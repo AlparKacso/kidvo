@@ -24,7 +24,7 @@ function ListingRow({ listing, onStatusChange }: {
   async function updateStatus(status: string) {
     setLoading(true)
     const supabase = createClient()
-    await supabase.from('listings').update({ status }).eq('id', listing.id)
+    await supabase.from('listings').update({ status: status as 'active' | 'paused' | 'pending' | 'draft' }).eq('id', listing.id)
     onStatusChange(listing.id, status)
     setLoading(false)
     setConfirm(null)
