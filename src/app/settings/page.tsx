@@ -18,9 +18,9 @@ export default async function SettingsPage() {
 
   const isProvider = profile?.role === 'provider' || profile?.role === 'both'
 
-  const { data: providerRaw } = isProvider
-    ? await supabase.from('providers').select('*').eq('user_id', user.id).single()
-    : Promise.resolve({ data: null })
+  const providerRaw = isProvider
+    ? (await supabase.from('providers').select('*').eq('user_id', user.id).single()).data
+    : null
 
   const provider = providerRaw as unknown as { id: string; display_name: string; bio: string | null; contact_email: string; contact_phone: string | null } | null
 
