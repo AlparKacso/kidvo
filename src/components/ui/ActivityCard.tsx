@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { SaveButton } from '@/components/ui/SaveButton'
+import { StarRating } from '@/components/ui/StarRating'
 import type { ListingWithRelations } from '@/types/database'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -13,12 +14,14 @@ function formatSchedule(schedules: ListingWithRelations['schedules']): string {
 }
 
 interface ActivityCardProps {
-  listing:   ListingWithRelations
-  featured?: boolean
-  savedIds?: string[]
+  listing:     ListingWithRelations
+  featured?:   boolean
+  savedIds?:   string[]
+  avgRating?:  number | null
+  reviewCount?: number
 }
 
-export function ActivityCard({ listing, featured, savedIds }: ActivityCardProps) {
+export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount }: ActivityCardProps) {
   const isFull  = (listing.spots_available ?? 1) === 0
   const accent  = listing.category.accent_color
   const isSaved = savedIds?.includes(listing.id) ?? false
@@ -71,6 +74,13 @@ export function ActivityCard({ listing, featured, savedIds }: ActivityCardProps)
             <span className="font-body font-normal text-[11px] text-ink-muted">/mo</span>
           </div>
         </div>
+
+        {/* Rating */}
+        {avgRating != null && avgRating > 0 && (
+          <div className="mb-2">
+            <StarRating rating={avgRating} count={reviewCount} size="sm" />
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-1.5 mt-auto">

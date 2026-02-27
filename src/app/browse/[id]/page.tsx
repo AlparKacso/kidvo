@@ -6,6 +6,8 @@ import { createClient }          from '@/lib/supabase/server'
 import { TrialRequestButton }    from '@/components/TrialRequestButton'
 import { SaveButton }            from '@/components/ui/SaveButton'
 import { ContactProviderButton } from '@/components/ui/ContactProviderButton'
+import { StarRating }            from '@/components/ui/StarRating'
+import { ReviewForm }            from '@/components/ui/ReviewForm'
 
 const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -42,11 +44,29 @@ export default async function ActivityDetailPage({ params }: Props) {
   const spotsLeft = listing.spots_available ?? null
   const accent    = category.accent_color
 
-  // Check if current user has saved this listing
-  const saveRowRaw = user
-    ? (await supabase.from('saves').select('id').eq('user_id', user.id).eq('listing_id', id).maybeSingle()).data
-    : null
-  const isSaved = !!saveRowRaw
+  // Parallel: save status + reviews + eligibility
+  const [saveRowRaw, reviewsRaw, confirmedTrialRaw, existingReviewRaw] = await Promise.all([
+    user
+      ? supabase.from('saves').select('id').eq('user_id', user.id).eq('listing_id', id).maybeSingle().then(r => r.data)
+      : Promise.resolve(null),
+    supabase
+      .from('reviews')
+      .select('id, rating, comment, created_at')
+      .eq('listing_id', id)
+      .order('created_at', { ascending: false }),
+    user
+      ? supabase.from('trial_requests').select('id').eq('user_id', user.id).eq('listing_id', id).eq('status', 'confirmed').limit(1).maybeSingle().then(r => r.data)
+      : Promise.resolve(null),
+    user
+      ? supabase.from('reviews').select('id').eq('user_id', user.id).eq('listing_id', id).maybeSingle().then(r => r.data)
+      : Promise.resolve(null),
+  ])
+
+  const isSaved    = !!saveRowRaw
+  const reviews    = (reviewsRaw.data ?? []) as { id: string; rating: number; comment: string | null; created_at: string }[]
+  const canReview  = !!confirmedTrialRaw && !existingReviewRaw
+
+  const avgRating  = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
   return (
     <AppShell>
@@ -82,6 +102,9 @@ export default async function ActivityDetailPage({ params }: Props) {
                   )}
                   {listing.featured && (
                     <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-gold-lt text-gold-text">Featured</span>
+                  )}
+                  {avgRating > 0 && (
+                    <StarRating rating={avgRating} count={reviews.length} size="sm" />
                   )}
                 </div>
                 <h1 className="font-display text-2xl font-bold tracking-tight text-ink mb-3">{listing.title}</h1>
@@ -194,6 +217,44 @@ export default async function ActivityDetailPage({ params }: Props) {
                 </ul>
               </div>
             )}
+
+            {/* Reviews */}
+            <div className="bg-white border border-border rounded-lg p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">
+                  Reviews
+                </div>
+                {avgRating > 0 && (
+                  <StarRating rating={avgRating} count={reviews.length} size="md" />
+                )}
+              </div>
+
+              {canReview && (
+                <>
+                  <p className="text-sm text-ink-mid mb-3">You've completed a trial — share your experience with other parents!</p>
+                  <ReviewForm listingId={listing.id} providerId={provider.id} />
+                  {reviews.length > 0 && <div className="h-px bg-border my-4" />}
+                </>
+              )}
+
+              {reviews.length === 0 && !canReview && (
+                <p className="text-sm text-ink-muted">No reviews yet. Be the first after completing a trial!</p>
+              )}
+
+              {reviews.map(review => (
+                <div key={review.id} className="py-3 border-b border-border last:border-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <StarRating rating={review.rating} size="sm" />
+                    <span className="text-[11px] text-ink-muted">
+                      {new Date(review.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-ink-mid leading-relaxed">{review.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
 
           </div>
 

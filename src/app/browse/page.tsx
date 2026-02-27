@@ -88,6 +88,26 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const rest      = listings?.filter(l => !l.featured) ?? []
   const total     = listings?.length ?? 0
 
+  // Fetch aggregate ratings for all visible listings in one query
+  const listingIds = (listings ?? []).map((l: any) => l.id as string)
+  const ratingsMap: Record<string, { avg: number; count: number }> = {}
+  if (listingIds.length > 0) {
+    const { data: reviewRows } = await supabase
+      .from('reviews')
+      .select('listing_id, rating')
+      .in('listing_id', listingIds)
+    if (reviewRows) {
+      for (const r of reviewRows) {
+        if (!ratingsMap[r.listing_id]) ratingsMap[r.listing_id] = { avg: 0, count: 0 }
+        ratingsMap[r.listing_id].count++
+        ratingsMap[r.listing_id].avg += r.rating
+      }
+      for (const lid in ratingsMap) {
+        ratingsMap[lid].avg = ratingsMap[lid].avg / ratingsMap[lid].count
+      }
+    }
+  }
+
   const hasActiveFilters = params.q || params.area || params.age || params.category
 
   return (
@@ -122,7 +142,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             <div className="section-label mb-3">Featured</div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(272px,1fr))] gap-3.5 mb-8">
               {featured.map(listing => (
-                <ActivityCard key={listing.id} listing={listing as ListingWithRelations} featured />
+                <ActivityCard key={listing.id} listing={listing as ListingWithRelations} featured
+                  avgRating={ratingsMap[listing.id]?.avg ?? null}
+                  reviewCount={ratingsMap[listing.id]?.count}
+                />
               ))}
             </div>
           </>
@@ -135,7 +158,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(272px,1fr))] gap-3.5">
               {rest.map(listing => (
-                <ActivityCard key={listing.id} listing={listing as ListingWithRelations} />
+                <ActivityCard key={listing.id} listing={listing as ListingWithRelations}
+                  avgRating={ratingsMap[listing.id]?.avg ?? null}
+                  reviewCount={ratingsMap[listing.id]?.count}
+                />
               ))}
             </div>
           </>

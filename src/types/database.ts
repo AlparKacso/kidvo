@@ -141,6 +141,19 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['trial_requests']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['trial_requests']['Insert']>
       }
+      reviews: {
+        Row: {
+          id:          string
+          user_id:     string
+          listing_id:  string
+          provider_id: string
+          rating:      number
+          comment:     string | null
+          created_at:  string
+        }
+        Insert: Omit<Database['public']['Tables']['reviews']['Row'], 'id' | 'created_at'>
+        Update: never
+      }
     }
   }
 }
