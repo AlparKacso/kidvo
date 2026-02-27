@@ -74,9 +74,8 @@ export default function SignupPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <span className="font-display font-bold text-[26px] leading-none tracking-tight">
-            <span className="text-primary">k</span>
-            <span className="text-gold">i</span>
-            <span className="text-primary">ndo</span>
+            <span className="text-primary">kid</span>
+            <span className="text-gold">vo</span>
           </span>
           <p className="text-sm text-ink-muted mt-2">Activities for kids in Timișoara</p>
         </div>

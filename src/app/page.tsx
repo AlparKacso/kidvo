@@ -14,7 +14,7 @@ const CATEGORIES = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#F5F4F6] font-body">
+    <div className="min-h-screen bg-[#F5F4F6] font-body flex flex-col">
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-5 md:px-8 py-4 md:py-5 max-w-[1200px] mx-auto">
@@ -32,6 +32,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
+      <main className="flex-1">
       {/* Hero */}
       <section className="max-w-[1200px] mx-auto px-5 md:px-8 pt-10 md:pt-12 pb-14 md:pb-20">
         <div className="text-center mb-10 md:mb-14">
@@ -181,6 +182,8 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-[#e8e0ec] bg-white">
