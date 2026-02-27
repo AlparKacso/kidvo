@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const resend   = new Resend(process.env.RESEND_API_KEY)
+const getResend = () => new Resend(process.env.RESEND_API_KEY)
 const FROM     = 'kindo <onboarding@resend.dev>'
 const APP_URL  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kindo.ro'
 const PURPLE   = '#523650'
@@ -75,7 +75,7 @@ export async function sendNewTrialRequestToProvider(opts: {
     opts.message      ? detailRow('Message',       `<em>${opts.message}</em>`)  : '',
   ].join('')
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from:    FROM,
     to:      opts.providerEmail,
     subject: `New trial request — ${opts.listingTitle}`,
@@ -103,7 +103,7 @@ export async function sendTrialConfirmedToParent(opts: {
     opts.providerPhone ? detailRow('Phone', `<a href="tel:${opts.providerPhone}" style="color:${PURPLE};">${opts.providerPhone}</a>`) : '',
   ].join('')
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from:    FROM,
     to:      opts.parentEmail,
     subject: `Trial confirmed — ${opts.listingTitle}`,
@@ -124,7 +124,7 @@ export async function sendTrialDeclinedToParent(opts: {
   parentName:   string
   listingTitle: string
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from:    FROM,
     to:      opts.parentEmail,
     subject: `Trial request update — ${opts.listingTitle}`,
