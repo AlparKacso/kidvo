@@ -12,7 +12,8 @@ export async function GET() {
     .select('listing_id')
     .eq('user_id', user.id)
 
-  return NextResponse.json({ ids: data?.map(s => s.listing_id) ?? [] })
+  const saves = data as unknown as { listing_id: string }[] | null
+  return NextResponse.json({ ids: saves?.map(s => s.listing_id) ?? [] })
 }
 
 // POST /api/saves — toggle save for a listing
@@ -25,12 +26,14 @@ export async function POST(req: NextRequest) {
   if (!listing_id) return NextResponse.json({ error: 'listing_id required' }, { status: 400 })
 
   // Check if already saved
-  const { data: existing } = await supabase
+  const { data: existingRaw } = await supabase
     .from('saves')
     .select('id')
     .eq('user_id', user.id)
     .eq('listing_id', listing_id)
     .single()
+
+  const existing = existingRaw as unknown as { id: string } | null
 
   if (existing) {
     await supabase.from('saves').delete().eq('id', existing.id)

@@ -29,10 +29,13 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const params   = await searchParams
   const supabase = await createClient()
 
-  const [{ data: categories }, { data: areas }] = await Promise.all([
+  const [{ data: categoriesRaw }, { data: areasRaw }] = await Promise.all([
     supabase.from('categories').select('*').order('sort_order'),
     supabase.from('areas').select('*').order('name'),
   ])
+
+  const categories = categoriesRaw as unknown as any[] | null
+  const areas      = areasRaw      as unknown as any[] | null
 
   // Build query
   let query = supabase
@@ -68,7 +71,8 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     }
   }
 
-  const { data: allListings } = await query
+  const { data: allListingsRaw } = await query
+  const allListings = allListingsRaw as unknown as any[] | null
 
   // Text search — client-side on the already-filtered set (sufficient for MVP scale)
   const q = params.q?.toLowerCase().trim() ?? ''

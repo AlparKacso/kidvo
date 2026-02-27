@@ -8,7 +8,7 @@ export default async function SavedPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const { data: saves } = await supabase
+  const { data: savesRaw } = await supabase
     .from('saves')
     .select(`
       id,
@@ -23,6 +23,7 @@ export default async function SavedPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
+  const saves = savesRaw as unknown as any[] | null
   const active = saves?.filter(s => s.listing && (s.listing as any).status === 'active') ?? []
 
   return (

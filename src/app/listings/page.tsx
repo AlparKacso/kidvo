@@ -17,20 +17,24 @@ export default async function ProviderListingsPage({ searchParams }: { searchPar
   if (!user) redirect('/auth/login')
 
   // Get provider record
-  const { data: provider } = await supabase
+  const { data: providerRaw } = await supabase
     .from('providers')
     .select('*')
     .eq('user_id', user.id)
     .single()
 
+  const provider = providerRaw as unknown as { id: string } | null
+
   if (!provider) redirect('/browse')
 
   // Get listings with schedules
-  const { data: listings } = await supabase
+  const { data: listingsRaw } = await supabase
     .from('listings')
     .select(`*, category:categories(*), area:areas(*), schedules:listing_schedules(*)`)
     .eq('provider_id', provider.id)
     .order('created_at', { ascending: false })
+
+  const listings = listingsRaw as unknown as any[] | null
 
   const active  = listings?.filter(l => l.status === 'active').length ?? 0
   const pending = listings?.filter(l => l.status === 'pending').length ?? 0

@@ -8,7 +8,7 @@ export default async function MyKidsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const [{ data: children }, { data: areas }, { data: saves }] = await Promise.all([
+  const [{ data: childrenRaw }, { data: areasRaw }, { data: savesRaw }] = await Promise.all([
     supabase.from('children').select('*').eq('user_id', user.id).order('created_at'),
     supabase.from('areas').select('*').order('name'),
     supabase
@@ -26,6 +26,10 @@ export default async function MyKidsPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
   ])
+
+  const children = childrenRaw as unknown as any[] | null
+  const areas    = areasRaw    as unknown as any[] | null
+  const saves    = savesRaw    as unknown as any[] | null
 
   const activeSaves = saves?.filter(s => s.listing && (s.listing as any).status === 'active') ?? []
 

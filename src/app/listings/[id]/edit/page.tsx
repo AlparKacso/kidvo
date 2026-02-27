@@ -15,25 +15,32 @@ export default async function EditListingPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const { data: provider } = await supabase
+  const { data: providerRaw } = await supabase
     .from('providers')
     .select('id')
     .eq('user_id', user.id)
     .single()
 
+  const provider = providerRaw as unknown as { id: string } | null
+
   if (!provider) redirect('/browse')
 
-  const { data: listing } = await supabase
+  const { data: listingRaw } = await supabase
     .from('listings')
     .select('*, schedules:listing_schedules(*)')
     .eq('id', id)
     .eq('provider_id', provider.id)
     .single()
 
+  const listing = listingRaw as unknown as any | null
+
   if (!listing) notFound()
 
-  const { data: categories } = await supabase.from('categories').select('*').order('sort_order')
-  const { data: areas }      = await supabase.from('areas').select('*').order('name')
+  const { data: categoriesRaw } = await supabase.from('categories').select('*').order('sort_order')
+  const { data: areasRaw }      = await supabase.from('areas').select('*').order('name')
+
+  const categories = categoriesRaw as unknown as any[] | null
+  const areas      = areasRaw      as unknown as any[] | null
 
   const initialData = {
     title:           listing.title,

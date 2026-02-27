@@ -21,12 +21,15 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const [{ data: listing }, { data: parent }] = await Promise.all([
+  const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
     supabase.from('listings').select('title, provider:providers(contact_email, display_name)').eq('id', listing_id).single(),
     supabase.from('users').select('full_name, email').eq('id', user.id).single(),
   ])
 
-  const provider = (listing as any)?.provider
+  const listing = listingRaw as unknown as any | null
+  const parent  = parentRaw  as unknown as { full_name: string; email: string } | null
+
+  const provider = listing?.provider
 
   if (provider?.contact_email && parent && listing) {
     sendNewTrialRequestToProvider({

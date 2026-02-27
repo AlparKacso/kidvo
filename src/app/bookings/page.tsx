@@ -17,7 +17,7 @@ export default async function ParentBookingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const { data: requests } = await supabase
+  const { data: requestsRaw } = await supabase
     .from('trial_requests')
     .select(`
       *,
@@ -30,6 +30,8 @@ export default async function ParentBookingsPage() {
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+
+  const requests = requestsRaw as unknown as any[] | null
 
   const total     = requests?.length ?? 0
   const pending   = requests?.filter(r => r.status === 'pending').length ?? 0

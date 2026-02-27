@@ -18,11 +18,13 @@ export async function AppShell({ children }: AppShellProps) {
   let isProvider = false
 
   if (authUser) {
-    const { data: profile } = await supabase
+    const { data: profileRaw } = await supabase
       .from('users')
       .select('full_name, role')
       .eq('id', authUser.id)
       .single()
+
+    const profile = profileRaw as unknown as { full_name: string; role: string } | null
 
     if (profile) {
       userName   = profile.full_name

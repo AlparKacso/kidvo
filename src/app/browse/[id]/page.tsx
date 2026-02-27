@@ -17,7 +17,7 @@ export default async function ActivityDetailPage({ params }: Props) {
   const { id }   = await params
   const supabase = await createClient()
 
-  const [{ data: listing }, { data: { user } }] = await Promise.all([
+  const [{ data: listingRaw }, { data: { user } }] = await Promise.all([
     supabase
       .from('listings')
       .select(`
@@ -31,6 +31,8 @@ export default async function ActivityDetailPage({ params }: Props) {
       .single(),
     supabase.auth.getUser(),
   ])
+
+  const listing = listingRaw as unknown as any | null
 
   if (!listing) notFound()
 

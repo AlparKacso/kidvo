@@ -17,29 +17,34 @@ export default async function ProviderBookingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const { data: provider } = await supabase
+  const { data: providerRaw } = await supabase
     .from('providers')
     .select('id')
     .eq('user_id', user.id)
     .single()
 
+  const provider = providerRaw as unknown as { id: string } | null
+
   if (!provider) redirect('/browse')
 
   // Get all listing IDs for this provider first
-  const { data: providerListings } = await supabase
+  const { data: providerListingsRaw } = await supabase
     .from('listings')
     .select('id')
     .eq('provider_id', provider.id)
 
+  const providerListings = providerListingsRaw as unknown as { id: string }[] | null
   const listingIds = providerListings?.map(l => l.id) ?? []
 
-  const { data: requests } = listingIds.length > 0
+  const { data: requestsRaw } = listingIds.length > 0
     ? await supabase
         .from('trial_requests')
         .select(`*, listing:listings(id, title, category:categories(name, accent_color)), parent:users(full_name, email)`)
         .in('listing_id', listingIds)
         .order('created_at', { ascending: false })
     : { data: [] }
+
+  const requests = requestsRaw as unknown as any[] | null
 
   const total   = requests?.length ?? 0
   const pending = requests?.filter(r => r.status === 'pending').length ?? 0
