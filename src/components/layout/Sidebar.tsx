@@ -5,10 +5,13 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const KidvoLogo = () => (
-  <div className="flex items-center px-[18px] py-[22px] border-b border-white/[0.06]">
+  <div className="flex flex-col px-[18px] py-[18px] border-b border-white/[0.06]">
     <span className="font-display font-bold text-[19px] leading-none tracking-tight" style={{ letterSpacing: '-0.03em' }}>
       <span className="text-white">kid</span>
       <span className="text-gold">vo</span>
+    </span>
+    <span className="font-display text-[9px] text-white/40 mt-1 leading-none tracking-wide">
+      where your <span className="text-white/70">kid</span> finds their <span className="text-gold/70">vo</span>cation
     </span>
   </div>
 )
