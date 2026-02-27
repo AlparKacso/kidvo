@@ -30,18 +30,16 @@ export function Topbar() {
           </div>
         ) : (
           <>
-            <Link href="/browse" className="flex flex-col leading-none">
-              <span className="font-display font-bold" style={{ fontSize: '20px', letterSpacing: '-0.03em' }}>
-                <span style={{ color: '#523650' }}>kid</span><span style={{ color: '#F0A500' }}>vo</span>
-              </span>
-              <span className="font-display text-[8px] text-ink-muted mt-0.5 leading-none tracking-wide">
-                where your <span style={{ color: '#523650' }}>kid</span> finds their <span style={{ color: '#F0A500' }}>vo</span>cation
-              </span>
+            <Link href="/browse" className="font-display leading-none" style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.03em' }}>
+              <span style={{ color: '#523650' }}>kid</span><span style={{ color: '#F0A500' }}>vo</span>
             </Link>
             <div className="flex items-center gap-1.5 font-display text-xs font-semibold text-ink-muted ml-2">
               <IconLocation />Timișoara
             </div>
             <div className="flex-1" />
+            <span className="font-display text-[9px] text-ink-muted italic tracking-wide">
+              where your <span style={{ color: '#523650' }}>kid</span> finds their <span style={{ color: '#F0A500' }}>vo</span>cation
+            </span>
             {!isBrowse && <button onClick={() => setSearchOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-ink-muted hover:border-primary transition-colors">
               <IconSearch />
             </button>}
@@ -64,6 +62,10 @@ export function Topbar() {
         <div className="flex items-center gap-1.5 font-display text-xs font-semibold text-ink-muted whitespace-nowrap">
           <IconLocation />Timișoara
         </div>
+        <div className="flex-1" />
+        <span className="font-display text-[10px] text-ink-muted italic tracking-wide">
+          where your <span style={{ color: '#523650' }}>kid</span> finds their <span style={{ color: '#F0A500' }}>vo</span>cation
+        </span>
       </div>
 
     </header>
