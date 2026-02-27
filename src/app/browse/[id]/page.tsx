@@ -53,7 +53,7 @@ export default async function ActivityDetailPage({ params }: Props) {
       <div>
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-ink-muted mb-6">
+        <div className="flex items-center gap-2 text-sm text-ink-muted mb-6 flex-wrap">
           <Link href="/browse" className="hover:text-primary transition-colors">Browse</Link>
           <span>›</span>
           <Link href={`/browse?category=${category.slug}`} className="hover:text-primary transition-colors">{category.name}</Link>
@@ -62,10 +62,10 @@ export default async function ActivityDetailPage({ params }: Props) {
         </div>
 
         {/* Two-column layout */}
-        <div className="grid grid-cols-[1fr_300px] gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-6 items-start">
 
           {/* ── LEFT ── */}
-          <div className="flex flex-col gap-4">
+          <div className="order-2 md:order-1 flex flex-col gap-4">
 
             {/* Header card */}
             <div className="bg-white border border-border rounded-lg overflow-hidden relative">
@@ -198,7 +198,7 @@ export default async function ActivityDetailPage({ params }: Props) {
           </div>
 
           {/* ── RIGHT — sticky ── */}
-          <div className="flex flex-col gap-3 sticky top-[70px]">
+          <div className="order-1 md:order-2 flex flex-col gap-3 md:sticky md:top-[70px]">
 
             {/* CTA card */}
             <div className="bg-white border border-border rounded-lg p-5">
