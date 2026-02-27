@@ -93,6 +93,7 @@ export async function sendTrialConfirmedToParent(opts: {
   parentEmail:   string
   parentName:    string
   listingTitle:  string
+  listingId:     string
   providerName:  string
   providerEmail: string
   providerPhone: string | null
@@ -113,6 +114,8 @@ export async function sendTrialConfirmedToParent(opts: {
       ${p('Reach out to arrange the details:')}
       ${detailTable(rows)}
       ${btn('View your bookings →', `${APP_URL}/bookings`)}
+      <p style="margin:24px 0 8px;font-size:13px;color:#4a3a52;">After attending the trial, you can leave a review to help other parents find great activities.</p>
+      ${btn('Leave a review →', `${APP_URL}/browse/${opts.listingId}`)}
       <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">All arrangements are directly between you and the provider. kidvo is not involved.</p>
     `),
   })
@@ -145,7 +148,37 @@ export async function sendNewListingToAdmin(opts: {
   })
 }
 
-// ── 4. Parent — trial declined ───────────────────────────────────────────────
+// ── 4. Admin — new review pending moderation ─────────────────────────────────
+export async function sendNewReviewToAdmin(opts: {
+  reviewId:     string
+  listingTitle: string
+  rating:       number
+  comment:      string | null
+  reviewerName: string
+}) {
+  const stars  = '★'.repeat(opts.rating) + '☆'.repeat(5 - opts.rating)
+  const rows = [
+    detailRow('Activity', opts.listingTitle),
+    detailRow('Reviewer', opts.reviewerName),
+    detailRow('Rating',   `${stars} (${opts.rating}/5)`),
+    opts.comment ? detailRow('Comment', `<em>${opts.comment}</em>`) : '',
+    detailRow('Review ID', opts.reviewId),
+  ].join('')
+
+  return getResend().emails.send({
+    from:    FROM,
+    to:      'alpar.kacso@gmail.com',
+    subject: `New review pending moderation — ${opts.listingTitle}`,
+    html: layout(`
+      ${h1('New review to moderate')}
+      ${p(`A parent submitted a review for <strong>${opts.listingTitle}</strong>. Please approve or reject it in the admin panel.`)}
+      ${detailTable(rows)}
+      ${btn('Moderate in Admin →', `${APP_URL}/admin`)}
+    `),
+  })
+}
+
+// ── 5. Parent — trial declined ───────────────────────────────────────────────
 export async function sendTrialDeclinedToParent(opts: {
   parentEmail:  string
   parentName:   string

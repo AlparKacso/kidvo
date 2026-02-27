@@ -44,8 +44,8 @@ export default async function ActivityDetailPage({ params }: Props) {
   const spotsLeft = listing.spots_available ?? null
   const accent    = category.accent_color
 
-  // Parallel: save status + reviews + eligibility
-  const [saveRowRaw, reviewsRaw, confirmedTrialRaw, existingReviewRaw] = await Promise.all([
+  // Parallel: save status + approved reviews + eligibility
+  const [saveRowRaw, reviewsRaw, confirmedTrialRaw, ownReviewRaw] = await Promise.all([
     user
       ? supabase.from('saves').select('id').eq('user_id', user.id).eq('listing_id', id).maybeSingle().then(r => r.data)
       : Promise.resolve(null),
@@ -53,20 +53,23 @@ export default async function ActivityDetailPage({ params }: Props) {
       .from('reviews')
       .select('id, rating, comment, created_at')
       .eq('listing_id', id)
+      .eq('status', 'approved')
       .order('created_at', { ascending: false }),
     user
       ? supabase.from('trial_requests').select('id').eq('user_id', user.id).eq('listing_id', id).eq('status', 'confirmed').limit(1).maybeSingle().then(r => r.data)
       : Promise.resolve(null),
     user
-      ? supabase.from('reviews').select('id').eq('user_id', user.id).eq('listing_id', id).maybeSingle().then(r => r.data)
+      ? supabase.from('reviews').select('id, status').eq('user_id', user.id).eq('listing_id', id).maybeSingle().then(r => r.data)
       : Promise.resolve(null),
   ])
 
-  const isSaved    = !!saveRowRaw
-  const reviews    = (reviewsRaw.data ?? []) as { id: string; rating: number; comment: string | null; created_at: string }[]
-  const canReview  = !!confirmedTrialRaw && !existingReviewRaw
+  const isSaved      = !!saveRowRaw
+  const reviews      = (reviewsRaw.data ?? []) as { id: string; rating: number; comment: string | null; created_at: string }[]
+  const ownReview    = ownReviewRaw as { id: string; status: string } | null
+  const hasConfirmed = !!confirmedTrialRaw
+  const canReview    = hasConfirmed && !ownReview
 
-  const avgRating  = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
+  const avgRating    = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
   return (
     <AppShell>
@@ -229,6 +232,23 @@ export default async function ActivityDetailPage({ params }: Props) {
                 )}
               </div>
 
+              {/* State: own review pending moderation */}
+              {ownReview?.status === 'pending' && (
+                <div className="flex items-start gap-2.5 bg-gold-lt border border-gold/20 rounded-lg px-3 py-2.5 mb-4">
+                  <svg className="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" fill="#F0A500" opacity=".2"/><path d="M7.5 4.5v4M7.5 10.5v.5" stroke="#8a6800" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <p className="text-xs text-gold-text leading-relaxed">Your review has been submitted and is awaiting moderation. It will appear here once approved.</p>
+                </div>
+              )}
+
+              {/* State: own review rejected — allow resubmission */}
+              {ownReview?.status === 'rejected' && (
+                <div className="flex items-start gap-2.5 bg-danger-lt border border-danger/20 rounded-lg px-3 py-2.5 mb-4">
+                  <svg className="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" fill="#dc2626" opacity=".15"/><path d="M5 5l5 5M10 5l-5 5" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <p className="text-xs text-danger leading-relaxed">Your previous review was not approved. Please contact us if you have questions.</p>
+                </div>
+              )}
+
+              {/* State: eligible, no review yet — show form */}
               {canReview && (
                 <>
                   <p className="text-sm text-ink-mid mb-3">You've completed a trial — share your experience with other parents!</p>
@@ -237,10 +257,19 @@ export default async function ActivityDetailPage({ params }: Props) {
                 </>
               )}
 
-              {reviews.length === 0 && !canReview && (
-                <p className="text-sm text-ink-muted">No reviews yet. Be the first after completing a trial!</p>
+              {/* State: not logged in */}
+              {!user && reviews.length === 0 && (
+                <p className="text-sm text-ink-muted">
+                  <a href="/auth/login" className="text-primary hover:underline">Sign in</a> and complete a trial to leave a review.
+                </p>
               )}
 
+              {/* State: logged in but no confirmed trial */}
+              {user && !hasConfirmed && !ownReview && reviews.length === 0 && (
+                <p className="text-sm text-ink-muted">No reviews yet. Book a trial — after attending you'll be able to leave a review.</p>
+              )}
+
+              {/* State: has reviews to show */}
               {reviews.map(review => (
                 <div key={review.id} className="py-3 border-b border-border last:border-0">
                   <div className="flex items-center gap-2 mb-1">

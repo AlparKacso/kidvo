@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
+import { sendTrialConfirmedToParent, sendTrialDeclinedToParent } from '@/lib/email'
 
 const STATUS_STYLES: Record<string, string> = {
   pending:   'bg-gold-lt text-gold-text',
@@ -54,8 +55,46 @@ export default async function ProviderBookingsPage() {
     const id     = formData.get('id') as string
     const status = formData.get('status') as string
     const supabase = await createClient()
-    await supabase.from('trial_requests').update({ status }).eq('id', id)
+
+    // Fetch full request details to send email
+    const { data: reqRaw } = await supabase
+      .from('trial_requests')
+      .select(`
+        listing_id,
+        listing:listings(id, title, provider:providers(display_name, contact_email, contact_phone)),
+        parent:users(full_name, email)
+      `)
+      .eq('id', id)
+      .single()
+
+    await supabase.from('trial_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', id)
     revalidatePath('/listings/bookings')
+
+    // Send email notification to parent
+    const req     = reqRaw as any
+    const listing = req?.listing
+    const parent  = req?.parent
+    const prov    = listing?.provider
+
+    if (parent?.email && listing?.title) {
+      if (status === 'confirmed' && prov) {
+        await sendTrialConfirmedToParent({
+          parentEmail:   parent.email,
+          parentName:    parent.full_name ?? 'there',
+          listingTitle:  listing.title,
+          listingId:     listing.id,
+          providerName:  prov.display_name,
+          providerEmail: prov.contact_email,
+          providerPhone: prov.contact_phone ?? null,
+        }).catch(console.error)
+      } else if (status === 'declined') {
+        await sendTrialDeclinedToParent({
+          parentEmail:  parent.email,
+          parentName:   parent.full_name ?? 'there',
+          listingTitle: listing.title,
+        }).catch(console.error)
+      }
+    }
   }
 
   return (

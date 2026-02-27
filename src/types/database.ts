@@ -3,6 +3,7 @@ export type ParentPlan  = 'free' | 'pro'
 export type ProviderPlan = 'free' | 'featured'
 export type ListingStatus = 'draft' | 'pending' | 'active' | 'paused'
 export type RequestStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled'
+export type ReviewStatus  = 'pending' | 'approved' | 'rejected'
 
 export interface Database {
   public: {
@@ -149,10 +150,11 @@ export interface Database {
           provider_id: string
           rating:      number
           comment:     string | null
+          status:      ReviewStatus
           created_at:  string
         }
         Insert: Omit<Database['public']['Tables']['reviews']['Row'], 'id' | 'created_at'>
-        Update: never
+        Update: Pick<Database['public']['Tables']['reviews']['Row'], 'status'>
       }
     }
   }

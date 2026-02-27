@@ -33,5 +33,18 @@ export default async function AdminPage() {
   const active  = listings.filter(l => l.status === 'active')
   const paused  = listings.filter(l => l.status === 'paused')
 
-  return <AdminClient pending={pending} active={active} paused={paused} />
+  // Fetch pending reviews for moderation
+  const { data: pendingReviewsRaw } = await supabase
+    .from('reviews')
+    .select(`
+      id, rating, comment, created_at,
+      listing:listings(id, title),
+      reviewer:users(full_name, email)
+    `)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+
+  const pendingReviews = (pendingReviewsRaw as unknown as any[] | null) ?? []
+
+  return <AdminClient pending={pending} active={active} paused={paused} pendingReviews={pendingReviews} />
 }

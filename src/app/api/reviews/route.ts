@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendNewReviewToAdmin } from '@/lib/email'
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Eligibility check: must have at least one confirmed trial for this listing
+    // Eligibility: confirmed trial for this listing
     const { data: confirmedTrial } = await supabase
       .from('trial_requests')
       .select('id')
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Duplicate check
+    // Duplicate check (any status)
     const { data: existing } = await supabase
       .from('reviews')
       .select('id')
@@ -42,17 +43,18 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (existing) {
-      return NextResponse.json({ error: 'You have already reviewed this activity' }, { status: 409 })
+      return NextResponse.json({ error: 'You have already submitted a review for this activity' }, { status: 409 })
     }
 
-    const { data, error } = await supabase
+    const { data: review, error } = await supabase
       .from('reviews')
       .insert({
         user_id:     user.id,
         listing_id,
         provider_id,
         rating,
-        comment: comment ?? null,
+        comment:     comment ?? null,
+        status:      'pending',
       })
       .select()
       .single()
@@ -62,7 +64,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to save review' }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true, review: data })
+    // Notify admin — fetch reviewer name and listing title
+    const [{ data: userRow }, { data: listingRow }] = await Promise.all([
+      supabase.from('users').select('full_name').eq('id', user.id).single(),
+      supabase.from('listings').select('title').eq('id', listing_id).single(),
+    ])
+
+    await sendNewReviewToAdmin({
+      reviewId:     review.id,
+      listingTitle: (listingRow as any)?.title ?? listing_id,
+      rating,
+      comment:      comment ?? null,
+      reviewerName: (userRow as any)?.full_name ?? user.email ?? 'Unknown',
+    }).catch(console.error)
+
+    return NextResponse.json({ ok: true, review })
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 500 })
   }
