@@ -17,7 +17,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#F5F4F6] font-body flex flex-col">
 
       {/* Nav */}
-      <nav className="flex items-center justify-between px-5 md:px-8 py-4 md:py-5 max-w-[1200px] mx-auto">
+      <nav className="w-full flex items-center justify-between px-5 md:px-8 py-4 md:py-5 max-w-[1200px] mx-auto">
         <span className="font-display leading-none" style={{ fontSize: '24px', fontWeight: 700, letterSpacing: '-0.03em' }}>
           <span style={{ color: '#523650' }}>kid</span>
           <span style={{ color: '#F0A500' }}>vo</span>
