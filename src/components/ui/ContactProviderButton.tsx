@@ -25,7 +25,7 @@ export function ContactProviderButton({ displayName, contactEmail, contactPhone 
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
 
-          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-[360px] p-6">
+          <div className="relative z-10 bg-white rounded-lg shadow-xl w-full max-w-[360px] p-6" onClick={e => e.stopPropagation()}>
             <button
               onClick={() => setOpen(false)}
               className="absolute top-4 right-4 w-7 h-7 rounded flex items-center justify-center text-ink-muted hover:bg-surface transition-colors"
