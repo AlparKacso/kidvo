@@ -37,7 +37,7 @@ export function Topbar() {
               <IconLocation />Timișoara
             </div>
             <div className="flex-1" />
-            <span className="font-display text-[9px] text-ink-muted italic tracking-wide">
+            <span className="font-display text-[10px] text-ink-muted italic tracking-wide">
               where your <span style={{ color: '#523650' }}>kid</span> finds their <span style={{ color: '#F0A500' }}>vo</span>cation
             </span>
             {!isBrowse && <button onClick={() => setSearchOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-ink-muted hover:border-primary transition-colors">
