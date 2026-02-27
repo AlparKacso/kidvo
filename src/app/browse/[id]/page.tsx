@@ -43,10 +43,10 @@ export default async function ActivityDetailPage({ params }: Props) {
   const accent    = category.accent_color
 
   // Check if current user has saved this listing
-  const { data: saveRow } = user
-    ? await supabase.from('saves').select('id').eq('user_id', user.id).eq('listing_id', id).maybeSingle()
-    : Promise.resolve({ data: null })
-  const isSaved = !!saveRow
+  const saveRowRaw = user
+    ? (await supabase.from('saves').select('id').eq('user_id', user.id).eq('listing_id', id).maybeSingle()).data
+    : null
+  const isSaved = !!saveRowRaw
 
   return (
     <AppShell>
