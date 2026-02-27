@@ -34,7 +34,6 @@ export async function POST(req: Request) {
   if (provider?.contact_email && parent && listing) {
     sendNewTrialRequestToProvider({
       providerEmail: provider.contact_email,
-      providerName:  provider.display_name,
       parentName:    parent.full_name,
       parentEmail:   parent.email,
       listingTitle:  (listing as any).title,
