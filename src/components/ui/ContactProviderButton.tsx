@@ -78,7 +78,7 @@ export function ContactProviderButton({ displayName, contactEmail, contactPhone 
             </div>
 
             <p className="text-[11px] text-ink-muted text-center mt-4 leading-relaxed">
-              You're contacting this provider directly.<br />kindo is not involved in this communication.
+              You're contacting this provider directly.<br />kidvo is not involved in this communication.
             </p>
           </div>
         </div>

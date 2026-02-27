@@ -1,8 +1,8 @@
 import { Resend } from 'resend'
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY)
-const FROM     = 'kindo <noreply@kidvo.eu>'
-const APP_URL  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kindo.ro'
+const FROM     = 'kidvo <noreply@kidvo.eu>'
+const APP_URL  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
 const PURPLE   = '#523650'
 const GOLD     = '#F0A500'
 
@@ -16,7 +16,7 @@ function layout(body: string) {
 
   <tr><td style="padding-bottom:20px;">
     <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">
-      <span style="color:${PURPLE};">k</span><span style="color:${GOLD};">i</span><span style="color:${PURPLE};">ndo</span>
+      <span style="color:${PURPLE};">kid</span><span style="color:${GOLD};">vo</span>
     </span>
   </td></tr>
 
@@ -25,8 +25,8 @@ function layout(body: string) {
   </td></tr>
 
   <tr><td style="padding-top:20px;text-align:center;font-size:11px;color:#9b89a5;">
-    kindo · Timișoara, Romania ·
-    <a href="${APP_URL}" style="color:#9b89a5;">kindo.ro</a>
+    kidvo · Timișoara, Romania ·
+    <a href="${APP_URL}" style="color:#9b89a5;">kidvo.eu</a>
   </td></tr>
 
 </table>
@@ -113,7 +113,7 @@ export async function sendTrialConfirmedToParent(opts: {
       ${p('Reach out to arrange the details:')}
       ${detailTable(rows)}
       ${btn('View your bookings →', `${APP_URL}/bookings`)}
-      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">All arrangements are directly between you and the provider. kindo is not involved.</p>
+      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">All arrangements are directly between you and the provider. kidvo is not involved.</p>
     `),
   })
 }

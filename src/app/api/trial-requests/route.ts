@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { sendNewTrialRequestToProvider } from '@/lib/email'
 
 const DAYS    = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kindo.ro'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
 
 export async function POST(req: Request) {
   const supabase = await createClient()

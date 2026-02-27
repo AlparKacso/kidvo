@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
-const KindoLogo = () => (
+const KidvoLogo = () => (
   <div className="flex items-center px-[18px] py-[22px] border-b border-white/[0.06]">
     <span className="font-display font-bold text-[19px] leading-none tracking-tight" style={{ letterSpacing: '-0.03em' }}>
       <span className="text-white">kid</span>
@@ -96,7 +96,7 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <aside className="w-sidebar min-w-sidebar bg-primary flex flex-col sticky top-0 h-screen">
-      <KindoLogo />
+      <KidvoLogo />
 
       <nav className="flex-1 px-2.5 py-3.5 flex flex-col gap-px overflow-y-auto">
         <div className="nav-label">Discover</div>
