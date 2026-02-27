@@ -17,7 +17,7 @@ export default async function AdminPage() {
   if ((profile as unknown as { role?: string } | null)?.role !== 'admin') redirect('/browse')
 
   // Fetch all listings with relations
-  const { data: listings } = await supabase
+  const { data: listingsRaw } = await supabase
     .from('listings')
     .select(`
       *,
@@ -27,9 +27,11 @@ export default async function AdminPage() {
     `)
     .order('created_at', { ascending: false })
 
-  const pending = listings?.filter(l => l.status === 'pending') ?? []
-  const active  = listings?.filter(l => l.status === 'active')  ?? []
-  const paused  = listings?.filter(l => l.status === 'paused')  ?? []
+  const listings = (listingsRaw as unknown as { status: string }[] | null) ?? []
+
+  const pending = listings.filter(l => l.status === 'pending')
+  const active  = listings.filter(l => l.status === 'active')
+  const paused  = listings.filter(l => l.status === 'paused')
 
   return <AdminClient pending={pending} active={active} paused={paused} />
 }
