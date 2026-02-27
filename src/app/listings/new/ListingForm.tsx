@@ -71,7 +71,7 @@ function StepIndicator({ current }: { current: number }) {
               </div>
               <div className={cn('flex-1 h-px', i === STEPS.length - 1 ? 'invisible' : done ? 'bg-primary' : 'bg-border')} />
             </div>
-            <div className={cn('font-display text-[11px] font-semibold mt-1.5', active ? 'text-primary' : done ? 'text-ink-mid' : 'text-ink-muted')}>
+            <div className={cn('hidden md:block font-display text-[11px] font-semibold mt-1.5', active ? 'text-primary' : done ? 'text-ink-mid' : 'text-ink-muted')}>
               {label}
             </div>
           </div>
@@ -219,6 +219,13 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
         )
         if (schedErr) throw schedErr
       }
+      if (!isEdit && finalListingId) {
+        await fetch('/api/listings/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId: finalListingId, listingTitle: data.title }),
+        })
+      }
       window.location.href = '/listings?submitted=1'
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
@@ -237,7 +244,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
 
       <StepIndicator current={step} />
 
-      <div className="grid grid-cols-[1fr_280px] gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-6 items-start">
         <div className="bg-white border border-border rounded-lg p-6">
 
           {/* Step 0 */}
@@ -281,7 +288,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
               </div>
               <div>
                 <Label>Category</Label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {categories.map(cat => (
                     <button key={cat.id} type="button" onClick={() => set('category_id', cat.id)}
                       className={cn(
@@ -295,7 +302,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div className="flex flex-col gap-4">
                   <div>
                     <Label>Neighborhood</Label>
@@ -355,19 +362,19 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 <Label hint="Add one row per session slot">Weekly schedule</Label>
                 <div className="flex flex-col gap-2">
                   {data.schedules.map((s, i) => (
-                    <div key={i} className="grid grid-cols-[140px_100px_100px_1fr_32px] gap-2 items-center">
-                      <select className={selectCls} value={s.day_of_week} onChange={e => updateSchedule(i, 'day_of_week', parseInt(e.target.value))}>
+                    <div key={i} className="flex flex-wrap gap-2 items-center p-2 bg-bg rounded-lg border border-border md:p-0 md:bg-transparent md:border-0 md:flex-nowrap">
+                      <select className={cn(selectCls, 'flex-1 min-w-[110px]')} value={s.day_of_week} onChange={e => updateSchedule(i, 'day_of_week', parseInt(e.target.value))}>
                         {DAYS.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
                       </select>
-                      <select className={selectCls} value={s.time_start} onChange={e => updateSchedule(i, 'time_start', e.target.value)}>
+                      <select className={cn(selectCls, 'flex-1 min-w-[90px]')} value={s.time_start} onChange={e => updateSchedule(i, 'time_start', e.target.value)}>
                         {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
-                      <select className={selectCls} value={s.time_end} onChange={e => updateSchedule(i, 'time_end', e.target.value)}>
+                      <select className={cn(selectCls, 'flex-1 min-w-[90px]')} value={s.time_end} onChange={e => updateSchedule(i, 'time_end', e.target.value)}>
                         {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
-                      <input className={inputCls} placeholder="Group label (optional)" value={s.group_label} onChange={e => updateSchedule(i, 'group_label', e.target.value)} />
+                      <input className={cn(inputCls, 'flex-1 min-w-[130px]')} placeholder="Group label (optional)" value={s.group_label} onChange={e => updateSchedule(i, 'group_label', e.target.value)} />
                       <button type="button" onClick={() => removeSchedule(i)} disabled={data.schedules.length === 1}
-                        className="w-8 h-8 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                        className="w-8 h-8 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                       </button>
                     </div>
@@ -384,7 +391,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           {/* Step 3 */}
           {step === 3 && (
             <div className="flex flex-col gap-5">
-              <div className="grid grid-cols-3 gap-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 <div>
                   <Label hint="Consider fair local pricing">Monthly price (RON)</Label>
                   <input className={inputCls} type="number" min={0} placeholder="e.g. 120" value={data.price_monthly} onChange={e => set('price_monthly', e.target.value)} />
@@ -448,7 +455,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           )}
         </div>
 
-        <div className="flex flex-col gap-4 sticky top-[80px]">
+        <div className="hidden md:flex flex-col gap-4 sticky top-[80px]">
           <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">Live preview</div>
           <PreviewCard data={data} categories={categories} areas={areas} />
           <div className="text-[11px] text-ink-muted text-center">This is how your listing will appear in browse results</div>

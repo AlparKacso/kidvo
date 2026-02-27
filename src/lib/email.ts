@@ -118,7 +118,34 @@ export async function sendTrialConfirmedToParent(opts: {
   })
 }
 
-// ── 3. Parent — trial declined ───────────────────────────────────────────────
+// ── 3. Admin — new listing submitted ─────────────────────────────────────────
+export async function sendNewListingToAdmin(opts: {
+  listingId:     string
+  listingTitle:  string
+  providerName:  string
+  providerEmail: string
+}) {
+  const rows = [
+    detailRow('Activity',       opts.listingTitle),
+    detailRow('Provider',       opts.providerName),
+    detailRow('Provider email', `<a href="mailto:${opts.providerEmail}" style="color:${PURPLE};">${opts.providerEmail}</a>`),
+    detailRow('Listing ID',     opts.listingId),
+  ].join('')
+
+  return getResend().emails.send({
+    from:    FROM,
+    to:      'alpar.kacso@gmail.com',
+    subject: `New listing pending review — ${opts.listingTitle}`,
+    html: layout(`
+      ${h1('New listing submitted')}
+      ${p(`<strong>${opts.providerName}</strong> submitted a new activity listing that is pending your review.`)}
+      ${detailTable(rows)}
+      ${btn('Review in Admin →', `${APP_URL}/admin`)}
+    `),
+  })
+}
+
+// ── 4. Parent — trial declined ───────────────────────────────────────────────
 export async function sendTrialDeclinedToParent(opts: {
   parentEmail:  string
   parentName:   string

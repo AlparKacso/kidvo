@@ -59,6 +59,7 @@ const IconTrials  = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="
 const IconListings  = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 const IconAnalytics = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 12l3.5-4 3 2.5L12 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
 const IconSettings  = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
+const IconAdmin     = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L2 4v3.5c0 3 2.5 5.5 5.5 6 3-0.5 5.5-3 5.5-6V4L7.5 1.5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
 
 function SignOutButton() {
   async function signOut() {
@@ -81,11 +82,14 @@ function SignOutButton() {
   )
 }
 
+const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
+
 interface SidebarProps {
   isProvider?: boolean
   userName?:   string
   userSub?:    string
   initials?:   string
+  userEmail?:  string
 }
 
 export function Sidebar({
@@ -93,7 +97,10 @@ export function Sidebar({
   userName   = '',
   userSub    = 'Timișoara',
   initials   = '?',
+  userEmail  = '',
 }: SidebarProps) {
+  const isAdmin = userEmail === ADMIN_EMAIL
+
   return (
     <aside className="w-sidebar min-w-sidebar bg-primary flex flex-col sticky top-0 h-screen">
       <KidvoLogo />
@@ -102,22 +109,29 @@ export function Sidebar({
         <div className="nav-label">Discover</div>
         <NavItem href="/browse" icon={<IconBrowse />} label="Browse" badge={24} exact />
 
-        <div className="nav-label">My Family</div>
-        <NavItem href="/kids"     icon={<IconKids />}     label="My Kids"  exact />
-        <NavItem href="/saved"    icon={<IconSaved />}    label="Saved"    exact />
-        <NavItem href="/bookings" icon={<IconTrials />} label="Trials" exact />
+        {!isProvider && (
+          <>
+            <div className="nav-label">My Family</div>
+            <NavItem href="/kids"     icon={<IconKids />}   label="My Kids" exact />
+            <NavItem href="/saved"    icon={<IconSaved />}  label="Saved"   exact />
+            <NavItem href="/bookings" icon={<IconTrials />} label="Trials"  exact />
+          </>
+        )}
 
         {isProvider && (
           <>
             <div className="nav-label">My Listings</div>
             <NavItem href="/listings"           icon={<IconListings />}  label="Activities" />
-            <NavItem href="/listings/bookings"  icon={<IconTrials />}  label="Trials"   exact />
+            <NavItem href="/listings/bookings"  icon={<IconTrials />}    label="Trials"     exact />
             <NavItem href="/listings/analytics" icon={<IconAnalytics />} label="Analytics"  exact />
           </>
         )}
 
         <div className="nav-label">Account</div>
         <NavItem href="/settings" icon={<IconSettings />} label="Settings" exact />
+        {isAdmin && (
+          <NavItem href="https://kidvo.eu/admin" icon={<IconAdmin />} label="Admin" exact />
+        )}
       </nav>
 
       <div className="px-2.5 py-3.5 border-t border-white/[0.06]">

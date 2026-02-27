@@ -16,6 +16,7 @@ export async function AppShell({ children }: AppShellProps) {
   let userSub    = 'Timișoara'
   let initials   = '?'
   let isProvider = false
+  let userEmail  = authUser?.email ?? ''
 
   if (authUser) {
     const { data: profileRaw } = await supabase
@@ -43,6 +44,7 @@ export async function AppShell({ children }: AppShellProps) {
           userName={userName}
           userSub={userSub}
           initials={initials}
+          userEmail={userEmail}
         />
       </div>
 
@@ -55,7 +57,7 @@ export async function AppShell({ children }: AppShellProps) {
       </div>
 
       {/* Bottom nav — mobile only */}
-      <BottomNav isProvider={isProvider} />
+      <BottomNav isProvider={isProvider} userEmail={userEmail} />
     </div>
   )
 }

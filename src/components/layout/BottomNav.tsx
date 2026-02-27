@@ -4,8 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
+const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
+
+const IconAdmin = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L2 4v3.5c0 3 2.5 5.5 5.5 6 3-0.5 5.5-3 5.5-6V4L7.5 1.5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+
 interface Props {
   isProvider?: boolean
+  userEmail?:  string
 }
 
 const IconBrowse   = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/></svg>
@@ -33,10 +38,11 @@ function NavItem({ href, icon, label, exact }: { href: string; icon: React.React
   )
 }
 
-export function BottomNav({ isProvider = false }: Props) {
+export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
+  const isAdmin = userEmail === ADMIN_EMAIL
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border flex items-stretch safe-area-bottom">
-      <NavItem href="/browse"   icon={<IconBrowse />}   label="Browse"   exact />
+      <NavItem href="/browse" icon={<IconBrowse />} label="Browse" exact />
       {!isProvider && (
         <>
           <NavItem href="/kids"     icon={<IconKids />}     label="My Kids"  exact />
@@ -48,10 +54,12 @@ export function BottomNav({ isProvider = false }: Props) {
         <>
           <NavItem href="/listings"          icon={<IconListings />} label="Listings" />
           <NavItem href="/listings/bookings" icon={<IconBookings />} label="Bookings" exact />
-          <NavItem href="/saved"             icon={<IconSaved />}    label="Saved"    exact />
         </>
       )}
       <NavItem href="/settings" icon={<IconSettings />} label="Settings" exact />
+      {isAdmin && (
+        <NavItem href="https://kidvo.eu/admin" icon={<IconAdmin />} label="Admin" exact />
+      )}
     </nav>
   )
 }
