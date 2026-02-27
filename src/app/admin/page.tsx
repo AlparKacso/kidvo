@@ -14,7 +14,7 @@ export default async function AdminPage() {
     .eq('id', user.id)
     .single()
 
-  if ((profile?.role as string) !== 'admin') redirect('/browse')
+  if ((profile as unknown as { role?: string } | null)?.role !== 'admin') redirect('/browse')
 
   // Fetch all listings with relations
   const { data: listings } = await supabase
