@@ -1,7 +1,7 @@
 import { Resend } from 'resend'
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY)
-const FROM     = 'kindo <onboarding@resend.dev>'
+const FROM     = 'kindo <noreply@kidvo.eu>'
 const APP_URL  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kindo.ro'
 const PURPLE   = '#523650'
 const GOLD     = '#F0A500'
