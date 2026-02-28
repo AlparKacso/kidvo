@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface Profile {
@@ -70,6 +71,15 @@ export function SettingsClient({ profile, provider, email }: Props) {
   const [profileError,  setProfileError]  = useState('')
   const [providerError, setProviderError] = useState('')
 
+  // Password reset
+  const [resetState,   setResetState]   = useState<'idle' | 'sending' | 'sent'>('idle')
+
+  // Delete account
+  const [deleteOpen,   setDeleteOpen]   = useState(false)
+  const [deleteInput,  setDeleteInput]  = useState('')
+  const [deleteState,  setDeleteState]  = useState<'idle' | 'deleting' | 'error'>('idle')
+  const [deleteError,  setDeleteError]  = useState('')
+
   async function saveProfile() {
     if (!fullName.trim()) { setProfileError('Name is required.'); return }
     setProfileError('')
@@ -105,6 +115,33 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
     if (error) { setProviderError(error.message); setProviderState('error') }
     else { setProviderState('saved'); setTimeout(() => setProviderState('idle'), 2500) }
+  }
+
+  async function sendResetLink() {
+    setResetState('sending')
+    const supabase = createClient()
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${appUrl}/auth/reset-password`,
+    })
+    setResetState('sent')
+    setTimeout(() => setResetState('idle'), 5000)
+  }
+
+  async function deleteAccount() {
+    if (deleteInput !== 'DELETE') return
+    setDeleteState('deleting')
+    setDeleteError('')
+    const res = await fetch('/api/auth/delete-account', { method: 'POST' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setDeleteError(body.error ?? 'Something went wrong. Please try again.')
+      setDeleteState('error')
+      return
+    }
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/'
   }
 
   function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void }) {
@@ -239,6 +276,82 @@ export function SettingsClient({ profile, provider, email }: Props) {
               Sign out
             </button>
           </div>
+        </Section>
+
+        {/* Security */}
+        <Section title="Security">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-display text-sm font-semibold text-ink">Password</div>
+              <div className="text-xs text-ink-muted mt-0.5">
+                {resetState === 'sent'
+                  ? 'Link sent! Check your inbox.'
+                  : 'Send a reset link to your email address.'}
+              </div>
+            </div>
+            <button
+              onClick={sendResetLink}
+              disabled={resetState === 'sending' || resetState === 'sent'}
+              className="px-3 py-1.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:border-primary hover:text-primary hover:bg-primary-lt disabled:opacity-50 transition-all"
+            >
+              {resetState === 'sending' ? 'Sending…' : resetState === 'sent' ? '✓ Sent' : 'Send reset link'}
+            </button>
+          </div>
+        </Section>
+
+        {/* Danger zone */}
+        <Section title="Danger zone">
+          {!deleteOpen ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-display text-sm font-semibold text-ink">Delete account</div>
+                <div className="text-xs text-ink-muted mt-0.5">Permanently delete your account and all data.</div>
+              </div>
+              <button
+                onClick={() => setDeleteOpen(true)}
+                className="px-3 py-1.5 rounded font-display text-sm font-semibold border border-danger/40 text-danger hover:bg-danger-lt transition-all"
+              >
+                Delete account
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="p-3 bg-danger-lt border border-danger/20 rounded-lg">
+                <p className="text-sm text-danger font-display font-semibold mb-0.5">This is permanent and cannot be undone.</p>
+                <p className="text-xs text-danger/80">Your account, listings, reviews, trial requests and saves will all be deleted.</p>
+              </div>
+              <div>
+                <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">
+                  Type <span className="text-danger">DELETE</span> to confirm
+                </label>
+                <input
+                  type="text"
+                  value={deleteInput}
+                  onChange={e => setDeleteInput(e.target.value)}
+                  placeholder="DELETE"
+                  className="w-full px-3 py-2 border border-border rounded bg-bg font-body text-sm text-ink placeholder:text-ink-muted outline-none focus:border-danger transition-all"
+                />
+              </div>
+              {deleteError && (
+                <div className="px-3 py-2 bg-danger-lt border border-danger/20 rounded text-sm text-danger">{deleteError}</div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => { setDeleteOpen(false); setDeleteInput(''); setDeleteError('') }}
+                  className="px-4 py-2 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteAccount}
+                  disabled={deleteInput !== 'DELETE' || deleteState === 'deleting'}
+                  className="px-4 py-2 rounded font-display text-sm font-semibold bg-danger text-white disabled:opacity-40 hover:opacity-90 transition-all"
+                >
+                  {deleteState === 'deleting' ? 'Deleting…' : 'Delete my account'}
+                </button>
+              </div>
+            </div>
+          )}
         </Section>
 
       </div>

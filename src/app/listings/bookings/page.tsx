@@ -40,7 +40,7 @@ export default async function ProviderBookingsPage() {
   const { data: requestsRaw } = listingIds.length > 0
     ? await supabase
         .from('trial_requests')
-        .select(`*, listing:listings(id, title, category:categories(name, accent_color)), parent:users(full_name, email)`)
+        .select(`*, listing:listings(id, title, category:categories(name, accent_color)), parent:users(full_name, email, phone)`)
         .in('listing_id', listingIds)
         .order('created_at', { ascending: false })
     : { data: [] }
@@ -151,6 +151,24 @@ export default async function ProviderBookingsPage() {
                       {req.message && (
                         <div className="mt-3 px-3 py-2.5 bg-bg rounded text-sm text-ink-mid italic">
                           "{req.message}"
+                        </div>
+                      )}
+
+                      {/* Contact card — shown only after confirmation */}
+                      {req.status === 'confirmed' && (
+                        <div className="mt-3 p-3 bg-success-lt border border-success/20 rounded-lg">
+                          <div className="font-display text-[10px] font-semibold tracking-label uppercase text-success mb-2">Parent contact</div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-ink-muted">✉</span>
+                            <a href={`mailto:${parent?.email}`} className="text-primary hover:underline font-medium">{parent?.email}</a>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm mt-1">
+                            <span className="text-ink-muted">✆</span>
+                            {parent?.phone
+                              ? <a href={`tel:${parent.phone}`} className="text-primary hover:underline font-medium">{parent.phone}</a>
+                              : <span className="text-ink-muted italic">No phone provided</span>
+                            }
+                          </div>
                         </div>
                       )}
                     </div>
