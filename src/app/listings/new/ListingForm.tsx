@@ -463,11 +463,13 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
       </div>
 
       <div className="flex items-center justify-between mt-6 pt-6 border-t border-border">
-        <button type="button" onClick={() => setStep(s => s - 1)} disabled={step === 0}
-          className="px-4 py-2 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-          Back
-        </button>
-        <span className="font-display text-xs text-ink-muted">Step {step + 1} of {STEPS.length}</span>
+        <div className="flex flex-col items-start gap-1">
+          <button type="button" onClick={() => setStep(s => s - 1)} disabled={step === 0}
+            className="px-4 py-2 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            Back
+          </button>
+          <span className="font-display text-[10px] text-ink-muted pl-1">Step {step + 1} of {STEPS.length}</span>
+        </div>
         {step < STEPS.length - 1 ? (
           <button type="button" onClick={() => setStep(s => s + 1)} disabled={!canProceed()}
             className="px-5 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
