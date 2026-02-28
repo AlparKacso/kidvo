@@ -196,3 +196,178 @@ export async function sendTrialDeclinedToParent(opts: {
     `),
   })
 }
+
+// ── 6. Parent — welcome ──────────────────────────────────────────────────────
+export async function sendWelcomeToParent(opts: { email: string; name: string }) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: 'Welcome to kidvo! 🎉',
+    html: layout(`
+      ${h1('Welcome to kidvo!')}
+      ${p(`Hi ${opts.name}, great to have you here!`)}
+      ${p('kidvo helps Timișoara families discover and try the best activities for their kids — sports, arts, music, coding, and more.')}
+      ${p('Browse activities now and book a free trial session with any provider — no payment required.')}
+      ${btn('Browse activities →', `${APP_URL}/browse`)}
+    `),
+  })
+}
+
+// ── 7. Provider — welcome ─────────────────────────────────────────────────────
+export async function sendWelcomeToProvider(opts: { email: string; name: string }) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: 'Welcome to kidvo — start listing!',
+    html: layout(`
+      ${h1('Welcome to kidvo!')}
+      ${p(`Hi ${opts.name}, you're all set to start listing your activities on kidvo.`)}
+      ${p('List your first activity and start receiving trial requests from interested parents. It only takes a few minutes.')}
+      ${btn('List your first activity →', `${APP_URL}/listings/new`)}
+      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">Your listing will be reviewed by our team within 24 hours before going live.</p>
+    `),
+  })
+}
+
+// ── 8. Provider — listing approved ───────────────────────────────────────────
+export async function sendListingApprovedToProvider(opts: {
+  email:        string
+  providerName: string
+  listingTitle: string
+  listingId:    string
+}) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: `Your listing is live — ${opts.listingTitle}`,
+    html: layout(`
+      ${h1('Your listing is live! 🎉')}
+      ${p(`Great news, ${opts.providerName}! <strong>${opts.listingTitle}</strong> has been approved and is now visible to parents browsing kidvo.`)}
+      ${p('Parents can now find your activity, save it, and request a trial session.')}
+      ${btn('View your listing →', `${APP_URL}/browse/${opts.listingId}`)}
+    `),
+  })
+}
+
+// ── 9. Provider — listing rejected ───────────────────────────────────────────
+export async function sendListingRejectedToProvider(opts: {
+  email:        string
+  providerName: string
+  listingTitle: string
+}) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: `Listing update — ${opts.listingTitle}`,
+    html: layout(`
+      ${h1('Listing update')}
+      ${p(`Hi ${opts.providerName}, your listing <strong>${opts.listingTitle}</strong> couldn't be approved at this time.`)}
+      ${p('Please review your listing details and make sure all information is complete and accurate. You can edit and resubmit from your dashboard.')}
+      ${btn('Edit your listing →', `${APP_URL}/listings`)}
+      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">Questions? Reach us at hello@kidvo.eu</p>
+    `),
+  })
+}
+
+// ── 10. Parent — review approved ───────────────────────────────────────────────
+export async function sendReviewApprovedToParent(opts: {
+  email:        string
+  parentName:   string
+  listingTitle: string
+  listingId:    string
+}) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: `Your review is published — ${opts.listingTitle}`,
+    html: layout(`
+      ${h1('Your review is live!')}
+      ${p(`Hi ${opts.parentName}, your review for <strong>${opts.listingTitle}</strong> has been approved and is now visible to other parents.`)}
+      ${p('Thank you for helping families in Timișoara find great activities for their kids!')}
+      ${btn('View the listing →', `${APP_URL}/browse/${opts.listingId}`)}
+    `),
+  })
+}
+
+// ── 11. Parent — review rejected ──────────────────────────────────────────────
+export async function sendReviewRejectedToParent(opts: {
+  email:        string
+  parentName:   string
+  listingTitle: string
+}) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: `Review update — ${opts.listingTitle}`,
+    html: layout(`
+      ${h1('Review update')}
+      ${p(`Hi ${opts.parentName}, unfortunately your review for <strong>${opts.listingTitle}</strong> couldn't be approved for publication.`)}
+      ${p('If you have any questions, feel free to reach out to us.')}
+      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">Questions? Reach us at hello@kidvo.eu</p>
+    `),
+  })
+}
+
+// ── 12. Provider — review published on their listing ─────────────────────────
+export async function sendReviewPublishedToProvider(opts: {
+  email:        string
+  providerName: string
+  listingTitle: string
+  listingId:    string
+  rating:       number
+  comment:      string | null
+}) {
+  const stars = '★'.repeat(opts.rating) + '☆'.repeat(5 - opts.rating)
+  const rows  = [
+    detailRow('Activity', opts.listingTitle),
+    detailRow('Rating',   `${stars} (${opts.rating}/5)`),
+    opts.comment ? detailRow('Comment', `<em>${opts.comment}</em>`) : '',
+  ].join('')
+
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: `New review on your listing — ${opts.listingTitle}`,
+    html: layout(`
+      ${h1('A new review is live on your listing!')}
+      ${p(`Hi ${opts.providerName}, a parent left a review for <strong>${opts.listingTitle}</strong> that has been approved and is now public.`)}
+      ${detailTable(rows)}
+      ${btn('View your listing →', `${APP_URL}/browse/${opts.listingId}`)}
+    `),
+  })
+}
+
+// ── 13. Parent — new listings digest (P2 + P3) ───────────────────────────────
+export async function sendNewListingsDigest(opts: {
+  email:      string
+  parentName: string
+  listings:   { title: string; id: string; providerName: string; categoryName: string; isNewProvider: boolean }[]
+}) {
+  const items = opts.listings.map(l => `
+    <tr>
+      <td style="padding:12px 0;border-bottom:1px solid #f0ecf4;">
+        <div style="font-size:13px;font-weight:700;color:#1a0f1e;">${l.title}</div>
+        <div style="font-size:12px;color:#9b89a5;margin-top:2px;">
+          ${l.categoryName} · by ${l.providerName}
+          ${l.isNewProvider ? '<span style="background:#FFF3CD;color:#856404;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;">NEW PROVIDER</span>' : ''}
+        </div>
+        <a href="${APP_URL}/browse/${l.id}" style="font-size:12px;color:${PURPLE};font-weight:600;text-decoration:none;margin-top:4px;display:inline-block;">View activity →</a>
+      </td>
+    </tr>
+  `).join('')
+
+  const count = opts.listings.length
+
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: `${count} new ${count === 1 ? 'activity' : 'activities'} from providers you follow`,
+    html: layout(`
+      ${h1('New activities from providers you follow')}
+      ${p(`Hi ${opts.parentName}, here's what's new from providers you've saved:`)}
+      <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:24px;">${items}</table>
+      ${btn('Browse all activities →', `${APP_URL}/browse`)}
+      <p style="margin:16px 0 0;font-size:11px;color:#9b89a5;">You're receiving this because you saved activities from these providers on kidvo.</p>
+    `),
+  })
+}

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
+import { ListingCardMenu } from './ListingCardMenu'
 
 const STATUS_STYLES: Record<string, string> = {
   active:  'bg-success-lt text-success',
@@ -80,9 +81,38 @@ export default async function ProviderListingsPage({ searchParams }: { searchPar
           </div>
         )}
 
-        {/* Listings table */}
+        {/* Mobile card list */}
         {total > 0 && (
-          <div className="bg-white border border-border rounded-lg overflow-hidden">
+          <div className="md:hidden flex flex-col gap-3">
+            {listings?.map(listing => (
+              <div key={listing.id} className="bg-white border border-border rounded-lg p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: (listing.category as any)?.accent_color }} />
+                      <span className="text-xs text-ink-muted">{(listing.category as any)?.name} · {(listing.area as any)?.name}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold capitalize ${STATUS_STYLES[listing.status] ?? ''}`}>
+                        {listing.status}
+                      </span>
+                    </div>
+                    <div className="font-display text-sm font-semibold text-ink">{listing.title}</div>
+                    <div className="text-[11px] text-ink-muted mt-0.5">
+                      Ages {listing.age_min}–{listing.age_max} · {listing.price_monthly} RON/mo
+                      {listing.spots_available !== null && listing.spots_total !== null && (
+                        <> · {listing.spots_available}/{listing.spots_total} spots</>
+                      )}
+                    </div>
+                  </div>
+                  <ListingCardMenu listingId={listing.id} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Desktop table */}
+        {total > 0 && (
+          <div className="hidden md:block bg-white border border-border rounded-lg overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">

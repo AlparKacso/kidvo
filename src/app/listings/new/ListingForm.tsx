@@ -474,9 +474,9 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
             Continue
           </button>
         ) : (
-          <>
+          <div className="flex flex-col items-end gap-1.5">
             {!isEdit && (
-              <p className="text-xs text-ink-muted text-center">
+              <p className="text-xs text-ink-muted text-right">
                 Your listing will be reviewed within 24 hours before going live.
               </p>
             )}
@@ -484,7 +484,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
               className="px-5 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-60 transition-colors">
               {saving ? 'Saving...' : isEdit ? 'Save changes' : 'Publish listing'}
             </button>
-          </>
+          </div>
         )}
       </div>
 

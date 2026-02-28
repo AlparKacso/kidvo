@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -23,8 +22,11 @@ function ListingRow({ listing, onStatusChange }: {
 
   async function updateStatus(status: string) {
     setLoading(true)
-    const supabase = createClient()
-    await (supabase.from('listings') as any).update({ status }).eq('id', listing.id)
+    await fetch(`/api/admin/listings/${listing.id}/status`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ status }),
+    })
     onStatusChange(listing.id, status)
     setLoading(false)
     setConfirm(null)

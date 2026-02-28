@@ -20,9 +20,11 @@ const IconBookings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill=
 const IconSettings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
 const IconListings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 
-function NavItem({ href, icon, label, exact }: { href: string; icon: React.ReactNode; label: string; exact?: boolean }) {
+function NavItem({ href, icon, label, exact, excludes }: { href: string; icon: React.ReactNode; label: string; exact?: boolean; excludes?: string[] }) {
   const pathname = usePathname()
-  const active   = exact ? pathname === href : pathname.startsWith(href)
+  const active   = exact
+    ? pathname === href
+    : pathname.startsWith(href) && !(excludes?.some(e => pathname.startsWith(e)))
 
   return (
     <Link
@@ -52,7 +54,7 @@ export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
       )}
       {isProvider && (
         <>
-          <NavItem href="/listings"          icon={<IconListings />} label="Listings" />
+          <NavItem href="/listings"          icon={<IconListings />} label="Listings" excludes={['/listings/bookings', '/listings/analytics']} />
           <NavItem href="/listings/bookings" icon={<IconBookings />} label="Bookings" exact />
         </>
       )}

@@ -14,16 +14,19 @@ const KidvoLogo = () => (
 )
 
 interface NavItemProps {
-  href:    string
-  icon:    React.ReactNode
-  label:   string
-  badge?:  string | number
-  exact?:  boolean
+  href:      string
+  icon:      React.ReactNode
+  label:     string
+  badge?:    string | number
+  exact?:    boolean
+  excludes?: string[]
 }
 
-function NavItem({ href, icon, label, badge, exact }: NavItemProps) {
+function NavItem({ href, icon, label, badge, exact, excludes }: NavItemProps) {
   const pathname = usePathname()
-  const active   = exact ? pathname === href : pathname.startsWith(href)
+  const active   = exact
+    ? pathname === href
+    : pathname.startsWith(href) && !(excludes?.some(e => pathname.startsWith(e)))
 
   return (
     <Link
@@ -121,7 +124,7 @@ export function Sidebar({
         {isProvider && (
           <>
             <div className="nav-label">My Listings</div>
-            <NavItem href="/listings"           icon={<IconListings />}  label="Activities" />
+            <NavItem href="/listings"           icon={<IconListings />}  label="Activities" excludes={['/listings/bookings', '/listings/analytics']} />
             <NavItem href="/listings/bookings"  icon={<IconTrials />}    label="Trials"     exact />
             <NavItem href="/listings/analytics" icon={<IconAnalytics />} label="Analytics"  exact />
           </>
