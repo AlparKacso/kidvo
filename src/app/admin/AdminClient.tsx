@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -193,6 +194,7 @@ interface Props {
 }
 
 export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews }: Props) {
+  const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([
     ...initialPending,
     ...initialActive,
@@ -202,10 +204,12 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
 
   function handleStatusChange(id: string, status: string) {
     setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l))
+    router.refresh() // bust Router Cache so next visit to /admin gets fresh data
   }
 
   function handleReviewModerated(id: string) {
     setReviews(prev => prev.filter(r => r.id !== id))
+    router.refresh() // bust Router Cache so next visit to /admin gets fresh data
   }
 
   const pending = listings.filter(l => l.status === 'pending')
