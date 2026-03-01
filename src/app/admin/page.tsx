@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminClient } from './AdminClient'
 
 export const dynamic = 'force-dynamic'
@@ -18,35 +19,75 @@ export default async function AdminPage() {
 
   if ((profile as unknown as { role?: string } | null)?.role !== 'admin') redirect('/browse')
 
-  // Fetch all listings with relations
-  const { data: listingsRaw } = await supabase
-    .from('listings')
-    .select(`
-      *,
-      category:categories(*),
-      area:areas(*),
-      provider:providers(display_name, contact_email)
-    `)
-    .order('created_at', { ascending: false })
+  const adminDb = createAdminClient()
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
-  const listings = (listingsRaw as unknown as { status: string }[] | null) ?? []
+  // Fetch all data in parallel
+  const [
+    listingsResult,
+    pendingReviewsResult,
+    usersPublicResult,
+    authUsersResult,
+    viewsResult,
+    trialsResult,
+  ] = await Promise.all([
+    // All listings with relations (for listing moderation panel)
+    supabase
+      .from('listings')
+      .select(`*, category:categories(*), area:areas(*), provider:providers(display_name, contact_email)`)
+      .order('created_at', { ascending: false }),
 
-  const pending = listings.filter(l => l.status === 'pending')
-  const active  = listings.filter(l => l.status === 'active')
-  const paused  = listings.filter(l => l.status === 'paused')
+    // Pending reviews for moderation
+    supabase
+      .from('reviews')
+      .select(`id, rating, comment, created_at, listing:listings(id, title), reviewer:users(full_name, email)`)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false }),
 
-  // Fetch pending reviews for moderation
-  const { data: pendingReviewsRaw } = await supabase
-    .from('reviews')
-    .select(`
-      id, rating, comment, created_at,
-      listing:listings(id, title),
-      reviewer:users(full_name, email)
-    `)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false })
+    // Public users for role lookup
+    supabase.from('users').select('id, role'),
 
-  const pendingReviews = (pendingReviewsRaw as unknown as any[] | null) ?? []
+    // Auth users for last_sign_in_at (active user counting)
+    adminDb.auth.admin.listUsers({ perPage: 1000 }),
 
-  return <AdminClient pending={pending} active={active} paused={paused} pendingReviews={pendingReviews} />
+    // Platform-wide views in last 30 days
+    supabase.from('listing_views').select('listing_id').gte('viewed_at', thirtyDaysAgo),
+
+    // Platform-wide trial requests in last 30 days
+    supabase.from('trial_requests').select('listing_id').gte('created_at', thirtyDaysAgo),
+  ])
+
+  const listingsRaw    = (listingsResult.data    as unknown as { status: string }[] | null) ?? []
+  const pendingReviews = (pendingReviewsResult.data as unknown as any[] | null)              ?? []
+  const usersPublic    = (usersPublicResult.data  as unknown as { id: string; role: string }[] | null) ?? []
+  const authUsers      = authUsersResult.data?.users ?? []
+
+  const pending = listingsRaw.filter(l => l.status === 'pending')
+  const active  = listingsRaw.filter(l => l.status === 'active')
+  const paused  = listingsRaw.filter(l => l.status === 'paused')
+
+  // Active user counts: cross-reference role from public.users with last_sign_in_at from auth.users
+  const parentIds   = new Set(usersPublic.filter(u => u.role === 'parent').map(u => u.id))
+  const providerIds = new Set(usersPublic.filter(u => u.role === 'provider').map(u => u.id))
+
+  const activeParents   = authUsers.filter(u => parentIds.has(u.id)   && (u.last_sign_in_at ?? '') > thirtyDaysAgo).length
+  const activeProviders = authUsers.filter(u => providerIds.has(u.id) && (u.last_sign_in_at ?? '') > thirtyDaysAgo).length
+  const platformViews   = (viewsResult.data  ?? []).length
+  const platformTrials  = (trialsResult.data ?? []).length
+
+  return (
+    <AdminClient
+      pending={pending}
+      active={active}
+      paused={paused}
+      pendingReviews={pendingReviews}
+      stats={{
+        activeParents,
+        activeProviders,
+        activeListings: active.length,
+        platformViews,
+        platformTrials,
+      }}
+    />
+  )
 }
