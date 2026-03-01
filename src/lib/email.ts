@@ -337,7 +337,37 @@ export async function sendReviewPublishedToProvider(opts: {
   })
 }
 
-// ── 13. Parent — new listings digest (P2 + P3) ───────────────────────────────
+// ── 13. User — account deleted confirmation ───────────────────────────────────
+export async function sendAccountDeletedConfirmation(opts: { email: string; name: string }) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: 'Your kidvo account has been deleted',
+    html: layout(`
+      ${h1('Account deleted')}
+      ${p(`Hi ${opts.name}, your kidvo account and all associated data have been permanently deleted.`)}
+      ${p('We\'re sorry to see you go. If you ever want to return, you\'re always welcome to create a new account.')}
+      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">If this was a mistake or you have questions, reach us at hello@kidvo.eu</p>
+    `),
+  })
+}
+
+// ── 14. User — password reset link ────────────────────────────────────────────
+export async function sendPasswordResetEmail(opts: { email: string; name: string; resetLink: string }) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.email,
+    subject: 'Reset your kidvo password',
+    html: layout(`
+      ${h1('Reset your password')}
+      ${p(`Hi ${opts.name}, click the button below to set a new password for your kidvo account.`)}
+      ${btn('Reset password →', opts.resetLink)}
+      ${p('This link expires in 1 hour. If you didn\'t request a password reset, you can safely ignore this email.')}
+    `),
+  })
+}
+
+// ── 15. Parent — new listings digest (P2 + P3) ───────────────────────────────
 export async function sendNewListingsDigest(opts: {
   email:      string
   parentName: string

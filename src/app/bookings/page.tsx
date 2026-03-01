@@ -25,7 +25,7 @@ export default async function ParentBookingsPage() {
         id, title, price_monthly, trial_available,
         category:categories(name, accent_color),
         area:areas(name),
-        provider:providers(display_name, contact_email)
+        provider:providers(display_name, contact_email, contact_phone)
       )
     `)
     .eq('user_id', user.id)
@@ -105,14 +105,23 @@ export default async function ParentBookingsPage() {
 
                       {/* Provider contact — show when confirmed */}
                       {req.status === 'confirmed' && provider && (
-                        <div className="mt-3 flex items-center gap-2 px-3 py-2.5 bg-success-lt rounded">
-                          <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="#1A7A4A" strokeWidth="1.3" fill="none"/><path d="M2 13.5c0-2.5 2.4-4.5 5.5-4.5s5.5 2 5.5 4.5" stroke="#1A7A4A" strokeWidth="1.3" strokeLinecap="round" fill="none"/></svg>
-                          <span className="text-xs text-success font-display font-semibold">{provider.display_name}</span>
-                          {provider.contact_email && (
-                            <a href={`mailto:${provider.contact_email}`} className="text-xs text-success underline ml-1">
+                        <div className="mt-3 p-3 bg-success-lt border border-success/20 rounded-lg">
+                          <div className="font-display text-[10px] font-semibold tracking-label uppercase text-success mb-2">
+                            {provider.display_name}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-ink-muted">✉</span>
+                            <a href={`mailto:${provider.contact_email}`} className="text-primary hover:underline font-medium">
                               {provider.contact_email}
                             </a>
-                          )}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm mt-1">
+                            <span className="text-ink-muted">✆</span>
+                            {provider.contact_phone
+                              ? <a href={`tel:${provider.contact_phone}`} className="text-primary hover:underline font-medium">{provider.contact_phone}</a>
+                              : <span className="text-ink-muted italic">No phone provided</span>
+                            }
+                          </div>
                         </div>
                       )}
 

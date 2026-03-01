@@ -55,7 +55,7 @@ export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
       {isProvider && (
         <>
           <NavItem href="/listings"          icon={<IconListings />} label="Listings" excludes={['/listings/bookings', '/listings/analytics']} />
-          <NavItem href="/listings/bookings" icon={<IconBookings />} label="Bookings" exact />
+          <NavItem href="/listings/bookings" icon={<IconBookings />} label="Trials" exact />
         </>
       )}
       <NavItem href="/settings" icon={<IconSettings />} label="Settings" exact />

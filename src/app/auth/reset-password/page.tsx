@@ -13,25 +13,20 @@ export default function ResetPasswordPage() {
   const [error,     setError]     = useState('')
   const [ready,     setReady]     = useState(false)
 
-  // Supabase sends the recovery token as a URL hash fragment.
-  // onAuthStateChange fires PASSWORD_RECOVERY when the token is valid.
+  // Supabase @supabase/ssr uses PKCE — the reset link contains ?code=xxx.
+  // We must call exchangeCodeForSession to get a valid session before
+  // the user can call updateUser({ password }).
   useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('code')
+    if (!code) {
+      setStatus('invalid')
+      return
+    }
     const supabase = createClient()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true)
-      if (event === 'SIGNED_OUT')        setStatus('invalid')
+    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+      if (error) setStatus('invalid')
+      else setReady(true)
     })
-
-    // If user lands here without a valid token the event never fires —
-    // show an error after a short delay.
-    const timer = setTimeout(() => {
-      setReady(prev => {
-        if (!prev) setStatus('invalid')
-        return prev
-      })
-    }, 3000)
-
-    return () => { subscription.unsubscribe(); clearTimeout(timer) }
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -79,7 +74,7 @@ export default function ResetPasswordPage() {
             </>
           )}
 
-          {/* Waiting for token validation */}
+          {/* Waiting for code exchange */}
           {status !== 'invalid' && !ready && (
             <p className="text-sm text-ink-muted text-center py-4">Verifying link…</p>
           )}
