@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface Profile {
@@ -119,11 +118,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
   async function sendResetLink() {
     setResetState('sending')
-    const supabase = createClient()
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${appUrl}/auth/reset-password`,
-    })
+    await fetch('/api/auth/send-reset-link', { method: 'POST' })
     setResetState('sent')
     setTimeout(() => setResetState('idle'), 5000)
   }
@@ -260,8 +255,8 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
         {/* Sign out — mobile only (desktop has it in sidebar) */}
         <Section title="Session">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1">
               <div className="font-display text-sm font-semibold text-ink">Sign out</div>
               <div className="text-xs text-ink-muted mt-0.5">Sign out of your kidvo account on this device.</div>
             </div>
@@ -271,7 +266,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
                 await createClient().auth.signOut()
                 window.location.href = '/auth/login'
               }}
-              className="px-3 py-1.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:border-danger/50 hover:text-danger hover:bg-danger-lt transition-all"
+              className="flex-shrink-0 self-start sm:self-auto px-3 py-1.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:border-danger/50 hover:text-danger hover:bg-danger-lt transition-all"
             >
               Sign out
             </button>
@@ -280,8 +275,8 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
         {/* Security */}
         <Section title="Security">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1">
               <div className="font-display text-sm font-semibold text-ink">Password</div>
               <div className="text-xs text-ink-muted mt-0.5">
                 {resetState === 'sent'
@@ -292,7 +287,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
             <button
               onClick={sendResetLink}
               disabled={resetState === 'sending' || resetState === 'sent'}
-              className="px-3 py-1.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:border-primary hover:text-primary hover:bg-primary-lt disabled:opacity-50 transition-all"
+              className="flex-shrink-0 self-start sm:self-auto px-3 py-1.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:border-primary hover:text-primary hover:bg-primary-lt disabled:opacity-50 transition-all"
             >
               {resetState === 'sending' ? 'Sending…' : resetState === 'sent' ? '✓ Sent' : 'Send reset link'}
             </button>
@@ -302,14 +297,14 @@ export function SettingsClient({ profile, provider, email }: Props) {
         {/* Danger zone */}
         <Section title="Danger zone">
           {!deleteOpen ? (
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1">
                 <div className="font-display text-sm font-semibold text-ink">Delete account</div>
                 <div className="text-xs text-ink-muted mt-0.5">Permanently delete your account and all data.</div>
               </div>
               <button
                 onClick={() => setDeleteOpen(true)}
-                className="px-3 py-1.5 rounded font-display text-sm font-semibold border border-danger/40 text-danger hover:bg-danger-lt transition-all"
+                className="flex-shrink-0 self-start sm:self-auto px-3 py-1.5 rounded font-display text-sm font-semibold border border-danger/40 text-danger hover:bg-danger-lt transition-all"
               >
                 Delete account
               </button>
