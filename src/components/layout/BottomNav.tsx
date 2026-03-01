@@ -18,7 +18,8 @@ const IconKids     = () => <svg width="18" height="18" viewBox="0 0 15 15" fill=
 const IconSaved    = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M7.5 13S2 9 2 5.5a3.5 3.5 0 0 1 5.5-2.9A3.5 3.5 0 0 1 13 5.5C13 9 7.5 13 7.5 13Z" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
 const IconBookings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 3V2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 const IconSettings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
-const IconListings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+const IconListings  = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+const IconAnalytics = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="10" width="3" height="4" rx="0.75" fill="currentColor"/><rect x="6" y="6" width="3" height="8" rx="0.75" fill="currentColor"/><rect x="11" y="2" width="3" height="12" rx="0.75" fill="currentColor"/></svg>
 
 function NavItem({ href, icon, label, exact, excludes }: { href: string; icon: React.ReactNode; label: string; exact?: boolean; excludes?: string[] }) {
   const pathname = usePathname()
@@ -54,8 +55,9 @@ export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
       )}
       {isProvider && (
         <>
-          <NavItem href="/listings"          icon={<IconListings />} label="Listings" excludes={['/listings/bookings', '/listings/analytics']} />
-          <NavItem href="/listings/bookings" icon={<IconBookings />} label="Trials" exact />
+          <NavItem href="/listings"          icon={<IconListings />}  label="Listings"  excludes={['/listings/bookings', '/listings/analytics']} />
+          <NavItem href="/listings/bookings" icon={<IconBookings />}  label="Trials"    exact />
+          <NavItem href="/listings/analytics" icon={<IconAnalytics />} label="Analytics" exact />
         </>
       )}
       <NavItem href="/settings" icon={<IconSettings />} label="Settings" exact />
