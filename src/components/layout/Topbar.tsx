@@ -7,10 +7,11 @@ import Link from 'next/link'
 const IconSearch   = () => <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" stroke="#A8A8AD" strokeWidth="1.4" fill="none"/><line x1="11" y1="11" x2="14" y2="14" stroke="#A8A8AD" strokeWidth="1.5" strokeLinecap="round"/></svg>
 const IconLocation = () => <svg width="12" height="12" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a5 5 0 0 1 5 5c0 3.5-5 8-5 8s-5-4.5-5-8a5 5 0 0 1 5-5Z" stroke="#A8A8AD" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="6.5" r="1.5" stroke="#A8A8AD" strokeWidth="1.3" fill="none"/></svg>
 
-export function Topbar() {
+export function Topbar({ isProvider = false }: { isProvider?: boolean }) {
   const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
-  const isBrowse = pathname === '/browse'
+  const isBrowse  = pathname === '/browse'
+  const homeHref  = isProvider ? '/listings' : '/browse'
 
   return (
     <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-10">
@@ -30,7 +31,7 @@ export function Topbar() {
           </div>
         ) : (
           <>
-            <Link href="/browse" className="font-display leading-none" style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.03em' }}>
+            <Link href={homeHref} className="font-display leading-none" style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.03em' }}>
               <span style={{ color: '#523650' }}>kid</span><span style={{ color: '#F0A500' }}>vo</span>
             </Link>
             <div className="flex items-center gap-1.5 font-display text-xs font-semibold text-ink-muted ml-2">

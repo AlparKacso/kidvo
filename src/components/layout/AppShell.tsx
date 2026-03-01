@@ -49,7 +49,7 @@ export async function AppShell({ children }: AppShellProps) {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar />
+        <Topbar isProvider={isProvider} />
         {/* Extra bottom padding on mobile for BottomNav */}
         <main className="flex-1 px-4 pt-5 pb-24 md:px-[28px] md:pt-[26px] md:pb-14">
           {children}
