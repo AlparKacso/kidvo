@@ -13,20 +13,49 @@ export default function ResetPasswordPage() {
   const [error,     setError]     = useState('')
   const [ready,     setReady]     = useState(false)
 
-  // Supabase @supabase/ssr uses PKCE — the reset link contains ?code=xxx.
-  // We must call exchangeCodeForSession to get a valid session before
-  // the user can call updateUser({ password }).
+  // Supabase reset links can arrive in two formats depending on how they were generated:
+  //
+  // 1. PKCE flow (?code=xxx) — produced by supabase.auth.resetPasswordForEmail() with @supabase/ssr.
+  //    Requires calling exchangeCodeForSession(code) to obtain a session.
+  //
+  // 2. Implicit / admin-generated flow (#access_token=xxx&type=recovery) — produced by
+  //    adminClient.auth.admin.generateLink({ type: 'recovery' }). The Supabase server
+  //    bypasses the PKCE dance because no client-side code_verifier was stored, so it
+  //    falls back to embedding the session directly in the hash fragment.
+  //    Requires calling setSession({ access_token, refresh_token }).
+  //
+  // We handle both here so either link format works.
   useEffect(() => {
+    const supabase = createClient()
+
+    // Case 1: PKCE — code in query string
     const code = new URLSearchParams(window.location.search).get('code')
-    if (!code) {
-      setStatus('invalid')
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) setStatus('invalid')
+        else setReady(true)
+      })
       return
     }
-    const supabase = createClient()
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (error) setStatus('invalid')
-      else setReady(true)
-    })
+
+    // Case 2: Implicit / admin-generated — tokens in hash fragment
+    const hash         = new URLSearchParams(window.location.hash.slice(1))
+    const accessToken  = hash.get('access_token')
+    const refreshToken = hash.get('refresh_token')
+    const type         = hash.get('type')
+
+    if (accessToken && type === 'recovery') {
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken ?? '' })
+        .then(({ error }) => {
+          if (error) setStatus('invalid')
+          else setReady(true)
+        })
+      return
+    }
+
+    // Nothing usable — show expired
+    setStatus('invalid')
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -74,7 +103,7 @@ export default function ResetPasswordPage() {
             </>
           )}
 
-          {/* Waiting for code exchange */}
+          {/* Waiting for session to be set */}
           {status !== 'invalid' && !ready && (
             <p className="text-sm text-ink-muted text-center py-4">Verifying link…</p>
           )}

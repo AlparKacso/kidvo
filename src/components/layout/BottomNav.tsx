@@ -49,7 +49,7 @@ export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
         <>
           <NavItem href="/kids"     icon={<IconKids />}     label="My Kids"  exact />
           <NavItem href="/saved"    icon={<IconSaved />}    label="Saved"    exact />
-          <NavItem href="/bookings" icon={<IconBookings />} label="Bookings" exact />
+          <NavItem href="/bookings" icon={<IconBookings />} label="Trials" exact />
         </>
       )}
       {isProvider && (
