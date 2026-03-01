@@ -29,7 +29,7 @@ interface Child {
 }
 
 interface Area  { id: string; name: string }
-interface Save  { id: string; listing: any }
+interface Save  { id: string; kid_id: string | null; listing: any }
 
 function ChildForm({ areas, initial, onSave, onCancel, saving }: {
   areas:    Area[]
@@ -110,7 +110,10 @@ export function MyKidsClient({ userId, initialKids, areas, saves }: Props) {
   const [removedSaveIds, setRemovedSaveIds] = useState<string[]>([])
 
   const selectedKid  = kids.find(k => k.id === selectedId) ?? null
-  const visibleSaves = saves.filter(s => !removedSaveIds.includes(s.id))
+  // Show only saves that haven't been optimistically removed AND belong to the selected kid
+  const visibleSaves = saves.filter(s =>
+    !removedSaveIds.includes(s.id) && s.kid_id === selectedId
+  )
 
   function areaName(areaId: string | null) {
     return areaId ? (areas.find(a => a.id === areaId)?.name ?? null) : null
@@ -149,12 +152,13 @@ export function MyKidsClient({ userId, initialKids, areas, saves }: Props) {
     if (selectedId === id) { setSelectedId(remaining[0]?.id ?? null); setShowDetail(false) }
   }
 
-  async function handleUnsave(saveId: string, listingId: string) {
+  async function handleUnsave(saveId: string, listingId: string, kidId: string | null) {
     setRemovedSaveIds(prev => [...prev, saveId])
+    // Pass kid_id so only this kid's save is removed (not all kids' saves for this listing)
     await fetch('/api/saves', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listing_id: listingId }),
+      body: JSON.stringify({ listing_id: listingId, kid_id: kidId }),
     })
   }
 
@@ -232,7 +236,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves }: Props) {
                       <Link href={`/browse/${listing?.id}`} className="font-display text-sm font-bold text-ink hover:text-primary transition-colors leading-snug">
                         {listing?.title}
                       </Link>
-                      <button onClick={() => handleUnsave(save.id, listing?.id)} className="w-5 h-5 rounded flex items-center justify-center text-ink-muted hover:text-danger flex-shrink-0 mt-0.5">
+                      <button onClick={() => handleUnsave(save.id, listing?.id, save.kid_id)} className="w-5 h-5 rounded flex items-center justify-center text-ink-muted hover:text-danger flex-shrink-0 mt-0.5">
                         <svg width="9" height="9" viewBox="0 0 15 15" fill="none"><path d="M3 3l9 9M12 3l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
                       </button>
                     </div>

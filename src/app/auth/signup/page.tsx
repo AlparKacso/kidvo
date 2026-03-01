@@ -15,10 +15,20 @@ export default function SignupPage() {
   const [error, setError]         = useState('')
   const [loading, setLoading]     = useState(false)
 
+  function isValidEmail(v: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (e.g. you@example.com).')
+      setLoading(false)
+      return
+    }
 
     const supabase = createClient()
 

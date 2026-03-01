@@ -24,6 +24,33 @@ export async function POST() {
     .single()
 
   const adminDb = createAdminClient()
+
+  // If user is a provider, explicitly delete their listings and all listing-level
+  // dependents before deleting the auth user. Without this, listings may become
+  // orphaned if the FK to providers lacks ON DELETE CASCADE.
+  const { data: providerData } = await supabase
+    .from('providers')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (providerData?.id) {
+    const { data: listingRows } = await adminDb
+      .from('listings')
+      .select('id')
+      .eq('provider_id', providerData.id)
+
+    if (listingRows?.length) {
+      const ids = listingRows.map((l: any) => l.id)
+      await Promise.all([
+        adminDb.from('saves').delete().in('listing_id', ids),
+        adminDb.from('trial_requests').delete().in('listing_id', ids),
+        adminDb.from('listing_schedules').delete().in('listing_id', ids),
+      ])
+      await adminDb.from('listings').delete().eq('provider_id', providerData.id)
+    }
+  }
+
   const { error } = await adminDb.auth.admin.deleteUser(user.id)
 
   if (error) {
