@@ -15,6 +15,7 @@ export default async function MyKidsPage() {
       .from('saves')
       .select(`
         id,
+        kid_id,
         listing:listings(
           id, title, price_monthly, age_min, age_max, status, spots_available,
           category:categories(name, accent_color),

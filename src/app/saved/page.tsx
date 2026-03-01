@@ -26,9 +26,19 @@ export default async function SavedPage() {
   const saves = savesRaw as unknown as any[] | null
   const active = saves?.filter(s => s.listing && (s.listing as any).status === 'active') ?? []
 
+  // Deduplicate by listing_id: same listing can be saved for multiple kids but
+  // the Saved page shows a merged view — one entry per listing
+  const seen = new Set<string>()
+  const uniqueSaves = active.filter(s => {
+    const id = (s.listing as any)?.id
+    if (!id || seen.has(id)) return false
+    seen.add(id)
+    return true
+  })
+
   return (
     <AppShell>
-      <SavedClient initialSaves={active} />
+      <SavedClient initialSaves={uniqueSaves} />
     </AppShell>
   )
 }
