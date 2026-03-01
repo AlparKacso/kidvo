@@ -38,6 +38,12 @@ export default async function ActivityDetailPage({ params }: Props) {
 
   if (!listing) notFound()
 
+  // Record a view — fire and forget (don't block page render)
+  supabase.from('listing_views').insert({
+    listing_id: id,
+    user_id: user?.id ?? null,
+  }).then(() => {})
+
   const { category, area, provider, schedules } = listing as any
 
   const isFull    = (listing.spots_available ?? 1) === 0

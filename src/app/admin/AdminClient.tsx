@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -185,14 +186,33 @@ function ReviewRow({ review, onModerate }: {
   )
 }
 
+interface Stats {
+  activeParents:   number
+  activeProviders: number
+  activeListings:  number
+  platformViews:   number
+  platformTrials:  number
+}
+
 interface Props {
   pending:        Listing[]
   active:         Listing[]
   paused:         Listing[]
   pendingReviews: any[]
+  stats:          Stats
 }
 
-export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews }: Props) {
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-white border border-border rounded-lg p-4">
+      <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-1">{label}</div>
+      <div className="font-display text-2xl font-bold text-ink">{value}</div>
+    </div>
+  )
+}
+
+export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, stats }: Props) {
+  const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([
     ...initialPending,
     ...initialActive,
@@ -202,10 +222,12 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
 
   function handleStatusChange(id: string, status: string) {
     setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l))
+    router.refresh() // bust Router Cache so next visit to /admin gets fresh data
   }
 
   function handleReviewModerated(id: string) {
     setReviews(prev => prev.filter(r => r.id !== id))
+    router.refresh() // bust Router Cache so next visit to /admin gets fresh data
   }
 
   const pending = listings.filter(l => l.status === 'pending')
@@ -230,6 +252,15 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
           <Link href="/browse" className="font-display text-sm font-semibold text-ink-muted hover:text-primary transition-colors">
             ← Back to app
           </Link>
+        </div>
+
+        {/* Platform stats */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+          <StatCard label="Active parents (30d)"   value={stats.activeParents}   />
+          <StatCard label="Active providers (30d)" value={stats.activeProviders} />
+          <StatCard label="Active listings"        value={stats.activeListings}  />
+          <StatCard label="Views (30d)"            value={stats.platformViews}   />
+          <StatCard label="Trials (30d)"           value={stats.platformTrials}  />
         </div>
 
         {/* Pending reviews — top priority */}
