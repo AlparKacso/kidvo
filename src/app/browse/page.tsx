@@ -72,7 +72,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     const profile = profileRes.data as { full_name: string; role: string } | null
     if (profile) {
       userFirstName = profile.full_name.split(' ')[0]
-      isParent      = profile.role === 'parent' || profile.role === 'both'
+      isParent      = profile.role === 'parent' || profile.role === 'both' || profile.role === 'admin'
     }
   }
 
