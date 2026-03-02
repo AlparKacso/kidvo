@@ -5,12 +5,12 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const KidvoLogo = () => (
-  <div className="flex items-center px-[18px] py-[22px] border-b border-white/[0.06]">
+  <Link href="/main" className="flex items-center px-[18px] py-[22px] border-b border-white/[0.06] hover:opacity-80 transition-opacity">
     <span className="font-display font-bold text-[19px] leading-none tracking-tight" style={{ letterSpacing: '-0.03em' }}>
       <span className="text-white">kid</span>
       <span className="text-gold">vo</span>
     </span>
-  </div>
+  </Link>
 )
 
 interface NavItemProps {
