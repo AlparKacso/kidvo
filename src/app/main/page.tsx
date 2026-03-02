@@ -97,7 +97,7 @@ export default async function MainPage() {
       const listingIds = (listingsRaw ?? []).map((l: any) => l.id as string)
 
       const currentMonth = new Date().getMonth() // 0-11
-      const tipIndex     = (currentMonth % 6) + 1  // cycles 1–6
+      const tipIndex     = (currentMonth % 5) + 1  // cycles 1–5
 
       if (listingIds.length > 0) {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
