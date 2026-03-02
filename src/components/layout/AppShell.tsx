@@ -1,3 +1,4 @@
+import Link           from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar }    from './Sidebar'
 import { Topbar }     from './Topbar'
@@ -12,27 +13,50 @@ export async function AppShell({ children }: AppShellProps) {
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()
 
+  // Guest shell — for public browse pages when not logged in
+  if (!authUser) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <header className="bg-white border-b border-border h-topbar flex items-center px-4 md:px-[28px] sticky top-0 z-10">
+          <Link href="/browse" className="font-display font-bold leading-none" style={{ fontSize: '20px', letterSpacing: '-0.03em' }}>
+            <span style={{ color: '#523650' }}>kid</span><span style={{ color: '#F0A500' }}>vo</span>
+          </Link>
+          <div className="flex-1" />
+          <div className="flex items-center gap-2">
+            <Link href="/auth/login" className="font-display text-sm font-semibold text-ink-mid hover:text-ink px-3 py-1.5 transition-colors">
+              Sign in
+            </Link>
+            <Link href="/auth/signup" className="font-display text-sm font-semibold bg-primary text-white px-4 py-1.5 rounded-lg hover:bg-primary-deep transition-colors">
+              Get started
+            </Link>
+          </div>
+        </header>
+        <main className="flex-1 px-4 pt-5 pb-8 md:px-[28px] md:pt-[26px]">
+          {children}
+        </main>
+      </div>
+    )
+  }
+
   let userName   = ''
   let userSub    = 'Timișoara'
   let initials   = '?'
   let isProvider = false
-  let userEmail  = authUser?.email ?? ''
+  let userEmail  = authUser.email ?? ''
 
-  if (authUser) {
-    const { data: profileRaw } = await supabase
-      .from('users')
-      .select('full_name, role')
-      .eq('id', authUser.id)
-      .single()
+  const { data: profileRaw } = await supabase
+    .from('users')
+    .select('full_name, role')
+    .eq('id', authUser.id)
+    .single()
 
-    const profile = profileRaw as unknown as { full_name: string; role: string } | null
+  const profile = profileRaw as unknown as { full_name: string; role: string } | null
 
-    if (profile) {
-      userName   = profile.full_name
-      isProvider = profile.role === 'provider' || profile.role === 'both' || profile.role === 'admin'
-      initials   = profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-      userSub    = isProvider ? 'Provider · Timișoara' : 'Parent · Timișoara'
-    }
+  if (profile) {
+    userName   = profile.full_name
+    isProvider = profile.role === 'provider' || profile.role === 'both' || profile.role === 'admin'
+    initials   = profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    userSub    = isProvider ? 'Provider · Timișoara' : 'Parent · Timișoara'
   }
 
   return (

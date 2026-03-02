@@ -325,6 +325,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                   listingTitle={listing.title}
                   schedules={schedules ?? []}
                   isFull={isFull}
+                  isLoggedIn={!!user}
                 />
               </Suspense>
               <ContactProviderButton
