@@ -29,6 +29,9 @@ export async function middleware(request: NextRequest) {
   const alwaysPublic = ['/', '/privacy', '/terms']
   if (alwaysPublic.includes(pathname)) return supabaseResponse
 
+  // Browse is public for discovery (actions inside require auth)
+  if (pathname === '/browse' || pathname.startsWith('/browse/')) return supabaseResponse
+
   // Auth pages — redirect away if already logged in
   const authRoutes = ['/auth/login', '/auth/signup']
   if (authRoutes.includes(pathname)) {

@@ -140,7 +140,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         {featured.length > 0 && (
           <>
             <div className="section-label mb-3">Featured</div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(272px,1fr))] gap-3.5 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-8">
               {featured.map(listing => (
                 <ActivityCard key={listing.id} listing={listing as ListingWithRelations} featured
                   avgRating={ratingsMap[listing.id]?.avg ?? null}
@@ -156,7 +156,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             <div className="section-label mb-3">
               {featured.length > 0 ? 'All activities' : 'Activities'}
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(272px,1fr))] gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {rest.map(listing => (
                 <ActivityCard key={listing.id} listing={listing as ListingWithRelations}
                   avgRating={ratingsMap[listing.id]?.avg ?? null}

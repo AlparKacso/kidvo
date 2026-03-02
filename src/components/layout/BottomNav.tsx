@@ -50,13 +50,13 @@ export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
         <>
           <NavItem href="/kids"     icon={<IconKids />}     label="My Kids"  exact />
           <NavItem href="/saved"    icon={<IconSaved />}    label="Saved"    exact />
-          <NavItem href="/bookings" icon={<IconBookings />} label="Trials" exact />
+          <NavItem href="/bookings" icon={<IconBookings />} label="Bookings" exact />
         </>
       )}
       {isProvider && (
         <>
           <NavItem href="/listings"          icon={<IconListings />}  label="Listings"  excludes={['/listings/bookings', '/listings/analytics']} />
-          <NavItem href="/listings/bookings" icon={<IconBookings />}  label="Trials"    exact />
+          <NavItem href="/listings/bookings" icon={<IconBookings />}  label="Bookings"  exact />
           <NavItem href="/listings/analytics" icon={<IconAnalytics />} label="Analytics" exact />
         </>
       )}

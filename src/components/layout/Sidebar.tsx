@@ -110,14 +110,14 @@ export function Sidebar({
 
       <nav className="flex-1 px-2.5 py-3.5 flex flex-col gap-px overflow-y-auto">
         <div className="nav-label">Discover</div>
-        <NavItem href="/browse" icon={<IconBrowse />} label="Browse" badge={24} exact />
+        <NavItem href="/browse" icon={<IconBrowse />} label="Browse" exact />
 
         {!isProvider && (
           <>
             <div className="nav-label">My Family</div>
             <NavItem href="/kids"     icon={<IconKids />}   label="My Kids" exact />
             <NavItem href="/saved"    icon={<IconSaved />}  label="Saved"   exact />
-            <NavItem href="/bookings" icon={<IconTrials />} label="Trials"  exact />
+            <NavItem href="/bookings" icon={<IconTrials />} label="Bookings" exact />
           </>
         )}
 
@@ -125,7 +125,7 @@ export function Sidebar({
           <>
             <div className="nav-label">My Listings</div>
             <NavItem href="/listings"           icon={<IconListings />}  label="Activities" excludes={['/listings/bookings', '/listings/analytics']} />
-            <NavItem href="/listings/bookings"  icon={<IconTrials />}    label="Trials"     exact />
+            <NavItem href="/listings/bookings"  icon={<IconTrials />}    label="Bookings"   exact />
             <NavItem href="/listings/analytics" icon={<IconAnalytics />} label="Analytics"  exact />
           </>
         )}

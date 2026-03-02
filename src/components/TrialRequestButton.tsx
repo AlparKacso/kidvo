@@ -11,11 +11,12 @@ interface Props {
   listingTitle: string
   schedules:    { day_of_week: number; time_start: string; time_end: string }[]
   isFull:       boolean
+  isLoggedIn:   boolean
 }
 
 type State = 'idle' | 'open' | 'submitting' | 'success' | 'error'
 
-export function TrialRequestButton({ listingId, listingTitle, schedules, isFull }: Props) {
+export function TrialRequestButton({ listingId, listingTitle, schedules, isFull, isLoggedIn }: Props) {
   const searchParams            = useSearchParams()
   const [state, setState]       = useState<State>('idle')
   const [preferredDay, setDay]  = useState<number | null>(schedules[0]?.day_of_week ?? null)
@@ -69,7 +70,10 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull 
     <>
       <button
         disabled={isFull}
-        onClick={() => setState('open')}
+        onClick={() => {
+          if (!isLoggedIn) { window.location.href = `/auth/signup?next=/browse/${listingId}`; return }
+          setState('open')
+        }}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><rect x="2" y="2" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M2 6h11M6 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>

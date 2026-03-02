@@ -26,18 +26,7 @@ export default function LoginPage() {
       return
     }
 
-    // Check role and redirect
-    const { data: user } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
-
-    if (user?.role === 'provider' || user?.role === 'both') {
-      router.push('/listings')
-    } else {
-      router.push('/browse')
-    }
+    router.push('/main')
   }
 
   const inputCls = 'w-full px-3 py-2.5 border border-border rounded bg-bg font-body text-base text-ink placeholder:text-ink-muted outline-none focus:border-primary focus:shadow-focus transition-all'

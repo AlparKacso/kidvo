@@ -59,11 +59,22 @@ const IconReview   = () => <svg width="15" height="15" viewBox="0 0 15 15" fill=
 const IconCalendar = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 3V2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 const IconChart    = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 12l3.5-4 3 2.5L12 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
 
-const WHY_ITEMS = [
+const WHY_PROVIDER = [
   { icon: <IconReach />,    label: 'Reach families',       desc: 'Connect with parents actively searching for activities in Timișoara.' },
   { icon: <IconReview />,   label: 'Trusted reviews',      desc: 'Build credibility with verified parent reviews after every trial.' },
   { icon: <IconCalendar />, label: 'Trial management',     desc: 'Manage trial requests and confirm bookings in one tap.' },
   { icon: <IconChart />,    label: 'Weekly analytics',     desc: 'Track views and parent reach week over week.' },
+]
+
+const IconSearch = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><line x1="11" y1="11" x2="14" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+const IconKid    = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 13.5c0-2.5 2.4-4.5 5.5-4.5s5.5 2 5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none"/></svg>
+const IconHeart  = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 13S2 9 2 5.5a3.5 3.5 0 0 1 5.5-2.9A3.5 3.5 0 0 1 13 5.5C13 9 7.5 13 7.5 13Z" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
+
+const WHY_PARENT = [
+  { icon: <IconSearch />,   label: 'Curated activities',   desc: 'Discover vetted activities for kids in Timișoara, all in one place.' },
+  { icon: <IconKid />,      label: 'Organised per child',  desc: 'Save and track activities separately for each of your kids.' },
+  { icon: <IconCalendar />, label: 'Free trials first',    desc: 'Book a trial class before committing — no pressure.' },
+  { icon: <IconHeart />,    label: 'Honest reviews',       desc: 'Read real reviews from other parents before you decide.' },
 ]
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -133,7 +144,7 @@ export default async function MainPage() {
 
     return (
       <AppShell>
-        <div className="max-w-2xl">
+        <div className="max-w-3xl">
 
           {/* Provider hero banner */}
           <div className="rounded-xl px-7 py-7 md:py-5 mb-5" style={{ background: '#3D2840' }}>
@@ -193,22 +204,6 @@ export default async function MainPage() {
             </div>
           </div>
 
-          {/* Quick links */}
-          <div className="grid grid-cols-3 gap-3">
-            <Link href="/listings" className="bg-white border border-border rounded-lg p-4 hover:border-primary transition-colors">
-              <div className="font-display text-sm font-semibold text-ink mb-0.5">My Activities</div>
-              <div className="text-xs text-ink-muted">Manage listings</div>
-            </Link>
-            <Link href="/listings/bookings" className="bg-white border border-border rounded-lg p-4 hover:border-primary transition-colors">
-              <div className="font-display text-sm font-semibold text-ink mb-0.5">Trial Requests</div>
-              <div className="text-xs text-ink-muted">View &amp; respond</div>
-            </Link>
-            <Link href="/listings/analytics" className="bg-white border border-border rounded-lg p-4 hover:border-primary transition-colors">
-              <div className="font-display text-sm font-semibold text-ink mb-0.5">Analytics</div>
-              <div className="text-xs text-ink-muted">Views &amp; trends</div>
-            </Link>
-          </div>
-
           {/* Performance this week */}
           <div className="mt-6">
             <p className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
@@ -228,7 +223,7 @@ export default async function MainPage() {
               Why kidvo works for providers
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {WHY_ITEMS.map(item => (
+              {WHY_PROVIDER.map(item => (
                 <div key={item.label} className="flex items-start gap-3 bg-white border border-border rounded-lg p-4">
                   <span className="w-8 h-8 rounded-md bg-bg flex items-center justify-center flex-shrink-0 text-ink-mid">
                     {item.icon}
@@ -327,7 +322,7 @@ export default async function MainPage() {
 
   return (
     <AppShell>
-      <div className="max-w-4xl">
+      <div className="max-w-3xl">
 
         {/* Parent hero banner */}
         <div className="rounded-xl px-7 py-7 md:py-5 mb-5" style={{ background: '#3D2840' }}>
@@ -373,22 +368,6 @@ export default async function MainPage() {
               Browse activities →
             </Link>
           </div>
-        </div>
-
-        {/* Quick links */}
-        <div className="grid grid-cols-3 gap-3">
-          <Link href="/browse" className="bg-white border border-border rounded-lg p-4 hover:border-primary transition-colors">
-            <div className="font-display text-sm font-semibold text-ink mb-0.5">Browse</div>
-            <div className="text-xs text-ink-muted">All activities</div>
-          </Link>
-          <Link href="/saved" className="bg-white border border-border rounded-lg p-4 hover:border-primary transition-colors">
-            <div className="font-display text-sm font-semibold text-ink mb-0.5">Saved</div>
-            <div className="text-xs text-ink-muted">Your saved list</div>
-          </Link>
-          <Link href="/bookings" className="bg-white border border-border rounded-lg p-4 hover:border-primary transition-colors">
-            <div className="font-display text-sm font-semibold text-ink mb-0.5">Bookings</div>
-            <div className="text-xs text-ink-muted">Trial requests</div>
-          </Link>
         </div>
 
         {/* Per-kid saved activities */}
@@ -447,7 +426,7 @@ export default async function MainPage() {
 
         {/* Popular in Timișoara */}
         {popularListings.length > 0 && (
-          <div className="mt-6 mb-4">
+          <div className="mt-6">
             <p className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
               Popular in Timișoara
             </p>
@@ -458,6 +437,39 @@ export default async function MainPage() {
             </div>
           </div>
         )}
+
+        {/* Why kidvo works for parents */}
+        <div className="mt-6">
+          <p className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">
+            Why kidvo works for parents
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {WHY_PARENT.map(item => (
+              <div key={item.label} className="flex items-start gap-3 bg-white border border-border rounded-lg p-4">
+                <span className="w-8 h-8 rounded-md bg-bg flex items-center justify-center flex-shrink-0 text-ink-mid">
+                  {item.icon}
+                </span>
+                <div>
+                  <div className="font-display text-sm font-semibold text-ink">{item.label}</div>
+                  <div className="text-xs text-ink-muted mt-0.5">{item.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Parent feedback */}
+        <div className="mt-4 mb-6">
+          <p className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+            Missing something?
+          </p>
+          <div className="bg-white border border-border rounded-lg px-5 py-4">
+            <p className="text-sm text-ink-muted mb-3">
+              Tell us what would help you find the right activities for your kids.
+            </p>
+            <FeedbackForm />
+          </div>
+        </div>
 
       </div>
     </AppShell>
