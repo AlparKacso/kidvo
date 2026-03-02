@@ -11,7 +11,7 @@ export function Topbar({ isProvider = false }: { isProvider?: boolean }) {
   const [searchOpen, setSearchOpen] = useState(false)
   const pathname = usePathname()
   const isBrowse  = pathname === '/browse'
-  const homeHref  = isProvider ? '/listings' : '/browse'
+  const homeHref  = '/main'
 
   return (
     <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-10">
