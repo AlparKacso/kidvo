@@ -54,7 +54,7 @@ export async function AppShell({ children }: AppShellProps) {
 
   if (profile) {
     userName   = profile.full_name
-    isProvider = profile.role === 'provider' || profile.role === 'both' || profile.role === 'admin'
+    isProvider = profile.role === 'provider' || profile.role === 'both'
     initials   = profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     userSub    = isProvider ? 'Provider · Timișoara' : 'Parent · Timișoara'
   }
