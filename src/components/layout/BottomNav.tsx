@@ -62,7 +62,7 @@ export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
       )}
       <NavItem href="/settings" icon={<IconSettings />} label="Settings" exact />
       {isAdmin && (
-        <NavItem href="https://kidvo.eu/admin" icon={<IconAdmin />} label="Admin" exact />
+        <NavItem href="/admin" icon={<IconAdmin />} label="Admin" exact />
       )}
     </nav>
   )
