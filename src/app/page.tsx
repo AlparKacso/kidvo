@@ -1,15 +1,15 @@
 import Link from 'next/link'
 
 const CATEGORIES = [
-  { name: 'Sport',       color: '#E84545' },
-  { name: 'Dance',       color: '#9B59B6' },
-  { name: 'Music',       color: '#3498DB' },
-  { name: 'Arts',        color: '#E67E22' },
-  { name: 'Coding',      color: '#27AE60' },
-  { name: 'Gymnastics',  color: '#E91E8C' },
-  { name: 'Languages',   color: '#16A085' },
-  { name: 'Chess',       color: '#8B6914' },
-  { name: 'Babysitting', color: '#FF6B9D' },
+  { name: 'Sport',      color: '#E84545' },
+  { name: 'Dance',      color: '#9B59B6' },
+  { name: 'Music',      color: '#3498DB' },
+  { name: 'Arts',       color: '#E67E22' },
+  { name: 'Coding',     color: '#27AE60' },
+  { name: 'Gymnastics', color: '#E91E8C' },
+  { name: 'Languages',  color: '#16A085' },
+  { name: 'Chess',      color: '#8B6914' },
+  { name: 'Other',      color: '#A8A8AD' },
 ]
 
 export default function LandingPage() {
@@ -62,7 +62,6 @@ export default function LandingPage() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                   <path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#523650" strokeWidth="1.6" fill="none"/>
                   <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#523650" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
-                  <circle cx="18" cy="8" r="3" fill="#F0A500"/>
                 </svg>
               </div>
               <div className="font-display text-[11px] font-semibold tracking-widest uppercase text-[#9b89a5] mb-2">For parents</div>
@@ -112,11 +111,11 @@ export default function LandingPage() {
                 Reach parents looking for you.
               </h2>
               <p className="text-sm text-white/60 leading-relaxed mb-5 md:mb-6">
-                List your activity, set your schedule and pricing, and receive trial session requests directly from interested parents. Free to start.
+                List your activity, set your schedule and pricing, and receive trial session requests directly from interested parents.
               </p>
               <ul className="flex flex-col gap-2.5 mb-6 md:mb-7">
                 {[
-                  '1 free listing to get started',
+                  'Intentionally free to use',
                   'Trial requests straight to your inbox',
                   'Your own profile page',
                   'No commissions, no intermediaries',
