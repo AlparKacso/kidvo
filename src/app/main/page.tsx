@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
+import { FeedbackForm } from './FeedbackForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -243,7 +244,7 @@ export default async function MainPage() {
 
           {/* Tip of the month */}
           {tipBody && (
-            <div className="mt-4 mb-4 flex items-start gap-3 bg-white border border-border rounded-lg px-5 py-4">
+            <div className="mt-4 flex items-start gap-3 bg-white border border-border rounded-lg px-5 py-4">
               <span className="text-lg flex-shrink-0" style={{ color: '#F0A500' }}>💡</span>
               <div>
                 <div className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">
@@ -253,6 +254,19 @@ export default async function MainPage() {
               </div>
             </div>
           )}
+
+          {/* Provider feedback */}
+          <div className="mt-4 mb-6">
+            <p className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+              Missing something?
+            </p>
+            <div className="bg-white border border-border rounded-lg px-5 py-4">
+              <p className="text-sm text-ink-muted mb-3">
+                Tell us what feature or section would help you use kidvo better.
+              </p>
+              <FeedbackForm />
+            </div>
+          </div>
 
         </div>
       </AppShell>

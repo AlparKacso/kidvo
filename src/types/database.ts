@@ -30,6 +30,7 @@ export interface Database {
           birth_year:   number
           school_grade: string | null
           area_id:      string | null
+          interests:    string[]
           created_at:   string
         }
         Insert: Omit<Database['public']['Tables']['children']['Row'], 'id' | 'created_at'>

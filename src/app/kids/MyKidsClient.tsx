@@ -26,31 +26,41 @@ interface Child {
   birth_year:   number
   school_grade: string | null
   area_id:      string | null
+  interests:    string[]
 }
 
-interface Area  { id: string; name: string }
-interface Save  { id: string; kid_id: string | null; listing: any }
+interface Area     { id: string; name: string }
+interface Save     { id: string; kid_id: string | null; listing: any }
+interface Category { id: string; name: string; slug: string; accent_color: string }
 
-function ChildForm({ areas, initial, onSave, onCancel, saving }: {
-  areas:    Area[]
-  initial?: Partial<Child>
-  onSave:   (data: Omit<Child, 'id'>) => Promise<void>
-  onCancel: () => void
-  saving:   boolean
+function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
+  areas:      Area[]
+  categories: Category[]
+  initial?:   Partial<Child>
+  onSave:     (data: Omit<Child, 'id'>) => Promise<void>
+  onCancel:   () => void
+  saving:     boolean
 }) {
-  const [name,   setName]   = useState(initial?.name         ?? '')
-  const [year,   setYear]   = useState(initial?.birth_year   ?? CURRENT_YEAR - 7)
-  const [grade,  setGrade]  = useState(initial?.school_grade ?? '')
-  const [areaId, setAreaId] = useState(initial?.area_id      ?? '')
-  const [error,  setError]  = useState('')
+  const [name,      setName]      = useState(initial?.name         ?? '')
+  const [year,      setYear]      = useState(initial?.birth_year   ?? CURRENT_YEAR - 7)
+  const [grade,     setGrade]     = useState(initial?.school_grade ?? '')
+  const [areaId,    setAreaId]    = useState(initial?.area_id      ?? '')
+  const [interests, setInterests] = useState<string[]>(initial?.interests ?? [])
+  const [error,     setError]     = useState('')
 
   const inputCls = 'w-full px-3 py-2 border border-border rounded bg-bg text-sm text-ink placeholder:text-ink-muted outline-none focus:border-primary transition-all'
+
+  function toggleInterest(slug: string) {
+    setInterests(prev =>
+      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+    )
+  }
 
   async function submit() {
     if (!name.trim()) { setError('Name is required.'); return }
     if (year < CURRENT_YEAR - 18 || year > CURRENT_YEAR - 2) { setError('Please enter a valid birth year (age 2–18).'); return }
     setError('')
-    await onSave({ name: name.trim(), birth_year: year, school_grade: grade || null, area_id: areaId || null })
+    await onSave({ name: name.trim(), birth_year: year, school_grade: grade || null, area_id: areaId || null, interests })
   }
 
   return (
@@ -80,6 +90,32 @@ function ChildForm({ areas, initial, onSave, onCancel, saving }: {
             </select>
           </div>
         )}
+        {categories.length > 0 && (
+          <div className="col-span-2">
+            <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-2">
+              Interests <span className="text-ink-muted font-normal normal-case">(opt.)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(cat => {
+                const selected = interests.includes(cat.slug)
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleInterest(cat.slug)}
+                    className="px-3 py-1.5 rounded-full text-xs font-display font-semibold border transition-colors"
+                    style={selected
+                      ? { background: cat.accent_color, borderColor: cat.accent_color, color: 'white' }
+                      : { background: 'white', borderColor: '#E4E4E0', color: '#5C5C60' }
+                    }
+                  >
+                    {cat.name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
       {error && <div className="mb-3 px-3 py-2 bg-danger-lt border border-danger/20 rounded text-sm text-danger">{error}</div>}
       <div className="flex gap-2">
@@ -97,9 +133,10 @@ interface Props {
   initialKids: Child[]
   areas:       Area[]
   saves:       Save[]
+  categories:  Category[]
 }
 
-export function MyKidsClient({ userId, initialKids, areas, saves }: Props) {
+export function MyKidsClient({ userId, initialKids, areas, saves, categories }: Props) {
   const [kids,           setKids]           = useState<Child[]>(initialKids)
   const [selectedId,     setSelectedId]     = useState<string | null>(initialKids[0]?.id ?? null)
   const [showDetail,     setShowDetail]     = useState(false) // mobile: show detail panel
@@ -168,7 +205,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves }: Props) {
       {/* Profile card */}
       <div className="bg-white border border-border rounded-lg p-5">
         {editId === selectedKid.id ? (
-          <ChildForm areas={areas} initial={selectedKid} onSave={data => handleEdit(selectedKid.id, data)} onCancel={() => setEditId(null)} saving={saving} />
+          <ChildForm areas={areas} categories={categories} initial={selectedKid} onSave={data => handleEdit(selectedKid.id, data)} onCancel={() => setEditId(null)} saving={saving} />
         ) : (
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-full bg-primary-lt border border-primary-border flex items-center justify-center font-display text-base font-bold text-primary flex-shrink-0">
@@ -185,6 +222,22 @@ export function MyKidsClient({ userId, initialKids, areas, saves }: Props) {
                   <span className="px-2.5 py-1 bg-surface rounded-full text-xs text-ink-mid">{selectedKid.school_grade}</span>
                 )}
               </div>
+              {(selectedKid.interests?.length ?? 0) > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {selectedKid.interests.map((slug: string) => {
+                    const cat = categories.find(c => c.slug === slug)
+                    return cat ? (
+                      <span
+                        key={slug}
+                        className="px-2.5 py-1 rounded-full text-[10px] font-display font-semibold text-white"
+                        style={{ background: cat.accent_color }}
+                      >
+                        {cat.name}
+                      </span>
+                    ) : null
+                  })}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button onClick={() => setEditId(selectedKid.id)} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">
@@ -297,7 +350,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves }: Props) {
       ))}
 
       {showAdd ? (
-        <ChildForm areas={areas} onSave={handleAdd} onCancel={() => setShowAdd(false)} saving={saving} />
+        <ChildForm areas={areas} categories={categories} onSave={handleAdd} onCancel={() => setShowAdd(false)} saving={saving} />
       ) : (
         <button
           onClick={() => setShowAdd(true)}

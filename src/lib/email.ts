@@ -401,3 +401,26 @@ export async function sendNewListingsDigest(opts: {
     `),
   })
 }
+
+// ── Provider feedback ─────────────────────────────────────────────────────────
+export async function sendProviderFeedback(
+  providerName:  string,
+  providerEmail: string,
+  message:       string,
+) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      'hello@kidvo.eu',
+    subject: `[Provider Feedback] ${providerName}`,
+    html: layout(`
+      ${h1('New provider feedback')}
+      <p style="margin:0 0 16px;font-size:14px;color:#5C5C60;">
+        <strong style="color:#1C1C1E;">${providerName}</strong>
+        &nbsp;·&nbsp;${providerEmail}
+      </p>
+      <div style="padding:16px;background:#F5F4F6;border-radius:8px;font-size:14px;line-height:1.6;color:#1C1C1E;">
+        ${message.replace(/\n/g, '<br>')}
+      </div>
+    `),
+  })
+}
