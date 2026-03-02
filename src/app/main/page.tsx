@@ -89,7 +89,7 @@ export default async function MainPage() {
 
   const role      = profile?.role ?? 'parent'
   const firstName = profile?.full_name?.split(' ')[0] ?? ''
-  const isProvider = role === 'provider' || role === 'both' || role === 'admin'
+  const isProvider = role === 'provider' || role === 'both'
 
   // ── Provider home ───────────────────────────────────────────────────────────
   if (isProvider) {
