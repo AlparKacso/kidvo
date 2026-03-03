@@ -12,7 +12,7 @@
 --   5 → Mon 16:00-17:30  + Thu 16:00-17:30
 
 INSERT INTO listing_schedules (listing_id, day_of_week, time_start, time_end)
-SELECT s.listing_id, s.day_of_week, s.time_start, s.time_end
+SELECT s.listing_id, s.day_of_week, s.time_start::time, s.time_end::time
 FROM (
   WITH unscheduled AS (
     SELECT
