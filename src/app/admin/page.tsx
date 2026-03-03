@@ -75,12 +75,19 @@ export default async function AdminPage() {
   const platformViews   = (viewsResult.data  ?? []).length
   const platformTrials  = (trialsResult.data ?? []).length
 
+  const parentEmails = authUsers
+    .filter(u => parentIds.has(u.id))
+    .map(u => u.email)
+    .filter((e): e is string => Boolean(e))
+    .sort()
+
   return (
     <AdminClient
       pending={pending}
       active={active}
       paused={paused}
       pendingReviews={pendingReviews}
+      parentEmails={parentEmails}
       stats={{
         activeParents,
         activeProviders,

@@ -199,10 +199,23 @@ interface Props {
   active:         Listing[]
   paused:         Listing[]
   pendingReviews: any[]
+  parentEmails:   string[]
   stats:          Stats
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="bg-white border border-border rounded-lg p-4 text-left hover:border-primary hover:shadow-sm transition-all w-full"
+      >
+        <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-1">{label}</div>
+        <div className="font-display text-2xl font-bold text-primary">{value}</div>
+        <div className="font-display text-[10px] text-ink-muted mt-1">click to view →</div>
+      </button>
+    )
+  }
   return (
     <div className="bg-white border border-border rounded-lg p-4">
       <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-1">{label}</div>
@@ -211,14 +224,74 @@ function StatCard({ label, value }: { label: string; value: number }) {
   )
 }
 
-export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, stats }: Props) {
+function EmailListModal({ emails, onClose }: { emails: string[]; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+
+  function copyAll() {
+    navigator.clipboard.writeText(emails.join('\n'))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className="relative bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col"
+        style={{ maxHeight: '80vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <div>
+            <div className="font-display text-sm font-bold text-ink">Parent email addresses</div>
+            <div className="text-xs text-ink-muted">{emails.length} registered</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={copyAll}
+              className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors"
+            >
+              {copied ? '✓ Copied!' : 'Copy all'}
+            </button>
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded flex items-center justify-center text-ink-muted hover:bg-surface hover:text-ink transition-colors font-display text-sm"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable list */}
+        <div className="overflow-y-auto flex-1 px-5 py-3">
+          {emails.length === 0 ? (
+            <p className="text-sm text-ink-muted text-center py-6">No parents registered yet.</p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {emails.map(email => (
+                <div key={email} className="flex items-center gap-2 py-1.5 border-b border-border/50 last:border-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary/40 flex-shrink-0" />
+                  <span className="text-sm text-ink font-body select-all">{email}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, stats }: Props) {
   const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([
     ...initialPending,
     ...initialActive,
     ...initialPaused,
   ])
-  const [reviews, setReviews] = useState<any[]>(initialReviews)
+  const [reviews, setReviews]           = useState<any[]>(initialReviews)
+  const [showParentEmails, setShowParentEmails] = useState(false)
 
   function handleStatusChange(id: string, status: string) {
     setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l))
@@ -256,12 +329,17 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
 
         {/* Platform stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
-          <StatCard label="Active parents (30d)"   value={stats.activeParents}   />
+          <StatCard label="Active parents (30d)"   value={stats.activeParents}   onClick={() => setShowParentEmails(true)} />
           <StatCard label="Active providers (30d)" value={stats.activeProviders} />
           <StatCard label="Active listings"        value={stats.activeListings}  />
           <StatCard label="Views (30d)"            value={stats.platformViews}   />
           <StatCard label="Trials (30d)"           value={stats.platformTrials}  />
         </div>
+
+        {/* Parent emails modal */}
+        {showParentEmails && (
+          <EmailListModal emails={parentEmails} onClose={() => setShowParentEmails(false)} />
+        )}
 
         {/* Pending reviews — top priority */}
         {reviews.length > 0 && (
