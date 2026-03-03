@@ -11,18 +11,20 @@ function MiniListingCard({ listing }: { listing: any }) {
   const cat      = listing.category as any
   const area     = listing.area as any
   const provider = listing.provider as any
+  const accent   = cat?.accent_color ?? '#523650'
   return (
     <Link
       href={`/browse/${listing.id}`}
-      className="min-w-[200px] md:min-w-0 bg-white border border-border rounded-lg p-3.5 hover:border-primary transition-colors flex-shrink-0 block"
+      className="relative min-w-[200px] md:min-w-0 bg-white border border-border rounded-lg pl-5 pr-3.5 py-3.5 hover:border-primary transition-colors flex-shrink-0 block overflow-hidden"
     >
+      {/* Category accent bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ background: accent }} />
+
       {cat && (
-        <span
-          className="inline-block font-display text-[10px] font-bold px-2 py-0.5 rounded-full mb-2"
-          style={{ background: cat.accent_color + '22', color: cat.accent_color }}
-        >
-          {cat.name}
-        </span>
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: accent }} />
+          <span className="font-display text-[10px] font-semibold" style={{ color: accent }}>{cat.name}</span>
+        </div>
       )}
       <div className="font-display text-sm font-semibold text-ink leading-snug line-clamp-2 mb-1">
         {listing.title}
