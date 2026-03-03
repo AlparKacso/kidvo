@@ -18,9 +18,11 @@ interface Props {
 }
 
 export function SavedClient({ initialSaves }: Props) {
-  const [saves, setSaves] = useState(initialSaves)
+  const [saves,         setSaves]         = useState(initialSaves)
+  const [pendingRemove, setPendingRemove] = useState<string | null>(null) // saveId awaiting confirm
 
   async function handleRemove(saveId: string, listingId: string) {
+    setPendingRemove(null)
     setSaves(prev => prev.filter(s => s.id !== saveId))
     await fetch('/api/saves', {
       method: 'POST',
@@ -78,12 +80,20 @@ export function SavedClient({ initialSaves }: Props) {
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleRemove(save.id, listing?.id)}
-                      className="w-6 h-6 rounded flex items-center justify-center border border-border text-ink-muted hover:border-danger/50 hover:text-danger hover:bg-danger-lt transition-all flex-shrink-0"
-                    >
-                      <svg width="9" height="9" viewBox="0 0 15 15" fill="none"><path d="M3 3l9 9M12 3l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
-                    </button>
+                    {pendingRemove === save.id ? (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-xs text-ink-muted">Remove?</span>
+                        <button onClick={() => handleRemove(save.id, listing?.id)} className="px-2 py-1 rounded font-display text-xs font-semibold bg-danger text-white">Yes</button>
+                        <button onClick={() => setPendingRemove(null)} className="px-2 py-1 rounded font-display text-xs font-semibold border border-border text-ink-mid">No</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setPendingRemove(save.id)}
+                        className="w-6 h-6 rounded flex items-center justify-center border border-border text-ink-muted hover:border-danger/50 hover:text-danger hover:bg-danger-lt transition-all flex-shrink-0"
+                      >
+                        <svg width="9" height="9" viewBox="0 0 15 15" fill="none"><path d="M3 3l9 9M12 3l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center justify-between mt-3">
                     <div>
@@ -130,12 +140,20 @@ export function SavedClient({ initialSaves }: Props) {
                         Book trial
                       </Link>
                     )}
+                    {pendingRemove === save.id ? (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-xs text-ink-muted">Remove?</span>
+                        <button onClick={() => handleRemove(save.id, listing?.id)} className="px-2 py-1 rounded font-display text-xs font-semibold bg-danger text-white">Yes</button>
+                        <button onClick={() => setPendingRemove(null)} className="px-2 py-1 rounded font-display text-xs font-semibold border border-border text-ink-mid">No</button>
+                      </div>
+                    ) : (
                     <button
-                      onClick={() => handleRemove(save.id, listing?.id)}
+                      onClick={() => setPendingRemove(save.id)}
                       className="w-6 h-6 rounded flex items-center justify-center border border-border text-ink-muted hover:border-danger/50 hover:text-danger hover:bg-danger-lt transition-all"
                     >
                       <svg width="9" height="9" viewBox="0 0 15 15" fill="none"><path d="M3 3l9 9M12 3l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
                     </button>
+                    )}
                   </div>
                 </div>
 

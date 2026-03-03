@@ -30,8 +30,12 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
     <div className={cn(
       'bg-white border border-border rounded-lg overflow-hidden relative flex flex-col',
       featured && 'border-primary-border',
-      isFull ? 'opacity-65' : 'card-hover cursor-pointer',
+      isFull ? 'opacity-65' : 'card-hover',
     )}>
+      {/* Stretched link — makes the entire card clickable */}
+      {!isFull && (
+        <Link href={`/browse/${listing.id}`} className="absolute inset-0 z-0" aria-label={listing.title} />
+      )}
       {/* Category accent bar */}
       <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ background: accent }} />
 
@@ -53,7 +57,9 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
 
           {/* Save button */}
           {!isFull && (
-            <SaveButton listingId={listing.id} initialSaved={isSaved} variant="icon" />
+            <div className="relative z-10">
+              <SaveButton listingId={listing.id} initialSaved={isSaved} variant="icon" />
+            </div>
           )}
         </div>
 
@@ -83,7 +89,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 mt-auto">
+        <div className="relative z-10 flex items-center gap-1.5 mt-auto">
           {isFull ? (
             <button disabled className="px-3 py-1.5 rounded font-display text-sm font-semibold bg-surface text-ink-muted border border-border opacity-50 cursor-not-allowed">
               Fully booked

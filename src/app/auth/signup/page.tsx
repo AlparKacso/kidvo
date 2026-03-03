@@ -30,13 +30,28 @@ export default function SignupPage() {
       return
     }
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
 
     // Create auth user
     const { data, error: authError } = await supabase.auth.signUp({ email, password })
 
     if (authError) {
-      setError(authError.message)
+      // Translate Supabase error messages into plain language
+      const msg = authError.message.toLowerCase()
+      if (msg.includes('password') && msg.includes('short'))
+        setError('Password must be at least 6 characters long.')
+      else if (msg.includes('already registered') || msg.includes('already exists'))
+        setError('An account with this email already exists. Try signing in.')
+      else if (msg.includes('invalid email'))
+        setError('Please enter a valid email address.')
+      else
+        setError(authError.message)
       setLoading(false)
       return
     }

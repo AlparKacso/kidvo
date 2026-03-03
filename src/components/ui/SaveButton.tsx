@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -13,6 +14,7 @@ interface SaveButtonProps {
 }
 
 export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveButtonProps) {
+  const router                      = useRouter()
   const [saved,      setSaved]      = useState(initialSaved)
   const [loading,    setLoading]    = useState(false)
   const [kids,       setKids]       = useState<Kid[] | null>(null) // null = not fetched yet
@@ -49,6 +51,7 @@ export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveBu
         body: JSON.stringify({ listing_id: listingId }),
       })
       if (!r.ok) setSaved(true)
+      else router.refresh()
       return
     }
 
@@ -87,6 +90,7 @@ export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveBu
       body: JSON.stringify({ listing_id: listingId, kid_id: kidId }),
     })
     if (!r.ok) setSaved(false)
+    else router.refresh()
   }
 
   // Kid picker dropdown — rendered inside the relative wrapper
