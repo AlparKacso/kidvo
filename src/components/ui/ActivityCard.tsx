@@ -1,120 +1,174 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { SaveButton } from '@/components/ui/SaveButton'
-import { StarRating } from '@/components/ui/StarRating'
 import type { ListingWithRelations } from '@/types/database'
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  sport:       '⚽',
+  dance:       '💃',
+  music:       '🎵',
+  coding:      '💻',
+  arts:        '🎨',
+  language:    '🌍',
+  languages:   '🌍',
+  chess:       '♟️',
+  gym:         '🤸',
+  gymnastics:  '🤸',
+  babysitting: '🍼',
+  other:       '✨',
+}
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-function formatSchedule(schedules: ListingWithRelations['schedules']): string {
-  if (!schedules?.length) return '—'
+function formatDays(schedules: ListingWithRelations['schedules']): string {
+  if (!schedules?.length) return ''
   const days = [...new Set(schedules.map(s => DAY_LABELS[s.day_of_week]))]
-  const first = schedules[0]
-  return `${days.join(' & ')} · ${first.time_start.slice(0, 5)}–${first.time_end.slice(0, 5)}`
+  return days.join(' · ')
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '')
+  const r = parseInt(clean.substring(0, 2), 16)
+  const g = parseInt(clean.substring(2, 4), 16)
+  const b = parseInt(clean.substring(4, 6), 16)
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return `rgba(124,58,237,${alpha})`
+  return `rgba(${r},${g},${b},${alpha})`
 }
 
 interface ActivityCardProps {
-  listing:     ListingWithRelations
-  featured?:   boolean
-  savedIds?:   string[]
-  avgRating?:  number | null
+  listing:      ListingWithRelations
+  featured?:    boolean
+  savedIds?:    string[]
+  avgRating?:   number | null
   reviewCount?: number
 }
 
 export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount }: ActivityCardProps) {
-  const isFull  = (listing.spots_available ?? 1) === 0
-  const accent  = listing.category.accent_color
-  const isSaved = savedIds?.includes(listing.id) ?? false
+  const isFull   = (listing.spots_available ?? 1) === 0
+  const accent   = listing.category.accent_color
+  const isSaved  = savedIds?.includes(listing.id) ?? false
+  const days     = formatDays(listing.schedules)
+  const spots    = listing.spots_available
+  const isUrgent = spots !== null && spots > 0 && spots <= 3
+  const provider = (listing.provider as any)?.display_name ?? ''
 
   return (
     <div className={cn(
-      'bg-white border border-border rounded-lg overflow-hidden relative flex flex-col',
-      featured && 'border-primary-border',
+      'bg-white rounded-[22px] border-[1.5px] border-border overflow-hidden shadow-card relative',
       isFull ? 'opacity-65' : 'card-hover',
     )}>
-      {/* Stretched link — makes the entire card clickable */}
+      {/* Stretched link */}
       {!isFull && (
         <Link href={`/browse/${listing.id}`} className="absolute inset-0 z-0" aria-label={listing.title} />
       )}
-      {/* Category accent bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ background: accent }} />
 
-      <div className="pl-5 pr-4 pt-[15px] pb-4 flex-1 flex flex-col">
+      {/* ── Header: 160px gradient + large icon ── */}
+      <div
+        className="h-[120px] flex items-center justify-center relative"
+        style={{ background: `linear-gradient(135deg, ${hexToRgba(accent, 0.15)}, ${hexToRgba(accent, 0.40)})`, color: accent }}
+      >
+        <span style={{ fontSize: '52px', lineHeight: 1 }}>{CATEGORY_EMOJI[listing.category.slug] ?? '✨'}</span>
 
-        {/* Meta row */}
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: accent }} />
-              <span className="text-xs text-ink-muted">
-                {listing.category.name} · Ages {listing.age_min}–{listing.age_max} · {listing.area.name}
-              </span>
-            </div>
-            <div className="font-display text-sm font-semibold text-ink leading-snug">
-              {listing.title}
-            </div>
-          </div>
-
-          {/* Save button */}
-          {!isFull && (
-            <div className="relative z-10">
-              <SaveButton listingId={listing.id} initialSaved={isSaved} variant="icon" />
-            </div>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="h-px bg-border my-2.5" />
-
-        {/* Schedule + price */}
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-1.5 text-xs text-ink-mid">
-            <svg width="11" height="11" viewBox="0 0 15 15" fill="none">
-              <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" />
-              <path d="M7.5 4.5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-            </svg>
-            {formatSchedule(listing.schedules)}
-          </div>
-          <div className="font-display text-sm font-semibold text-ink">
-            {listing.price_monthly} RON
-            <span className="font-body font-normal text-[11px] text-ink-muted">/mo</span>
-          </div>
-        </div>
-
-        {/* Rating */}
-        {avgRating != null && avgRating > 0 && (
-          <div className="mb-2">
-            <StarRating rating={avgRating} count={reviewCount} size="sm" />
+        {/* Save button — top-right overlay */}
+        {!isFull && (
+          <div className="absolute top-3 right-3 z-10 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-border bg-white/90">
+            <SaveButton listingId={listing.id} initialSaved={isSaved} variant="icon" />
           </div>
         )}
 
-        {/* Actions */}
-        <div className="relative z-10 flex items-center gap-1.5 mt-auto">
-          {isFull ? (
-            <button disabled className="px-3 py-1.5 rounded font-display text-sm font-semibold bg-surface text-ink-muted border border-border opacity-50 cursor-not-allowed">
-              Fully booked
-            </button>
-          ) : (
-            <Link href={`/browse/${listing.id}?book=1`} className="px-3 py-1.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
-              Book trial
-            </Link>
-          )}
-          <Link href={`/browse/${listing.id}`} className="px-3 py-1.5 rounded font-display text-sm font-semibold bg-surface text-ink-mid border border-border hover:bg-border transition-colors">
-            Details
-          </Link>
-          <div className="ml-auto">
-            {isFull && (
-              <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-danger-lt text-danger">Full</span>
-            )}
-            {!isFull && listing.featured && (
-              <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-gold-lt text-gold-text">Featured</span>
-            )}
-            {!isFull && !listing.featured && listing.spots_available !== null && listing.spots_available > 0 && (
-              <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-success-lt text-success">Available</span>
-            )}
+        {/* Featured badge — top-left overlay */}
+        {featured && (
+          <div
+            className="absolute top-3 left-3 rounded-full font-display text-[11px] font-semibold"
+            style={{ background: '#fef9e6', color: '#b45309', padding: '3px 9px' }}
+          >
+            Featured
           </div>
+        )}
+      </div>
+
+      {/* ── Body ── */}
+      <div className="p-4">
+        {/* Tags */}
+        <div className="flex flex-wrap gap-1.5 mb-2.5">
+          <span
+            className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
+            style={{ background: hexToRgba(accent, 0.12), color: accent, padding: '3px 9px' }}
+          >
+            Ages {listing.age_min}–{listing.age_max}
+          </span>
+
+          {days && (
+            <span
+              className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
+              style={{ background: '#f1f0f5', color: '#55527a', padding: '3px 9px' }}
+            >
+              {days}
+            </span>
+          )}
+
+          {!isFull && spots !== null && (
+            isUrgent ? (
+              <span
+                className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
+                style={{ background: '#fef9e6', color: '#b45309', padding: '3px 9px' }}
+              >
+                {spots} {spots === 1 ? 'spot' : 'spots'} left
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
+                style={{ background: '#e8fde9', color: '#15803d', padding: '3px 9px' }}
+              >
+                Open spots
+              </span>
+            )
+          )}
         </div>
 
+        {/* Title */}
+        <div
+          className="font-display font-extrabold text-ink mb-1 leading-snug"
+          style={{ fontSize: '16px', letterSpacing: '-0.3px' }}
+        >
+          {listing.title}
+        </div>
+
+        {/* Meta: provider + rating */}
+        <div className="text-[13px] text-ink-muted">
+          {[
+            provider,
+            avgRating && avgRating > 0 ? `★ ${avgRating.toFixed(1)}${reviewCount ? ` (${reviewCount})` : ''}` : null,
+          ].filter(Boolean).join(' · ')}
+          {!provider && !avgRating && listing.area.name}
+        </div>
+      </div>
+
+      {/* ── Footer ── */}
+      <div className="relative z-10 flex items-center border-t border-border px-4 py-3 gap-2">
+        <div className="whitespace-nowrap">
+          <span className="font-display font-extrabold text-ink" style={{ fontSize: '16px' }}>
+            {listing.price_monthly} RON
+          </span>
+          <span className="text-[11px] text-ink-muted">/mo</span>
+        </div>
+
+        {isFull ? (
+          <span
+            className="ml-auto whitespace-nowrap rounded-full font-display text-[12px] font-semibold"
+            style={{ background: '#f1f0f5', color: '#55527a', padding: '5px 12px' }}
+          >
+            Fully booked
+          </span>
+        ) : (
+          <Link
+            href={`/browse/${listing.id}?book=1`}
+            className="ml-auto whitespace-nowrap rounded-[8px] font-display text-[12px] font-semibold bg-blue text-white hover:bg-blue-deep transition-colors"
+            style={{ padding: '6px 12px' }}
+          >
+            Book trial →
+          </Link>
+        )}
       </div>
     </div>
   )

@@ -13,6 +13,17 @@ export function CookieBanner() {
     if (!consent) setVisible(true)
   }, [])
 
+  // Add body padding on mobile while the banner is visible so page content
+  // (incl. footer) is scrollable above the fixed banner zone.
+  useEffect(() => {
+    if (visible) {
+      document.body.classList.add('cookie-banner-open')
+    } else {
+      document.body.classList.remove('cookie-banner-open')
+    }
+    return () => document.body.classList.remove('cookie-banner-open')
+  }, [visible])
+
   function accept()  { localStorage.setItem('kidvo_cookie_consent', 'accepted');  setVisible(false) }
   function decline() { localStorage.setItem('kidvo_cookie_consent', 'declined'); setVisible(false) }
 

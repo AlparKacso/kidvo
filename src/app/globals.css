@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   html {
-    font-family: 'Instrument Sans', sans-serif;
+    font-family: 'Onest', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -17,7 +17,7 @@
 }
 
 @layer utilities {
-  /* Nav label — section headers in sidebar */
+  /* Nav label — section headers in sidebar (white sidebar, dark text) */
   .nav-label {
     @apply font-display text-[9px] font-bold tracking-nav uppercase text-sidebar-muted px-2.5 pt-3.5 pb-1;
   }
@@ -48,4 +48,14 @@
 @keyframes pulseGold {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.65; transform: scale(0.82); }
+}
+
+/* ── Cookie banner safe area ───────────────────────────────────────────────
+   Dynamically added by CookieBanner.tsx when the banner is visible.
+   Adds bottom padding on mobile so page content (incl. footer) scrolls
+   above the fixed banner. Removed as soon as the user accepts / declines. */
+@media (max-width: 767px) {
+  body.cookie-banner-open {
+    padding-bottom: 240px;
+  }
 }
