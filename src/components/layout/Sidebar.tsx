@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 const KidvoLogo = () => (
   <Link href="/main" className="flex items-center px-[18px] py-[22px] border-b border-border hover:opacity-80 transition-opacity">
-    <span className="font-display font-bold text-[19px] leading-none" style={{ letterSpacing: '-0.03em' }}>
+    <span className="font-display font-black leading-none" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
       <span className="text-ink">kid</span>
       <span className="text-primary">vo</span>
     </span>

@@ -31,7 +31,7 @@ export function Topbar({ isProvider = false }: { isProvider?: boolean }) {
           </div>
         ) : (
           <>
-            <Link href={homeHref} className="font-display leading-none" style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.03em' }}>
+            <Link href={homeHref} className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
               <span style={{ color: '#1c1c27' }}>kid</span><span style={{ color: '#7c3aed' }}>vo</span>
             </Link>
             <div className="flex items-center gap-1.5 font-display text-xs font-semibold text-ink-muted ml-2">

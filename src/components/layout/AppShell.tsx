@@ -18,7 +18,7 @@ export async function AppShell({ children }: AppShellProps) {
     return (
       <div className="flex min-h-screen flex-col">
         <header className="bg-white border-b border-border h-topbar flex items-center px-4 md:px-[28px] sticky top-0 z-10">
-          <Link href="/browse" className="font-display font-bold leading-none" style={{ fontSize: '20px', letterSpacing: '-0.03em' }}>
+          <Link href="/browse" className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
             <span style={{ color: '#1c1c27' }}>kid</span><span style={{ color: '#7c3aed' }}>vo</span>
           </Link>
           <div className="flex-1" />
