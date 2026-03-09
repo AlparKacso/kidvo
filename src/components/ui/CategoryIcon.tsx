@@ -62,6 +62,7 @@ export function CategoryIcon({ slug, className, size = 14 }: CategoryIconProps) 
         </svg>
       )
     case 'language':
+    case 'languages':
       // Globe with meridian lines
       return (
         <svg {...s} className={className}>
@@ -81,6 +82,7 @@ export function CategoryIcon({ slug, className, size = 14 }: CategoryIconProps) 
         </svg>
       )
     case 'gym':
+    case 'gymnastics':
       // Gymnastics figure / dumbbell
       return (
         <svg {...s} className={className}>

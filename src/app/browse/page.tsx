@@ -74,7 +74,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const { data: allListingsRaw } = await query
   const allListings = allListingsRaw as unknown as any[] | null
 
-  // Text search — client-side on the already-filtered set (sufficient for MVP scale)
+  // Text search — client-side on the already-filtered set
   const q = params.q?.toLowerCase().trim() ?? ''
   const listings = q
     ? allListings?.filter(l =>
@@ -88,7 +88,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const rest      = listings?.filter(l => !l.featured) ?? []
   const total     = listings?.length ?? 0
 
-  // Fetch aggregate ratings for all visible listings in one query
+  // Fetch aggregate ratings for all visible listings
   const listingIds = (listings ?? []).map((l: any) => l.id as string)
   const ratingsMap: Record<string, { avg: number; count: number }> = {}
   if (listingIds.length > 0) {
@@ -112,60 +112,112 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   return (
     <AppShell>
-      <div>
-        <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">
-          Browse Activities
-        </h1>
-        <p className="text-sm text-ink-muted mb-5">
-          All ages · Updated today · {total} {total === 1 ? 'activity' : 'activities'} listed
-        </p>
+      <div className="flex flex-col gap-5">
 
+        {/* ── Page header ── */}
+        <div>
+          <div
+            className="font-display font-extrabold text-ink"
+            style={{ fontSize: '21px', letterSpacing: '-0.5px' }}
+          >
+            Browse activities
+          </div>
+          <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
+            Timișoara · {total} {total === 1 ? 'activity' : 'activities'} available
+          </div>
+        </div>
+
+        {/* ── Search + filters ── */}
         <Suspense>
           <SearchBar areas={areas ?? []} />
           <CategoryPills categories={categories ?? []} />
         </Suspense>
 
+        {/* ── Empty state ── */}
         {total === 0 && (
-          <div className="bg-white border border-border rounded-lg p-12 text-center">
+          <div className="bg-white border border-border rounded-[16px] p-12 text-center shadow-card">
             <div className="text-2xl mb-3">🔍</div>
             <div className="font-display text-sm font-semibold text-ink-mid mb-1">
               {hasActiveFilters ? 'No activities match your search' : 'No activities yet'}
             </div>
             <div className="text-sm text-ink-muted">
-              {hasActiveFilters ? 'Try adjusting your filters or search term.' : 'Be the first to list an activity in Timișoara.'}
+              {hasActiveFilters
+                ? 'Try adjusting your filters or search term.'
+                : 'Be the first to list an activity in Timișoara.'}
             </div>
           </div>
         )}
 
+        {/* ── Featured section ── */}
         {featured.length > 0 && (
-          <>
-            <div className="section-label mb-3">Featured</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-8">
+          <div className="bg-white rounded-[22px] p-[22px] shadow-card">
+            {/* Section header */}
+            <div className="flex items-start justify-between mb-[18px]">
+              <div>
+                <div
+                  className="font-display font-extrabold text-ink"
+                  style={{ fontSize: '17px', letterSpacing: '-0.3px' }}
+                >
+                  Featured activities
+                </div>
+                <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
+                  Handpicked by kidvo
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {featured.map(listing => (
-                <ActivityCard key={listing.id} listing={listing as ListingWithRelations} featured
+                <ActivityCard
+                  key={listing.id}
+                  listing={listing as ListingWithRelations}
+                  featured
                   avgRating={ratingsMap[listing.id]?.avg ?? null}
                   reviewCount={ratingsMap[listing.id]?.count}
                 />
               ))}
             </div>
-          </>
+          </div>
         )}
 
+        {/* ── All activities section ── */}
         {rest.length > 0 && (
-          <>
-            <div className="section-label mb-3">
-              {featured.length > 0 ? 'All activities' : 'Activities'}
+          <div className="bg-white rounded-[22px] p-[22px] shadow-card">
+            {/* Section header */}
+            <div className="flex items-start justify-between mb-[18px]">
+              <div>
+                <div
+                  className="font-display font-extrabold text-ink"
+                  style={{ fontSize: '17px', letterSpacing: '-0.3px' }}
+                >
+                  {featured.length > 0 ? 'All activities' : 'Activities'}
+                </div>
+                <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
+                  {rest.length} {rest.length === 1 ? 'result' : 'results'}
+                  {params.category ? ` in ${categories?.find(c => c.slug === params.category)?.name ?? params.category}` : ''}
+                </div>
+              </div>
+              <span
+                className="font-display text-[12.5px] font-semibold whitespace-nowrap mt-0.5"
+                style={{ color: '#2aa7ff' }}
+              >
+                {total} total
+              </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {rest.map(listing => (
-                <ActivityCard key={listing.id} listing={listing as ListingWithRelations}
+                <ActivityCard
+                  key={listing.id}
+                  listing={listing as ListingWithRelations}
                   avgRating={ratingsMap[listing.id]?.avg ?? null}
                   reviewCount={ratingsMap[listing.id]?.count}
                 />
               ))}
             </div>
-          </>
+          </div>
         )}
+
       </div>
     </AppShell>
   )

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { SaveButton } from '@/components/ui/SaveButton'
+import { CategoryIconChip } from '@/components/ui/CategoryIcon'
 import type { ListingWithRelations } from '@/types/database'
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -62,10 +63,10 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
         <Link href={`/browse/${listing.id}`} className="absolute inset-0 z-0" aria-label={listing.title} />
       )}
 
-      {/* ── Header: 160px gradient + large icon ── */}
+      {/* ── Header: gradient + large emoji ── */}
       <div
         className="h-[120px] flex items-center justify-center relative"
-        style={{ background: `linear-gradient(135deg, ${hexToRgba(accent, 0.15)}, ${hexToRgba(accent, 0.40)})`, color: accent }}
+        style={{ background: `linear-gradient(135deg, ${hexToRgba(accent, 0.15)}, ${hexToRgba(accent, 0.40)})` }}
       >
         <span style={{ fontSize: '52px', lineHeight: 1 }}>{CATEGORY_EMOJI[listing.category.slug] ?? '✨'}</span>
 
@@ -89,6 +90,15 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
 
       {/* ── Body ── */}
       <div className="p-4">
+        {/* Category chip */}
+        <div className="mb-2.5">
+          <CategoryIconChip
+            slug={listing.category.slug}
+            name={listing.category.name}
+            accentColor={accent}
+          />
+        </div>
+
         {/* Tags */}
         <div className="flex flex-wrap gap-1.5 mb-2.5">
           <span
@@ -138,7 +148,9 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
         <div className="text-[13px] text-ink-muted">
           {[
             provider,
-            avgRating && avgRating > 0 ? `★ ${avgRating.toFixed(1)}${reviewCount ? ` (${reviewCount})` : ''}` : null,
+            avgRating && avgRating > 0
+              ? `★ ${avgRating.toFixed(1)}${reviewCount ? ` (${reviewCount})` : ''}`
+              : null,
           ].filter(Boolean).join(' · ')}
           {!provider && !avgRating && listing.area.name}
         </div>
