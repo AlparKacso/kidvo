@@ -87,15 +87,8 @@ export default async function LandingPage() {
       <nav className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-border h-16 flex items-center">
         <div className="max-w-[1200px] mx-auto w-full flex items-center gap-3 px-5 md:px-9">
 
-          {/* Logo — icon + wordmark */}
-          <Link href="/" className="flex items-center gap-2 font-display font-black leading-none hover:opacity-80 transition-opacity flex-shrink-0" style={{ fontSize: '21px', letterSpacing: '-0.6px' }}>
-            <div className="w-[30px] h-[30px] rounded-[9px] bg-primary flex items-center justify-center text-white flex-shrink-0">
-              <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="4.5" r="2"/>
-                <path d="M5.5 8.5C5.5 7 7 6 9 6s3.5 1 3.5 2.5V11l-3.5 2-3.5-2V8.5Z"/>
-                <path d="M5.5 11l-2.5 4.5M12.5 11l2.5 4.5M9 13v2.5"/>
-              </svg>
-            </div>
+          {/* Logo — wordmark only */}
+          <Link href="/" className="font-display font-black leading-none hover:opacity-80 transition-opacity flex-shrink-0" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
             <span className="text-ink">kid</span><span className="text-primary">vo</span>
           </Link>
 

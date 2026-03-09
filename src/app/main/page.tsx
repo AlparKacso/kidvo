@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
 import { FeedbackForm } from './FeedbackForm'
+import { CategoryIconChip } from '@/components/ui/CategoryIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,29 +12,28 @@ function MiniListingCard({ listing }: { listing: any }) {
   const cat      = listing.category as any
   const area     = listing.area as any
   const provider = listing.provider as any
-  const accent   = cat?.accent_color ?? '#523650'
+  const accent   = cat?.accent_color ?? '#7c3aed'
   return (
     <Link
       href={`/browse/${listing.id}`}
-      className="relative min-w-[200px] md:min-w-0 bg-white border border-border rounded-lg pl-5 pr-3.5 py-3.5 hover:border-primary transition-colors flex-shrink-0 block overflow-hidden"
+      className="relative min-w-[200px] md:min-w-0 bg-white border border-border rounded-xl pl-5 pr-3.5 py-3.5 hover:border-primary/30 hover:shadow-card transition-all flex-shrink-0 block overflow-hidden"
     >
       {/* Category accent bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg" style={{ background: accent }} />
+      <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl" style={{ background: accent }} />
 
       {cat && (
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: accent }} />
-          <span className="font-display text-[10px] font-semibold" style={{ color: accent }}>{cat.name}</span>
+        <div className="mb-2">
+          <CategoryIconChip slug={cat.slug} name={cat.name} accentColor={accent} />
         </div>
       )}
-      <div className="font-display text-sm font-semibold text-ink leading-snug line-clamp-2 mb-1">
+      <div className="font-display text-sm font-bold text-ink leading-snug line-clamp-2 mb-1">
         {listing.title}
       </div>
       <div className="text-xs text-ink-muted">{provider?.display_name}</div>
       <div className="flex items-center justify-between mt-1.5">
         <span className="text-xs text-ink-muted">{area?.name}</span>
         {listing.price_monthly != null && (
-          <span className="font-display text-xs font-semibold text-ink">{listing.price_monthly} RON/mo</span>
+          <span className="font-display text-xs font-bold text-ink">{listing.price_monthly} RON/mo</span>
         )}
       </div>
     </Link>
@@ -41,16 +41,27 @@ function MiniListingCard({ listing }: { listing: any }) {
 }
 
 // ── Stat card (provider) ─────────────────────────────────────────────────────
-function StatCard({ label, value, highlight = false }: { label: string; value: number; highlight?: boolean }) {
+interface StatCardProps {
+  label:     string
+  value:     number
+  accent?:   'purple' | 'blue' | 'gold' | 'none'
+}
+
+function StatCard({ label, value, accent = 'none' }: StatCardProps) {
+  const styles = {
+    purple: { card: 'bg-primary text-white border-primary', value: 'text-white', label: 'text-white/70' },
+    blue:   { card: 'bg-blue text-white border-blue', value: 'text-white', label: 'text-white/70' },
+    gold:   { card: 'bg-white border-gold-deep/30', value: 'text-gold', label: 'text-ink-muted' },
+    none:   { card: 'bg-white border-border', value: 'text-ink', label: 'text-ink-muted' },
+  }
+  const s = styles[accent]
+
   return (
-    <div className={`bg-white border rounded-lg px-4 py-3 ${highlight ? 'border-gold' : 'border-border'}`}>
-      <div
-        className="font-display text-2xl font-bold leading-none mb-0.5"
-        style={{ color: highlight ? '#F0A500' : '#523650' }}
-      >
+    <div className={`border rounded-xl px-4 py-3.5 ${s.card}`}>
+      <div className={`font-display text-2xl font-bold leading-none mb-0.5 ${s.value}`}>
         {value}
       </div>
-      <div className="text-xs text-ink-muted">{label}</div>
+      <div className={`text-xs ${s.label}`}>{label}</div>
     </div>
   )
 }
@@ -79,6 +90,14 @@ const WHY_PARENT = [
   { icon: <IconHeart />,    label: 'Honest reviews',       desc: 'Read real reviews from other parents before you decide.' },
 ]
 
+// ── Tip bulb icon ─────────────────────────────────────────────────────────────
+const IconBulb = () => (
+  <svg width="16" height="16" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+    <path d="M7.5 1.5a4.5 4.5 0 0 1 2.5 8.2V11H5v-1.3A4.5 4.5 0 0 1 7.5 1.5Z" />
+    <path d="M5.5 11h4M6 13h3" />
+  </svg>
+)
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default async function MainPage() {
   const supabase = await createClient()
@@ -89,8 +108,8 @@ export default async function MainPage() {
     .from('users').select('full_name, role').eq('id', user.id).single()
   const profile = profileRaw as { full_name: string; role: string } | null
 
-  const role      = profile?.role ?? 'parent'
-  const firstName = profile?.full_name?.split(' ')[0] ?? ''
+  const role       = profile?.role ?? 'parent'
+  const firstName  = profile?.full_name?.split(' ')[0] ?? ''
   const isProvider = role === 'provider' || role === 'both'
 
   // ── Provider home ───────────────────────────────────────────────────────────
@@ -149,19 +168,22 @@ export default async function MainPage() {
         <div className="max-w-3xl">
 
           {/* Provider hero banner */}
-          <div className="rounded-xl px-7 py-7 md:py-5 mb-5" style={{ background: '#3D2840' }}>
-            <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <div className="rounded-2xl px-7 py-7 md:py-6 mb-5 relative overflow-hidden" style={{ background: '#1c1c27' }}>
+            {/* Decorative gradient orb */}
+            <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
+
+            <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>
               Your activities reached
             </p>
             <div className="flex items-baseline gap-2 mb-3">
-              <span className="font-display text-5xl font-bold leading-none" style={{ color: '#F0A500' }}>
+              <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>
                 {weekReach}
               </span>
               <span className="font-display text-2xl font-bold text-white">
                 parents this week
               </span>
             </div>
-            <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
               {pendingTrials > 0 ? (
                 <>
                   You have{' '}
@@ -180,8 +202,8 @@ export default async function MainPage() {
               {pendingTrials > 0 && (
                 <Link
                   href="/listings/bookings"
-                  className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-lg transition-opacity hover:opacity-90"
-                  style={{ background: '#F0A500', color: '#1A0A1A' }}
+                  className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-90"
+                  style={{ background: '#f5c542', color: '#1c1c27' }}
                 >
                   View trial requests →
                 </Link>
@@ -189,15 +211,15 @@ export default async function MainPage() {
               {!hasListings ? (
                 <Link
                   href="/listings/new"
-                  className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-lg transition-opacity hover:opacity-90"
-                  style={{ background: '#F0A500', color: '#1A0A1A' }}
+                  className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-90"
+                  style={{ background: '#f5c542', color: '#1c1c27' }}
                 >
                   List an activity →
                 </Link>
               ) : (
                 <Link
                   href="/listings/analytics"
-                  className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-lg border transition-colors"
+                  className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-full border transition-colors"
                   style={{ color: 'rgba(255,255,255,0.65)', borderColor: 'rgba(255,255,255,0.18)' }}
                 >
                   Full analytics →
@@ -212,9 +234,9 @@ export default async function MainPage() {
               Performance this week
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatCard label="Parents reached" value={weekReach} />
-              <StatCard label="Total views"     value={totalViews} />
-              <StatCard label="Pending trials"  value={pendingTrials} highlight={pendingTrials > 0} />
+              <StatCard label="Parents reached" value={weekReach}     accent="purple" />
+              <StatCard label="Total views"     value={totalViews}    accent="blue" />
+              <StatCard label="Pending trials"  value={pendingTrials} accent={pendingTrials > 0 ? 'gold' : 'none'} />
               <StatCard label="Active listings" value={activeCount} />
             </div>
           </div>
@@ -226,12 +248,12 @@ export default async function MainPage() {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {WHY_PROVIDER.map(item => (
-                <div key={item.label} className="flex items-start gap-3 bg-white border border-border rounded-lg p-4">
-                  <span className="w-8 h-8 rounded-md bg-bg flex items-center justify-center flex-shrink-0 text-ink-mid">
+                <div key={item.label} className="flex items-start gap-3 bg-white border border-border rounded-xl p-4">
+                  <span className="w-8 h-8 rounded-lg bg-primary-lt flex items-center justify-center flex-shrink-0 text-primary">
                     {item.icon}
                   </span>
                   <div>
-                    <div className="font-display text-sm font-semibold text-ink">{item.label}</div>
+                    <div className="font-display text-sm font-bold text-ink">{item.label}</div>
                     <div className="text-xs text-ink-muted mt-0.5">{item.desc}</div>
                   </div>
                 </div>
@@ -241,8 +263,10 @@ export default async function MainPage() {
 
           {/* Tip of the month */}
           {tipBody && (
-            <div className="mt-4 flex items-start gap-3 bg-white border border-border rounded-lg px-5 py-4">
-              <span className="text-lg flex-shrink-0" style={{ color: '#F0A500' }}>💡</span>
+            <div className="mt-4 flex items-start gap-3 bg-white border border-border rounded-xl px-5 py-4">
+              <span className="w-8 h-8 rounded-lg bg-gold-lt flex items-center justify-center flex-shrink-0 text-gold-text flex-shrink-0">
+                <IconBulb />
+              </span>
               <div>
                 <div className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">
                   Tip of the month
@@ -257,7 +281,7 @@ export default async function MainPage() {
             <p className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
               Missing something?
             </p>
-            <div className="bg-white border border-border rounded-lg px-5 py-4">
+            <div className="bg-white border border-border rounded-xl px-5 py-4">
               <p className="text-sm text-ink-muted mb-3">
                 Tell us what feature or section would help you use kidvo better.
               </p>
@@ -280,14 +304,14 @@ export default async function MainPage() {
       id, kid_id,
       listing:listings(
         id, title, price_monthly, status,
-        category:categories(name, accent_color),
+        category:categories(name, slug, accent_color),
         area:areas(name),
         provider:providers(display_name)
       )
     `).eq('user_id', user.id).order('created_at', { ascending: false }),
     supabase.from('listings').select(`
       id, title, price_monthly,
-      category:categories(name, accent_color),
+      category:categories(name, slug, accent_color),
       area:areas(name),
       provider:providers(display_name)
     `).eq('status', 'active')
@@ -296,11 +320,11 @@ export default async function MainPage() {
      .limit(6),
   ])
 
-  const children    = childrenRes.data ?? []
+  const children     = childrenRes.data ?? []
   const pendingTrials = trialsRes.data?.length ?? 0
-  const allSaves    = (savesRes.data ?? []).filter((s: any) => s.listing && (s.listing as any).status === 'active')
-  const newListings = newListingsRes.data ?? []
-  const savedCount  = allSaves.length
+  const allSaves     = (savesRes.data ?? []).filter((s: any) => s.listing && (s.listing as any).status === 'active')
+  const newListings  = newListingsRes.data ?? []
+  const savedCount   = allSaves.length
 
   // Popular: aggregate by listing_id across all saves, top 5
   const saveCountMap = new Map<string, number>()
@@ -316,7 +340,7 @@ export default async function MainPage() {
   const popularListings: any[] = popularIds.length > 0
     ? ((await supabase.from('listings').select(`
         id, title, price_monthly,
-        category:categories(name, accent_color),
+        category:categories(name, slug, accent_color),
         area:areas(name),
         provider:providers(display_name)
       `).in('id', popularIds).eq('status', 'active')).data ?? [])
@@ -327,19 +351,22 @@ export default async function MainPage() {
       <div className="max-w-3xl">
 
         {/* Parent hero banner */}
-        <div className="rounded-xl px-7 py-7 md:py-5 mb-5" style={{ background: '#3D2840' }}>
-          <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
+        <div className="rounded-2xl px-7 py-7 md:py-6 mb-5 relative overflow-hidden" style={{ background: '#1c1c27' }}>
+          {/* Decorative gradient orb */}
+          <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #2aa7ff 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
+
+          <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>
             Hi, {firstName}!
           </p>
           <div className="flex items-baseline gap-2 mb-3">
-            <span className="font-display text-5xl font-bold leading-none" style={{ color: '#F0A500' }}>
+            <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>
               {savedCount}
             </span>
             <span className="font-display text-2xl font-bold text-white">
               {savedCount === 1 ? 'activity saved' : 'activities saved'} for your kids
             </span>
           </div>
-          <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
             {pendingTrials > 0 ? (
               <>
                 You have{' '}
@@ -356,15 +383,15 @@ export default async function MainPage() {
             {pendingTrials > 0 && (
               <Link
                 href="/bookings"
-                className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-lg transition-opacity hover:opacity-90"
-                style={{ background: '#F0A500', color: '#1A0A1A' }}
+                className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full transition-opacity hover:opacity-90"
+                style={{ background: '#f5c542', color: '#1c1c27' }}
               >
                 View bookings →
               </Link>
             )}
             <Link
               href="/browse"
-              className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-lg border transition-colors"
+              className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-full border transition-colors"
               style={{ color: 'rgba(255,255,255,0.65)', borderColor: 'rgba(255,255,255,0.18)' }}
             >
               Browse activities →
@@ -380,7 +407,7 @@ export default async function MainPage() {
           return (
             <div key={kid.id} className="mt-6">
               <div className="flex items-center justify-between mb-2">
-                <p className="font-display text-sm font-semibold text-ink">
+                <p className="font-display text-sm font-bold text-ink">
                   {kid.name}&apos;s saved activities
                 </p>
                 <Link href="/kids" className="text-xs font-display font-semibold text-primary hover:underline">
@@ -388,7 +415,7 @@ export default async function MainPage() {
                 </Link>
               </div>
               {kidSaves.length === 0 ? (
-                <div className="text-sm text-ink-muted bg-white border border-border rounded-lg px-4 py-3">
+                <div className="text-sm text-ink-muted bg-white border border-border rounded-xl px-4 py-3">
                   No saved activities yet.{' '}
                   <Link href="/browse" className="text-primary font-semibold hover:underline">Browse →</Link>
                 </div>
@@ -405,7 +432,7 @@ export default async function MainPage() {
 
         {/* No kids yet */}
         {children.length === 0 && (
-          <div className="mt-6 bg-white border border-border rounded-lg px-5 py-4 text-sm text-ink-muted">
+          <div className="mt-6 bg-white border border-border rounded-xl px-5 py-4 text-sm text-ink-muted">
             Add your kids in{' '}
             <Link href="/kids" className="text-primary font-semibold hover:underline">My Kids</Link>
             {' '}to track saved activities per child.
@@ -447,12 +474,12 @@ export default async function MainPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {WHY_PARENT.map(item => (
-              <div key={item.label} className="flex items-start gap-3 bg-white border border-border rounded-lg p-4">
-                <span className="w-8 h-8 rounded-md bg-bg flex items-center justify-center flex-shrink-0 text-ink-mid">
+              <div key={item.label} className="flex items-start gap-3 bg-white border border-border rounded-xl p-4">
+                <span className="w-8 h-8 rounded-lg bg-primary-lt flex items-center justify-center flex-shrink-0 text-primary">
                   {item.icon}
                 </span>
                 <div>
-                  <div className="font-display text-sm font-semibold text-ink">{item.label}</div>
+                  <div className="font-display text-sm font-bold text-ink">{item.label}</div>
                   <div className="text-xs text-ink-muted mt-0.5">{item.desc}</div>
                 </div>
               </div>
@@ -465,7 +492,7 @@ export default async function MainPage() {
           <p className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
             Missing something?
           </p>
-          <div className="bg-white border border-border rounded-lg px-5 py-4">
+          <div className="bg-white border border-border rounded-xl px-5 py-4">
             <p className="text-sm text-ink-muted mb-3">
               Tell us what would help you find the right activities for your kids.
             </p>

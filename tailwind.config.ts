@@ -9,31 +9,39 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand
+        // Brand — replaces old primary (#523650) with new brand purple (#7c3aed)
+        // All existing `text-primary`, `bg-primary`, `border-primary` classes
+        // now automatically render in the new brand purple.
         primary: {
-          DEFAULT: '#523650',
-          deep:    '#3D2840',
-          lt:      'rgba(82,54,80,0.07)',
-          border:  'rgba(82,54,80,0.15)',
+          DEFAULT: '#7c3aed',
+          deep:    '#6d28d9',
+          lt:      '#f0e8ff',
+          border:  'rgba(124,58,237,0.15)',
         },
         gold: {
-          DEFAULT: '#F0A500',
-          deep:    '#C98A00',
-          lt:      '#FEF3D0',
-          text:    '#8A5C00',
+          DEFAULT: '#f5c542',
+          deep:    '#d4a017',
+          lt:      '#fef9e6',
+          text:    '#a07800',
+        },
+        // Blue CTA — used for "Book trial" buttons, primary actions
+        blue: {
+          DEFAULT: '#2aa7ff',
+          deep:    '#0090e0',
+          soft:    '#e0f2ff',
         },
         // Neutrals
-        bg:      '#F5F5F3',
-        surface: '#EDEDEB',
+        bg:      '#ece8f5',
+        surface: '#ffffff',
         border: {
-          DEFAULT: '#E4E4E0',
-          mid:     '#CFCFCA',
+          DEFAULT: '#e8e4f0',
+          mid:     '#d5d0e0',
         },
-        // Text
+        // Text — new ink scale (slightly purple-tinted)
         ink: {
-          DEFAULT: '#1C1C1E',
-          mid:     '#5C5C60',
-          muted:   '#A8A8AD',
+          DEFAULT: '#1c1c27',
+          mid:     '#55527a',
+          muted:   '#9590b3',
         },
         // Status
         success: {
@@ -52,7 +60,7 @@ const config: Config = {
           DEFAULT: '#6B6B72',
           lt:      '#F0F0F2',
         },
-        // Category accents
+        // Category accents — kept for per-category tinting on cards/pills
         cat: {
           sport:    '#523650',
           dance:    '#be123c',
@@ -63,17 +71,18 @@ const config: Config = {
           chess:    '#374151',
           gym:      '#b45309',
         },
-        // Sidebar
+        // Sidebar tokens — updated for white sidebar
         sidebar: {
-          text:   'rgba(255,255,255,0.62)',
-          hover:  'rgba(255,255,255,0.08)',
-          muted:  'rgba(255,255,255,0.25)',
-          active: 'rgba(255,255,255,0.11)',
+          text:   '#55527a',
+          hover:  '#f0e8ff',
+          muted:  '#9590b3',
+          active: 'rgba(28,28,39,0.06)',
         },
       },
       fontFamily: {
-        display: ['Syne', 'sans-serif'],
-        body:    ['Instrument Sans', 'sans-serif'],
+        // Both display and body now use Onest (single font family)
+        display: ['Onest', 'sans-serif'],
+        body:    ['Onest', 'sans-serif'],
         mono:    ['JetBrains Mono', 'monospace'],
       },
       fontSize: {
@@ -88,12 +97,18 @@ const config: Config = {
         '3xl': ['30px', { lineHeight: '38px' }],
       },
       borderRadius: {
-        DEFAULT: '8px',
-        'lg':    '14px',
+        DEFAULT: '10px',
+        'sm':    '6px',
+        'md':    '14px',
+        'lg':    '18px',
+        'xl':    '22px',
         'full':  '9999px',
       },
       width: {
-        sidebar: '228px',
+        sidebar: '248px',
+      },
+      minWidth: {
+        sidebar: '248px',
       },
       height: {
         topbar: '54px',
@@ -103,8 +118,9 @@ const config: Config = {
         'content-y': '26px',
       },
       boxShadow: {
-        'card-hover': '0 6px 24px rgba(82,54,80,0.10)',
-        'focus':      '0 0 0 3px rgba(82,54,80,0.07)',
+        'card':       '0 2px 12px rgba(124,58,237,0.06)',
+        'card-hover': '0 8px 28px rgba(124,58,237,0.13)',
+        'focus':      '0 0 0 3px rgba(124,58,237,0.08)',
       },
       letterSpacing: {
         'label': '0.12em',

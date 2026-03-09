@@ -19,14 +19,14 @@ export async function AppShell({ children }: AppShellProps) {
       <div className="flex min-h-screen flex-col">
         <header className="bg-white border-b border-border h-topbar flex items-center px-4 md:px-[28px] sticky top-0 z-10">
           <Link href="/browse" className="font-display font-bold leading-none" style={{ fontSize: '20px', letterSpacing: '-0.03em' }}>
-            <span style={{ color: '#523650' }}>kid</span><span style={{ color: '#F0A500' }}>vo</span>
+            <span style={{ color: '#1c1c27' }}>kid</span><span style={{ color: '#7c3aed' }}>vo</span>
           </Link>
           <div className="flex-1" />
           <div className="flex items-center gap-2">
             <Link href="/auth/login" className="font-display text-sm font-semibold text-ink-mid hover:text-ink px-3 py-1.5 transition-colors">
               Sign in
             </Link>
-            <Link href="/auth/signup" className="font-display text-sm font-semibold bg-primary text-white px-4 py-1.5 rounded-lg hover:bg-primary-deep transition-colors">
+            <Link href="/auth/signup" className="font-display text-sm font-semibold bg-primary text-white px-4 py-1.5 rounded-full hover:bg-primary-deep transition-colors">
               Get started
             </Link>
           </div>
