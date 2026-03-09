@@ -2,8 +2,23 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import type { Category } from '@/types/database'
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  all:         '✦',
+  sport:       '⚽',
+  dance:       '💃',
+  music:       '🎵',
+  coding:      '💻',
+  arts:        '🎨',
+  language:    '🌍',
+  languages:   '🌍',
+  chess:       '♟️',
+  gym:         '🤸',
+  gymnastics:  '🤸',
+  babysitting: '🍼',
+  other:       '✨',
+}
 
 interface CategoryPillsProps {
   categories: Category[]
@@ -51,7 +66,7 @@ export function CategoryPills({ categories }: CategoryPillsProps) {
             )}
             style={{ padding: '6px 14px', ...activeStyle }}
           >
-            <CategoryIcon slug={cat.slug} size={14} />
+            <span style={{ fontSize: '13px', lineHeight: 1 }}>{CATEGORY_EMOJI[cat.slug] ?? '✨'}</span>
             {cat.name}
           </button>
         )
