@@ -84,18 +84,32 @@ export default async function LandingPage() {
     <div className="min-h-screen bg-bg font-display flex flex-col">
 
       {/* ── Nav ──────────────────────────────────────────────────────────── */}
-      <nav className="w-full bg-white border-b border-border">
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between px-5 md:px-8 py-4 md:py-5">
+      <nav className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-border h-16 flex items-center">
+        <div className="max-w-[1200px] mx-auto w-full flex items-center gap-3 px-5 md:px-9">
 
-          <Link href="/" className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
+          {/* Logo — icon + wordmark */}
+          <Link href="/" className="flex items-center gap-2 font-display font-black leading-none hover:opacity-80 transition-opacity flex-shrink-0" style={{ fontSize: '21px', letterSpacing: '-0.6px' }}>
+            <div className="w-[30px] h-[30px] rounded-[9px] bg-primary flex items-center justify-center text-white flex-shrink-0">
+              <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="4.5" r="2"/>
+                <path d="M5.5 8.5C5.5 7 7 6 9 6s3.5 1 3.5 2.5V11l-3.5 2-3.5-2V8.5Z"/>
+                <path d="M5.5 11l-2.5 4.5M12.5 11l2.5 4.5M9 13v2.5"/>
+              </svg>
+            </div>
             <span className="text-ink">kid</span><span className="text-primary">vo</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <Link href="/auth/login"  className="font-display text-sm font-semibold text-ink-mid hover:text-ink transition-colors px-3 py-2">Sign in</Link>
-            <Link href="/auth/signup" className="font-display text-sm font-semibold bg-ink text-white px-4 py-2 rounded-full hover:opacity-80 transition-opacity">
-              Get started →
-            </Link>
+          {/* Center nav links — desktop only */}
+          <div className="hidden md:flex items-center gap-0.5 ml-4">
+            <Link href="/browse"       className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>Browse activities</Link>
+            <Link href="/auth/signup"  className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>For providers</Link>
+            <a    href="#how-it-works" className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>How it works</a>
+          </div>
+
+          {/* Right CTAs */}
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/auth/login"  className="hidden sm:block font-display font-semibold text-ink-mid hover:text-ink transition-colors border-[1.5px] border-border bg-white rounded-[8px] hover:border-border-mid" style={{ fontSize: '13.5px', padding: '7px 17px' }}>Sign in</Link>
+            <Link href="/auth/signup" className="font-display font-bold bg-ink text-white rounded-[8px] hover:opacity-80 transition-opacity whitespace-nowrap" style={{ fontSize: '13.5px', padding: '7px 17px' }}>Get started →</Link>
           </div>
         </div>
       </nav>
@@ -116,7 +130,7 @@ export default async function LandingPage() {
               style={{ fontSize: 'clamp(36px, 6vw, 64px)', letterSpacing: 'clamp(-1.5px, -0.04em, -2.5px)' }}>
             Find the perfect<br />
             <span className="text-primary">activity</span> for your<br />
-            <span style={{ background: 'linear-gradient(90deg, #2aa7ff 0%, #c38cfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            <span style={{ color: '#2aa7ff' }}>
               little one
             </span>
           </h1>
@@ -162,20 +176,23 @@ export default async function LandingPage() {
         {/* ── Activity showcase ────────────────────────────────────────────── */}
         <section className="max-w-[1200px] mx-auto px-5 md:px-8 pb-14 md:pb-18">
 
-          <div className="flex items-center justify-between mb-5">
-            <div className="font-display text-[10px] font-bold tracking-widest uppercase text-ink-muted">Trending near you</div>
-            <Link href="/browse" className="font-display text-sm font-semibold text-primary hover:underline whitespace-nowrap">
+          {/* Section header */}
+          <div className="flex items-center justify-between mb-4 gap-4">
+            <div className="font-display font-extrabold text-ink flex-shrink-0" style={{ fontSize: '21px', letterSpacing: '-0.4px' }}>
+              Trending near you
+            </div>
+            <Link href="/browse" className="font-display text-sm font-semibold text-primary hover:underline whitespace-nowrap flex-shrink-0">
               See all 120 →
             </Link>
           </div>
 
-          {/* Category pills — from DB, same as browse (exclude babysitting & other) */}
-          <div className="flex gap-2 flex-wrap mb-6">
+          {/* Category pills — horizontal scroll row */}
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {categories.filter(cat => cat.slug !== 'babysitting').map(cat => (
               <Link
                 key={cat.slug}
                 href={`/browse?category=${cat.slug}`}
-                className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-border bg-white text-ink-mid font-display text-[13px] font-semibold transition-all hover:border-primary/40 hover:text-primary hover:bg-primary-lt/50 whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-border bg-white text-ink-mid font-display text-[13px] font-semibold transition-all hover:border-primary/40 hover:text-primary hover:bg-primary-lt/50 whitespace-nowrap flex-shrink-0"
                 style={{ padding: '7px 16px' }}
               >
                 {CATEGORY_EMOJI[cat.slug] && (
@@ -338,7 +355,7 @@ export default async function LandingPage() {
         </section>
 
         {/* ── How it works ─────────────────────────────────────────────────── */}
-        <section className="max-w-[1200px] mx-auto px-5 md:px-8 pb-16 md:pb-24">
+        <section id="how-it-works" className="max-w-[1200px] mx-auto px-5 md:px-8 pb-16 md:pb-24">
           <div className="text-center mb-8 md:mb-10">
             <div className="font-display text-[10px] font-bold tracking-widest uppercase text-ink-muted mb-2.5">Simple by design</div>
             <h2 className="font-display text-2xl md:text-3xl font-bold text-ink">How kidvo works</h2>
