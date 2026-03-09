@@ -166,7 +166,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {featured.map(listing => (
                 <ActivityCard
                   key={listing.id}
@@ -205,7 +205,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {rest.map(listing => (
                 <ActivityCard
                   key={listing.id}
