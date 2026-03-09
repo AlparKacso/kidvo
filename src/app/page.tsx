@@ -119,16 +119,22 @@ export default async function LandingPage() {
           </div>
 
           {/* Headline */}
-          <h1 className="font-display font-black text-ink leading-[1.07] mb-5"
-              style={{ fontSize: 'clamp(36px, 6vw, 64px)', letterSpacing: 'clamp(-1.5px, -0.04em, -2.5px)' }}>
+          <h1 className="font-display font-black text-ink leading-[1.05] mb-5"
+              style={{ fontSize: 'clamp(36px, 4.5vw, 54px)', letterSpacing: '-2.5px' }}>
             Find the perfect<br />
             <span className="text-primary">activity</span> for your<br />
-            <span style={{ color: '#2aa7ff' }}>
+            <span style={{
+              background: 'linear-gradient(90deg, #2aa7ff, #c38cfa)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
               little one
             </span>
           </h1>
 
-          <p className="text-base md:text-[17px] text-ink-mid max-w-[460px] mx-auto leading-relaxed mb-8">
+          <p className="font-display text-ink-mid mx-auto mb-8"
+             style={{ fontSize: '17px', lineHeight: '1.65', maxWidth: '480px' }}>
             Browse local sports, arts, music, coding and more — then book a free trial session in seconds.
           </p>
 
