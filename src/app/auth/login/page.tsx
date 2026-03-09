@@ -18,7 +18,7 @@ export default function LoginPage() {
     setError('')
 
     const supabase = createClient()
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
@@ -29,7 +29,7 @@ export default function LoginPage() {
     router.push('/main')
   }
 
-  const inputCls = 'w-full px-3 py-2.5 border border-border rounded bg-bg font-body text-base text-ink placeholder:text-ink-muted outline-none focus:border-primary focus:shadow-focus transition-all'
+  const inputCls = 'w-full px-3.5 py-2.5 border border-border rounded-[10px] bg-white font-display text-[13.5px] text-ink placeholder:text-ink-muted outline-none focus:border-primary transition-all'
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4">
@@ -37,20 +37,22 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <span className="font-display font-bold text-[26px] leading-none tracking-tight">
-            <span className="text-primary">kid</span>
-            <span className="text-gold">vo</span>
-          </span>
-          <p className="text-sm text-ink-muted mt-2">Activities for kids in Timișoara</p>
+          <Link href="/" className="inline-block font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '28px', letterSpacing: '-1px' }}>
+            <span className="text-ink">kid</span><span className="text-primary">vo</span>
+          </Link>
+          <p className="font-display text-[13px] text-ink-muted mt-2">Activities for kids in Timișoara</p>
         </div>
 
-        <div className="bg-white border border-border rounded-lg p-6">
-          <h1 className="font-display text-lg font-bold text-ink mb-1">Welcome back</h1>
-          <p className="text-sm text-ink-muted mb-5">Sign in to your account</p>
+        {/* Card */}
+        <div className="bg-white border border-border rounded-[18px] p-7 shadow-card">
+          <h1 className="font-display text-[20px] font-extrabold text-ink mb-1 leading-snug" style={{ letterSpacing: '-0.3px' }}>
+            Welcome back
+          </h1>
+          <p className="font-display text-[13px] text-ink-muted mb-6">Sign in to your kidvo account</p>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
-              <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">Email</label>
+              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">Email</label>
               <input
                 className={inputCls}
                 type="email"
@@ -61,7 +63,12 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid">Password</label>
+                <Link href="/auth/reset-password" className="font-display text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
+                  Forgot?
+                </Link>
+              </div>
               <input
                 className={inputCls}
                 type="password"
@@ -73,22 +80,24 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="bg-danger-lt border border-danger/20 text-danger text-sm rounded p-3">{error}</div>
+              <div className="bg-[#fff0f0] border border-[#fecaca] text-[#dc2626] font-display text-[12.5px] rounded-[8px] px-3.5 py-2.5">
+                {error}
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors mt-1"
+              className="w-full py-2.5 rounded-[10px] font-display text-[13.5px] font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors mt-1"
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Signing in…' : 'Sign in →'}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-sm text-ink-muted mt-4">
+        <p className="text-center font-display text-[13px] text-ink-muted mt-5">
           Don't have an account?{' '}
-          <Link href="/auth/signup" className="text-primary font-semibold hover:underline">Sign up</Link>
+          <Link href="/auth/signup" className="text-primary font-semibold hover:opacity-75 transition-opacity">Sign up</Link>
         </p>
       </div>
     </div>
