@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 /* Logo — prototype: padding 2px 8px 22px inside the aside's 14px base */
 const KidvoLogo = () => (
-  <Link href="/main" className="flex items-center px-[8px] pt-[2px] pb-[22px] hover:opacity-80 transition-opacity">
+  <Link href="/dashboard" className="flex items-center px-[8px] pt-[2px] pb-[22px] hover:opacity-80 transition-opacity">
     <span className="font-display font-black leading-none" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
       <span className="text-ink">kid</span>
       <span className="text-primary">vo</span>
@@ -140,7 +140,7 @@ export function Sidebar({
       <nav className="flex-1 flex flex-col">
 
         <NavSection label="Discover">
-          <NavItem href="/main"   icon={<IconHome />}   label="Home"   exact />
+          <NavItem href="/dashboard" icon={<IconHome />} label="Dashboard" exact />
           <NavItem href="/browse" icon={<IconBrowse />} label="Browse" exact />
           <NavItem href="/saved"  icon={<IconSaved />}  label="Saved"  badge={savedCount} badgeVariant="purple" exact />
         </NavSection>

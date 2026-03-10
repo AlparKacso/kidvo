@@ -145,7 +145,7 @@ export function Topbar({
           </div>
         ) : (
           <>
-            <Link href="/main" className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
+            <Link href="/dashboard" className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
               <span style={{ color: '#1c1c27' }}>kid</span><span style={{ color: '#7c3aed' }}>vo</span>
             </Link>
             {locationLine}

@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   // Auth pages — redirect away if already logged in
   const authRoutes = ['/auth/login', '/auth/signup']
   if (authRoutes.includes(pathname)) {
-    if (user) return NextResponse.redirect(new URL('/main', request.url))
+    if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
     return supabaseResponse
   }
 

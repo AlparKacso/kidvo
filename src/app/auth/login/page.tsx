@@ -26,7 +26,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/main')
+    router.push('/dashboard')
   }
 
   const inputCls = 'w-full px-3.5 py-2.5 border border-border rounded-[10px] bg-white font-display text-[13.5px] text-ink placeholder:text-ink-muted outline-none focus:border-primary transition-all'
