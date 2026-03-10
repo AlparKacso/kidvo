@@ -63,43 +63,48 @@ export function SearchBar({ areas, languages }: Props) {
           className="flex-1 bg-transparent font-display text-sm text-ink placeholder:text-ink-muted outline-none min-w-0"
         />
 
-        <div className="w-px h-4 bg-border flex-shrink-0 hidden sm:block" />
-
-        <select
-          value={area}
-          onChange={e => { setArea(e.target.value); apply({ area: e.target.value }) }}
-          className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none pr-1 hidden sm:block"
-        >
-          <option value="">All areas</option>
-          {areas.map(a => <option key={a.id} value={a.slug}>{a.name}</option>)}
-        </select>
-
-        <div className="w-px h-4 bg-border flex-shrink-0 hidden sm:block" />
-
-        <select
-          value={age}
-          onChange={e => { setAge(e.target.value); apply({ age: e.target.value }) }}
-          className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none pr-1 hidden sm:block"
-        >
-          <option value="">All ages</option>
-          {[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(a => (
-            <option key={a} value={a}>Age {a}</option>
-          ))}
-        </select>
-
-        {languages.length > 0 && (
-          <>
-            <div className="w-px h-4 bg-border flex-shrink-0 hidden sm:block" />
+        {/* Filters group — single divider, then all selects together */}
+        <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+          <div className="w-px h-4 bg-border" />
+          {/* Wrapper sized by hidden mirror span; select is absolute-fill over it */}
+          <span className="relative inline-block">
+            <span aria-hidden className="font-display text-xs font-semibold invisible whitespace-nowrap">
+              {area ? (areas.find(a => a.slug === area)?.name ?? 'All areas') : 'All areas'}
+            </span>
             <select
-              value={lang}
-              onChange={e => { setLang(e.target.value); apply({ lang: e.target.value }) }}
-              className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none pr-1 hidden sm:block"
+              value={area}
+              onChange={e => { setArea(e.target.value); apply({ area: e.target.value }) }}
+              className="absolute inset-0 w-full bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
             >
-              <option value="">All languages</option>
-              {languages.map(l => <option key={l} value={l}>{l}</option>)}
+              <option value="">All areas</option>
+              {areas.map(a => <option key={a.id} value={a.slug}>{a.name}</option>)}
             </select>
-          </>
-        )}
+          </span>
+          <div className="w-px h-4 bg-border" />
+          <select
+            value={age}
+            onChange={e => { setAge(e.target.value); apply({ age: e.target.value }) }}
+            className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
+          >
+            <option value="">All ages</option>
+            {[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(a => (
+              <option key={a} value={a}>Age {a}</option>
+            ))}
+          </select>
+          {languages.length > 0 && (
+            <>
+              <div className="w-px h-4 bg-border" />
+              <select
+                value={lang}
+                onChange={e => { setLang(e.target.value); apply({ lang: e.target.value }) }}
+                className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
+              >
+                <option value="">All languages</option>
+                {languages.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </>
+          )}
+        </div>
 
         <button
           onClick={() => apply()}
@@ -114,8 +119,9 @@ export function SearchBar({ areas, languages }: Props) {
         <select
           value={area}
           onChange={e => { setArea(e.target.value); apply({ area: e.target.value }) }}
+          style={{ textAlignLast: 'center' }}
           className={cn(
-            'w-full px-2 py-2 rounded-full border font-display text-xs font-semibold outline-none cursor-pointer appearance-none text-center transition-all',
+            'w-full px-2 py-2 rounded-full border font-display text-xs font-semibold outline-none cursor-pointer appearance-none transition-all',
             area ? 'bg-primary-lt border-primary-border text-primary' : 'bg-white border-border text-ink-mid'
           )}
         >
@@ -126,8 +132,9 @@ export function SearchBar({ areas, languages }: Props) {
         <select
           value={age}
           onChange={e => { setAge(e.target.value); apply({ age: e.target.value }) }}
+          style={{ textAlignLast: 'center' }}
           className={cn(
-            'w-full px-2 py-2 rounded-full border font-display text-xs font-semibold outline-none cursor-pointer appearance-none text-center transition-all',
+            'w-full px-2 py-2 rounded-full border font-display text-xs font-semibold outline-none cursor-pointer appearance-none transition-all',
             age ? 'bg-primary-lt border-primary-border text-primary' : 'bg-white border-border text-ink-mid'
           )}
         >
@@ -141,8 +148,9 @@ export function SearchBar({ areas, languages }: Props) {
           <select
             value={lang}
             onChange={e => { setLang(e.target.value); apply({ lang: e.target.value }) }}
+            style={{ textAlignLast: 'center' }}
             className={cn(
-              'w-full px-2 py-2 rounded-full border font-display text-xs font-semibold outline-none cursor-pointer appearance-none text-center transition-all',
+              'w-full px-2 py-2 rounded-full border font-display text-xs font-semibold outline-none cursor-pointer appearance-none transition-all',
               lang ? 'bg-primary-lt border-primary-border text-primary' : 'bg-white border-border text-ink-mid'
             )}
           >

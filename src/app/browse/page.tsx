@@ -29,16 +29,12 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const params   = await searchParams
   const supabase = await createClient()
 
-  const [{ data: categoriesRaw }, { data: areasRaw }, { data: langRows }] = await Promise.all([
+  const [{ data: categoriesRaw }, { data: areasRaw }] = await Promise.all([
     supabase.from('categories').select('*').order('sort_order'),
     supabase.from('areas').select('*').order('name'),
-    supabase.from('listings').select('language').eq('status', 'active'),
   ])
 
-  const languages = [...new Set(
-    (langRows ?? []).map((r: any) => r.language as string).filter(Boolean)
-  )].sort()
-
+  const languages  = ['Romanian', 'Hungarian', 'Serbian', 'German', 'English']
   const categories = categoriesRaw as unknown as any[] | null
   const areas      = areasRaw      as unknown as any[] | null
 
