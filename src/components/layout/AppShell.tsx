@@ -39,25 +39,28 @@ export async function AppShell({ children }: AppShellProps) {
   }
 
   let userName   = ''
-  let userSub    = 'Timișoara'
   let initials   = '?'
   let isProvider = false
   let userEmail  = authUser.email ?? ''
 
-  const { data: profileRaw } = await supabase
-    .from('users')
-    .select('full_name, role')
-    .eq('id', authUser.id)
-    .single()
+  const [profileRes, savedRes, bookingsRes, listingsRes] = await Promise.all([
+    supabase.from('users').select('full_name, role').eq('id', authUser.id).single(),
+    supabase.from('saves').select('*', { count: 'exact', head: true }).eq('user_id', authUser.id),
+    supabase.from('trial_requests').select('*', { count: 'exact', head: true }).eq('user_id', authUser.id),
+    supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+  ])
 
-  const profile = profileRaw as unknown as { full_name: string; role: string } | null
+  const profile = profileRes.data as unknown as { full_name: string; role: string } | null
 
   if (profile) {
     userName   = profile.full_name
     isProvider = profile.role === 'provider' || profile.role === 'both'
     initials   = profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-    userSub    = isProvider ? 'Provider · Timișoara' : 'Parent · Timișoara'
   }
+
+  const savedCount    = savedRes.count    ?? 0
+  const bookingsCount = bookingsRes.count ?? 0
+  const listingsCount = listingsRes.count ?? 0
 
   return (
     <div className="flex min-h-screen">
@@ -65,15 +68,20 @@ export async function AppShell({ children }: AppShellProps) {
       <div className="hidden md:flex">
         <Sidebar
           isProvider={isProvider}
-          userName={userName}
-          userSub={userSub}
-          initials={initials}
+          savedCount={savedCount}
+          bookingsCount={bookingsCount}
           userEmail={userEmail}
         />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar isProvider={isProvider} />
+        <Topbar
+          isProvider={isProvider}
+          userName={userName}
+          initials={initials}
+          userEmail={userEmail}
+          listingsCount={listingsCount}
+        />
         {/* Extra bottom padding on mobile for BottomNav */}
         <main className="flex-1 px-4 pt-5 pb-24 md:px-[28px] md:pt-[26px] md:pb-14">
           {children}

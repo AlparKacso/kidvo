@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const KidvoLogo = () => (
-  <Link href="/main" className="flex items-center px-[18px] py-[22px] border-b border-border hover:opacity-80 transition-opacity">
+  <Link href="/main" className="flex items-center px-[8px] pb-[22px] pt-[2px] hover:opacity-80 transition-opacity">
     <span className="font-display font-black leading-none" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
       <span className="text-ink">kid</span>
       <span className="text-primary">vo</span>
@@ -14,13 +14,13 @@ const KidvoLogo = () => (
 )
 
 interface NavItemProps {
-  href:         string
-  icon:         React.ReactNode
-  label:        string
-  badge?:       string | number
+  href:          string
+  icon:          React.ReactNode
+  label:         string
+  badge?:        number
   badgeVariant?: 'purple' | 'blue'
-  exact?:       boolean
-  excludes?:    string[]
+  exact?:        boolean
+  excludes?:     string[]
 }
 
 function NavItem({ href, icon, label, badge, badgeVariant = 'purple', exact, excludes }: NavItemProps) {
@@ -43,7 +43,7 @@ function NavItem({ href, icon, label, badge, badgeVariant = 'purple', exact, exc
         {icon}
       </span>
       {label}
-      {badge !== undefined && (
+      {badge !== undefined && badge > 0 && (
         <span
           className={cn(
             'ml-auto font-display text-[10.5px] font-bold px-[7px] py-px rounded-full',
@@ -61,7 +61,7 @@ function NavItem({ href, icon, label, badge, badgeVariant = 'purple', exact, exc
 
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mb-[18px]">
+    <div className="mb-[20px]">
       <span className="block font-display text-[10.5px] font-bold tracking-[.1em] uppercase text-ink-muted px-[10px] mb-1.5">
         {label}
       </span>
@@ -83,34 +83,12 @@ const IconAnalytics = () => <svg width="15" height="15" viewBox="0 0 15 15" fill
 const IconSettings  = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
 const IconAdmin     = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L2 4v3.5c0 3 2.5 5.5 5.5 6 3-0.5 5.5-3 5.5-6V4L7.5 1.5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
 
-function SignOutButton() {
-  async function signOut() {
-    const { createClient } = await import('@/lib/supabase/client')
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = '/auth/login'
-  }
-
-  return (
-    <button
-      onClick={signOut}
-      title="Sign out"
-      className="w-6 h-6 rounded flex items-center justify-center text-ink-muted hover:text-ink hover:bg-border transition-colors flex-shrink-0"
-    >
-      <svg width="13" height="13" viewBox="0 0 15 15" fill="none">
-        <path d="M6 2H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3M10 10l3-3-3-3M13 7.5H6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
-  )
-}
-
 function NudgeWidget() {
   return (
     <div
       className="rounded-[16px] p-4 text-white"
       style={{ background: '#1c1c27' }}
     >
-      {/* Icon */}
       <div
         className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-2.5"
         style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.70)' }}
@@ -121,7 +99,6 @@ function NudgeWidget() {
           <path d="M4 15.5l2.5-4 2.5 1 2.5-1 2.5 4"/>
         </svg>
       </div>
-
       <div className="font-display text-[14px] font-bold mb-1 leading-snug">
         Book a free trial
       </div>
@@ -145,38 +122,39 @@ function NudgeWidget() {
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
 
 interface SidebarProps {
-  isProvider?: boolean
-  userName?:   string
-  userSub?:    string
-  initials?:   string
-  userEmail?:  string
+  isProvider?:    boolean
+  savedCount?:    number
+  bookingsCount?: number
+  userEmail?:     string
 }
 
 export function Sidebar({
-  isProvider = false,
-  userName   = '',
-  userSub    = 'Timișoara',
-  initials   = '?',
-  userEmail  = '',
+  isProvider    = false,
+  savedCount    = 0,
+  bookingsCount = 0,
+  userEmail     = '',
 }: SidebarProps) {
   const isAdmin = userEmail === ADMIN_EMAIL
 
   return (
-    <aside className="w-sidebar min-w-sidebar bg-white border-r border-border flex flex-col sticky top-0 h-screen">
-      <KidvoLogo />
+    <aside className="w-sidebar min-w-sidebar bg-white border-r border-border flex flex-col sticky top-0 h-screen overflow-y-auto">
+      {/* Logo — no bottom border, matches prototype padding */}
+      <div className="px-[14px] pt-[20px]">
+        <KidvoLogo />
+      </div>
 
-      <nav className="flex-1 px-2.5 py-4 flex flex-col overflow-y-auto">
+      <nav className="flex-1 px-[14px] pb-[16px] flex flex-col">
 
         <NavSection label="Discover">
-          <NavItem href="/main"   icon={<IconHome />}   label="Home" exact />
+          <NavItem href="/main"   icon={<IconHome />}   label="Home"   exact />
           <NavItem href="/browse" icon={<IconBrowse />} label="Browse" exact />
-          <NavItem href="/saved"  icon={<IconSaved />}  label="Saved" exact />
+          <NavItem href="/saved"  icon={<IconSaved />}  label="Saved"  badge={savedCount}    badgeVariant="purple" exact />
         </NavSection>
 
         {!isProvider && (
           <NavSection label="My Family">
             <NavItem href="/kids"     icon={<IconKids />}   label="My Kids"  exact />
-            <NavItem href="/bookings" icon={<IconTrials />} label="Bookings" exact />
+            <NavItem href="/bookings" icon={<IconTrials />} label="Bookings" badge={bookingsCount} badgeVariant="blue" exact />
           </NavSection>
         )}
 
@@ -202,20 +180,6 @@ export function Sidebar({
           </div>
         )}
       </nav>
-
-      {/* User profile */}
-      <div className="px-2.5 py-3.5 border-t border-border flex-shrink-0">
-        <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-[8px] hover:bg-sidebar-hover transition-colors">
-          <div className="w-7 h-7 rounded-full bg-[#f0e8ff] border border-[#ddd6fe] flex items-center justify-center font-display text-[10px] font-bold text-primary flex-shrink-0">
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-display text-xs font-semibold text-ink leading-tight truncate">{userName}</div>
-            <div className="text-[10.5px] text-ink-muted leading-tight">{userSub}</div>
-          </div>
-          <SignOutButton />
-        </div>
-      </div>
     </aside>
   )
 }
