@@ -44,33 +44,35 @@ export function CategoryPills({ categories }: CategoryPillsProps) {
   ]
 
   return (
-    <div className="flex gap-2 flex-wrap mb-[18px]">
-      {pills.map(cat => {
-        const isActive = active === cat.slug
+    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-[18px]">
+      <div className="flex gap-2 sm:flex-wrap" style={{ width: 'max-content' }}>
+        {pills.map(cat => {
+          const isActive = active === cat.slug
 
-        const activeStyle = isActive
-          ? cat.slug === 'all'
-            ? { background: '#1c1c27', color: '#ffffff', borderColor: '#1c1c27' }
-            : { background: '#f0e8ff', color: '#7c3aed', borderColor: '#7c3aed' }
-          : {}
+          const activeStyle = isActive
+            ? cat.slug === 'all'
+              ? { background: '#1c1c27', color: '#ffffff', borderColor: '#1c1c27' }
+              : { background: '#f0e8ff', color: '#7c3aed', borderColor: '#7c3aed' }
+            : {}
 
-        return (
-          <button
-            key={cat.slug}
-            onClick={() => select(cat.slug)}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-full font-display text-[13px] font-semibold transition-all border-[1.5px]',
-              isActive
-                ? ''
-                : 'bg-white border-border text-ink-mid hover:border-primary/40 hover:text-primary hover:bg-primary-lt/50'
-            )}
-            style={{ padding: '6px 14px', ...activeStyle }}
-          >
-            <span style={{ fontSize: '13px', lineHeight: 1 }}>{CATEGORY_EMOJI[cat.slug] ?? '✨'}</span>
-            {cat.name}
-          </button>
-        )
-      })}
+          return (
+            <button
+              key={cat.slug}
+              onClick={() => select(cat.slug)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full font-display text-[13px] font-semibold transition-all border-[1.5px] whitespace-nowrap',
+                isActive
+                  ? ''
+                  : 'bg-white border-border text-ink-mid hover:border-primary/40 hover:text-primary hover:bg-primary-lt/50'
+              )}
+              style={{ padding: '6px 14px', ...activeStyle }}
+            >
+              <span style={{ fontSize: '13px', lineHeight: 1 }}>{CATEGORY_EMOJI[cat.slug] ?? '✨'}</span>
+              {cat.name}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

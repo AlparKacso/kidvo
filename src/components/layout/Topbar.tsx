@@ -14,7 +14,7 @@ export function Topbar({ isProvider = false }: { isProvider?: boolean }) {
   const homeHref  = '/main'
 
   return (
-    <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-10">
+    <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-20">
 
       {/* Mobile */}
       <div className="flex md:hidden items-center gap-2 flex-1">

@@ -7,7 +7,7 @@ import { createClient }  from '@/lib/supabase/server'
 import type { ListingWithRelations } from '@/types/database'
 
 interface BrowsePageProps {
-  searchParams: Promise<{ category?: string; area?: string; age?: string; q?: string }>
+  searchParams: Promise<{ category?: string; area?: string; age?: string; q?: string; lang?: string }>
 }
 
 import type { Metadata } from 'next'
@@ -29,10 +29,15 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const params   = await searchParams
   const supabase = await createClient()
 
-  const [{ data: categoriesRaw }, { data: areasRaw }] = await Promise.all([
+  const [{ data: categoriesRaw }, { data: areasRaw }, { data: langRows }] = await Promise.all([
     supabase.from('categories').select('*').order('sort_order'),
     supabase.from('areas').select('*').order('name'),
+    supabase.from('listings').select('language').eq('status', 'active'),
   ])
+
+  const languages = [...new Set(
+    (langRows ?? []).map((r: any) => r.language as string).filter(Boolean)
+  )].sort()
 
   const categories = categoriesRaw as unknown as any[] | null
   const areas      = areasRaw      as unknown as any[] | null
@@ -69,6 +74,11 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     if (!isNaN(age)) {
       query = query.lte('age_min', age).gte('age_max', age)
     }
+  }
+
+  // Language filter
+  if (params.lang) {
+    query = query.eq('language', params.lang)
   }
 
   const { data: allListingsRaw } = await query
@@ -108,7 +118,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     }
   }
 
-  const hasActiveFilters = params.q || params.area || params.age || params.category
+  const hasActiveFilters = params.q || params.area || params.age || params.category || params.lang
 
   return (
     <AppShell>
@@ -129,7 +139,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
         {/* ── Search + filters ── */}
         <Suspense>
-          <SearchBar areas={areas ?? []} />
+          <SearchBar areas={areas ?? []} languages={languages} />
           <CategoryPills categories={categories ?? []} />
         </Suspense>
 
