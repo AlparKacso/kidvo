@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
+/* Logo — prototype: padding 2px 8px 22px inside the aside's 14px base */
 const KidvoLogo = () => (
-  <Link href="/main" className="flex items-center px-[8px] pb-[22px] pt-[2px] hover:opacity-80 transition-opacity">
+  <Link href="/main" className="flex items-center px-[8px] pt-[2px] pb-[22px] hover:opacity-80 transition-opacity">
     <span className="font-display font-black leading-none" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
       <span className="text-ink">kid</span>
       <span className="text-primary">vo</span>
@@ -33,13 +34,14 @@ function NavItem({ href, icon, label, badge, badgeVariant = 'purple', exact, exc
     <Link
       href={href}
       className={cn(
-        'flex items-center gap-[9px] px-[10px] py-[9px] rounded-[8px] text-[13.5px] font-display font-medium transition-colors relative',
+        'flex items-center gap-[9px] px-[10px] py-[9px] rounded-[8px] font-display text-[13.5px] font-medium transition-colors',
         active
           ? 'bg-ink text-white'
           : 'text-sidebar-text hover:bg-sidebar-hover hover:text-ink'
       )}
     >
-      <span className={cn('w-[15px] h-[15px] flex items-center justify-center flex-shrink-0', active ? 'opacity-100' : 'opacity-55')}>
+      {/* Prototype: 16×16 icons at 0.65 opacity inactive */}
+      <span className={cn('w-4 h-4 flex items-center justify-center flex-shrink-0', active ? 'opacity-100' : 'opacity-[.65]')}>
         {icon}
       </span>
       {label}
@@ -59,36 +61,34 @@ function NavItem({ href, icon, label, badge, badgeVariant = 'purple', exact, exc
   )
 }
 
+/* Prototype: nav-section margin-bottom 20px, nav-label margin-bottom 4px */
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-[20px]">
-      <span className="block font-display text-[10.5px] font-bold tracking-[.1em] uppercase text-ink-muted px-[10px] mb-1.5">
+      <span className="block font-display text-[10.5px] font-bold tracking-[.1em] uppercase text-ink-muted px-[10px] mb-[4px]">
         {label}
       </span>
-      <div className="flex flex-col gap-px">
+      <div className="flex flex-col">
         {children}
       </div>
     </div>
   )
 }
 
-/* ── SVG icons (15×15, currentColor) ── */
-const IconHome      = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 8l5.5-5.5L13 8M3.5 7v5.5a.5.5 0 0 0 .5.5h3V10h3v3h3a.5.5 0 0 0 .5-.5V7"/></svg>
-const IconBrowse    = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7 1.5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><line x1="11" y1="11" x2="14" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-const IconSaved     = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 13S2 9 2 5.5a3.5 3.5 0 0 1 5.5-2.9A3.5 3.5 0 0 1 13 5.5C13 9 7.5 13 7.5 13Z" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
-const IconKids      = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 13.5c0-2.5 2.4-4.5 5.5-4.5s5.5 2 5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none"/></svg>
-const IconTrials    = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 3V2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-const IconListings  = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-const IconAnalytics = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 12l3.5-4 3 2.5L12 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-const IconSettings  = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
-const IconAdmin     = () => <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L2 4v3.5c0 3 2.5 5.5 5.5 6 3-0.5 5.5-3 5.5-6V4L7.5 1.5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+/* ── SVG icons (16×16, currentColor, matching prototype stroke widths) ── */
+const IconHome      = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9l7-7 7 7M3.5 8v7a1 1 0 0 0 1 1H8V12h4v4h3.5a1 1 0 0 0 1-1V8"/></svg>
+const IconBrowse    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="8" cy="8" r="5.5"/><path d="M13 13l3 3"/></svg>
+const IconSaved     = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 14.5S2.5 10 2.5 6a4 4 0 0 1 6.5-3.1A4 4 0 0 1 15.5 6C15.5 10 9 14.5 9 14.5Z"/></svg>
+const IconKids      = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="9" cy="5.5" r="3"/><path d="M2.5 16c0-3 2.9-5.5 6.5-5.5s6.5 2.5 6.5 5.5"/></svg>
+const IconTrials    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2" y="3.5" width="14" height="11" rx="1.5"/><path d="M6 3.5V2M12 3.5V2M2 7.5h14"/></svg>
+const IconListings  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2.5" y="2" width="13" height="14" rx="1.5"/><path d="M6 6h6M6 9h6M6 12h4"/></svg>
+const IconAnalytics = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 13.5l4-4.5 3.5 3L13 5"/><path d="M13 5h3v3"/></svg>
+const IconSettings  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2.5"/></svg>
+const IconAdmin     = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 1.5L2.5 4.5v4c0 3.5 2.9 6.5 6.5 7 3.6-.5 6.5-3.5 6.5-7v-4L9 1.5Z"/><path d="M6 9l2 2 4-4"/></svg>
 
 function NudgeWidget() {
   return (
-    <div
-      className="rounded-[16px] p-4 text-white"
-      style={{ background: '#1c1c27' }}
-    >
+    <div className="rounded-[16px] p-4 text-white" style={{ background: '#1c1c27' }}>
       <div
         className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-2.5"
         style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.70)' }}
@@ -99,13 +99,8 @@ function NudgeWidget() {
           <path d="M4 15.5l2.5-4 2.5 1 2.5-1 2.5 4"/>
         </svg>
       </div>
-      <div className="font-display text-[14px] font-bold mb-1 leading-snug">
-        Book a free trial
-      </div>
-      <div
-        className="font-display text-[12px] leading-[1.5] mb-3"
-        style={{ color: 'rgba(255,255,255,0.50)' }}
-      >
+      <div className="font-display text-[14px] font-bold mb-1 leading-snug">Book a free trial</div>
+      <div className="font-display text-[12px] leading-[1.5] mb-3" style={{ color: 'rgba(255,255,255,0.50)' }}>
         Find your child's perfect activity and reserve a free trial in seconds.
       </div>
       <Link
@@ -136,19 +131,18 @@ export function Sidebar({
 }: SidebarProps) {
   const isAdmin = userEmail === ADMIN_EMAIL
 
+  /* Prototype aside: padding 20px 14px 16px, flex column */
   return (
-    <aside className="w-sidebar min-w-sidebar bg-white border-r border-border flex flex-col sticky top-0 h-screen overflow-y-auto">
-      {/* Logo — no bottom border, matches prototype padding */}
-      <div className="px-[14px] pt-[20px]">
-        <KidvoLogo />
-      </div>
+    <aside className="w-sidebar min-w-sidebar bg-white border-r border-border flex flex-col sticky top-0 h-screen overflow-y-auto px-[14px] pt-[20px] pb-[16px]">
 
-      <nav className="flex-1 px-[14px] pb-[16px] flex flex-col">
+      <KidvoLogo />
+
+      <nav className="flex-1 flex flex-col">
 
         <NavSection label="Discover">
           <NavItem href="/main"   icon={<IconHome />}   label="Home"   exact />
           <NavItem href="/browse" icon={<IconBrowse />} label="Browse" exact />
-          <NavItem href="/saved"  icon={<IconSaved />}  label="Saved"  badge={savedCount}    badgeVariant="purple" exact />
+          <NavItem href="/saved"  icon={<IconSaved />}  label="Saved"  badge={savedCount} badgeVariant="purple" exact />
         </NavSection>
 
         {!isProvider && (
@@ -173,12 +167,13 @@ export function Sidebar({
           )}
         </NavSection>
 
-        {/* Nudge widget — parents only */}
+        {/* Nudge widget — parents only, pushed to bottom */}
         {!isProvider && (
           <div className="mt-auto pt-3">
             <NudgeWidget />
           </div>
         )}
+
       </nav>
     </aside>
   )
