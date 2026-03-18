@@ -17,6 +17,8 @@
 - [x] **Listing cover photo upload + crop** — Interactive crop modal (canvas-based, no deps), locked to card aspect ratio with live preview. `Effort: M`
 - [x] **Google Maps pin on listing** — Field in listing form + "View on Google Maps →" link on detail page. `Effort: S`
 - [ ] **Provider Activities / Bookings / Analytics redesign** — The provider dashboard is what the partner sees every day. Polished UI = higher confidence. `Effort: L`
+  - [ ] **"Show contact details" CTA on listing detail page** — Hide provider phone/email behind a reveal button. Tracks intent between browsing and committing to a trial. `Effort: S`
+  - [ ] **"Contact reveals" as analytics funnel step** — Surface the count in provider analytics between *Total Views* (card → detail page clicks) and *Trial Requests*, making the full conversion funnel: Views → Contact Reveals → Trial Requests. `Effort: S`
 - [ ] **"Trial available" toggle audit** — Clarify what the toggle does vs our core promise "book a free trial". Consider surfacing as "*free trial if available" on cards/CTAs rather than a hidden toggle. `Effort: S`
 
 ---
