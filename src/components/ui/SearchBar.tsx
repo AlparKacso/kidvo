@@ -45,7 +45,7 @@ export function SearchBar({ areas, languages }: Props) {
   const hasFilters = q || area || age || lang
 
   return (
-    <div className="mb-5">
+    <div className="mb-2">
       {/* Combined search row */}
       <div className="flex items-center gap-2 bg-white border border-border rounded-xl px-3 py-2 mb-3 focus-within:border-primary transition-colors max-w-[680px]">
         {/* Search icon */}

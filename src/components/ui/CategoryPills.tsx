@@ -44,7 +44,7 @@ export function CategoryPills({ categories }: CategoryPillsProps) {
   ]
 
   return (
-    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-[18px] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+    <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
       <div className="flex gap-2 sm:flex-wrap" style={{ width: 'max-content' }}>
         {pills.map(cat => {
           const isActive = active === cat.slug
