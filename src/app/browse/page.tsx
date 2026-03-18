@@ -135,8 +135,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
         {/* ── Search + filters ── */}
         <Suspense>
-          <SearchBar areas={areas ?? []} languages={languages} />
-          <CategoryPills categories={categories ?? []} />
+          <div className="flex flex-col gap-2">
+            <SearchBar areas={areas ?? []} languages={languages} />
+            <CategoryPills categories={categories ?? []} />
+          </div>
         </Suspense>
 
         {/* ── Empty state ── */}
