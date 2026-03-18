@@ -98,6 +98,12 @@ export default async function ActivityDetailPage({ params }: Props) {
 
             {/* Header card */}
             <div className="bg-white border border-border rounded-lg overflow-hidden relative">
+              {/* Cover photo */}
+              {listing.cover_image_url && (
+                <div className="h-[220px] overflow-hidden">
+                  <img src={listing.cover_image_url} alt={listing.title} className="w-full h-full object-cover" />
+                </div>
+              )}
               <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent }} />
               <div className="pl-6 pr-5 py-5">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -177,6 +183,17 @@ export default async function ActivityDetailPage({ params }: Props) {
                     <div>
                       <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">Location</div>
                       <div className="text-sm text-ink">{listing.address}</div>
+                      {listing.maps_url && (
+                        <a
+                          href={listing.maps_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-primary font-display font-semibold mt-1 hover:underline"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a5 5 0 0 1 5 5c0 3.5-5 8-5 8s-5-4.5-5-8a5 5 0 0 1 5-5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="6.5" r="1.5" fill="currentColor"/></svg>
+                          View on Google Maps →
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}

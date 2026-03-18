@@ -63,12 +63,15 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
         <Link href={`/browse/${listing.id}`} className="absolute inset-0 z-0" aria-label={listing.title} />
       )}
 
-      {/* ── Header: gradient + large emoji ── */}
+      {/* ── Header: cover photo or gradient + emoji ── */}
       <div
-        className="h-[120px] flex items-center justify-center relative"
-        style={{ background: `linear-gradient(135deg, ${hexToRgba(accent, 0.15)}, ${hexToRgba(accent, 0.40)})` }}
+        className="h-[120px] flex items-center justify-center relative overflow-hidden"
+        style={!(listing as any).cover_image_url ? { background: `linear-gradient(135deg, ${hexToRgba(accent, 0.15)}, ${hexToRgba(accent, 0.40)})` } : {}}
       >
-        <span style={{ fontSize: '52px', lineHeight: 1 }}>{CATEGORY_EMOJI[listing.category.slug] ?? '✨'}</span>
+        {(listing as any).cover_image_url
+          ? <img src={(listing as any).cover_image_url} alt={listing.title} className="absolute inset-0 w-full h-full object-cover" />
+          : <span style={{ fontSize: '52px', lineHeight: 1 }}>{CATEGORY_EMOJI[listing.category.slug] ?? '✨'}</span>
+        }
 
         {/* Save button — top-right overlay */}
         {!isFull && (

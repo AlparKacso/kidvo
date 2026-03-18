@@ -96,11 +96,13 @@ export interface Database {
           address:         string | null
           language:        string
           includes:        string[] | null
-          trial_available: boolean
-          featured:        boolean
-          status:          ListingStatus
-          created_at:      string
-          updated_at:      string
+          trial_available:  boolean
+          featured:         boolean
+          status:           ListingStatus
+          cover_image_url:  string | null
+          maps_url:         string | null
+          created_at:       string
+          updated_at:       string
         }
         Insert: Omit<Database['public']['Tables']['listings']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['listings']['Insert']>

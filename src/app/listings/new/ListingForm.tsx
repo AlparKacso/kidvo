@@ -19,6 +19,7 @@ interface FormData {
   category_id:     string
   area_id:         string
   address:         string
+  maps_url:        string
   language:        string[]
   age_min:         string
   age_max:         string
@@ -29,6 +30,7 @@ interface FormData {
   description:     string
   includes:        string[]
   trial_available: boolean
+  cover_image_url: string
 }
 
 const DAYS  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -41,10 +43,10 @@ const TIMES = [
 const STEPS = ['Before you start', 'Basic info', 'Schedule', 'Details', 'Preview & publish']
 const EMPTY_SCHEDULE: ScheduleRow = { day_of_week: 0, time_start: '16:00', time_end: '17:00', group_label: '' }
 const INITIAL: FormData = {
-  title: '', category_id: '', area_id: '', address: '', language: ['Romanian'],
+  title: '', category_id: '', area_id: '', address: '', maps_url: '', language: ['Romanian'],
   age_min: '', age_max: '', schedules: [{ ...EMPTY_SCHEDULE }],
   price_monthly: '', spots_total: '', spots_available: '', description: '',
-  includes: [''], trial_available: true,
+  includes: [''], trial_available: true, cover_image_url: '',
 }
 
 function StepIndicator({ current }: { current: number }) {
@@ -144,12 +146,14 @@ interface ListingFormProps {
 }
 
 export function ListingForm({ categories, areas, providerId, listingId, initialData }: ListingFormProps) {
-  const isEdit                    = !!listingId
-  const [step, setStep]           = useState(0)
-  const [data, setData]           = useState<FormData>({ ...INITIAL, ...initialData })
-  const [saving, setSaving]       = useState(false)
-  const [error,  setError]        = useState('')
-  const [showTerms, setShowTerms] = useState(false)
+  const isEdit                      = !!listingId
+  const [step, setStep]             = useState(0)
+  const [data, setData]             = useState<FormData>({ ...INITIAL, ...initialData })
+  const [saving, setSaving]         = useState(false)
+  const [error,  setError]          = useState('')
+  const [showTerms, setShowTerms]   = useState(false)
+  const [coverFile, setCoverFile]   = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string>(initialData?.cover_image_url ?? '')
 
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
     setData(prev => ({ ...prev, [key]: value }))
@@ -177,6 +181,22 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
     setError('')
     try {
       const supabase = createClient()
+
+      // Upload cover image if a new file was selected
+      let coverImageUrl = data.cover_image_url
+      if (coverFile) {
+        const ext  = coverFile.name.split('.').pop() ?? 'jpg'
+        const path = `${providerId}/${Date.now()}.${ext}`
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('listing-images')
+          .upload(path, coverFile, { upsert: true, contentType: coverFile.type })
+        if (uploadErr) throw uploadErr
+        const { data: { publicUrl } } = supabase.storage
+          .from('listing-images')
+          .getPublicUrl(uploadData.path)
+        coverImageUrl = publicUrl
+      }
+
       const payload = {
         category_id:     data.category_id,
         area_id:         data.area_id,
@@ -188,9 +208,11 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
         spots_total:     data.spots_total ? parseInt(data.spots_total) : null,
         spots_available: data.spots_available ? parseInt(data.spots_available) : null,
         address:         data.address,
+        maps_url:        data.maps_url || null,
         language:        data.language.join(', '),
         includes:        data.includes.filter(Boolean),
         trial_available: data.trial_available,
+        cover_image_url: coverImageUrl || null,
         status:          'pending',
       }
       let finalListingId = listingId
@@ -315,6 +337,10 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                     <Label hint="Street address where the activity takes place">Address</Label>
                     <input className={inputCls} placeholder="e.g. Str. Muresului 12, Fabric" value={data.address} onChange={e => set('address', e.target.value)} />
                   </div>
+                  <div>
+                    <Label hint="Paste the Google Maps share link so parents can find you easily">Google Maps link (optional)</Label>
+                    <input className={inputCls} placeholder="https://maps.app.goo.gl/..." value={data.maps_url} onChange={e => set('maps_url', e.target.value)} />
+                  </div>
                 </div>
                 <div>
                   <Label>Languages spoken</Label>
@@ -391,6 +417,48 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           {/* Step 3 */}
           {step === 3 && (
             <div className="flex flex-col gap-5">
+
+              {/* Cover photo */}
+              <div>
+                <Label hint="Square or landscape photo works best. It will be displayed on your activity card.">Cover photo (optional)</Label>
+                <div className="flex items-start gap-4 mt-1">
+                  {/* Preview or placeholder */}
+                  <div
+                    className="w-24 h-24 rounded-lg border-2 border-dashed border-border bg-surface flex items-center justify-center flex-shrink-0 overflow-hidden"
+                    style={coverPreview ? { borderStyle: 'solid', borderColor: 'transparent' } : {}}
+                  >
+                    {coverPreview
+                      ? <img src={coverPreview} alt="Cover preview" className="w-full h-full object-cover" />
+                      : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-ink-muted opacity-40"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><circle cx="8.5" cy="10.5" r="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M3 16l4.5-4.5 3 3 3-3 4 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    }
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="inline-flex items-center gap-2 cursor-pointer px-3 py-2 rounded border border-border bg-bg font-display text-xs font-semibold text-ink-mid hover:border-primary hover:text-primary transition-all">
+                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 4l3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 10v1.5A1.5 1.5 0 0 0 2.5 13h9a1.5 1.5 0 0 0 1.5-1.5V10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                      {coverPreview ? 'Change photo' : 'Upload photo'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          setCoverFile(file)
+                          setCoverPreview(URL.createObjectURL(file))
+                        }}
+                      />
+                    </label>
+                    {coverPreview && (
+                      <button type="button" onClick={() => { setCoverFile(null); setCoverPreview(''); set('cover_image_url', '') }}
+                        className="text-xs text-ink-muted hover:text-danger transition-colors text-left">
+                        Remove photo
+                      </button>
+                    )}
+                    <p className="text-[11px] text-ink-muted">JPG, PNG or WebP · max 5 MB</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 <div>
                   <Label hint="Consider fair local pricing">Monthly price (RON)</Label>
