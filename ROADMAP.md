@@ -14,9 +14,10 @@
 ## Phase 1 — Provider-First (Before First Partner Outreach)
 *The first partner is a provider. Their listing creation & management experience must be polished.*
 
-- [ ] **Listing cover photo upload + crop** — Emoji placeholders look unfinished. Real photos are the #1 visual differentiator in browse. `Effort: M`
-- [ ] **Google Maps pin on listing** — Parents evaluate activities by proximity. A map link on listing detail adds trust and utility. `Effort: S`
+- [x] **Listing cover photo upload + crop** — Interactive crop modal (canvas-based, no deps), locked to card aspect ratio with live preview. `Effort: M`
+- [x] **Google Maps pin on listing** — Field in listing form + "View on Google Maps →" link on detail page. `Effort: S`
 - [ ] **Provider Activities / Bookings / Analytics redesign** — The provider dashboard is what the partner sees every day. Polished UI = higher confidence. `Effort: L`
+- [ ] **"Trial available" toggle audit** — Clarify what the toggle does vs our core promise "book a free trial". Consider surfacing as "*free trial if available" on cards/CTAs rather than a hidden toggle. `Effort: S`
 
 ---
 
@@ -36,3 +37,9 @@
 
 - [ ] **Edit review** (text → moderation flow, rating → instant update) — Reviews drive conversion. Fixing typos or updating scores = more honest reviews. `Effort: M`
 - [ ] **SEO optimization** — Organic search is the long-term acquisition channel. Metadata, structured data, sitemap. `Effort: M`
+
+---
+
+## Landing Page
+- [ ] **Replace landing page cards with real listing photos** — Now that listings have cover images, the landing page showcase cards should pull from live data instead of static placeholders. `Effort: S`
+- [ ] **"I'm a provider" button → scroll to For Providers section** — Currently navigates away or does nothing useful. Should anchor-scroll to the provider value prop section on the same page. `Effort: XS`
