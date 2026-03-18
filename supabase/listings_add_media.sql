@@ -14,7 +14,12 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Storage RLS: providers can upload/update/delete their own listing images
+-- Storage RLS: drop first so the file is safe to re-run
+DROP POLICY IF EXISTS "providers_upload_listing_images"  ON storage.objects;
+DROP POLICY IF EXISTS "providers_update_listing_images"  ON storage.objects;
+DROP POLICY IF EXISTS "providers_delete_listing_images"  ON storage.objects;
+DROP POLICY IF EXISTS "public_read_listing_images"       ON storage.objects;
+
 CREATE POLICY "providers_upload_listing_images"
   ON storage.objects FOR INSERT
   TO authenticated
