@@ -110,7 +110,7 @@ export default async function LandingPage() {
       <main className="flex-1">
 
         {/* ── Hero ────────────────────────────────────────────────────────── */}
-        <section className="max-w-[1200px] mx-auto px-5 md:px-8 pt-10 md:pt-14 pb-12 md:pb-16 text-center">
+        <section className="max-w-[1200px] mx-auto px-5 md:px-8 pt-10 md:pt-14 pb-6 md:pb-8 text-center">
 
           {/* Badge */}
           <div className="inline-block mb-6 font-display font-bold text-primary rounded-full"
@@ -157,7 +157,7 @@ export default async function LandingPage() {
           </div>
 
           {/* Stats row — border-top separator, flex-centered */}
-          <div className="border-t border-border mt-12 pt-10 flex flex-wrap justify-center gap-x-8 gap-y-5">
+          <div className="border-t border-border mt-6 md:mt-8 pt-5 md:pt-7 flex flex-wrap justify-center gap-x-8 gap-y-5">
             {[
               { value: '120+',  label: 'Activities',    color: '#c38cfa' },
               { value: '48',    label: 'Providers',      color: '#2aa7ff' },
