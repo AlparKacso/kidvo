@@ -41,5 +41,5 @@
 ---
 
 ## Landing Page
-- [ ] **Replace landing page cards with real listing photos** — Now that listings have cover images, the landing page showcase cards should pull from live data instead of static placeholders. `Effort: S`
-- [ ] **"I'm a provider" button → scroll to For Providers section** — Currently navigates away or does nothing useful. Should anchor-scroll to the provider value prop section on the same page. `Effort: XS`
+- [x] **Replace landing page cards with real listing photos** — Now that listings have cover images, the landing page showcase cards should pull from live data instead of static placeholders. `Effort: S`
+- [x] **"I'm a provider" button → scroll to For Providers section** — Currently navigates away or does nothing useful. Should anchor-scroll to the provider value prop section on the same page. `Effort: XS`
