@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { LegalModal } from '@/components/ui/LegalModal'
 import { TermsContent } from '@/components/ui/LegalContent'
+import { CoverCropModal } from '@/components/ui/CoverCropModal'
 import type { Category, Area } from '@/types/database'
 
 interface ScheduleRow {
@@ -152,8 +153,10 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   const [saving, setSaving]         = useState(false)
   const [error,  setError]          = useState('')
   const [showTerms, setShowTerms]   = useState(false)
-  const [coverFile, setCoverFile]   = useState<File | null>(null)
+  const [coverFile, setCoverFile]       = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string>(initialData?.cover_image_url ?? '')
+  const [rawImageSrc, setRawImageSrc]   = useState<string>('')
+  const [showCropModal, setShowCropModal] = useState(false)
 
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
     setData(prev => ({ ...prev, [key]: value }))
@@ -443,8 +446,14 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                         onChange={e => {
                           const file = e.target.files?.[0]
                           if (!file) return
-                          setCoverFile(file)
-                          setCoverPreview(URL.createObjectURL(file))
+                          const reader = new FileReader()
+                          reader.onload = () => {
+                            setRawImageSrc(reader.result as string)
+                            setShowCropModal(true)
+                          }
+                          reader.readAsDataURL(file)
+                          // reset input so same file can be re-selected
+                          e.target.value = ''
                         }}
                       />
                     </label>
@@ -562,6 +571,22 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
         <LegalModal title="Terms of Use" onClose={() => setShowTerms(false)}>
           <TermsContent />
         </LegalModal>
+      )}
+
+      {showCropModal && rawImageSrc && (
+        <CoverCropModal
+          src={rawImageSrc}
+          onConfirm={(blob, previewUrl) => {
+            setCoverFile(new File([blob], 'cover.jpg', { type: 'image/jpeg' }))
+            setCoverPreview(previewUrl)
+            setShowCropModal(false)
+            setRawImageSrc('')
+          }}
+          onCancel={() => {
+            setShowCropModal(false)
+            setRawImageSrc('')
+          }}
+        />
       )}
     </div>
   )
