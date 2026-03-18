@@ -26,14 +26,6 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-// ── Sample showcase activities (static, for marketing only) ───────────────
-const SHOWCASE = [
-  { slug: 'sport',      accent: '#523650', title: 'Junior Football Academy',   provider: 'Sport Arena Nord',   ages: '5–12', days: 'Mon · Wed · Fri', price: 80,  emoji: '⚽' },
-  { slug: 'coding',     accent: '#065f46', title: 'Scratch & Python for Kids', provider: 'TechHub Fabric',     ages: '8–15', days: 'Saturdays',       price: 120, emoji: '💻' },
-  { slug: 'arts',       accent: '#7c3aed', title: 'Creative Arts Studio',      provider: 'ArtSpace Centru',    ages: '4–10', days: 'Tue · Thu',       price: 90,  emoji: '🎨' },
-  { slug: 'gymnastics', accent: '#b45309', title: 'Rhythmic Gymnastics',       provider: 'Olimpic Club',       ages: '5–14', days: 'Mon · Wed',       price: 110, emoji: '🤸' },
-]
-
 // ── How it works steps ────────────────────────────────────────────────────
 const HOW_IT_WORKS = [
   {
@@ -74,11 +66,27 @@ const HOW_IT_WORKS = [
 // ── Page ──────────────────────────────────────────────────────────────────
 export default async function LandingPage() {
   const supabase = await createClient()
-  const { data: categoriesRaw } = await supabase
-    .from('categories')
-    .select('slug, name, accent_color')
-    .order('sort_order')
+  const [{ data: categoriesRaw }, { data: showcaseRaw }] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('slug, name, accent_color')
+      .order('sort_order'),
+    supabase
+      .from('listings')
+      .select('id, title, cover_image_url, price_monthly, age_min, age_max, category:categories(slug, name, accent_color), area:areas(name)')
+      .eq('status', 'active')
+      .not('cover_image_url', 'is', null)
+      .order('featured', { ascending: false })
+      .limit(4),
+  ])
   const categories = (categoriesRaw ?? []) as { slug: string; name: string; accent_color: string }[]
+  type ShowcaseListing = {
+    id: string; title: string; cover_image_url: string | null; price_monthly: number
+    age_min: number; age_max: number
+    category: { slug: string; name: string; accent_color: string }
+    area: { name: string }
+  }
+  const showcase = (showcaseRaw ?? []) as ShowcaseListing[]
 
   return (
     <div className="min-h-screen bg-bg font-display flex flex-col">
@@ -147,13 +155,13 @@ export default async function LandingPage() {
             >
               🔍 Browse activities
             </Link>
-            <Link
-              href="/auth/signup"
+            <a
+              href="#for-providers"
               className="inline-flex items-center gap-2 border-[1.5px] border-border bg-white text-ink font-display font-bold rounded-[16px] hover:border-ink/30 hover:shadow-card transition-all"
               style={{ fontSize: '16px', padding: '14px 28px' }}
             >
               I&apos;m a provider →
-            </Link>
+            </a>
           </div>
 
           {/* Stats row — border-top separator, flex-centered */}
@@ -202,70 +210,97 @@ export default async function LandingPage() {
             ))}
           </div>
 
-          {/* Cards grid — 4 cards, act-card-lg style */}
+          {/* Cards grid — up to 4 real listings with cover photos */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {SHOWCASE.map(act => (
-              <Link
-                key={act.title}
-                href="/browse"
-                className="bg-white rounded-[22px] border-[1.5px] border-border overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all block"
-              >
-                {/* Header — gradient + large emoji */}
-                <div
-                  className="h-[120px] flex items-center justify-center"
-                  style={{ background: `linear-gradient(135deg, ${hexToRgba(act.accent, 0.15)}, ${hexToRgba(act.accent, 0.40)})` }}
+            {showcase.map(act => {
+              const accent = act.category.accent_color ?? '#7c3aed'
+              const emoji  = CATEGORY_EMOJI[act.category.slug] ?? '✨'
+              return (
+                <Link
+                  key={act.id}
+                  href={`/browse/${act.id}`}
+                  className="bg-white rounded-[22px] border-[1.5px] border-border overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all block"
                 >
-                  <span style={{ fontSize: '52px', lineHeight: 1 }}>{act.emoji}</span>
-                </div>
-
-                {/* Body */}
-                <div className="p-4">
-                  <div className="flex flex-wrap gap-1.5 mb-2.5">
-                    <span
-                      className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
-                      style={{ background: hexToRgba(act.accent, 0.12), color: act.accent, padding: '3px 9px' }}
+                  {/* Header — real photo or emoji fallback */}
+                  {act.cover_image_url ? (
+                    <div className="h-[140px] overflow-hidden">
+                      <img
+                        src={act.cover_image_url}
+                        alt={act.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="h-[140px] flex items-center justify-center"
+                      style={{ background: `linear-gradient(135deg, ${hexToRgba(accent, 0.15)}, ${hexToRgba(accent, 0.40)})` }}
                     >
-                      Ages {act.ages}
-                    </span>
-                    <span
-                      className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
-                      style={{ background: '#f1f0f5', color: '#55527a', padding: '3px 9px' }}
+                      <span style={{ fontSize: '52px', lineHeight: 1 }}>{emoji}</span>
+                    </div>
+                  )}
+
+                  {/* Body */}
+                  <div className="p-4">
+                    <div className="flex flex-wrap gap-1.5 mb-2.5">
+                      <span
+                        className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
+                        style={{ background: hexToRgba(accent, 0.12), color: accent, padding: '3px 9px' }}
+                      >
+                        {act.category.name}
+                      </span>
+                      <span
+                        className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
+                        style={{ background: '#f1f0f5', color: '#55527a', padding: '3px 9px' }}
+                      >
+                        Ages {act.age_min}–{act.age_max}
+                      </span>
+                    </div>
+
+                    <div
+                      className="font-display font-extrabold text-ink mb-1 leading-snug"
+                      style={{ fontSize: '15px', letterSpacing: '-0.3px' }}
                     >
-                      {act.days}
-                    </span>
+                      {act.title}
+                    </div>
+                    <div className="text-[13px] text-ink-muted">{act.area.name}</div>
                   </div>
 
-                  <div
-                    className="font-display font-extrabold text-ink mb-1 leading-snug"
-                    style={{ fontSize: '16px', letterSpacing: '-0.3px' }}
-                  >
-                    {act.title}
-                  </div>
-                  <div className="text-[13px] text-ink-muted">{act.provider}</div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center border-t border-border px-4 py-3 gap-2">
-                  <div className="whitespace-nowrap">
-                    <span className="font-display font-extrabold text-ink" style={{ fontSize: '16px' }}>
-                      {act.price} RON
+                  {/* Footer */}
+                  <div className="flex items-center border-t border-border px-4 py-3 gap-2">
+                    <div className="whitespace-nowrap">
+                      <span className="font-display font-extrabold text-ink" style={{ fontSize: '16px' }}>
+                        {act.price_monthly} RON
+                      </span>
+                      <span className="text-[11px] text-ink-muted">/mo</span>
+                    </div>
+                    <span
+                      className="ml-auto whitespace-nowrap rounded-full font-display text-[12px] font-bold"
+                      style={{ background: '#e8fde9', color: '#15803d', padding: '5px 12px' }}
+                    >
+                      Free trial
                     </span>
-                    <span className="text-[11px] text-ink-muted">/mo</span>
                   </div>
-                  <span
-                    className="ml-auto whitespace-nowrap rounded-full font-display text-[12px] font-bold"
-                    style={{ background: '#e8fde9', color: '#15803d', padding: '5px 12px' }}
-                  >
-                    Free trial
-                  </span>
+                </Link>
+              )
+            })}
+
+            {/* Fill remaining slots with a browse CTA if fewer than 4 real listings */}
+            {showcase.length < 4 && showcase.length > 0 && (
+              <Link
+                href="/browse"
+                className="bg-white rounded-[22px] border-[1.5px] border-dashed border-border overflow-hidden shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center p-8 text-center gap-3"
+              >
+                <span style={{ fontSize: '40px', lineHeight: 1 }}>🔍</span>
+                <div className="font-display font-bold text-ink-mid" style={{ fontSize: '14px' }}>
+                  See all activities →
                 </div>
               </Link>
-            ))}
+            )}
           </div>
         </section>
 
         {/* ── Provider section (dark) ──────────────────────────────────────── */}
-        <section className="max-w-[1200px] mx-auto px-5 md:px-8 pb-14 md:pb-18">
+        <section id="for-providers" className="max-w-[1200px] mx-auto px-5 md:px-8 pb-14 md:pb-18">
           <div className="rounded-2xl p-6 md:p-12 relative overflow-hidden" style={{ background: '#1c1c27' }}>
 
             {/* Decorative gradient orbs */}
