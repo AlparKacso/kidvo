@@ -144,13 +144,13 @@ function ProgRow({ label, pct, color, val }: { label: string; pct: number; color
 }
 
 /* Recommended (dark) card */
-function RecommendedCard({ listing }: { listing: any }) {
+function RecommendedCard({ listing, forKid }: { listing: any; forKid?: string }) {
   if (!listing) return null
   const cat = listing.category as any
   return (
     <div className="rounded-[22px] p-[22px] text-white" style={{ background: '#1c1c27', boxShadow: '0 6px 28px rgba(90,70,140,.12)' }}>
       <div className="font-display text-[10.5px] font-bold tracking-[.1em] uppercase mb-2.5" style={{ color: '#f0e8ff' }}>
-        ⚡ RECOMMENDED FOR YOU
+        ⚡ {forKid ? `FOR ${forKid.toUpperCase()}` : 'RECOMMENDED FOR YOU'}
       </div>
       <div
         className="w-[42px] h-[42px] rounded-[11px] flex items-center justify-center mb-3 text-xl"
@@ -384,29 +384,40 @@ export default async function DashboardPage() {
     label: c.name,
   }))
 
-  // Recommended listing — scored by kid interests (+3), age match (+2), area match (+1)
+  // Recommended listing — random kid + random pick from top-5 scored pool
+  // Server component re-renders on every navigation → Math.random() rotates naturally
   const savedIds    = new Set(allSaves.map((s: any) => (s.listing as any)?.id))
   const bookedIds   = new Set((trialsRes.data ?? []).map((t: any) => (t.listing as any)?.id))
   const allListings = topListingRes.data ?? []
-  const kid         = children[0] as any | undefined
-  const kidYear     = kid?.birth_year as number | undefined
-  const kidAge      = kidYear ? new Date().getFullYear() - kidYear : null
-  const kidInterests: string[] = kid?.interests ?? []
-  const kidAreaId: string | null = kid?.area_id ?? null
+
+  // Pick a random kid each render
+  const recKid = children.length > 0
+    ? (children[Math.floor(Math.random() * children.length)] as any)
+    : undefined
+  const recKidYear:      number | undefined  = recKid?.birth_year
+  const recKidAge:       number | null       = recKidYear ? new Date().getFullYear() - recKidYear : null
+  const recKidInterests: string[]            = recKid?.interests ?? []
+  const recKidAreaId:    string | null       = recKid?.area_id ?? null
 
   const scored = allListings
     .filter((l: any) => !savedIds.has(l.id) && !bookedIds.has(l.id))
     .map((l: any) => {
-      const cat      = (l.category as any)
+      const cat = (l.category as any)
       let score = 0
-      if (kidInterests.length > 0 && cat?.slug && kidInterests.includes(cat.slug)) score += 3
-      if (kidAge !== null && l.age_min <= kidAge && l.age_max >= kidAge)            score += 2
-      if (kidAreaId && l.area_id === kidAreaId)                                     score += 1
+      if (recKidInterests.length > 0 && cat?.slug && recKidInterests.includes(cat.slug)) score += 3
+      if (recKidAge !== null && l.age_min <= recKidAge && l.age_max >= recKidAge)          score += 2
+      if (recKidAreaId && l.area_id === recKidAreaId)                                      score += 1
       return { ...l, _score: score }
     })
     .sort((a: any, b: any) => b._score - a._score)
 
-  const recommended = scored[0] ?? allListings.find((l: any) => !savedIds.has(l.id)) ?? allListings[0]
+  // Pick randomly from the top-5 so the card feels fresh each visit
+  const topPool    = scored.slice(0, 5)
+  const recListing = topPool.length > 0
+    ? topPool[Math.floor(Math.random() * topPool.length)]
+    : (allListings.find((l: any) => !savedIds.has(l.id)) ?? allListings[0])
+  const recommended    = recListing
+  const recommendedFor = recKid?.name as string | undefined
 
   // First kid for profile card
   const firstKid     = children[0]
@@ -497,7 +508,7 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-[14px]">
 
           {/* Recommended dark card */}
-          <RecommendedCard listing={recommended} />
+          <RecommendedCard listing={recommended} forKid={recommendedFor} />
 
           {/* Activity mix donuts */}
           {donutData.length > 0 && (
