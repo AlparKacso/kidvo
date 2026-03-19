@@ -300,7 +300,7 @@ export default async function LandingPage() {
         </section>
 
         {/* ── Provider section (dark) ──────────────────────────────────────── */}
-        <section id="for-providers" className="max-w-[1200px] mx-auto px-5 md:px-8 pb-14 md:pb-18">
+        <section id="for-providers" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 md:px-8 pb-14 md:pb-18">
           <div className="rounded-2xl p-6 md:p-12 relative overflow-hidden" style={{ background: '#1c1c27' }}>
 
             {/* Decorative gradient orbs */}
@@ -389,7 +389,7 @@ export default async function LandingPage() {
         </section>
 
         {/* ── How it works ─────────────────────────────────────────────────── */}
-        <section id="how-it-works" className="max-w-[1200px] mx-auto px-5 md:px-8 pb-16 md:pb-24">
+        <section id="how-it-works" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 md:px-8 pb-16 md:pb-24">
           <div className="text-center mb-8 md:mb-10">
             <div className="font-display text-[10px] font-bold tracking-widest uppercase text-ink-muted mb-2.5">Simple by design</div>
             <h2 className="font-display text-2xl md:text-3xl font-bold text-ink">How kidvo works</h2>
