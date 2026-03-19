@@ -4,56 +4,60 @@
 
 ---
 
-## ✅ Security (Done)
-- [x] RLS enabled on all public tables (`listings`, `trial_requests`, `users`, `children`, `areas`, `child_interests`, `categories`, `saves`, `listing_schedules`, `listing_views`, `tips`, `providers`)
-- [x] `listing_views` INSERT policy tightened (`WITH CHECK user_id = auth.uid() OR user_id IS NULL`)
-- [x] `contact_reveals` table created with RLS policies
+## ✅ Security
+- [x] RLS enabled on all public tables
+- [x] `listing_views` INSERT policy tightened
+- [x] `contact_reveals` table with RLS policies
+- [x] RLS UPDATE policies for `trial_requests` + `saves` (child_id / kid_id reassignment)
 - [ ] Leaked password protection → enable manually in Supabase dashboard (Auth → Security)
 
 ---
 
-## Phase 1 — Provider-First (Before First Partner Outreach)
+## Phase 1 — Provider-First
 *The first partner is a provider. Their listing creation & management experience must be polished.*
 
-- [x] **Listing cover photo upload + crop** — Interactive crop modal (canvas-based, no deps), locked to card aspect ratio with live preview. `Effort: M`
-- [x] **Google Maps pin on listing** — Field in listing form + "View on Google Maps →" link on detail page. `Effort: S`
-- [x] **"Show contact details" CTA on listing detail page** — Hides phone/email behind a reveal button. Requires login. Fires `contact_reveals` event on open.
-- [x] **"Contact reveals" as analytics funnel step** — Views → Contact Reveals → Trial Requests funnel live in provider analytics.
-- [ ] **Provider Activities page redesign** — `/listings` list view: match new design language, better status indicators, quick-actions per listing. `Effort: M`
-- [ ] **Provider Bookings page redesign** — `/listings/bookings`: cleaner layout, parent info at a glance, confirm/decline flow polished. `Effort: M`
-- [ ] **Provider Analytics page redesign** — `/listings/analytics`: visual funnel, better stat hierarchy. `Effort: M`
-- [ ] **"Trial available" toggle audit** — Clarify what the toggle does vs our core promise "book a free trial". ⚠️ *Product decision needed: remove entirely (all listings always offer a trial) or keep as explicit opt-in?* `Effort: S`
+- [x] Listing cover photo upload + crop `M`
+- [x] Google Maps pin on listing `S`
+- [x] "Show contact details" CTA — login-gated reveal, fires `contact_reveals` event
+- [x] Contact reveals funnel in provider analytics (Views → Reveals → Trial Requests)
+- [x] **Trial sessions — Option C** — Default ON; provider can disable with a contextual reason (Cohort-based / At capacity / Arrange directly). Reason shown to parents instead of generic message. Copy audited across all surfaces. `S`
+- [ ] Provider Activities page redesign `M`
+- [ ] Provider Bookings page redesign `M`
+- [ ] Provider Analytics page redesign `M`
 
 ---
 
-## Phase 2 — Parent Experience Polish
+## Phase 2 — Parent Experience
 *Once a provider is live, parents need a compelling, bug-free experience to convert.*
 
-- [x] **Fix internal nav links & CTAs** — "For providers" nav → `#for-providers`, "See how it works" → `#how-it-works`, `trial_available` respected across cards and detail page.
-- [ ] **Dashboard: fix Activity Mix + Activity Interest** — Widgets show empty/wrong data. Better to fix or hide than mislead. `Effort: M`
-- [ ] **Dashboard: Recommended cards per kid (tab selector)** — Personalization is the core UX promise. One card per kid makes it real. `Effort: M`
-- [ ] **Dashboard: "Kids added / Trials booked / First review" onboarding card** — Nudges parents toward completing profile & booking. `Effort: S`
-- [x] **My Bookings — grouped by kid** — Families with 2+ kids need this. Low data complexity, high UX clarity.
-- [x] **"Kids & Activities" — merge Saved + Bookings under My Kids** — Rename page/nav to "Kids & Activities". Merge saved listings and bookings per child (collapsed to 3, expand available). No-kids flat view. Unassigned bucket for saves/bookings predating child creation. Kid selector on trial booking modal (same as save CTA). Remove separate Saved/Bookings nav items. `Effort: M`
+- [x] Fix internal nav links & anchor scroll offsets (mobile)
+- [x] `trial_available` respected across ActivityCard, detail page, Saved, Kids & Activities
+- [x] My Bookings — grouped by kid
+- [x] **Kids & Activities** — merged Saved + Bookings per child; no-kids flat view; unassigned bucket; kid selector on trial booking; inline reassignment with error surfacing `M`
+- [x] **Featured listings — hybrid ranking** — Auto-qualify by quality floor (photo + description + ≥1 review), sort by review count; capped at 8; manual `featured` flag still works `S`
+- [x] **Dashboard recommendations** — Scored by kid interests (+3), age range (+2), same area (+1); excludes already-saved/booked `S`
+- [ ] Dashboard: fix Activity Mix + Activity Interest widgets `M`
+- [ ] Dashboard: Recommended cards per kid (tab selector, multiple kids) `M`
+- [ ] Dashboard: onboarding card (Kids added / Trials booked / First review) `S`
 
 ---
 
 ## Phase 3 — Trust & Quality
-*Needed before any marketing push or word-of-mouth referrals.*
+*Needed before any marketing push.*
 
-- [ ] **Edit review** (text → moderation flow, rating → instant update) — Reviews drive conversion. Fixing typos or updating scores = more honest reviews. `Effort: M`
-- [ ] **SEO optimization** — Organic search is the long-term acquisition channel. Metadata, structured data, sitemap. `Effort: M`
+- [ ] Edit review flow (text → moderation, rating → instant update) `M`
+- [ ] SEO optimization (metadata, structured data, sitemap) `M`
 
 ---
 
 ## General
-- [ ] **Email templates — design language audit** — All transactional emails (trial request, welcome, digest) should use the new design language and logo, not the old gray/orange style. `Effort: M`
-- [ ] **Admin page redesign** — The admin panel still uses a basic layout. Should match the new design language (sidebar, typography, card components) so internal tooling feels consistent. `Effort: M`
-- [ ] **Featured listings — define ranking logic** — Currently `featured` is a manual boolean flag. Initial proposal: score by child interests (saved/booked categories) + area proximity. Needs product decision on weights before implementation. `Effort: M`
-- [x] **Sidebar feedback nudge** — Replaced "Book a free trial" card with a contextual feedback widget. Parents see activity-discovery prompt; providers see listing-management prompt. Both open a modal with the existing FeedbackForm.
+- [x] Sidebar feedback nudge — replaced "Book free trial" card; parent/provider variants; opens FeedbackForm modal
+- [ ] Email templates — design language audit `M`
+- [ ] Admin page redesign `M`
 
 ---
 
 ## Landing Page
-- [x] **Replace landing page cards with real listing photos** — Landing page showcase pulls live listings with cover images from DB.
-- [x] **"I'm a provider" button → scroll to For Providers section** — Anchor-scrolls to provider value prop section on the same page.
+- [x] Showcase pulls live listing photos from DB
+- [x] "I'm a provider" + "See how it works" → anchor scroll (with `scroll-mt-20` offset fix for mobile)
+- [x] Trial copy updated to match Option C ("Request a trial session", "Most providers offer a free first session")
