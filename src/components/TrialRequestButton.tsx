@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+interface Kid { id: string; name: string }
+
 interface Props {
   listingId:    string
   listingTitle: string
@@ -22,10 +24,24 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
   const [preferredDay, setDay]  = useState<number | null>(schedules[0]?.day_of_week ?? null)
   const [message, setMessage]   = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [kids,     setKids]     = useState<Kid[] | null>(null)
+  const [childId,  setChildId]  = useState<string | null>(null)
 
   useEffect(() => {
-    if (searchParams.get('book') === '1' && !isFull) setState('open')
+    if (searchParams.get('book') === '1' && !isFull) openModal()
   }, [searchParams, isFull])
+
+  async function openModal() {
+    setState('open')
+    if (kids === null) {
+      const res  = await fetch('/api/kids')
+      const data = await res.json()
+      const list = (data.kids ?? []) as Kid[]
+      setKids(list)
+      // Auto-select if only one child
+      if (list.length === 1) setChildId(list[0].id)
+    }
+  }
 
   async function submit() {
     setState('submitting')
@@ -37,6 +53,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
         listing_id:    listingId,
         preferred_day: preferredDay,
         message:       message || null,
+        child_id:      childId,
       }),
     })
 
@@ -72,7 +89,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
         disabled={isFull}
         onClick={() => {
           if (!isLoggedIn) { window.location.href = `/auth/signup?next=/browse/${listingId}`; return }
-          setState('open')
+          openModal()
         }}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
@@ -94,6 +111,32 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
 
             <h2 className="font-display text-base font-bold text-ink mb-0.5">Book a trial session</h2>
             <p className="text-sm text-ink-muted mb-5">{listingTitle}</p>
+
+            {/* Kid picker — only shown when the parent has children */}
+            {kids && kids.length > 0 && (
+              <div className="mb-4">
+                <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">
+                  For <span className="text-ink-muted font-normal normal-case">(optional)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {kids.map(kid => (
+                    <button
+                      key={kid.id}
+                      type="button"
+                      onClick={() => setChildId(prev => prev === kid.id ? null : kid.id)}
+                      className={cn(
+                        'px-3 py-1.5 rounded border font-display text-xs font-semibold transition-all',
+                        childId === kid.id
+                          ? 'bg-primary-lt border-primary text-primary'
+                          : 'bg-bg border-border text-ink-mid hover:border-primary'
+                      )}
+                    >
+                      {kid.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-4">
               <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">

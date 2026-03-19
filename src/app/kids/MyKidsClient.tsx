@@ -332,35 +332,35 @@ interface Props {
   bookings:    Booking[]
 }
 
-export function MyKidsClient({ userId, initialKids, areas, saves, categories, bookings }: Props) {
-  const [kids,                 setKids]                 = useState<Child[]>(initialKids)
-  const [selectedId,           setSelectedId]           = useState<string | null>(initialKids[0]?.id ?? null)
-  const [showDetail,           setShowDetail]           = useState(false)
-  const [showAdd,              setShowAdd]              = useState(false)
-  const [editId,               setEditId]               = useState<string | null>(null)
-  const [saving,               setSaving]               = useState(false)
-  const [deleteId,             setDeleteId]             = useState<string | null>(null)
-  const [removedSaveIds,       setRemovedSaveIds]       = useState<string[]>([])
-  const [reassignedSaveIds,    setReassignedSaveIds]    = useState<string[]>([])
-  const [reassignedBookingIds, setReassignedBookingIds] = useState<string[]>([])
+export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, categories, bookings: initialBookings }: Props) {
+  const [kids,           setKids]           = useState<Child[]>(initialKids)
+  const [localBookings,  setLocalBookings]  = useState<Booking[]>(initialBookings)
+  const [localSaves,     setLocalSaves]     = useState<Save[]>(initialSaves)
+  const [selectedId,     setSelectedId]     = useState<string | null>(initialKids[0]?.id ?? null)
+  const [showDetail,     setShowDetail]     = useState(false)
+  const [showAdd,        setShowAdd]        = useState(false)
+  const [editId,         setEditId]         = useState<string | null>(null)
+  const [saving,         setSaving]         = useState(false)
+  const [deleteId,       setDeleteId]       = useState<string | null>(null)
+  const [removedSaveIds, setRemovedSaveIds] = useState<string[]>([])
 
-  // Unassigned items (null kid/child id, not yet reassigned)
-  const unassignedBookings = bookings.filter(b => b.child_id === null && !reassignedBookingIds.includes(b.id))
-  const unassignedSaves    = saves.filter(s => !removedSaveIds.includes(s.id) && s.kid_id === null && !reassignedSaveIds.includes(s.id))
+  // Unassigned items (null kid/child id)
+  const unassignedBookings = localBookings.filter(b => b.child_id === null)
+  const unassignedSaves    = localSaves.filter(s => !removedSaveIds.includes(s.id) && s.kid_id === null)
   const hasUnassigned      = unassignedBookings.length > 0 || unassignedSaves.length > 0
 
   const isUnassignedSlot = selectedId === UNASSIGNED_ID
   const selectedKid      = isUnassignedSlot ? null : (kids.find(k => k.id === selectedId) ?? null)
 
-  const kidBookings  = isUnassignedSlot ? unassignedBookings  : bookings.filter(b => b.child_id === selectedId)
-  const visibleSaves = isUnassignedSlot ? unassignedSaves     : saves.filter(s => !removedSaveIds.includes(s.id) && s.kid_id === selectedId)
+  const kidBookings  = isUnassignedSlot ? unassignedBookings  : localBookings.filter(b => b.child_id === selectedId)
+  const visibleSaves = isUnassignedSlot ? unassignedSaves     : localSaves.filter(s => !removedSaveIds.includes(s.id) && s.kid_id === selectedId)
 
   function areaName(areaId: string | null) {
     return areaId ? (areas.find(a => a.id === areaId)?.name ?? null) : null
   }
 
   function pendingCount(kidId: string) {
-    return bookings.filter(b => b.child_id === kidId && b.status === 'pending').length
+    return localBookings.filter(b => b.child_id === kidId && b.status === 'pending').length
   }
 
   function selectKid(id: string) {
@@ -408,13 +408,13 @@ export function MyKidsClient({ userId, initialKids, areas, saves, categories, bo
   async function reassignBooking(bookingId: string, kidId: string) {
     const supabase = createClient()
     await supabase.from('trial_requests').update({ child_id: kidId }).eq('id', bookingId)
-    setReassignedBookingIds(prev => [...prev, bookingId])
+    setLocalBookings(prev => prev.map(b => b.id === bookingId ? { ...b, child_id: kidId } : b))
   }
 
   async function reassignSave(saveId: string, kidId: string) {
     const supabase = createClient()
     await supabase.from('saves').update({ kid_id: kidId }).eq('id', saveId)
-    setReassignedSaveIds(prev => [...prev, saveId])
+    setLocalSaves(prev => prev.map(s => s.id === saveId ? { ...s, kid_id: kidId } : s))
   }
 
   // ── Flat view (no kids added yet) ─────────────────────────────────────────
@@ -438,9 +438,9 @@ export function MyKidsClient({ userId, initialKids, areas, saves, categories, bo
         <ChildForm areas={areas} categories={categories} onSave={handleAdd} onCancel={() => setShowAdd(false)} saving={saving} />
       )}
       {/* All bookings (no kid filter) */}
-      <BookingsSection bookings={bookings} />
+      <BookingsSection bookings={localBookings} />
       {/* All saves (no kid filter) */}
-      <SavesSection saves={saves.filter(s => !removedSaveIds.includes(s.id))} onUnsave={handleUnsave} />
+      <SavesSection saves={localSaves.filter(s => !removedSaveIds.includes(s.id))} onUnsave={handleUnsave} />
     </div>
   )
 

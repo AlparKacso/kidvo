@@ -10,12 +10,12 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { listing_id, preferred_day, message } = await req.json()
+  const { listing_id, preferred_day, message, child_id } = await req.json()
   if (!listing_id) return NextResponse.json({ error: 'Missing listing_id' }, { status: 400 })
 
   const { data: request, error } = await supabase
     .from('trial_requests')
-    .insert({ listing_id, user_id: user.id, preferred_day, message: message || null, status: 'pending' })
+    .insert({ listing_id, user_id: user.id, preferred_day, message: message || null, status: 'pending', child_id: child_id ?? null })
     .select()
     .single()
 
