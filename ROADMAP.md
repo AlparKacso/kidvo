@@ -19,8 +19,8 @@
 - [ ] **Provider Activities page redesign** — `/listings` list view: match new design language, better status indicators, quick-actions per listing. `Effort: M`
 - [ ] **Provider Bookings page redesign** — `/listings/bookings`: cleaner layout, parent info at a glance, confirm/decline flow polished. `Effort: M`
 - [ ] **Provider Analytics page redesign** — `/listings/analytics`: visual funnel (Views → Contact Reveals → Trial Requests), better stat hierarchy. `Effort: M`
-  - [x] **"Show contact details" CTA on listing detail page** — Hide provider phone/email behind a reveal button. Requires login. *(built — run `supabase/contact_reveals.sql` to activate)*
-  - [x] **"Contact reveals" as analytics funnel step** — Views → Contact Reveals → Trial Requests funnel in provider analytics. *(built — run `supabase/contact_reveals.sql` to activate)*
+  - [x] **"Show contact details" CTA on listing detail page** — Hide provider phone/email behind a reveal button. Requires login.
+  - [x] **"Contact reveals" as analytics funnel step** — Views → Contact Reveals → Trial Requests funnel in provider analytics.
 - [ ] **"Trial available" toggle audit** — Clarify what the toggle does vs our core promise "book a free trial". ⚠️ *Product decision needed: should the toggle be removed entirely (all listings always have a free trial), or kept as an opt-in perk?* `Effort: S`
 
 ---

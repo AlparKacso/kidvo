@@ -351,13 +351,15 @@ export default async function ActivityDetailPage({ params }: Props) {
                   No trial session offered · Contact the provider directly
                 </div>
               )}
-              <ContactProviderButton
-                listingId={listing.id}
-                displayName={provider?.display_name ?? ''}
-                contactEmail={provider?.contact_email ?? ''}
-                contactPhone={provider?.contact_phone ?? null}
-                isLoggedIn={!!user}
-              />
+              <div className="mt-2">
+                <ContactProviderButton
+                  listingId={listing.id}
+                  displayName={provider?.display_name ?? ''}
+                  contactEmail={provider?.contact_email ?? ''}
+                  contactPhone={provider?.contact_phone ?? null}
+                  isLoggedIn={!!user}
+                />
+              </div>
 
               <div className="h-px bg-border my-4" />
               <div className="text-[11px] text-ink-muted text-center leading-relaxed">

@@ -118,8 +118,8 @@ export function Topbar({
   return (
     <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-20">
 
-      {/* ── Mobile ── */}
-      <div className="flex md:hidden items-center gap-2 flex-1">
+      {/* ── Mobile content (logo + location + search) ── */}
+      <div className="flex md:hidden items-center gap-2 flex-1 min-w-0">
         {searchOpen ? (
           <div className="flex items-center gap-2 flex-1">
             <div className="relative flex-1">
@@ -158,17 +158,18 @@ export function Topbar({
                 <IconSearch />
               </button>
             )}
-            {avatarBtn}
           </>
         )}
       </div>
 
-      {/* ── Desktop ── */}
+      {/* ── Desktop content (location) ── */}
       <div className="hidden md:flex items-center gap-3 flex-1">
         {locationLine}
         <div className="flex-1" />
-        {avatarBtn}
       </div>
+
+      {/* ── Avatar + dropdown — rendered ONCE, shared across breakpoints ── */}
+      {!searchOpen && avatarBtn}
 
     </header>
   )
