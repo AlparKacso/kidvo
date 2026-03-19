@@ -352,9 +352,11 @@ export default async function ActivityDetailPage({ params }: Props) {
                 </div>
               )}
               <ContactProviderButton
+                listingId={listing.id}
                 displayName={provider?.display_name ?? ''}
                 contactEmail={provider?.contact_email ?? ''}
                 contactPhone={provider?.contact_phone ?? null}
+                isLoggedIn={!!user}
               />
 
               <div className="h-px bg-border my-4" />

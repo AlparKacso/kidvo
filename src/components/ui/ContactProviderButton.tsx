@@ -3,22 +3,40 @@
 import { useState } from 'react'
 
 interface Props {
+  listingId:    string
   displayName:  string
   contactEmail: string
   contactPhone: string | null
+  isLoggedIn:   boolean
 }
 
-export function ContactProviderButton({ displayName, contactEmail, contactPhone }: Props) {
+export function ContactProviderButton({ listingId, displayName, contactEmail, contactPhone, isLoggedIn }: Props) {
   const [open, setOpen] = useState(false)
+
+  function handleReveal() {
+    if (!isLoggedIn) {
+      window.location.href = `/auth/login?next=/browse/${listingId}`
+      return
+    }
+
+    // Fire reveal event — fire and forget
+    fetch('/api/contact-reveals', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ listing_id: listingId }),
+    }).catch(() => {})
+
+    setOpen(true)
+  }
 
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={handleReveal}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
       >
         <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><path d="M2 3.5h11M2 7.5h8M2 11.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-        Contact provider
+        Show contact details
       </button>
 
       {open && (
@@ -33,7 +51,7 @@ export function ContactProviderButton({ displayName, contactEmail, contactPhone 
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </button>
 
-            <h2 className="font-display text-base font-bold text-ink mb-0.5">Contact provider</h2>
+            <h2 className="font-display text-base font-bold text-ink mb-0.5">Contact details</h2>
             <p className="text-sm text-ink-muted mb-5">{displayName}</p>
 
             <div className="flex flex-col gap-3">
@@ -78,7 +96,7 @@ export function ContactProviderButton({ displayName, contactEmail, contactPhone 
             </div>
 
             <p className="text-[11px] text-ink-muted text-center mt-4 leading-relaxed">
-              You're contacting this provider directly.<br />kidvo is not involved in this communication.
+              You&apos;re contacting this provider directly.<br />kidvo is not involved in this communication.
             </p>
           </div>
         </div>
