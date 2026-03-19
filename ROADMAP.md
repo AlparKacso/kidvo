@@ -42,6 +42,12 @@
 
 ---
 
+## General
+- [ ] **Email templates — design language audit** — All transactional emails (trial request, welcome, digest) should use the new design language and logo, not the old gray/orange style. `Effort: M`
+- [ ] **Admin page redesign** — The admin panel still uses a basic layout. Should match the new design language (sidebar, typography, card components) so internal tooling feels consistent. `Effort: M`
+
+---
+
 ## Landing Page
 - [x] **Replace landing page cards with real listing photos** — Now that listings have cover images, the landing page showcase cards should pull from live data instead of static placeholders. `Effort: S`
 - [x] **"I'm a provider" button → scroll to For Providers section** — Currently navigates away or does nothing useful. Should anchor-scroll to the provider value prop section on the same page. `Effort: XS`
