@@ -34,7 +34,7 @@
 - [ ] **Dashboard: Recommended cards per kid (tab selector)** — Personalization is the core UX promise. One card per kid makes it real. `Effort: M`
 - [ ] **Dashboard: "Kids added / Trials booked / First review" onboarding card** — Nudges parents toward completing profile & booking. `Effort: S`
 - [x] **My Bookings — grouped by kid** — Families with 2+ kids need this. Low data complexity, high UX clarity.
-- [ ] **"Kids & Activities" — merge Saved + Bookings under My Kids** — Rename page/nav to "Kids & Activities". Merge saved listings and bookings per child (collapsed to 3, expand available). No-kids flat view. Unassigned bucket for saves/bookings predating child creation. Kid selector on trial booking modal (same as save CTA). Remove separate Saved/Bookings nav items. `Effort: M`
+- [x] **"Kids & Activities" — merge Saved + Bookings under My Kids** — Rename page/nav to "Kids & Activities". Merge saved listings and bookings per child (collapsed to 3, expand available). No-kids flat view. Unassigned bucket for saves/bookings predating child creation. Kid selector on trial booking modal (same as save CTA). Remove separate Saved/Bookings nav items. `Effort: M`
 
 ---
 
