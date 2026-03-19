@@ -47,11 +47,7 @@ export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border flex items-stretch safe-area-bottom">
       <NavItem href="/browse" icon={<IconBrowse />} label="Browse" exact />
       {!isProvider && (
-        <>
-          <NavItem href="/kids"     icon={<IconKids />}     label="My Kids"  exact />
-          <NavItem href="/saved"    icon={<IconSaved />}    label="Saved"    exact />
-          <NavItem href="/bookings" icon={<IconBookings />} label="Bookings" exact />
-        </>
+        <NavItem href="/kids" icon={<IconKids />} label="Kids & Activities" exact />
       )}
       {isProvider && (
         <>

@@ -43,10 +43,9 @@ export async function AppShell({ children }: AppShellProps) {
   let isProvider = false
   let userEmail  = authUser.email ?? ''
 
-  const [profileRes, savedRes, bookingsRes, listingsRes] = await Promise.all([
+  const [profileRes, bookingsRes, listingsRes] = await Promise.all([
     supabase.from('users').select('full_name, role').eq('id', authUser.id).single(),
-    supabase.from('saves').select('*', { count: 'exact', head: true }).eq('user_id', authUser.id),
-    supabase.from('trial_requests').select('*', { count: 'exact', head: true }).eq('user_id', authUser.id),
+    supabase.from('trial_requests').select('*', { count: 'exact', head: true }).eq('user_id', authUser.id).eq('status', 'pending'),
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
   ])
 
@@ -58,9 +57,8 @@ export async function AppShell({ children }: AppShellProps) {
     initials   = profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
-  const savedCount    = savedRes.count    ?? 0
-  const bookingsCount = bookingsRes.count ?? 0
-  const listingsCount = listingsRes.count ?? 0
+  const pendingBookings = bookingsRes.count ?? 0
+  const listingsCount   = listingsRes.count ?? 0
 
   return (
     <div className="flex min-h-screen">
@@ -68,8 +66,7 @@ export async function AppShell({ children }: AppShellProps) {
       <div className="hidden md:flex">
         <Sidebar
           isProvider={isProvider}
-          savedCount={savedCount}
-          bookingsCount={bookingsCount}
+          pendingBookings={pendingBookings}
           userEmail={userEmail}
         />
       </div>

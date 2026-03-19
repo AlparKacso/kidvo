@@ -117,17 +117,15 @@ function NudgeWidget() {
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
 
 interface SidebarProps {
-  isProvider?:    boolean
-  savedCount?:    number
-  bookingsCount?: number
-  userEmail?:     string
+  isProvider?:         boolean
+  pendingBookings?:    number
+  userEmail?:          string
 }
 
 export function Sidebar({
-  isProvider    = false,
-  savedCount    = 0,
-  bookingsCount = 0,
-  userEmail     = '',
+  isProvider       = false,
+  pendingBookings  = 0,
+  userEmail        = '',
 }: SidebarProps) {
   const isAdmin = userEmail === ADMIN_EMAIL
 
@@ -140,15 +138,13 @@ export function Sidebar({
       <nav className="flex-1 flex flex-col">
 
         <NavSection label="Discover">
-          <NavItem href="/dashboard" icon={<IconHome />} label="Dashboard" exact />
-          <NavItem href="/browse" icon={<IconBrowse />} label="Browse" exact />
-          <NavItem href="/saved"  icon={<IconSaved />}  label="Saved"  badge={savedCount} badgeVariant="purple" exact />
+          <NavItem href="/dashboard" icon={<IconHome />}   label="Dashboard" exact />
+          <NavItem href="/browse"    icon={<IconBrowse />} label="Browse"    exact />
         </NavSection>
 
         {!isProvider && (
           <NavSection label="My Family">
-            <NavItem href="/kids"     icon={<IconKids />}   label="My Kids"  exact />
-            <NavItem href="/bookings" icon={<IconTrials />} label="Bookings" badge={bookingsCount} badgeVariant="blue" exact />
+            <NavItem href="/kids" icon={<IconKids />} label="Kids & Activities" badge={pendingBookings} badgeVariant="blue" exact />
           </NavSection>
         )}
 
