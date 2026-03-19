@@ -293,7 +293,7 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
                       <span className={cn('inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold ml-1', isFull ? 'bg-danger-lt text-danger' : 'bg-success-lt text-success')}>
                         {isFull ? 'Full' : 'Open'}
                       </span>
-                      {!isFull && (
+                      {!isFull && listing?.trial_available && (
                         <Link href={`/browse/${listing?.id}?book=1`} className="ml-auto px-3 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
                           Book trial
                         </Link>

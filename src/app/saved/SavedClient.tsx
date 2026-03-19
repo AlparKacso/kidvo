@@ -104,7 +104,7 @@ export function SavedClient({ initialSaves }: Props) {
                       <span className={cn('inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold', isFull ? 'bg-danger-lt text-danger' : 'bg-success-lt text-success')}>
                         {isFull ? 'Full' : 'Available'}
                       </span>
-                      {!isFull && (
+                      {!isFull && listing?.trial_available && (
                         <Link href={`/browse/${listing?.id}?book=1`} className="px-2.5 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
                           Book trial
                         </Link>
@@ -135,7 +135,7 @@ export function SavedClient({ initialSaves }: Props) {
                     <span className={cn('inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold', isFull ? 'bg-danger-lt text-danger' : 'bg-success-lt text-success')}>
                       {isFull ? 'Full' : 'Available'}
                     </span>
-                    {!isFull && (
+                    {!isFull && listing?.trial_available && (
                       <Link href={`/browse/${listing?.id}?book=1`} className="px-2.5 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
                         Book trial
                       </Link>

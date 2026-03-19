@@ -347,8 +347,14 @@ export default async function ActivityDetailPage({ params }: Props) {
                   />
                 </Suspense>
               ) : (
-                <div className="w-full text-center text-xs text-ink-muted py-2 mb-1">
-                  No trial session offered · Contact the provider directly
+                <div className="w-full text-center text-xs py-2 mb-1 px-3 rounded bg-surface border border-border text-ink-muted">
+                  {listing.trial_disabled_reason === 'cohort'
+                    ? '📅 Cohort-based programme — contact us about the next intake'
+                    : listing.trial_disabled_reason === 'full'
+                    ? '🔒 Currently at full capacity — check back soon'
+                    : listing.trial_disabled_reason === 'contact_us'
+                    ? '💬 Contact the provider directly to arrange a visit'
+                    : 'No trial session available — contact the provider'}
                 </div>
               )}
               <div className="mt-2">

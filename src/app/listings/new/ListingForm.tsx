@@ -29,9 +29,10 @@ interface FormData {
   spots_total:     string
   spots_available: string
   description:     string
-  includes:        string[]
-  trial_available: boolean
-  cover_image_url: string
+  includes:              string[]
+  trial_available:       boolean
+  trial_disabled_reason: string
+  cover_image_url:       string
 }
 
 const DAYS  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -47,7 +48,7 @@ const INITIAL: FormData = {
   title: '', category_id: '', area_id: '', address: '', maps_url: '', language: ['Romanian'],
   age_min: '', age_max: '', schedules: [{ ...EMPTY_SCHEDULE }],
   price_monthly: '', spots_total: '', spots_available: '', description: '',
-  includes: [''], trial_available: true, cover_image_url: '',
+  includes: [''], trial_available: true, trial_disabled_reason: 'cohort', cover_image_url: '',
 }
 
 function StepIndicator({ current }: { current: number }) {
@@ -214,7 +215,8 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
         maps_url:        data.maps_url || null,
         language:        data.language.join(', '),
         includes:        data.includes.filter(Boolean),
-        trial_available: data.trial_available,
+        trial_available:       data.trial_available,
+        trial_disabled_reason: data.trial_available ? null : data.trial_disabled_reason,
         cover_image_url: coverImageUrl || null,
         status:          'pending',
       }
@@ -504,12 +506,45 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                   </button>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={() => set('trial_available', !data.trial_available)}
-                  className={cn('w-10 h-6 rounded-full transition-colors relative flex-shrink-0', data.trial_available ? 'bg-primary' : 'bg-border')}>
-                  <span className={cn('absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all', data.trial_available ? 'left-5' : 'left-1')} />
-                </button>
-                <span className="text-sm text-ink-mid font-body">Trial session available</span>
+              {/* Trial sessions */}
+              <div className="border border-border rounded-lg p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-display text-sm font-semibold text-ink">Trial sessions</div>
+                    <div className="text-xs text-ink-muted mt-0.5">
+                      {data.trial_available ? 'Parents can book a free first session' : 'Parents will see a reason instead of a booking button'}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => set('trial_available', !data.trial_available)}
+                    className={cn('w-10 h-6 rounded-full transition-colors relative flex-shrink-0', data.trial_available ? 'bg-primary' : 'bg-border')}>
+                    <span className={cn('absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all', data.trial_available ? 'left-5' : 'left-1')} />
+                  </button>
+                </div>
+                {!data.trial_available && (
+                  <div className="flex flex-col gap-2 pt-1 border-t border-border">
+                    <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted">Reason shown to parents</div>
+                    <div className="flex flex-col gap-1.5">
+                      {([
+                        { key: 'cohort',     label: 'Cohort-based',      desc: 'Fixed class groups — parents can ask about the next intake' },
+                        { key: 'full',       label: 'At full capacity',   desc: 'Currently no open spots — check back soon' },
+                        { key: 'contact_us', label: 'Arrange directly',   desc: 'Contact us to set up a visit' },
+                      ] as const).map(({ key, label, desc }) => (
+                        <button key={key} type="button" onClick={() => set('trial_disabled_reason', key)}
+                          className={cn('flex items-start gap-3 px-3 py-2.5 rounded-lg border text-left transition-all',
+                            data.trial_disabled_reason === key ? 'border-primary bg-primary-lt' : 'border-border hover:border-primary/40')}>
+                          <div className={cn('w-4 h-4 rounded-full border-2 mt-0.5 flex-shrink-0 flex items-center justify-center transition-colors',
+                            data.trial_disabled_reason === key ? 'border-primary bg-primary' : 'border-border')}>
+                            {data.trial_disabled_reason === key && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                          <div>
+                            <div className="font-display text-sm font-semibold text-ink">{label}</div>
+                            <div className="text-xs text-ink-muted">{desc}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -525,7 +560,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 <div className="flex justify-between"><span className="text-ink-muted">Ages</span><span className="font-semibold text-ink">{data.age_min}-{data.age_max}</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">Price</span><span className="font-semibold text-ink">{data.price_monthly} RON/mo</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">Sessions</span><span className="font-semibold text-ink">{data.schedules.length} slot{data.schedules.length !== 1 ? 's' : ''}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Trial</span><span className="font-semibold text-ink">{data.trial_available ? 'Yes' : 'No'}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">Trial</span><span className="font-semibold text-ink">{data.trial_available ? 'Available' : { cohort: 'Cohort-based', full: 'At capacity', contact_us: 'Arrange directly' }[data.trial_disabled_reason] ?? 'Unavailable'}</span></div>
               </div>
               {error && <div className="bg-danger-lt border border-danger/20 text-danger text-sm rounded p-3">{error}</div>}
             </div>

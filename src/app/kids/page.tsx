@@ -17,7 +17,7 @@ export default async function MyKidsPage() {
         id,
         kid_id,
         listing:listings(
-          id, title, price_monthly, age_min, age_max, status, spots_available,
+          id, title, price_monthly, age_min, age_max, status, spots_available, trial_available,
           category:categories(name, accent_color),
           area:areas(name),
           provider:providers(display_name),

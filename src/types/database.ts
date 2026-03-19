@@ -96,8 +96,9 @@ export interface Database {
           address:         string | null
           language:        string
           includes:        string[] | null
-          trial_available:  boolean
-          featured:         boolean
+          trial_available:        boolean
+          trial_disabled_reason:  string | null
+          featured:               boolean
           status:           ListingStatus
           cover_image_url:  string | null
           maps_url:         string | null

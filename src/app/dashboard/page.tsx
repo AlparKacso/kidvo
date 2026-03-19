@@ -327,7 +327,7 @@ export default async function DashboardPage() {
 
   /* ── Parent dashboard — fetch everything in parallel ──────── */
   const [childrenRes, trialsRes, savesRes, topListingRes] = await Promise.all([
-    supabase.from('children').select('id, name').eq('user_id', user.id).order('created_at'),
+    supabase.from('children').select('id, name, birth_year, area_id, interests').eq('user_id', user.id).order('created_at'),
     supabase.from('trial_requests')
       .select('id, status, preferred_day, listing:listings(id, title, provider:providers(display_name))')
       .eq('user_id', user.id)
@@ -338,10 +338,10 @@ export default async function DashboardPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase.from('listings')
-      .select('id, title, price_monthly, category:categories(name, slug, accent_color), provider:providers(display_name)')
+      .select('id, title, price_monthly, age_min, age_max, area_id, category_id, cover_image_url, trial_available, category:categories(name, slug, accent_color), provider:providers(display_name)')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
-      .limit(10),
+      .limit(50),
   ])
 
   const children      = childrenRes.data ?? []
@@ -382,9 +382,29 @@ export default async function DashboardPage() {
     label: c.name,
   }))
 
-  // Recommended listing — first active listing the user hasn't saved
-  const savedIds   = new Set(allSaves.map((s: any) => (s.listing as any)?.id))
-  const recommended = (topListingRes.data ?? []).find((l: any) => !savedIds.has(l.id)) ?? topListingRes.data?.[0]
+  // Recommended listing — scored by kid interests (+3), age match (+2), area match (+1)
+  const savedIds    = new Set(allSaves.map((s: any) => (s.listing as any)?.id))
+  const bookedIds   = new Set((trialsRes.data ?? []).map((t: any) => (t.listing as any)?.id))
+  const allListings = topListingRes.data ?? []
+  const kid         = children[0] as any | undefined
+  const kidYear     = kid?.birth_year as number | undefined
+  const kidAge      = kidYear ? new Date().getFullYear() - kidYear : null
+  const kidInterests: string[] = kid?.interests ?? []
+  const kidAreaId: string | null = kid?.area_id ?? null
+
+  const scored = allListings
+    .filter((l: any) => !savedIds.has(l.id) && !bookedIds.has(l.id))
+    .map((l: any) => {
+      const cat      = (l.category as any)
+      let score = 0
+      if (kidInterests.length > 0 && cat?.slug && kidInterests.includes(cat.slug)) score += 3
+      if (kidAge !== null && l.age_min <= kidAge && l.age_max >= kidAge)            score += 2
+      if (kidAreaId && l.area_id === kidAreaId)                                     score += 1
+      return { ...l, _score: score }
+    })
+    .sort((a: any, b: any) => b._score - a._score)
+
+  const recommended = scored[0] ?? allListings.find((l: any) => !savedIds.has(l.id)) ?? allListings[0]
 
   // First kid for profile card
   const firstKid     = children[0]
