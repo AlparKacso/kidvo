@@ -283,7 +283,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
               </div>
               <div className="flex flex-col gap-3">
                 {[
-                  { icon: "🎯", title: "Free trial is mandatory", desc: "Every listing on kidvo must offer a free trial session. This is non-negotiable — it is what makes kidvo work for parents. If your activity cannot offer a free trial, kidvo is not the right fit." },
+                  { icon: "🎯", title: "Trial sessions are on by default", desc: "Every listing should offer a trial session. If your activity has a genuine reason it can't (cohort schedule, full capacity), you can explain this — parents will see your reason. Listings with no valid reason to disable trials may be reviewed." },
                   { icon: "🤝", title: "Direct relationship with parents", desc: "kidvo connects you with parents, but all contracts, payments, and agreements happen directly between you and the family. kidvo is not involved in any financial transactions." },
                   { icon: "📋", title: "You are responsible for compliance", desc: "You must hold all required licenses, certifications, and insurance for your activity. kidvo does not verify credentials and is not liable for any incidents." },
                   { icon: "⏱️", title: "Listings are reviewed before going live", desc: "Every new listing is reviewed by the kidvo team within 24 hours. Listings that do not meet our quality standards may be rejected." },

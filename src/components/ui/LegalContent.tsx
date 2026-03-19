@@ -57,7 +57,7 @@ export function TermsContent() {
 
       <section>
         <h3 className="font-display text-sm font-bold text-[#1a0f1e] mb-2">2. Provider responsibilities</h3>
-        <p>Providers must provide accurate information, hold all required licenses and insurance, offer a free trial session for every listing, and respond to trial requests in a timely manner. kidvo may remove listings that violate these terms.</p>
+        <p>Providers must provide accurate information, hold all required licenses and insurance, offer trial sessions by default (and provide a clear reason if unavailable), and respond to trial requests in a timely manner. kidvo may remove listings that violate these terms.</p>
       </section>
 
       <section>

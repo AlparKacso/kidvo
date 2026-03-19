@@ -143,7 +143,7 @@ export default async function LandingPage() {
 
           <p className="font-display text-ink-mid mx-auto mb-8"
              style={{ fontSize: '17px', lineHeight: '1.65', maxWidth: '480px' }}>
-            Browse local sports, arts, music, coding and more — then book a free trial session in seconds.
+            Browse local sports, arts, music, coding and more — then request a trial session with any provider.
           </p>
 
           {/* CTAs */}

@@ -120,7 +120,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const featured = [
     ...(listings ?? []).filter(l => l.featured),
     ...autoFeatured,
-  ]
+  ].slice(0, 8)
   const featuredIds = new Set(featured.map(l => l.id))
   const rest        = (listings ?? []).filter(l => !featuredIds.has(l.id))
   const total       = listings?.length ?? 0

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kidvo — Prototype v1 (Reference)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  --font:        'Onest', sans-serif;
+
+  /* Palette */
+  --dark:        #1c1c27;
+  --purple:      #c38cfa;
+  --purple-soft: #ece6ff;
+  --blue:        #2aa7ff;
+  --blue-soft:   #e0f2ff;
+  --green:       #b4f9b7;
+  --green-soft:  #e8fde9;
+  --gold:        #f5c542;
+  --gold-soft:   #fef9e6;
+  --pink:        #ff8fab;
+  --pink-soft:   #fff0f4;
+
+  --bg:          #ece8f5;
+  --surface:     #ffffff;
+  --surface-2:   #f7f5fb;
+  --border:      #ede9f7;
+  --ink:         #1c1c27;
+  --ink-mid:     #55527a;
+  --ink-muted:   #9590b3;
+
+  --sidebar-w:   248px;
+  --radius-xl:   22px;
+  --radius-lg:   16px;
+  --radius-md:   12px;
+  --radius-sm:   8px;
+  --radius-pill: 100px;
+  --shadow:      0 2px 16px rgba(90,70,140,.07);
+  --shadow-md:   0 6px 24px rgba(90,70,140,.11);
+}
+
+html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--ink); font-size: 14px; line-height: 1.5; }
+
+/* ── Layout shell ─────────────────────────────────────────── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--surface);
+  display: flex; flex-direction: column;
+  padding: 24px 16px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.sidebar-logo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 8px; margin-bottom: 28px;
+}
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--purple) 0%, var(--blue) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.logo-text { font-size: 20px; font-weight: 800; letter-spacing: -.5px; color: var(--ink); }
+.logo-text span { color: var(--purple); }
+
+.nav-section { margin-bottom: 24px; }
+.nav-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-muted);
+  padding: 0 12px; margin-bottom: 6px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--radius-md);
+  color: var(--ink-mid); font-weight: 500; font-size: 14px;
+  cursor: pointer; transition: background .15s, color .15s;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--ink); }
+.nav-item.active { background: var(--dark); color: #fff; }
+.nav-item.active .nav-icon { color: #fff; }
+.nav-icon { width: 18px; height: 18px; flex-shrink: 0; opacity: .8; }
+.nav-badge {
+  margin-left: auto; background: var(--purple); color: #fff;
+  font-size: 11px; font-weight: 700; padding: 2px 7px;
+  border-radius: var(--radius-pill);
+}
+.nav-badge.new { background: var(--blue); }
+
+.sidebar-footer {
+  margin-top: auto;
+  background: linear-gradient(135deg, #2a1f3d 0%, #1c1c27 100%);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  color: #fff;
+}
+.footer-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.footer-sub { font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.5; margin-bottom: 12px; }
+.footer-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--blue); color: #fff;
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; cursor: pointer; border: none;
+  font-family: var(--font);
+}
+.footer-emoji { font-size: 28px; display: block; margin-bottom: 8px; }
+
+/* ── Main content ─────────────────────────────────────────── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Top bar ──────────────────────────────────────────────── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 64px;
+  display: flex; align-items: center; gap: 16px;
+  flex-shrink: 0;
+}
+.topbar-title { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+.topbar-sub { font-size: 13px; color: var(--ink-muted); margin-top: 1px; }
+
+.search-bar {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill); padding: 8px 16px;
+  width: 240px;
+}
+.search-bar input {
+  border: none; background: transparent; font-family: var(--font);
+  font-size: 14px; color: var(--ink); outline: none; width: 100%;
+}
+.search-bar input::placeholder { color: var(--ink-muted); }
+.search-icon { color: var(--ink-muted); flex-shrink: 0; }
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--ink-mid);
+}
+.icon-btn:hover { background: var(--surface-2); }
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff; cursor: pointer;
+}
+
+/* ── Body ─────────────────────────────────────────────────── */
+.body { flex: 1; display: flex; overflow: hidden; }
+.content {
+  flex: 1; overflow-y: auto;
+  padding: 24px 28px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+/* ── Stats row ────────────────────────────────────────────── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.stat-card.accent-purple { background: linear-gradient(135deg, #7c3aed 0%, #c38cfa 100%); color: #fff; }
+.stat-card.accent-blue   { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); color: #fff; }
+.stat-label { font-size: 12px; font-weight: 600; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.stat-card.accent-purple .stat-label,
+.stat-card.accent-blue   .stat-label { color: rgba(255,255,255,.7); }
+.stat-value { font-size: 28px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+.stat-change { font-size: 12px; color: var(--ink-muted); margin-top: 6px; }
+.stat-card.accent-purple .stat-change,
+.stat-card.accent-blue   .stat-change { color: rgba(255,255,255,.6); }
+.stat-change.up { color: #22c55e; }
+
+/* ── Category pills ───────────────────────────────────────── */
+.filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pill {
+  padding: 7px 16px; border-radius: var(--radius-pill);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1.5px solid transparent; transition: all .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.pill.inactive {
+  background: var(--surface); border-color: var(--border); color: var(--ink-mid);
+}
+.pill.inactive:hover { border-color: var(--purple); color: #7c3aed; }
+.pill.active-purple { background: var(--purple-soft); border-color: var(--purple); color: #7c3aed; }
+.pill.active-blue   { background: var(--blue-soft);   border-color: var(--blue);   color: #0369a1; }
+.pill.active-green  { background: var(--green-soft);  border-color: #4ade80;       color: #15803d; }
+.pill.active-gold   { background: var(--gold-soft);   border-color: var(--gold);   color: #b45309; }
+.pill.active-pink   { background: var(--pink-soft);   border-color: var(--pink);   color: #be185d; }
+
+/* ── Two-col layout ───────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+
+/* ── Section card ─────────────────────────────────────────── */
+.section-card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.section-title { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.section-sub { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+.see-all { font-size: 13px; font-weight: 600; color: var(--blue); cursor: pointer; }
+
+/* ── Activity cards ───────────────────────────────────────── */
+.activities-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.activity-card {
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border);
+  padding: 16px;
+  cursor: pointer; transition: box-shadow .15s, border-color .15s;
+  position: relative; overflow: hidden;
+  background: var(--surface);
+}
+.activity-card:hover { box-shadow: var(--shadow-md); border-color: var(--purple); }
+.activity-card.selected { border-color: var(--blue); background: var(--blue-soft); }
+
+.card-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.card-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.card-icon.purple { background: var(--purple-soft); }
+.card-icon.blue   { background: var(--blue-soft); }
+.card-icon.green  { background: var(--green-soft); }
+.card-icon.gold   { background: var(--gold-soft); }
+.card-icon.pink   { background: var(--pink-soft); }
+
+.card-name { font-size: 15px; font-weight: 700; letter-spacing: -.2px; margin-bottom: 2px; }
+.card-provider { font-size: 12px; color: var(--ink-muted); }
+.card-bookmark {
+  margin-left: auto; width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; flex-shrink: 0;
+}
+.card-bookmark.saved { background: var(--purple-soft); border-color: var(--purple); }
+
+.card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tag {
+  padding: 3px 9px; border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 600;
+}
+.tag.purple { background: var(--purple-soft); color: #7c3aed; }
+.tag.blue   { background: var(--blue-soft);   color: #0369a1; }
+.tag.green  { background: var(--green-soft);  color: #15803d; }
+.tag.gold   { background: var(--gold-soft);   color: #b45309; }
+.tag.pink   { background: var(--pink-soft);   color: #be185d; }
+.tag.dark   { background: #f1f0f5; color: var(--ink-mid); }
+
+.card-footer { display: flex; align-items: center; gap: 8px; }
+.card-price { font-size: 15px; font-weight: 800; color: var(--ink); }
+.card-price-label { font-size: 11px; color: var(--ink-muted); font-weight: 400; }
+.card-trial-btn {
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  background: var(--blue); color: #fff;
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  border: none; cursor: pointer; margin-left: auto;
+}
+.card-trial-btn:hover { background: #0ea5e9; }
+.age-chip { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-muted); }
+
+/* ── Right panel ──────────────────────────────────────────── */
+.right-panel { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Featured dark card ───────────────────────────────────── */
+.featured-card {
+  background: linear-gradient(160deg, #2a1f3d 0%, #1c1c27 100%);
+  border-radius: var(--radius-xl);
+  padding: 24px; color: #fff;
+  box-shadow: var(--shadow-md);
+}
+.featured-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--purple);
+  margin-bottom: 10px;
+}
+.featured-title { font-size: 20px; font-weight: 800; letter-spacing: -.5px; line-height: 1.2; margin-bottom: 6px; }
+.featured-sub { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 16px; line-height: 1.5; }
+.featured-stats { display: flex; gap: 20px; margin-bottom: 16px; }
+.fstat-val { font-size: 22px; font-weight: 800; line-height: 1; }
+.fstat-label { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 2px; }
+.featured-btn {
+  width: 100%; padding: 12px; border-radius: var(--radius-md);
+  background: var(--blue); color: #fff;
+  font-family: var(--font); font-size: 14px; font-weight: 700;
+  border: none; cursor: pointer; text-align: center;
+}
+.featured-emoji { font-size: 36px; margin-bottom: 12px; display: block; }
+
+/* ── Progress bars ────────────────────────────────────────── */
+.mini-progress { display: flex; flex-direction: column; gap: 10px; }
+.progress-row { display: flex; align-items: center; gap: 10px; }
+.progress-label { font-size: 13px; font-weight: 600; width: 90px; flex-shrink: 0; }
+.progress-bar-wrap { flex: 1; height: 8px; background: var(--surface-2); border-radius: 100px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 100px; }
+.progress-val { font-size: 13px; font-weight: 700; width: 36px; text-align: right; }
+
+/* ── Sessions list ────────────────────────────────────────── */
+.session-list { display: flex; flex-direction: column; gap: 10px; }
+.session-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; border-radius: var(--radius-md);
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.session-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.session-name { font-size: 14px; font-weight: 600; }
+.session-time { font-size: 12px; color: var(--ink-muted); margin-top: 1px; }
+.session-badge {
+  margin-left: auto; padding: 4px 10px; border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 700;
+}
+.badge-confirmed { background: var(--green-soft);  color: #15803d; }
+.badge-pending   { background: var(--gold-soft);   color: #b45309; }
+.badge-trial     { background: var(--blue-soft);   color: #0369a1; }
+
+/* ── Bar chart ────────────────────────────────────────────── */
+.bar-chart { display: flex; flex-direction: column; gap: 8px; }
+.bar-row   { display: flex; align-items: center; gap: 10px; }
+.bar-day   { font-size: 12px; color: var(--ink-muted); width: 28px; }
+.bar-track { flex: 1; height: 36px; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
+.bar-fill  { border-radius: 8px; height: 100%; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 700; color: #fff; }
+.bar-fill.blue       { background: linear-gradient(90deg, #2aa7ff, #5bc4ff); }
+.bar-fill.blue-ghost { background: #daeeff; }
+.bar-val   { font-size: 12px; font-weight: 700; color: var(--ink-mid); width: 40px; text-align: right; }
+
+/* ── Donut charts ─────────────────────────────────────────── */
+.donut-row { display: flex; gap: 16px; align-items: center; }
+.donut {
+  width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.donut.purple { background: conic-gradient(var(--purple) 0% 64%, var(--purple-soft) 64%); }
+.donut.blue   { background: conic-gradient(var(--blue)   0% 77%, var(--blue-soft)   77%); }
+.donut.green  { background: conic-gradient(#4ade80       0% 89%, var(--green-soft)  89%); }
+.donut-inner {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--ink);
+}
+.donut-label { font-size: 12px; color: var(--ink-muted); margin-top: 3px; }
+
+/* ── Large activity cards (landing) ──────────────────────── */
+.cards-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.act-card-lg {
+  background: var(--surface); border-radius: var(--radius-xl);
+  overflow: hidden; box-shadow: var(--shadow);
+  border: 1.5px solid var(--border);
+  cursor: pointer; transition: box-shadow .2s, transform .2s;
+}
+.act-card-lg:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.act-card-img {
+  height: 160px; display: flex; align-items: center; justify-content: center;
+  font-size: 64px;
+}
+.act-card-body { padding: 16px; }
+.act-card-tags { display: flex; gap: 6px; margin-bottom: 10px; }
+.act-card-name { font-size: 16px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 4px; }
+.act-card-meta { font-size: 13px; color: var(--ink-muted); }
+.act-card-footer {
+  display: flex; align-items: center;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border);
+}
+.act-card-price { font-size: 16px; font-weight: 800; }
+.act-card-price-label { font-size: 11px; color: var(--ink-muted); }
+.act-free {
+  margin-left: auto; padding: 5px 12px; border-radius: var(--radius-pill);
+  background: var(--green-soft); color: #15803d;
+  font-size: 12px; font-weight: 700;
+}
+
+/* ── Landing ──────────────────────────────────────────────── */
+.landing { background: var(--bg); min-height: 100vh; padding-top: 80px; }
+.landing-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  background: rgba(255,255,255,.85); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px; height: 64px;
+  display: flex; align-items: center; gap: 16px;
+}
+.landing-nav-logo { display: flex; align-items: center; gap: 10px; }
+.landing-nav-logo .logo-text { font-size: 22px; font-weight: 900; letter-spacing: -1px; }
+.landing-nav-links { display: flex; gap: 8px; margin-left: 32px; }
+.nav-link {
+  padding: 7px 14px; border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 600; color: var(--ink-mid);
+  cursor: pointer; text-decoration: none; transition: background .15s;
+}
+.nav-link:hover { background: var(--surface-2); color: var(--ink); }
+.landing-nav-cta { margin-left: auto; display: flex; gap: 8px; }
+.btn-outline {
+  padding: 8px 18px; border-radius: var(--radius-md);
+  border: 1.5px solid var(--border); background: var(--surface);
+  font-family: var(--font); font-size: 14px; font-weight: 600;
+  color: var(--ink); cursor: pointer;
+}
+.btn-primary {
+  padding: 8px 18px; border-radius: var(--radius-md);
+  border: none; background: var(--dark);
+  font-family: var(--font); font-size: 14px; font-weight: 700;
+  color: #fff; cursor: pointer;
+}
+.hero { text-align: center; padding: 72px 40px 56px; max-width: 720px; margin: 0 auto; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--purple-soft); color: #7c3aed;
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  font-size: 13px; font-weight: 700; margin-bottom: 24px;
+}
+.hero-h1 {
+  font-size: 56px; font-weight: 900; letter-spacing: -2.5px;
+  line-height: 1.05; margin-bottom: 20px;
+}
+.hero-h1 .accent      { color: var(--purple); }
+.hero-h1 .accent-blue { color: var(--blue); }
+.hero-p { font-size: 18px; color: var(--ink-mid); line-height: 1.6; max-width: 520px; margin: 0 auto 36px; }
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero-btn-primary {
+  padding: 14px 28px; border-radius: var(--radius-lg);
+  background: var(--dark); color: #fff;
+  font-family: var(--font); font-size: 16px; font-weight: 700;
+  border: none; cursor: pointer;
+}
+.hero-btn-secondary {
+  padding: 14px 28px; border-radius: var(--radius-lg);
+  background: var(--surface); color: var(--ink);
+  font-family: var(--font); font-size: 16px; font-weight: 700;
+  border: 1.5px solid var(--border); cursor: pointer;
+}
+.hero-stats {
+  display: flex; gap: 32px; justify-content: center;
+  margin-top: 48px; padding-top: 40px; border-top: 1px solid var(--border);
+}
+.hstat-val { font-size: 32px; font-weight: 900; letter-spacing: -1px; }
+.hstat-label { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+
+/* Provider CTA */
+.provider-cta-inner {
+  background: linear-gradient(135deg, #2a1f3d 0%, #1c1c27 100%);
+  border-radius: var(--radius-xl); padding: 56px;
+  display: flex; align-items: center; gap: 48px;
+  max-width: 960px; margin: 0 auto 80px;
+}
+.provider-cta-text { flex: 1; }
+.provider-cta-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--purple); margin-bottom: 12px;
+}
+.provider-cta-h2 { font-size: 32px; font-weight: 900; letter-spacing: -1px; color: #fff; line-height: 1.15; margin-bottom: 14px; }
+.provider-cta-p  { font-size: 15px; color: rgba(255,255,255,.55); line-height: 1.6; margin-bottom: 24px; }
+.provider-cta-stats { display: flex; gap: 28px; margin-bottom: 24px; }
+.pcstat-val { font-size: 26px; font-weight: 900; color: #fff; letter-spacing: -1px; }
+.pcstat-label { font-size: 12px; color: rgba(255,255,255,.45); }
+.provider-cta-img { font-size: 80px; flex-shrink: 0; text-align: center; }
+.provider-cta-btn {
+  padding: 14px 28px; border-radius: var(--radius-lg);
+  background: var(--blue); color: #fff;
+  font-family: var(--font); font-size: 15px; font-weight: 700;
+  border: none; cursor: pointer;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
+
+/* ── Prototype nav ──────────────────────────────────────────── */
+.proto-nav {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px;
+  background: var(--dark); color: #fff;
+  padding: 6px 8px; border-radius: var(--radius-pill);
+  z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+.proto-nav-label { padding: 0 8px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.4); letter-spacing: .06em; }
+.proto-btn {
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  cursor: pointer; font-family: var(--font); font-size: 12px; font-weight: 600;
+  border: none; background: transparent; color: rgba(255,255,255,.6); transition: all .15s;
+}
+.proto-btn.active { background: var(--purple); color: #fff; }
+.proto-btn:hover:not(.active) { background: rgba(255,255,255,.1); color: #fff; }
+
+/* ── Screen visibility ──────────────────────────────────────── */
+.screen { display: none; }
+#screen-landing { display: block; height: 100vh; overflow-y: auto; }
+</style>
+</head>
+<body>
+
+<!-- Prototype switcher -->
+<div class="proto-nav">
+  <span class="proto-nav-label">SCREENS</span>
+  <button class="proto-btn active" onclick="showScreen('landing')">Landing</button>
+  <button class="proto-btn"        onclick="showScreen('browse')">Browse</button>
+  <button class="proto-btn"        onclick="showScreen('dashboard')">Dashboard</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 1 — Landing
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-landing">
+<div class="landing">
+
+  <nav class="landing-nav">
+    <div class="landing-nav-logo">
+      <div class="logo-icon">🎯</div>
+      <div class="logo-text">kid<span>vo</span></div>
+    </div>
+    <div class="landing-nav-links">
+      <a class="nav-link" href="#">Browse activities</a>
+      <a class="nav-link" href="#">For providers</a>
+      <a class="nav-link" href="#">How it works</a>
+    </div>
+    <div class="landing-nav-cta">
+      <button class="btn-outline">Sign in</button>
+      <button class="btn-primary">Get started →</button>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-eyebrow">✨ Now in Timișoara</div>
+    <h1 class="hero-h1">
+      Find the perfect<br>
+      <span class="accent">activity</span> for your<br>
+      <span class="accent-blue">little one</span>
+    </h1>
+    <p class="hero-p">Browse local sports, arts, music, coding and more — then book a free trial session in seconds.</p>
+    <div class="hero-actions">
+      <button class="hero-btn-primary">🔍 Browse activities</button>
+      <button class="hero-btn-secondary">I'm a provider →</button>
+    </div>
+    <div class="hero-stats">
+      <div><div class="hstat-val" style="color:var(--purple)">120+</div><div class="hstat-label">Activities</div></div>
+      <div><div class="hstat-val" style="color:var(--blue)">48</div><div class="hstat-label">Providers</div></div>
+      <div><div class="hstat-val" style="color:#22c55e">Free</div><div class="hstat-label">Trial sessions</div></div>
+      <div><div class="hstat-val">4.9 ★</div><div class="hstat-label">Avg. rating</div></div>
+    </div>
+  </div>
+
+  <!-- Trending near you -->
+  <div style="max-width:1040px; margin:0 auto; padding:0 40px 80px">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px">
+      <div style="font-size:22px; font-weight:800; letter-spacing:-.5px">Trending near you</div>
+      <div class="filter-row">
+        <div class="pill active-purple">⚽ Sports</div>
+        <div class="pill active-blue">💻 Coding</div>
+        <div class="pill active-gold">🎨 Arts</div>
+        <div class="pill inactive">🎵 Music</div>
+        <div class="pill inactive">🤸 Dance</div>
+      </div>
+    </div>
+    <div class="cards-3col">
+      <div class="act-card-lg">
+        <div class="act-card-img" style="background:linear-gradient(135deg,#ede9ff,#c8b6ff)">⚽</div>
+        <div class="act-card-body">
+          <div class="act-card-tags"><div class="tag purple">Ages 5–12</div><div class="tag dark">Mon · Wed</div></div>
+          <div class="act-card-name">Junior Football Academy</div>
+          <div class="act-card-meta">🏟️ Sport Arena Nord &nbsp;·&nbsp; ★ 4.9 (28)</div>
+        </div>
+        <div class="act-card-footer">
+          <div><span class="act-card-price">80 RON</span><span class="act-card-price-label"> /mo</span></div>
+          <div class="act-free">Free trial</div>
+        </div>
+      </div>
+      <div class="act-card-lg">
+        <div class="act-card-img" style="background:linear-gradient(135deg,#e0f2ff,#93d5ff)">💻</div>
+        <div class="act-card-body">
+          <div class="act-card-tags"><div class="tag blue">Ages 8–15</div><div class="tag dark">Sat mornings</div></div>
+          <div class="act-card-name">Scratch & Python for Kids</div>
+          <div class="act-card-meta">🏫 TechHub Fabric &nbsp;·&nbsp; ★ 4.8 (14)</div>
+        </div>
+        <div class="act-card-footer">
+          <div><span class="act-card-price">120 RON</span><span class="act-card-price-label"> /mo</span></div>
+          <div class="act-free">Free trial</div>
+        </div>
+      </div>
+      <div class="act-card-lg">
+        <div class="act-card-img" style="background:linear-gradient(135deg,#fef9e6,#fde68a)">🎨</div>
+        <div class="act-card-body">
+          <div class="act-card-tags"><div class="tag gold">Ages 4–10</div><div class="tag dark">Tue · Thu</div></div>
+          <div class="act-card-name">Creative Arts Studio</div>
+          <div class="act-card-meta">🎭 ArtSpace Centru &nbsp;·&nbsp; ★ 5.0 (9)</div>
+        </div>
+        <div class="act-card-footer">
+          <div><span class="act-card-price">90 RON</span><span class="act-card-price-label"> /mo</span></div>
+          <div class="act-free">Free trial</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Provider CTA -->
+  <div style="max-width:960px; margin:0 auto 80px; padding:0 40px">
+    <div class="provider-cta-inner">
+      <div class="provider-cta-text">
+        <div class="provider-cta-label">FOR PROVIDERS</div>
+        <h2 class="provider-cta-h2">Grow your class.<br>Reach more families.</h2>
+        <p class="provider-cta-p">List your activity, manage bookings, and get discovered by hundreds of local parents — for free.</p>
+        <div class="provider-cta-stats">
+          <div><div class="pcstat-val">500+</div><div class="pcstat-label">Families reached</div></div>
+          <div><div class="pcstat-val">0 RON</div><div class="pcstat-label">To get started</div></div>
+          <div><div class="pcstat-val">2 min</div><div class="pcstat-label">To list activity</div></div>
+        </div>
+        <button class="provider-cta-btn">List your activity →</button>
+      </div>
+      <div class="provider-cta-img">🏫</div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /screen-landing -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 2 — Browse
+═══════════════════════════════════════════════════════════ -->
+<div class="screen app" id="screen-browse">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🎯</div>
+      <div class="logo-text">kid<span>vo</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Discover</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Home</div>
+      <div class="nav-item active"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-width="2" d="M21 21l-4.35-4.35"/></svg>Browse</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>Saved<span class="nav-badge">4</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">My Family</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>My Kids</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Bookings<span class="nav-badge new">2</span></div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Progress</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Account</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>Settings</div>
+    </div>
+    <div class="sidebar-footer">
+      <span class="footer-emoji">🆓</span>
+      <div class="footer-title">Free trial waiting</div>
+      <div class="footer-sub">Mia hasn't tried Gymnastics yet — 3 spots left this week!</div>
+      <button class="footer-btn">Book now →</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Browse activities</div>
+        <div class="topbar-sub">Timișoara · 120+ activities available</div>
+      </div>
+      <div class="search-bar">
+        <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-width="2" d="M21 21l-4.35-4.35"/></svg>
+        <input placeholder="Search activities…" />
+      </div>
+      <div class="topbar-actions">
+        <div class="icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg></div>
+        <div class="icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
+        <div class="avatar">M</div>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="content">
+        <div class="filter-row">
+          <div class="pill active-purple">⚽ Sports</div>
+          <div class="pill active-blue">💻 Coding</div>
+          <div class="pill inactive">🎵 Music</div>
+          <div class="pill inactive">🎨 Arts</div>
+          <div class="pill inactive">🤸 Dance</div>
+          <div class="pill inactive">♟️ Chess</div>
+          <div class="pill inactive">🌍 Languages</div>
+          <div class="pill inactive">🤼 Gymnastics</div>
+        </div>
+
+        <div class="section-card" style="padding:20px">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Activities for Mia, age 7</div>
+              <div class="section-sub">Based on her interests in sports & arts</div>
+            </div>
+            <span class="see-all">See all 120 →</span>
+          </div>
+          <div class="activities-grid">
+
+            <div class="activity-card selected">
+              <div class="card-top">
+                <div class="card-icon blue">⚽</div>
+                <div><div class="card-name">Junior Football Academy</div><div class="card-provider">Sport Arena Nord</div></div>
+                <div class="card-bookmark saved">🔖</div>
+              </div>
+              <div class="card-tags"><div class="tag blue">Ages 5–12</div><div class="tag dark">Mon · Wed · Fri</div><div class="tag green">Open spots</div></div>
+              <div class="card-footer"><div class="age-chip">👧 Ages 5–12</div><button class="card-trial-btn">Book trial →</button></div>
+            </div>
+
+            <div class="activity-card">
+              <div class="card-top">
+                <div class="card-icon purple">💻</div>
+                <div><div class="card-name">Scratch & Python for Kids</div><div class="card-provider">TechHub Fabric</div></div>
+                <div class="card-bookmark">🔖</div>
+              </div>
+              <div class="card-tags"><div class="tag purple">Ages 8–15</div><div class="tag dark">Saturdays</div><div class="tag green">2 spots left</div></div>
+              <div class="card-footer"><div class="age-chip">👦 Ages 8–15</div><button class="card-trial-btn">Book trial →</button></div>
+            </div>
+
+            <div class="activity-card">
+              <div class="card-top">
+                <div class="card-icon gold">🎨</div>
+                <div><div class="card-name">Creative Arts Studio</div><div class="card-provider">ArtSpace Centru</div></div>
+                <div class="card-bookmark saved">🔖</div>
+              </div>
+              <div class="card-tags"><div class="tag gold">Ages 4–10</div><div class="tag dark">Tue · Thu</div></div>
+              <div class="card-footer"><div class="age-chip">👧 Ages 4–10</div><button class="card-trial-btn">Book trial →</button></div>
+            </div>
+
+            <div class="activity-card">
+              <div class="card-top">
+                <div class="card-icon pink">🤸</div>
+                <div><div class="card-name">Rhythmic Gymnastics</div><div class="card-provider">Olimpic Club</div></div>
+                <div class="card-bookmark">🔖</div>
+              </div>
+              <div class="card-tags"><div class="tag pink">Ages 5–14</div><div class="tag dark">Mon · Wed</div><div class="tag gold">Filling fast</div></div>
+              <div class="card-footer"><div class="age-chip">👧 Ages 5–14</div><button class="card-trial-btn">Book trial →</button></div>
+            </div>
+
+            <div class="activity-card">
+              <div class="card-top">
+                <div class="card-icon green">🎵</div>
+                <div><div class="card-name">Piano & Music Theory</div><div class="card-provider">Harmonia Studio</div></div>
+                <div class="card-bookmark">🔖</div>
+              </div>
+              <div class="card-tags"><div class="tag green">Ages 5–16</div><div class="tag dark">Flexible</div></div>
+              <div class="card-footer"><div class="age-chip">🎹 All levels</div><button class="card-trial-btn">Book trial →</button></div>
+            </div>
+
+            <div class="activity-card">
+              <div class="card-top">
+                <div class="card-icon purple">♟️</div>
+                <div><div class="card-name">Chess Club — Beginners</div><div class="card-provider">Club Șah Timișoara</div></div>
+                <div class="card-bookmark">🔖</div>
+              </div>
+              <div class="card-tags"><div class="tag purple">Ages 6–14</div><div class="tag dark">Saturdays</div><div class="tag green">Open spots</div></div>
+              <div class="card-footer"><div class="age-chip">♟️ Ages 6–14</div><button class="card-trial-btn">Book trial →</button></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /screen-browse -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 3 — Dashboard
+═══════════════════════════════════════════════════════════ -->
+<div class="screen app" id="screen-dashboard">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🎯</div>
+      <div class="logo-text">kid<span>vo</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Discover</div>
+      <div class="nav-item active"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Dashboard</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-width="2" d="M21 21l-4.35-4.35"/></svg>Browse</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>Saved<span class="nav-badge">4</span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">My Family</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>My Kids</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Bookings<span class="nav-badge new">2</span></div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Progress</div>
+      <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>Settings</div>
+    </div>
+    <div class="sidebar-footer">
+      <span class="footer-emoji">🎉</span>
+      <div class="footer-title">2 trials booked!</div>
+      <div class="footer-sub">Football on Mon · Coding on Sat. Good luck Mia!</div>
+      <button class="footer-btn">View bookings</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Dashboard</div>
+        <div class="topbar-sub">Hello, Maria! Here's what's happening 👋</div>
+      </div>
+      <div class="topbar-actions" style="margin-left:auto">
+        <div class="icon-btn"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
+        <div class="avatar">M</div>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="content">
+        <div class="stats-row">
+          <div class="stat-card accent-purple"><div class="stat-label">Activities saved</div><div class="stat-value">4</div><div class="stat-change">+2 this week</div></div>
+          <div class="stat-card accent-blue"><div class="stat-label">Trials booked</div><div class="stat-value">2</div><div class="stat-change">Next: Mon 16:00</div></div>
+          <div class="stat-card"><div class="stat-label">Kids on profile</div><div class="stat-value" style="color:var(--ink)">2</div><div class="stat-change">Mia & Alex</div></div>
+          <div class="stat-card"><div class="stat-label">Reviews left</div><div class="stat-value" style="color:var(--ink)">1</div><div class="stat-change" style="color:var(--blue)">Pending ★</div></div>
+        </div>
+
+        <div class="two-col">
+          <div style="display:flex; flex-direction:column; gap:20px">
+
+            <div class="section-card">
+              <div class="section-header">
+                <div><div class="section-title">Upcoming sessions</div><div class="section-sub">Your confirmed & pending trials</div></div>
+                <span class="see-all">Calendar →</span>
+              </div>
+              <div class="session-list">
+                <div class="session-row">
+                  <div class="session-dot" style="background:var(--blue)"></div>
+                  <div><div class="session-name">Junior Football Academy</div><div class="session-time">Mon, 10 Mar · 16:00–17:30 · Sport Arena Nord</div></div>
+                  <div class="session-badge badge-confirmed">Confirmed ✓</div>
+                </div>
+                <div class="session-row">
+                  <div class="session-dot" style="background:var(--purple)"></div>
+                  <div><div class="session-name">Scratch & Python for Kids</div><div class="session-time">Sat, 15 Mar · 10:00–11:30 · TechHub Fabric</div></div>
+                  <div class="session-badge badge-trial">Trial session</div>
+                </div>
+                <div class="session-row">
+                  <div class="session-dot" style="background:var(--gold)"></div>
+                  <div><div class="session-name">Creative Arts Studio</div><div class="session-time">Request sent · Waiting for provider</div></div>
+                  <div class="session-badge badge-pending">Pending</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card">
+              <div class="section-header"><div class="section-title">Activity interest</div></div>
+              <div class="bar-chart">
+                <div class="bar-row"><div class="bar-day">⚽</div><div class="bar-track"><div class="bar-fill blue" style="width:82%">Sports</div></div><div class="bar-val">82%</div></div>
+                <div class="bar-row"><div class="bar-day">💻</div><div class="bar-track"><div class="bar-fill blue" style="width:64%">Coding</div></div><div class="bar-val">64%</div></div>
+                <div class="bar-row"><div class="bar-day">🎨</div><div class="bar-track"><div class="bar-fill blue" style="width:48%">Arts</div></div><div class="bar-val">48%</div></div>
+                <div class="bar-row"><div class="bar-day">🤸</div><div class="bar-track"><div class="bar-fill blue-ghost" style="width:30%"></div></div><div class="bar-val" style="color:var(--ink-muted)">30%</div></div>
+                <div class="bar-row"><div class="bar-day">🎵</div><div class="bar-track"><div class="bar-fill blue-ghost" style="width:18%"></div></div><div class="bar-val" style="color:var(--ink-muted)">18%</div></div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="right-panel">
+            <div class="featured-card">
+              <div class="featured-label">⚡ RECOMMENDED FOR MIA</div>
+              <span class="featured-emoji">🤸</span>
+              <div class="featured-title">Rhythmic Gymnastics — Olimpic Club</div>
+              <div class="featured-sub">Only 3 spots left this week. Mia's age group starts Mon & Wed at 17:00.</div>
+              <div class="featured-stats">
+                <div><div class="fstat-val">4.9 ★</div><div class="fstat-label">Rating</div></div>
+                <div><div class="fstat-val">Free</div><div class="fstat-label">Trial</div></div>
+                <div><div class="fstat-val">3 left</div><div class="fstat-label">Spots</div></div>
+              </div>
+              <button class="featured-btn">Book free trial →</button>
+            </div>
+
+            <div class="section-card">
+              <div class="section-header" style="margin-bottom:16px"><div class="section-title">Activity mix</div></div>
+              <div class="donut-row">
+                <div>
+                  <div class="donut purple"><div class="donut-inner">64%</div></div>
+                  <div class="donut-label" style="text-align:center;margin-top:6px">Sports</div>
+                </div>
+                <div>
+                  <div class="donut blue"><div class="donut-inner">77%</div></div>
+                  <div class="donut-label" style="text-align:center;margin-top:6px">STEM</div>
+                </div>
+                <div>
+                  <div class="donut green"><div class="donut-inner">89%</div></div>
+                  <div class="donut-label" style="text-align:center;margin-top:6px">Arts</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card" style="padding:16px">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--purple),var(--blue));display:flex;align-items:center;justify-content:center;font-size:22px">👧</div>
+                <div>
+                  <div style="font-size:16px;font-weight:800">Mia, 7</div>
+                  <div style="font-size:12px;color:var(--ink-muted)">2 activities · 2 trials pending</div>
+                </div>
+                <div style="margin-left:auto;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer">Edit →</div>
+              </div>
+              <div class="mini-progress">
+                <div class="progress-row"><div class="progress-label">Interests set</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:100%;background:#22c55e"></div></div><div class="progress-val" style="color:#15803d">✓</div></div>
+                <div class="progress-row"><div class="progress-label">Trial booked</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:100%;background:var(--blue)"></div></div><div class="progress-val" style="color:#0369a1">✓</div></div>
+                <div class="progress-row"><div class="progress-label">1st review</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:0%;background:var(--purple)"></div></div><div class="progress-val" style="color:var(--ink-muted)">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div><!-- /screen-dashboard -->
+
+<script>
+function showScreen(name) {
+  ['landing','browse','dashboard'].forEach(n => {
+    const el = document.getElementById('screen-' + n)
+    if (n === name) {
+      el.style.display = n === 'landing' ? 'block' : 'flex'
+    } else {
+      el.style.display = 'none'
+    }
+  })
+  document.querySelectorAll('.proto-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === name)
+  })
+}
+</script>
+</body>
+</html>

@@ -74,7 +74,7 @@ export default async function ParentBookingsPage() {
           <div className="bg-white border border-border rounded-lg p-12 text-center">
             <div className="text-3xl mb-3">📅</div>
             <div className="font-display text-sm font-semibold text-ink-mid mb-1">No trial requests yet</div>
-            <p className="text-sm text-ink-muted mb-5">Browse activities and book a free trial session.</p>
+            <p className="text-sm text-ink-muted mb-5">Browse activities and request a trial session with any provider that offers one.</p>
             <Link href="/browse" className="inline-block bg-primary text-white font-display text-sm font-semibold px-4 py-2 rounded hover:bg-primary-deep transition-colors">
               Browse activities
             </Link>

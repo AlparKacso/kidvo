@@ -162,7 +162,7 @@ function RecommendedCard({ listing }: { listing: any }) {
         {listing.title}
       </div>
       <div className="font-display text-[12px] leading-[1.55] mb-4" style={{ color: 'rgba(255,255,255,.5)' }}>
-        {(listing.provider as any)?.display_name} · Free trial available
+        {(listing.provider as any)?.display_name}{listing.trial_available ? ' · Trial session available' : ''}
       </div>
       <div className="flex gap-5 mb-4">
         {listing.price_monthly != null && (
@@ -171,17 +171,19 @@ function RecommendedCard({ listing }: { listing: any }) {
             <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>RON/mo</div>
           </div>
         )}
-        <div>
-          <div className="font-display text-[20px] font-extrabold leading-none">Free</div>
-          <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>Trial</div>
-        </div>
+        {listing.trial_available && (
+          <div>
+            <div className="font-display text-[20px] font-extrabold leading-none">Free</div>
+            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>Trial</div>
+          </div>
+        )}
       </div>
       <Link
         href={`/browse/${listing.id}`}
         className="block w-full text-center font-display text-[13.5px] font-bold text-white rounded-[12px] py-[11px] hover:opacity-90 transition-opacity"
         style={{ background: '#2aa7ff' }}
       >
-        Book free trial →
+        {listing.trial_available ? 'Book trial →' : 'View listing →'}
       </Link>
     </div>
   )

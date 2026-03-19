@@ -207,7 +207,7 @@ export async function sendWelcomeToParent(opts: { email: string; name: string })
       ${h1('Welcome to kidvo!')}
       ${p(`Hi ${opts.name}, great to have you here!`)}
       ${p('kidvo helps Timișoara families discover and try the best activities for their kids — sports, arts, music, coding, and more.')}
-      ${p('Browse activities now and book a free trial session with any provider — no payment required.')}
+      ${p('Browse activities now and request a trial session with providers — most offer a free first session, no payment required.')}
       ${btn('Browse activities →', `${APP_URL}/browse`)}
     `),
   })

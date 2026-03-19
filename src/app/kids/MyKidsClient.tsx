@@ -164,7 +164,7 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
         <div className="px-5 py-8 text-center">
           <div className="text-2xl mb-2">📅</div>
           <div className="font-display text-sm font-semibold text-ink-mid mb-1">No trial requests yet</div>
-          <p className="text-xs text-ink-muted">Book a free trial for any saved activity.</p>
+          <p className="text-xs text-ink-muted">Request a trial for activities that offer one.</p>
         </div>
       ) : (
         <>
