@@ -41,8 +41,8 @@ const HOW_IT_WORKS = [
   },
   {
     step: '02',
-    title: 'Book a free trial',
-    desc:  'Request a trial session directly with the provider. No payment, no commitment — just show up.',
+    title: 'Request a trial session',
+    desc:  'Most providers offer a free first session. Request one directly — no payment, no commitment, just show up.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -277,7 +277,7 @@ export default async function LandingPage() {
                       className="ml-auto whitespace-nowrap rounded-full font-display text-[12px] font-bold"
                       style={{ background: '#e8fde9', color: '#15803d', padding: '5px 12px' }}
                     >
-                      Free trial
+                      Trial available
                     </span>
                   </div>
                 </Link>
