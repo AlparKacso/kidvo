@@ -16,10 +16,12 @@
 
 - [x] **Listing cover photo upload + crop** — Interactive crop modal (canvas-based, no deps), locked to card aspect ratio with live preview. `Effort: M`
 - [x] **Google Maps pin on listing** — Field in listing form + "View on Google Maps →" link on detail page. `Effort: S`
-- [ ] **Provider Activities / Bookings / Analytics redesign** — The provider dashboard is what the partner sees every day. Polished UI = higher confidence. `Effort: L`
-  - [ ] **"Show contact details" CTA on listing detail page** — Hide provider phone/email behind a reveal button. Tracks intent between browsing and committing to a trial. `Effort: S`
-  - [ ] **"Contact reveals" as analytics funnel step** — Surface the count in provider analytics between *Total Views* (card → detail page clicks) and *Trial Requests*, making the full conversion funnel: Views → Contact Reveals → Trial Requests. `Effort: S`
-- [ ] **"Trial available" toggle audit** — Clarify what the toggle does vs our core promise "book a free trial". Consider surfacing as "*free trial if available" on cards/CTAs rather than a hidden toggle. `Effort: S`
+- [ ] **Provider Activities page redesign** — `/listings` list view: match new design language, better status indicators, quick-actions per listing. `Effort: M`
+- [ ] **Provider Bookings page redesign** — `/listings/bookings`: cleaner layout, parent info at a glance, confirm/decline flow polished. `Effort: M`
+- [ ] **Provider Analytics page redesign** — `/listings/analytics`: visual funnel (Views → Contact Reveals → Trial Requests), better stat hierarchy. `Effort: M`
+  - [x] **"Show contact details" CTA on listing detail page** — Hide provider phone/email behind a reveal button. Requires login. *(built — run `supabase/contact_reveals.sql` to activate)*
+  - [x] **"Contact reveals" as analytics funnel step** — Views → Contact Reveals → Trial Requests funnel in provider analytics. *(built — run `supabase/contact_reveals.sql` to activate)*
+- [ ] **"Trial available" toggle audit** — Clarify what the toggle does vs our core promise "book a free trial". ⚠️ *Product decision needed: should the toggle be removed entirely (all listings always have a free trial), or kept as an opt-in perk?* `Effort: S`
 
 ---
 
