@@ -90,22 +90,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       )
     : allListings
 
-  // Hybrid featured: manual flag OR quality floor (photo + description + ≥1 review)
-  // Within auto-featured, sort by review count descending (engagement proxy)
-  const manualFeaturedIds = new Set((listings ?? []).filter(l => l.featured).map(l => l.id))
-  const autoFeatured = (listings ?? [])
-    .filter(l => !manualFeaturedIds.has(l.id) && l.cover_image_url && l.description?.trim())
-    .filter(l => (ratingsMap[l.id]?.count ?? 0) >= 1)
-    .sort((a, b) => (ratingsMap[b.id]?.count ?? 0) - (ratingsMap[a.id]?.count ?? 0))
-  const featured = [
-    ...(listings ?? []).filter(l => l.featured),
-    ...autoFeatured,
-  ]
-  const featuredIds = new Set(featured.map(l => l.id))
-  const rest        = (listings ?? []).filter(l => !featuredIds.has(l.id))
-  const total       = listings?.length ?? 0
-
-  // Fetch aggregate ratings for all visible listings
+  // Fetch aggregate ratings for all visible listings (must come before featured split)
   const listingIds = (listings ?? []).map((l: any) => l.id as string)
   const ratingsMap: Record<string, { avg: number; count: number }> = {}
   if (listingIds.length > 0) {
@@ -124,6 +109,21 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       }
     }
   }
+
+  // Hybrid featured: manual flag OR quality floor (photo + description + ≥1 review)
+  // Within auto-featured, sort by review count descending (engagement proxy)
+  const manualFeaturedIds = new Set((listings ?? []).filter(l => l.featured).map(l => l.id))
+  const autoFeatured = (listings ?? [])
+    .filter(l => !manualFeaturedIds.has(l.id) && l.cover_image_url && l.description?.trim())
+    .filter(l => (ratingsMap[l.id]?.count ?? 0) >= 1)
+    .sort((a, b) => (ratingsMap[b.id]?.count ?? 0) - (ratingsMap[a.id]?.count ?? 0))
+  const featured = [
+    ...(listings ?? []).filter(l => l.featured),
+    ...autoFeatured,
+  ]
+  const featuredIds = new Set(featured.map(l => l.id))
+  const rest        = (listings ?? []).filter(l => !featuredIds.has(l.id))
+  const total       = listings?.length ?? 0
 
   const hasActiveFilters = params.q || params.area || params.age || params.category || params.lang
 
