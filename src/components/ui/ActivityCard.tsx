@@ -175,13 +175,21 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
           >
             Fully booked
           </span>
-        ) : (
+        ) : listing.trial_available ? (
           <Link
             href={`/browse/${listing.id}?book=1`}
             className="ml-auto whitespace-nowrap rounded-[8px] font-display text-[12px] font-semibold bg-blue text-white hover:bg-blue-deep transition-colors"
             style={{ padding: '6px 12px' }}
           >
             Book trial →
+          </Link>
+        ) : (
+          <Link
+            href={`/browse/${listing.id}`}
+            className="ml-auto whitespace-nowrap rounded-[8px] font-display text-[12px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
+            style={{ padding: '6px 12px' }}
+          >
+            View listing →
           </Link>
         )}
       </div>

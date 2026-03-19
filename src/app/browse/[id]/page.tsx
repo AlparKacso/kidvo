@@ -332,19 +332,25 @@ export default async function ActivityDetailPage({ params }: Props) {
                 )}
               </div>
 
-              <Suspense fallback={
-                <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
-                  Book a trial session
-                </button>
-              }>
-                <TrialRequestButton
-                  listingId={listing.id}
-                  listingTitle={listing.title}
-                  schedules={schedules ?? []}
-                  isFull={isFull}
-                  isLoggedIn={!!user}
-                />
-              </Suspense>
+              {listing.trial_available ? (
+                <Suspense fallback={
+                  <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
+                    Book a trial session
+                  </button>
+                }>
+                  <TrialRequestButton
+                    listingId={listing.id}
+                    listingTitle={listing.title}
+                    schedules={schedules ?? []}
+                    isFull={isFull}
+                    isLoggedIn={!!user}
+                  />
+                </Suspense>
+              ) : (
+                <div className="w-full text-center text-xs text-ink-muted py-2 mb-1">
+                  No trial session offered · Contact the provider directly
+                </div>
+              )}
               <ContactProviderButton
                 displayName={provider?.display_name ?? ''}
                 contactEmail={provider?.contact_email ?? ''}
