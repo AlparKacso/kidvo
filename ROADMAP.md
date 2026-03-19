@@ -48,6 +48,7 @@
 ## General
 - [ ] **Email templates — design language audit** — All transactional emails (trial request, welcome, digest) should use the new design language and logo, not the old gray/orange style. `Effort: M`
 - [ ] **Admin page redesign** — The admin panel still uses a basic layout. Should match the new design language (sidebar, typography, card components) so internal tooling feels consistent. `Effort: M`
+- [ ] **Featured listings — define ranking logic** — Currently `featured` is a manual boolean flag. Initial proposal: score by child interests (saved/booked categories) + area proximity. Needs product decision on weights before implementation. `Effort: M`
 
 ---
 
