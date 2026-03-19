@@ -86,7 +86,7 @@ export default async function LandingPage() {
     category: { slug: string; name: string; accent_color: string }
     area: { name: string }
   }
-  const showcase = (showcaseRaw ?? []) as ShowcaseListing[]
+  const showcase = (showcaseRaw ?? []) as unknown as ShowcaseListing[]
 
   return (
     <div className="min-h-screen bg-bg font-display flex flex-col">
