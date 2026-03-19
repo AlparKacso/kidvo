@@ -1,12 +1,13 @@
 # Kidvo Pre-Launch Roadmap
 
-> Supabase RLS security ✅ fixed. Now working through phases below.
+> Last updated: 2026-03-19
 
 ---
 
 ## ✅ Security (Done)
 - [x] RLS enabled on all public tables (`listings`, `trial_requests`, `users`, `children`, `areas`, `child_interests`, `categories`, `saves`, `listing_schedules`, `listing_views`, `tips`, `providers`)
 - [x] `listing_views` INSERT policy tightened (`WITH CHECK user_id = auth.uid() OR user_id IS NULL`)
+- [x] `contact_reveals` table created with RLS policies
 - [ ] Leaked password protection → enable manually in Supabase dashboard (Auth → Security)
 
 ---
@@ -16,19 +17,19 @@
 
 - [x] **Listing cover photo upload + crop** — Interactive crop modal (canvas-based, no deps), locked to card aspect ratio with live preview. `Effort: M`
 - [x] **Google Maps pin on listing** — Field in listing form + "View on Google Maps →" link on detail page. `Effort: S`
+- [x] **"Show contact details" CTA on listing detail page** — Hides phone/email behind a reveal button. Requires login. Fires `contact_reveals` event on open.
+- [x] **"Contact reveals" as analytics funnel step** — Views → Contact Reveals → Trial Requests funnel live in provider analytics.
 - [ ] **Provider Activities page redesign** — `/listings` list view: match new design language, better status indicators, quick-actions per listing. `Effort: M`
 - [ ] **Provider Bookings page redesign** — `/listings/bookings`: cleaner layout, parent info at a glance, confirm/decline flow polished. `Effort: M`
-- [ ] **Provider Analytics page redesign** — `/listings/analytics`: visual funnel (Views → Contact Reveals → Trial Requests), better stat hierarchy. `Effort: M`
-  - [x] **"Show contact details" CTA on listing detail page** — Hide provider phone/email behind a reveal button. Requires login.
-  - [x] **"Contact reveals" as analytics funnel step** — Views → Contact Reveals → Trial Requests funnel in provider analytics.
-- [ ] **"Trial available" toggle audit** — Clarify what the toggle does vs our core promise "book a free trial". ⚠️ *Product decision needed: should the toggle be removed entirely (all listings always have a free trial), or kept as an opt-in perk?* `Effort: S`
+- [ ] **Provider Analytics page redesign** — `/listings/analytics`: visual funnel, better stat hierarchy. `Effort: M`
+- [ ] **"Trial available" toggle audit** — Clarify what the toggle does vs our core promise "book a free trial". ⚠️ *Product decision needed: remove entirely (all listings always offer a trial) or keep as explicit opt-in?* `Effort: S`
 
 ---
 
 ## Phase 2 — Parent Experience Polish
 *Once a provider is live, parents need a compelling, bug-free experience to convert.*
 
-- [ ] **Fix internal nav links & CTAs** — Broken links kill trust on first visit. Quick win. `Effort: S`
+- [x] **Fix internal nav links & CTAs** — "For providers" nav → `#for-providers`, "See how it works" → `#how-it-works`, `trial_available` respected across cards and detail page.
 - [ ] **Dashboard: fix Activity Mix + Activity Interest** — Widgets show empty/wrong data. Better to fix or hide than mislead. `Effort: M`
 - [ ] **Dashboard: Recommended cards per kid (tab selector)** — Personalization is the core UX promise. One card per kid makes it real. `Effort: M`
 - [ ] **Dashboard: "Kids added / Trials booked / First review" onboarding card** — Nudges parents toward completing profile & booking. `Effort: S`
@@ -51,5 +52,5 @@
 ---
 
 ## Landing Page
-- [x] **Replace landing page cards with real listing photos** — Now that listings have cover images, the landing page showcase cards should pull from live data instead of static placeholders. `Effort: S`
-- [x] **"I'm a provider" button → scroll to For Providers section** — Currently navigates away or does nothing useful. Should anchor-scroll to the provider value prop section on the same page. `Effort: XS`
+- [x] **Replace landing page cards with real listing photos** — Landing page showcase pulls live listings with cover images from DB.
+- [x] **"I'm a provider" button → scroll to For Providers section** — Anchor-scrolls to provider value prop section on the same page.
