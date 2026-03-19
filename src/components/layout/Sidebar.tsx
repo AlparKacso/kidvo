@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { FeedbackForm } from '@/app/main/FeedbackForm'
 
 /* Logo — prototype: padding 2px 8px 22px inside the aside's 14px base */
 const KidvoLogo = () => (
@@ -86,31 +88,57 @@ const IconAnalytics = () => <svg width="16" height="16" viewBox="0 0 18 18" fill
 const IconSettings  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2.5"/></svg>
 const IconAdmin     = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 1.5L2.5 4.5v4c0 3.5 2.9 6.5 6.5 7 3.6-.5 6.5-3.5 6.5-7v-4L9 1.5Z"/><path d="M6 9l2 2 4-4"/></svg>
 
-function NudgeWidget() {
+function FeedbackNudge({ isProvider }: { isProvider: boolean }) {
+  const [open, setOpen] = useState(false)
+
+  const title    = isProvider ? 'Help us improve for providers' : 'How\'s kidvo working for you?'
+  const subtitle = isProvider
+    ? 'What would make managing your listings easier?'
+    : 'Tell us what would help you find the right activities for your kids.'
+
   return (
-    <div className="rounded-[16px] p-4 text-white" style={{ background: '#1c1c27' }}>
-      <div
-        className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-2.5"
-        style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.70)' }}
-      >
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-          <circle cx="9" cy="4.5" r="1.5"/>
-          <path d="M9 6.5V10M6.5 10c0 3 5 3 5 0"/>
-          <path d="M4 15.5l2.5-4 2.5 1 2.5-1 2.5 4"/>
-        </svg>
+    <>
+      <div className="rounded-[16px] p-4 text-white" style={{ background: '#1c1c27' }}>
+        <div
+          className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-2.5"
+          style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.70)' }}
+        >
+          {/* Speech bubble icon */}
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15.5 9.5c0 3-2.9 5-6.5 5a7.7 7.7 0 0 1-3-.6L2.5 15l1-3.3A5.3 5.3 0 0 1 2.5 9c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6Z"/>
+          </svg>
+        </div>
+        <div className="font-display text-[14px] font-bold mb-1 leading-snug">{title}</div>
+        <div className="font-display text-[12px] leading-[1.5] mb-3" style={{ color: 'rgba(255,255,255,0.50)' }}>
+          {subtitle}
+        </div>
+        <button
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-1 font-display text-[12px] font-semibold text-white rounded-[8px] hover:opacity-85 transition-opacity"
+          style={{ background: '#7c3aed', padding: '7px 13px' }}
+        >
+          Share feedback →
+        </button>
       </div>
-      <div className="font-display text-[14px] font-bold mb-1 leading-snug">Book a free trial</div>
-      <div className="font-display text-[12px] leading-[1.5] mb-3" style={{ color: 'rgba(255,255,255,0.50)' }}>
-        Find your child's perfect activity and reserve a free trial in seconds.
-      </div>
-      <Link
-        href="/browse"
-        className="inline-flex items-center gap-1 font-display text-[12px] font-semibold text-white rounded-[8px] hover:opacity-85 transition-opacity"
-        style={{ background: '#2aa7ff', padding: '7px 13px' }}
-      >
-        Browse now →
-      </Link>
-    </div>
+
+      {/* Modal */}
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="relative z-10 bg-white rounded-lg shadow-xl w-full max-w-[400px] p-6" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-4 right-4 w-7 h-7 rounded flex items-center justify-center text-ink-muted hover:bg-surface transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            </button>
+            <h2 className="font-display text-base font-bold text-ink mb-1">{title}</h2>
+            <p className="text-sm text-ink-muted mb-4">{subtitle}</p>
+            <FeedbackForm />
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -163,12 +191,10 @@ export function Sidebar({
           )}
         </NavSection>
 
-        {/* Nudge widget — parents only, pushed to bottom */}
-        {!isProvider && (
-          <div className="mt-auto pt-3">
-            <NudgeWidget />
-          </div>
-        )}
+        {/* Feedback nudge — pushed to bottom, shown for all roles */}
+        <div className="mt-auto pt-3">
+          <FeedbackNudge isProvider={isProvider} />
+        </div>
 
       </nav>
     </aside>
