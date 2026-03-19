@@ -343,6 +343,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
   const [saving,         setSaving]         = useState(false)
   const [deleteId,       setDeleteId]       = useState<string | null>(null)
   const [removedSaveIds, setRemovedSaveIds] = useState<string[]>([])
+  const [assignError,    setAssignError]    = useState<string | null>(null)
 
   // Unassigned items (null kid/child id)
   const unassignedBookings = localBookings.filter(b => b.child_id === null)
@@ -406,14 +407,18 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
   }
 
   async function reassignBooking(bookingId: string, kidId: string) {
+    setAssignError(null)
     const supabase = createClient()
-    await supabase.from('trial_requests').update({ child_id: kidId }).eq('id', bookingId)
+    const { error } = await supabase.from('trial_requests').update({ child_id: kidId }).eq('id', bookingId)
+    if (error) { setAssignError('Could not assign booking — please try again.'); return }
     setLocalBookings(prev => prev.map(b => b.id === bookingId ? { ...b, child_id: kidId } : b))
   }
 
   async function reassignSave(saveId: string, kidId: string) {
+    setAssignError(null)
     const supabase = createClient()
-    await supabase.from('saves').update({ kid_id: kidId }).eq('id', saveId)
+    const { error } = await supabase.from('saves').update({ kid_id: kidId }).eq('id', saveId)
+    if (error) { setAssignError('Could not assign saved activity — please try again.'); return }
     setLocalSaves(prev => prev.map(s => s.id === saveId ? { ...s, kid_id: kidId } : s))
   }
 
@@ -540,6 +545,11 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
               <div className="text-xs text-ink-muted">These aren&apos;t linked to a child yet. Assign them below.</div>
             </div>
           </div>
+          {assignError && (
+            <div className="px-4 py-2.5 bg-danger-lt border border-danger/20 rounded-lg text-sm text-danger font-display">
+              ⚠ {assignError}
+            </div>
+          )}
           <BookingsSection key="b-unassigned" bookings={kidBookings} kids={kids} isUnassigned onReassign={reassignBooking} />
           <SavesSection    key="s-unassigned" saves={visibleSaves}   kids={kids} isUnassigned onReassign={reassignSave} onUnsave={handleUnsave} />
         </div>
