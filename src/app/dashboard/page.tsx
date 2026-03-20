@@ -584,7 +584,7 @@ export default async function DashboardPage() {
           {/* Per-kid [interest | mix] rows — same width as sessions */}
           {kidWidgets.length > 0 ? (
             kidWidgets.map(k => (
-              <div key={k.kidId} className="grid grid-cols-2 gap-[14px]">
+              <div key={k.kidId} className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
                 {k.interest && (
                   <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} />
                 )}
