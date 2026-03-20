@@ -613,7 +613,7 @@ export default async function DashboardPage() {
 
           {/* Kid profile card */}
           {hasKids && firstKid && (
-            <SectionCard title="">
+            <SectionCard title="Your child" sub={children.length > 1 ? `+${children.length - 1} more on profile` : undefined}>
               <div className="flex items-center gap-[11px] mb-[13px] -mt-[4px]">
                 <div className="w-10 h-10 rounded-[11px] bg-primary-lt flex items-center justify-center flex-shrink-0">
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-primary">
