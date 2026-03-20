@@ -96,18 +96,18 @@ const CAT_EMOJI: Record<string, string> = {
   babysitting: '🍼', other: '✨',
 }
 
-/* Activity interest bar row — relative to max (normalised) */
-function BarRow({ emoji, pct, dim }: { emoji: string; pct: number; dim?: boolean }) {
+/* Activity interest bar row — % of total saves */
+function BarRow({ emoji, pct }: { emoji: string; pct: number }) {
   return (
     <div className="flex items-center gap-[9px]">
-      <span className="text-base w-6 flex-shrink-0 leading-none">{emoji}</span>
-      <div className="flex-1 h-8 rounded-[7px] overflow-hidden" style={{ background: '#f5f4fb' }}>
+      <span className="text-sm w-5 flex-shrink-0 leading-none">{emoji}</span>
+      <div className="flex-1 h-[18px] rounded-[5px] overflow-hidden" style={{ background: '#f5f4fb' }}>
         <div
-          className="h-full rounded-[7px]"
-          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)', opacity: dim ? 0.35 : 1 }}
+          className="h-full rounded-[5px]"
+          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }}
         />
       </div>
-      <span className={`font-display text-[12px] font-semibold w-[34px] text-right ${dim ? 'text-ink-muted' : 'text-ink-mid'}`}>
+      <span className="font-display text-[11.5px] font-semibold w-[30px] text-right text-ink-mid">
         {pct}%
       </span>
     </div>
@@ -117,13 +117,13 @@ function BarRow({ emoji, pct, dim }: { emoji: string; pct: number; dim?: boolean
 /* Per-kid activity interest card (saves only) */
 function ActivityInterestCard({ kidName, bars }: {
   kidName: string
-  bars: Array<{ slug: string; pct: number; dim: boolean }>
+  bars: Array<{ slug: string; pct: number }>
 }) {
   return (
     <SectionCard title={`Activity interest · ${kidName}`} sub="Based on saved activities">
-      <div className="flex flex-col gap-[9px]">
+      <div className="flex flex-col gap-2">
         {bars.map(b => (
-          <BarRow key={b.slug} emoji={CAT_EMOJI[b.slug] ?? '✨'} pct={b.pct} dim={b.dim} />
+          <BarRow key={b.slug} emoji={CAT_EMOJI[b.slug] ?? '✨'} pct={b.pct} />
         ))}
       </div>
     </SectionCard>
@@ -403,22 +403,21 @@ export default async function DashboardPage() {
     return [...map.values()].sort((a, b) => b.count - a.count)
   }
 
-  // Per-kid activity INTEREST (saves only) — top 5, normalised bars
+  // Per-kid activity INTEREST (saves only) — top 5, real % of total saves
   const kidInterests = children.map((kid: any) => {
     const kidSaves = allSaves.filter((s: any) => s.kid_id === kid.id)
     const sorted   = buildCatCount(kidSaves, s => (s.listing as any)?.category)
     if (sorted.length === 0) return null
-    const maxCount = sorted[0].count
+    const total = sorted.reduce((sum, c) => sum + c.count, 0)
     return {
       kidId:   kid.id as string,
       kidName: kid.name as string,
       bars: sorted.slice(0, 5).map(c => ({
         slug: c.slug,
-        pct:  Math.round((c.count / maxCount) * 100),
-        dim:  (c.count / maxCount) < 0.35,
+        pct:  Math.round((c.count / total) * 100),
       })),
     }
-  }).filter(Boolean) as Array<{ kidId: string; kidName: string; bars: Array<{ slug: string; pct: number; dim: boolean }> }>
+  }).filter(Boolean) as Array<{ kidId: string; kidName: string; bars: Array<{ slug: string; pct: number }> }>
 
   // Per-kid activity MIX (bookings only) — top 3 donuts, real % of total, + N others
   const DONUT_PALETTE = [
