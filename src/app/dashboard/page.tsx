@@ -153,7 +153,7 @@ function ActivityMixCard({ kidName, items, othersCount }: {
 }) {
   return (
     <SectionCard title={`Activity mix · ${kidName}`} sub="Based on booked trials">
-      <div className="flex items-end justify-between">
+      <div className="flex items-end gap-5">
         {items.map(d => (
           <Donut key={d.slug} pct={d.pct} color={d.color} softColor={d.soft} label={d.name} />
         ))}
