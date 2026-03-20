@@ -153,7 +153,7 @@ function ActivityMixCard({ kidName, items, othersCount }: {
 }) {
   return (
     <SectionCard title={`Activity mix · ${kidName}`} sub="Based on booked trials">
-      <div className="flex items-end gap-5">
+      <div className="flex items-end justify-between">
         {items.map(d => (
           <Donut key={d.slug} pct={d.pct} color={d.color} softColor={d.soft} label={d.name} />
         ))}
@@ -510,7 +510,7 @@ export default async function DashboardPage() {
       {/* Two-col layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_328px] gap-[18px]">
 
-        {/* ── LEFT COLUMN — sessions only ── */}
+        {/* ── LEFT COLUMN — sessions + kid activity widgets ── */}
         <div className="flex flex-col gap-[18px]">
           <SectionCard
             title="Upcoming sessions"
@@ -547,6 +547,26 @@ export default async function DashboardPage() {
               </div>
             )}
           </SectionCard>
+
+          {/* Per-kid [interest | mix] rows — same width as sessions */}
+          {kidWidgets.length > 0 ? (
+            kidWidgets.map(k => (
+              <div key={k.kidId} className="grid grid-cols-2 gap-[14px]">
+                {k.interest && (
+                  <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} />
+                )}
+                {k.mix && (
+                  <ActivityMixCard kidName={k.mix.kidName} items={k.mix.items} othersCount={k.mix.othersCount} />
+                )}
+              </div>
+            ))
+          ) : hasKids ? (
+            <SectionCard title="Activity interest" sub="Save activities to see what your kids gravitate towards">
+              <p className="font-display text-sm text-ink-muted">
+                <Link href="/browse" className="text-primary font-semibold hover:underline">Browse activities →</Link>
+              </p>
+            </SectionCard>
+          ) : null}
         </div>
 
         {/* ── RIGHT COLUMN ── */}
@@ -593,30 +613,6 @@ export default async function DashboardPage() {
 
         </div>
       </div>
-
-      {/* ── Kid activity section — full-width, [interest | mix] per kid ── */}
-      {kidWidgets.length > 0 ? (
-        <div className="mt-[18px] flex flex-col gap-[14px]">
-          {kidWidgets.map(k => (
-            <div key={k.kidId} className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">
-              {k.interest && (
-                <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} />
-              )}
-              {k.mix && (
-                <ActivityMixCard kidName={k.mix.kidName} items={k.mix.items} othersCount={k.mix.othersCount} />
-              )}
-            </div>
-          ))}
-        </div>
-      ) : hasKids ? (
-        <div className="mt-[18px]">
-          <SectionCard title="Activity interest" sub="Save activities to see what your kids gravitate towards">
-            <p className="font-display text-sm text-ink-muted">
-              <Link href="/browse" className="text-primary font-semibold hover:underline">Browse activities →</Link>
-            </p>
-          </SectionCard>
-        </div>
-      ) : null}
 
       {/* Feedback */}
       <div className="mt-5 mb-6">
