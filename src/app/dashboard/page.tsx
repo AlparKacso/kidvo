@@ -89,6 +89,47 @@ const SESSION_COLOR: Record<string, string> = {
   declined:  '#ef4444',
 }
 
+/* Category emoji map */
+const CAT_EMOJI: Record<string, string> = {
+  sport: '⚽', dance: '💃', music: '🎵', coding: '💻',
+  arts: '🎨', languages: '🌍', chess: '♟️', gymnastics: '🤸',
+  babysitting: '🍼', other: '✨',
+}
+
+/* Activity interest bar row — relative to max (normalised) */
+function BarRow({ emoji, pct, dim }: { emoji: string; pct: number; dim?: boolean }) {
+  return (
+    <div className="flex items-center gap-[9px]">
+      <span className="text-base w-6 flex-shrink-0 leading-none">{emoji}</span>
+      <div className="flex-1 h-8 rounded-[7px] overflow-hidden" style={{ background: '#f5f4fb' }}>
+        <div
+          className="h-full rounded-[7px]"
+          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)', opacity: dim ? 0.35 : 1 }}
+        />
+      </div>
+      <span className={`font-display text-[12px] font-semibold w-[34px] text-right ${dim ? 'text-ink-muted' : 'text-ink-mid'}`}>
+        {pct}%
+      </span>
+    </div>
+  )
+}
+
+/* Per-kid activity interest card (saves only) */
+function ActivityInterestCard({ kidName, bars }: {
+  kidName: string
+  bars: Array<{ slug: string; pct: number; dim: boolean }>
+}) {
+  return (
+    <SectionCard title={`Activity interest · ${kidName}`} sub="Based on saved activities">
+      <div className="flex flex-col gap-[9px]">
+        {bars.map(b => (
+          <BarRow key={b.slug} emoji={CAT_EMOJI[b.slug] ?? '✨'} pct={b.pct} dim={b.dim} />
+        ))}
+      </div>
+    </SectionCard>
+  )
+}
+
 /* Donut ring chart */
 function Donut({ pct, color, softColor, label }: { pct: number; color: string; softColor: string; label: string }) {
   return (
@@ -115,7 +156,7 @@ function ActivityMixCard({ kidName, items, othersCount }: {
   othersCount: number
 }) {
   return (
-    <SectionCard title={`Activity mix · ${kidName}`}>
+    <SectionCard title={`Activity mix · ${kidName}`} sub="Based on booked trials">
       <div className="flex items-end justify-between gap-2">
         <div className="flex gap-4">
           {items.map(d => (
@@ -349,36 +390,52 @@ export default async function DashboardPage() {
   const bookingsCount = allTrialsRaw.length
   const childCount    = children.length
 
-  // Per-kid activity mix — saves + bookings combined, real % of total, top 3 + others
+  // Helper: count categories from a list of items with a .listing.category shape
+  function buildCatCount(items: any[], getCat: (item: any) => any) {
+    const map = new Map<string, { name: string; slug: string; count: number }>()
+    items.forEach(item => {
+      const cat = getCat(item)
+      if (!cat) return
+      const e = map.get(cat.slug) ?? { name: cat.name, slug: cat.slug, count: 0 }
+      e.count++
+      map.set(cat.slug, e)
+    })
+    return [...map.values()].sort((a, b) => b.count - a.count)
+  }
+
+  // Per-kid activity INTEREST (saves only) — top 5, normalised bars
+  const kidInterests = children.map((kid: any) => {
+    const kidSaves = allSaves.filter((s: any) => s.kid_id === kid.id)
+    const sorted   = buildCatCount(kidSaves, s => (s.listing as any)?.category)
+    if (sorted.length === 0) return null
+    const maxCount = sorted[0].count
+    return {
+      kidId:   kid.id as string,
+      kidName: kid.name as string,
+      bars: sorted.slice(0, 5).map(c => ({
+        slug: c.slug,
+        pct:  Math.round((c.count / maxCount) * 100),
+        dim:  (c.count / maxCount) < 0.35,
+      })),
+    }
+  }).filter(Boolean) as Array<{ kidId: string; kidName: string; bars: Array<{ slug: string; pct: number; dim: boolean }> }>
+
+  // Per-kid activity MIX (bookings only) — top 3 donuts, real % of total, + N others
   const DONUT_PALETTE = [
     { color: '#7c3aed', soft: '#f0e8ff' },
     { color: '#2aa7ff', soft: '#e0f2ff' },
     { color: '#22c55e', soft: '#dcfce7' },
   ]
   const kidMixes = children.map((kid: any) => {
-    const kidSaves    = allSaves.filter((s: any) => s.kid_id === kid.id)
     const kidBookings = allTrialsRaw.filter((t: any) => t.child_id === kid.id)
-
-    const catCount = new Map<string, { name: string; slug: string; count: number }>()
-    const addCat = (cat: any) => {
-      if (!cat) return
-      const e = catCount.get(cat.slug) ?? { name: cat.name, slug: cat.slug, count: 0 }
-      e.count++
-      catCount.set(cat.slug, e)
-    }
-    kidSaves.forEach((s: any)    => addCat((s.listing as any)?.category))
-    kidBookings.forEach((t: any) => addCat((t.listing as any)?.category))
-
-    const sorted = [...catCount.values()].sort((a, b) => b.count - a.count)
-    const total  = sorted.reduce((sum, c) => sum + c.count, 0)
-    const top3   = sorted.slice(0, 3)
-    const othersCount = sorted.length > 3 ? sorted.length - 3 : 0
-
+    const sorted      = buildCatCount(kidBookings, t => (t.listing as any)?.category)
+    if (sorted.length === 0) return null
+    const total       = sorted.reduce((sum, c) => sum + c.count, 0)
+    const top3        = sorted.slice(0, 3)
     return {
-      kidId:   kid.id as string,
-      kidName: kid.name as string,
-      total,
-      othersCount,
+      kidId:       kid.id as string,
+      kidName:     kid.name as string,
+      othersCount: sorted.length > 3 ? sorted.length - 3 : 0,
       items: top3.map((c, i) => ({
         slug:  c.slug,
         name:  c.name,
@@ -387,7 +444,14 @@ export default async function DashboardPage() {
         soft:  DONUT_PALETTE[i].soft,
       })),
     }
-  }).filter(m => m.total > 0) // only kids with at least 1 activity
+  }).filter(Boolean) as Array<{ kidId: string; kidName: string; othersCount: number; items: Array<{ slug: string; name: string; pct: number; color: string; soft: string }> }>
+
+  // Merge per-kid for render: group interest + mix by kid, preserve children order
+  const kidWidgets = children.map((kid: any) => ({
+    kidId:    kid.id as string,
+    interest: kidInterests.find(k => k.kidId === kid.id) ?? null,
+    mix:      kidMixes.find(k => k.kidId === kid.id) ?? null,
+  })).filter(k => k.interest || k.mix)
 
   // Recommended listing — random kid + random pick from top-5 scored pool
   // Server component re-renders on every navigation → Math.random() rotates naturally
@@ -490,13 +554,20 @@ export default async function DashboardPage() {
             )}
           </SectionCard>
 
-          {/* Per-kid Activity mix */}
-          {kidMixes.length > 0 ? (
-            kidMixes.map(m => (
-              <ActivityMixCard key={m.kidId} kidName={m.kidName} items={m.items} othersCount={m.othersCount} />
+          {/* Per-kid Activity interest + mix, grouped by child */}
+          {kidWidgets.length > 0 ? (
+            kidWidgets.map(k => (
+              <div key={k.kidId} className="flex flex-col gap-[18px]">
+                {k.interest && (
+                  <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} />
+                )}
+                {k.mix && (
+                  <ActivityMixCard kidName={k.mix.kidName} items={k.mix.items} othersCount={k.mix.othersCount} />
+                )}
+              </div>
             ))
           ) : (
-            <SectionCard title="Activity mix" sub="Save or book activities to see the mix per child">
+            <SectionCard title="Activity interest" sub="Save activities to see what your kids gravitate towards">
               <p className="font-display text-sm text-ink-muted">
                 <Link href="/browse" className="text-primary font-semibold hover:underline">Browse activities →</Link>
               </p>
