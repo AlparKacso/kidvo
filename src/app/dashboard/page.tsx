@@ -89,28 +89,6 @@ const SESSION_COLOR: Record<string, string> = {
   declined:  '#ef4444',
 }
 
-/* Activity interest bar row */
-function BarRow({ emoji, pct, dim }: { emoji: string; pct: number; dim?: boolean }) {
-  return (
-    <div className="flex items-center gap-[9px]">
-      <span className="text-base w-6 flex-shrink-0 leading-none">{emoji}</span>
-      <div className="flex-1 h-8 rounded-[7px] overflow-hidden" style={{ background: '#f5f4fb' }}>
-        <div
-          className="h-full rounded-[7px]"
-          style={{
-            width: `${pct}%`,
-            background: 'linear-gradient(90deg, #7c3aed, #a855f7)',
-            opacity: dim ? 0.35 : 1,
-          }}
-        />
-      </div>
-      <span className={`font-display text-[12px] font-semibold w-[34px] text-right ${dim ? 'text-ink-muted' : 'text-ink-mid'}`}>
-        {pct}%
-      </span>
-    </div>
-  )
-}
-
 /* Donut ring chart */
 function Donut({ pct, color, softColor, label }: { pct: number; color: string; softColor: string; label: string }) {
   return (
@@ -127,6 +105,33 @@ function Donut({ pct, color, softColor, label }: { pct: number; color: string; s
       </div>
       <span className="font-display text-[11.5px] text-ink-muted">{label}</span>
     </div>
+  )
+}
+
+/* Per-kid activity mix card */
+function ActivityMixCard({ kidName, items, othersCount }: {
+  kidName:     string
+  items:       Array<{ slug: string; name: string; pct: number; color: string; soft: string }>
+  othersCount: number
+}) {
+  return (
+    <SectionCard title={`Activity mix · ${kidName}`}>
+      <div className="flex items-end justify-between gap-2">
+        <div className="flex gap-4">
+          {items.map(d => (
+            <Donut key={d.slug} pct={d.pct} color={d.color} softColor={d.soft} label={d.name} />
+          ))}
+          {items.length < 3 && Array.from({ length: 3 - items.length }).map((_, i) => (
+            <Donut key={`empty-${i}`} pct={0} color="#e5e3f0" softColor="#f5f4fb" label="—" />
+          ))}
+        </div>
+        {othersCount > 0 && (
+          <span className="font-display text-[11.5px] text-ink-muted pb-1 flex-shrink-0">
+            +{othersCount} other{othersCount !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+    </SectionCard>
   )
 }
 
@@ -187,15 +192,6 @@ function RecommendedCard({ listing, forKid }: { listing: any; forKid?: string })
       </Link>
     </div>
   )
-}
-
-/* ─────────────────────────────────────────────────────────────
-   CATEGORY EMOJI MAP (for bar chart / donuts)
-───────────────────────────────────────────────────────────── */
-const CAT_EMOJI: Record<string, string> = {
-  sport: '⚽', dance: '💃', music: '🎵', coding: '💻',
-  arts: '🎨', languages: '🌍', chess: '♟️', gymnastics: '🤸',
-  babysitting: '🍼', other: '✨',
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -331,10 +327,9 @@ export default async function DashboardPage() {
   const [childrenRes, trialsRes, savesRes, topListingRes] = await Promise.all([
     supabase.from('children').select('id, name, birth_year, area_id, interests').eq('user_id', user.id).order('created_at'),
     supabase.from('trial_requests')
-      .select('id, status, preferred_day, listing:listings(id, title, provider:providers(display_name))')
+      .select('id, status, preferred_day, child_id, listing:listings(id, title, provider:providers(display_name), category:categories(name, slug, accent_color))')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(5),
+      .order('created_at', { ascending: false }),
     supabase.from('saves')
       .select('id, kid_id, listing:listings(id, title, price_monthly, status, category:categories(name, slug, accent_color), area:areas(name), provider:providers(display_name))')
       .eq('user_id', user.id)
@@ -347,42 +342,52 @@ export default async function DashboardPage() {
   ])
 
   const children      = childrenRes.data ?? []
-  const sessions      = trialsRes.data ?? []
+  const allTrialsRaw  = trialsRes.data ?? []
+  const sessions      = allTrialsRaw.slice(0, 5)
   const allSaves      = (savesRes.data ?? []).filter((s: any) => s.listing && (s.listing as any).status === 'active')
   const savedCount    = allSaves.length
-  const bookingsCount = sessions.length
+  const bookingsCount = allTrialsRaw.length
   const childCount    = children.length
 
-  // Compute category interest from saves
-  const catCount = new Map<string, { name: string; slug: string; count: number }>()
-  allSaves.forEach((s: any) => {
-    const cat = (s.listing as any)?.category
-    if (cat) {
+  // Per-kid activity mix — saves + bookings combined, real % of total, top 3 + others
+  const DONUT_PALETTE = [
+    { color: '#7c3aed', soft: '#f0e8ff' },
+    { color: '#2aa7ff', soft: '#e0f2ff' },
+    { color: '#22c55e', soft: '#dcfce7' },
+  ]
+  const kidMixes = children.map((kid: any) => {
+    const kidSaves    = allSaves.filter((s: any) => s.kid_id === kid.id)
+    const kidBookings = allTrialsRaw.filter((t: any) => t.child_id === kid.id)
+
+    const catCount = new Map<string, { name: string; slug: string; count: number }>()
+    const addCat = (cat: any) => {
+      if (!cat) return
       const e = catCount.get(cat.slug) ?? { name: cat.name, slug: cat.slug, count: 0 }
       e.count++
       catCount.set(cat.slug, e)
     }
-  })
-  const sortedCats = [...catCount.values()].sort((a, b) => b.count - a.count)
-  const maxCount   = sortedCats[0]?.count ?? 1
-  const barData    = sortedCats.slice(0, 5).map(c => ({
-    slug:  c.slug,
-    emoji: CAT_EMOJI[c.slug] ?? '✨',
-    pct:   Math.round((c.count / maxCount) * 100),
-    dim:   (c.count / maxCount) < 0.35,
-  }))
+    kidSaves.forEach((s: any)    => addCat((s.listing as any)?.category))
+    kidBookings.forEach((t: any) => addCat((t.listing as any)?.category))
 
-  // Donut trio — top 3 categories
-  const donutColors = [
-    { color: '#7c3aed', soft: '#f0e8ff', label: '' },
-    { color: '#2aa7ff', soft: '#e0f2ff', label: '' },
-    { color: '#22c55e', soft: '#dcfce7', label: '' },
-  ]
-  const donutData = sortedCats.slice(0, 3).map((c, i) => ({
-    pct:   Math.max(15, Math.round((c.count / maxCount) * 89)),
-    ...donutColors[i],
-    label: c.name,
-  }))
+    const sorted = [...catCount.values()].sort((a, b) => b.count - a.count)
+    const total  = sorted.reduce((sum, c) => sum + c.count, 0)
+    const top3   = sorted.slice(0, 3)
+    const othersCount = sorted.length > 3 ? sorted.length - 3 : 0
+
+    return {
+      kidId:   kid.id as string,
+      kidName: kid.name as string,
+      total,
+      othersCount,
+      items: top3.map((c, i) => ({
+        slug:  c.slug,
+        name:  c.name,
+        pct:   Math.round((c.count / total) * 100),
+        color: DONUT_PALETTE[i].color,
+        soft:  DONUT_PALETTE[i].soft,
+      })),
+    }
+  }).filter(m => m.total > 0) // only kids with at least 1 activity
 
   // Recommended listing — random kid + random pick from top-5 scored pool
   // Server component re-renders on every navigation → Math.random() rotates naturally
@@ -485,17 +490,13 @@ export default async function DashboardPage() {
             )}
           </SectionCard>
 
-          {/* Activity interest bar chart */}
-          {barData.length > 0 ? (
-            <SectionCard title="Activity interest">
-              <div className="flex flex-col gap-[9px]">
-                {barData.map(b => (
-                  <BarRow key={b.slug} emoji={b.emoji} pct={b.pct} dim={b.dim} />
-                ))}
-              </div>
-            </SectionCard>
+          {/* Per-kid Activity mix */}
+          {kidMixes.length > 0 ? (
+            kidMixes.map(m => (
+              <ActivityMixCard key={m.kidId} kidName={m.kidName} items={m.items} othersCount={m.othersCount} />
+            ))
           ) : (
-            <SectionCard title="Activity interest" sub="Save activities to see your interest mix">
+            <SectionCard title="Activity mix" sub="Save or book activities to see the mix per child">
               <p className="font-display text-sm text-ink-muted">
                 <Link href="/browse" className="text-primary font-semibold hover:underline">Browse activities →</Link>
               </p>
@@ -509,21 +510,6 @@ export default async function DashboardPage() {
 
           {/* Recommended dark card */}
           <RecommendedCard listing={recommended} forKid={recommendedFor} />
-
-          {/* Activity mix donuts */}
-          {donutData.length > 0 && (
-            <SectionCard title="Activity mix">
-              <div className="flex justify-between">
-                {donutData.map(d => (
-                  <Donut key={d.label} pct={d.pct} color={d.color} softColor={d.soft} label={d.label} />
-                ))}
-                {/* Fill empty slots if fewer than 3 categories */}
-                {donutData.length < 3 && Array.from({ length: 3 - donutData.length }).map((_, i) => (
-                  <Donut key={`empty-${i}`} pct={0} color="#e5e3f0" softColor="#f5f4fb" label="—" />
-                ))}
-              </div>
-            </SectionCard>
-          )}
 
           {/* Kid profile card */}
           {hasKids && firstKid && (
