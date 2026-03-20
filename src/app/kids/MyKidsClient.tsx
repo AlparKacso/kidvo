@@ -33,6 +33,7 @@ interface Area     { id: string; name: string }
 interface Save     { id: string; kid_id: string | null; listing: any }
 interface Booking  { id: string; status: string; preferred_day: number | null; created_at: string; child_id: string | null; message: string | null; listing: any }
 interface Category { id: string; name: string; slug: string; accent_color: string }
+interface Listing  { id: string; title: string; price_monthly: number; age_min: number; age_max: number; area_id: string | null; trial_available: boolean; category: { name: string; slug: string; accent_color: string } | null; area: { name: string } | null }
 
 // ── ChildForm ────────────────────────────────────────────────────────────────
 
@@ -321,6 +322,73 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
   )
 }
 
+// ── RecommendationsSection ───────────────────────────────────────────────────
+
+function RecommendationsSection({ kid, listings, saves, bookings }: {
+  kid:      Child
+  listings: Listing[]
+  saves:    Save[]
+  bookings: Booking[]
+}) {
+  const kidAge       = CURRENT_YEAR - kid.birth_year
+  const savedIds     = new Set(saves.filter(s => s.kid_id === kid.id).map(s => (s.listing as any)?.id).filter(Boolean))
+  const bookedIds    = new Set(bookings.filter(b => b.child_id === kid.id).map(b => (b.listing as any)?.id).filter(Boolean))
+
+  const recs = listings
+    .filter(l => !savedIds.has(l.id) && !bookedIds.has(l.id))
+    .filter(l => kidAge >= l.age_min && kidAge <= l.age_max)
+    .map(l => ({
+      ...l,
+      score: (kid.interests?.includes(l.category?.slug ?? '') ? 2 : 0)
+           + (kid.area_id && l.area_id === kid.area_id ? 1 : 0),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+
+  if (recs.length === 0) return null
+
+  return (
+    <div className="bg-white border border-border rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
+        <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">
+          Recommended for {kid.name}
+        </div>
+        <Link href="/browse" className="font-display text-xs font-semibold text-primary hover:underline">
+          Browse all →
+        </Link>
+      </div>
+      <div className="divide-y divide-border">
+        {recs.map(listing => {
+          const category = listing.category
+          const area     = listing.area
+          return (
+            <div key={listing.id} className="px-4 py-3.5 flex gap-3">
+              <div className="w-1 self-stretch rounded-full flex-shrink-0 mt-0.5" style={{ background: category?.accent_color ?? '#ccc' }} />
+              <div className="flex-1 min-w-0">
+                <Link href={`/browse/${listing.id}`} className="font-display text-sm font-bold text-ink hover:text-primary transition-colors leading-snug block">
+                  {listing.title}
+                </Link>
+                <div className="text-xs text-ink-muted mt-0.5">
+                  {[category?.name, `Ages ${listing.age_min}–${listing.age_max}`, area?.name].filter(Boolean).join(' · ')}
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="font-display text-sm font-bold text-ink">{listing.price_monthly} RON</span>
+                  <span className="text-xs text-ink-muted font-body">/mo</span>
+                  {listing.trial_available && (
+                    <Link href={`/browse/${listing.id}?book=1`} className="ml-auto px-3 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
+                      Book trial
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 interface Props {
@@ -330,9 +398,10 @@ interface Props {
   saves:       Save[]
   categories:  Category[]
   bookings:    Booking[]
+  listings:    Listing[]
 }
 
-export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, categories, bookings: initialBookings }: Props) {
+export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, categories, bookings: initialBookings, listings }: Props) {
   const [kids,           setKids]           = useState<Child[]>(initialKids)
   const [localBookings,  setLocalBookings]  = useState<Booking[]>(initialBookings)
   const [localSaves,     setLocalSaves]     = useState<Save[]>(initialSaves)
@@ -616,6 +685,13 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
         {/* Bookings + saves — key resets collapse state on kid switch */}
         <BookingsSection key={`b-${selectedId}`} bookings={kidBookings} />
         <SavesSection    key={`s-${selectedId}`} saves={visibleSaves}   onUnsave={handleUnsave} />
+        <RecommendationsSection
+          key={`r-${selectedId}`}
+          kid={selectedKid}
+          listings={listings}
+          saves={localSaves}
+          bookings={localBookings}
+        />
       </div>
     )
   })()
