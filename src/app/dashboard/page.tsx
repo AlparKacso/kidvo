@@ -612,21 +612,32 @@ export default async function DashboardPage() {
           <RecommendedCard listing={recommended} forKid={recommendedFor} />
 
           {/* Kid profile card */}
-          {hasKids && firstKid && (
-            <SectionCard title="Your child" sub={children.length > 1 ? `+${children.length - 1} more on profile` : undefined}>
-              <div className="flex items-center gap-[11px] mb-[13px] -mt-[4px]">
-                <div className="w-10 h-10 rounded-[11px] bg-primary-lt flex items-center justify-center flex-shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-primary">
-                    <circle cx="9" cy="5.5" r="3"/><path d="M2.5 16c0-3 2.9-5.5 6.5-5.5s6.5 2.5 6.5 5.5"/>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="font-display text-[15px] font-extrabold text-ink">{firstKid.name}</div>
-                  <div className="font-display text-[11.5px] text-ink-muted">
-                    {firstKidSaves} saved · {sessions.length} trial{sessions.length !== 1 ? 's' : ''} pending
-                  </div>
-                </div>
-                <Link href="/kids" className="font-display text-[12px] font-semibold text-blue hover:opacity-80">Edit →</Link>
+          {hasKids && (
+            <SectionCard
+              title={children.length > 1 ? 'Your children' : 'Your child'}
+              linkText="Edit →"
+              linkHref="/kids"
+            >
+              <div className="flex flex-col gap-[9px]">
+                {(children as any[]).map((kid) => {
+                  const kidSaves    = allSaves.filter((s: any) => s.kid_id === kid.id).length
+                  const kidBookings = allTrialsRaw.filter((t: any) => t.child_id === kid.id).length
+                  return (
+                    <div key={kid.id} className="flex items-center gap-[11px] px-3 py-[11px] rounded-[12px] border border-border" style={{ background: '#f9f8fd' }}>
+                      <div className="w-9 h-9 rounded-[10px] bg-primary-lt flex items-center justify-center flex-shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-primary">
+                          <circle cx="9" cy="5.5" r="3"/><path d="M2.5 16c0-3 2.9-5.5 6.5-5.5s6.5 2.5 6.5 5.5"/>
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-display text-[13.5px] font-semibold text-ink">{kid.name}</div>
+                        <div className="font-display text-[11.5px] text-ink-muted">
+                          {kidSaves} saved · {kidBookings} trial{kidBookings !== 1 ? 's' : ''} booked
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </SectionCard>
           )}
