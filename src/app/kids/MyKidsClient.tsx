@@ -217,7 +217,7 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
                     {isUnassigned && kids && kids.length > 0 && onReassign && (
                       assigningId === req.id
                         ? <AssignButtons kids={kids} onAssign={kidId => { onReassign(req.id, kidId); setAssigningId(null) }} onCancel={() => setAssigningId(null)} />
-                        : <button onClick={() => setAssigningId(req.id)} className="mt-2 font-display text-xs font-semibold text-ink-muted hover:text-primary transition-colors">Assign to child →</button>
+                        : <button onClick={() => setAssigningId(req.id)} className="mt-2.5 inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary-border bg-primary-lt font-display text-xs font-semibold text-primary active:bg-primary active:text-white transition-colors">Assign to child →</button>
                     )}
                   </div>
                 </div>
@@ -302,7 +302,7 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
                     {isUnassigned && kids && kids.length > 0 && onReassign && (
                       assigningId === save.id
                         ? <AssignButtons kids={kids} onAssign={kidId => { onReassign(save.id, kidId); setAssigningId(null) }} onCancel={() => setAssigningId(null)} />
-                        : <button onClick={() => setAssigningId(save.id)} className="mt-2 font-display text-xs font-semibold text-ink-muted hover:text-primary transition-colors">Assign to child →</button>
+                        : <button onClick={() => setAssigningId(save.id)} className="mt-2.5 inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary-border bg-primary-lt font-display text-xs font-semibold text-primary active:bg-primary active:text-white transition-colors">Assign to child →</button>
                     )}
                   </div>
                 </div>
