@@ -97,19 +97,15 @@ const CAT_EMOJI: Record<string, string> = {
 }
 
 /* Activity interest bar row — % of total saves */
-function BarRow({ emoji, pct }: { emoji: string; pct: number }) {
+function BarRow({ emoji, name, pct }: { emoji: string; name: string; pct: number }) {
   return (
-    <div className="flex items-center gap-[9px]">
-      <span className="text-sm w-5 flex-shrink-0 leading-none">{emoji}</span>
-      <div className="flex-1 h-[18px] rounded-[5px] overflow-hidden" style={{ background: '#f5f4fb' }}>
-        <div
-          className="h-full rounded-[5px]"
-          style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }}
-        />
+    <div className="flex items-center gap-2">
+      <span className="text-[13px] w-[18px] flex-shrink-0 leading-none">{emoji}</span>
+      <span className="font-display text-[11px] text-ink-mid w-[52px] flex-shrink-0 truncate capitalize">{name}</span>
+      <div className="flex-1 h-[13px] rounded-[4px] overflow-hidden" style={{ background: '#f5f4fb' }}>
+        <div className="h-full rounded-[4px]" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }} />
       </div>
-      <span className="font-display text-[11.5px] font-semibold w-[30px] text-right text-ink-mid">
-        {pct}%
-      </span>
+      <span className="font-display text-[11px] font-bold w-[26px] text-right text-ink-mid">{pct}%</span>
     </div>
   )
 }
@@ -117,13 +113,13 @@ function BarRow({ emoji, pct }: { emoji: string; pct: number }) {
 /* Per-kid activity interest card (saves only) */
 function ActivityInterestCard({ kidName, bars }: {
   kidName: string
-  bars: Array<{ slug: string; pct: number }>
+  bars: Array<{ slug: string; name: string; pct: number }>
 }) {
   return (
-    <SectionCard title={`Activity interest · ${kidName}`} sub="Based on saved activities">
-      <div className="flex flex-col gap-2">
+    <SectionCard title={`Activity interest · ${kidName}`} sub="Based on saves">
+      <div className="flex flex-col gap-[7px]">
         {bars.map(b => (
-          <BarRow key={b.slug} emoji={CAT_EMOJI[b.slug] ?? '✨'} pct={b.pct} />
+          <BarRow key={b.slug} emoji={CAT_EMOJI[b.slug] ?? '✨'} name={b.name} pct={b.pct} />
         ))}
       </div>
     </SectionCard>
@@ -157,17 +153,12 @@ function ActivityMixCard({ kidName, items, othersCount }: {
 }) {
   return (
     <SectionCard title={`Activity mix · ${kidName}`} sub="Based on booked trials">
-      <div className="flex items-end justify-between gap-2">
-        <div className="flex gap-4">
-          {items.map(d => (
-            <Donut key={d.slug} pct={d.pct} color={d.color} softColor={d.soft} label={d.name} />
-          ))}
-          {items.length < 3 && Array.from({ length: 3 - items.length }).map((_, i) => (
-            <Donut key={`empty-${i}`} pct={0} color="#e5e3f0" softColor="#f5f4fb" label="—" />
-          ))}
-        </div>
+      <div className="flex items-end gap-5">
+        {items.map(d => (
+          <Donut key={d.slug} pct={d.pct} color={d.color} softColor={d.soft} label={d.name} />
+        ))}
         {othersCount > 0 && (
-          <span className="font-display text-[11.5px] text-ink-muted pb-1 flex-shrink-0">
+          <span className="font-display text-[11.5px] text-ink-muted self-end pb-1">
             +{othersCount} other{othersCount !== 1 ? 's' : ''}
           </span>
         )}
@@ -384,7 +375,7 @@ export default async function DashboardPage() {
 
   const children      = childrenRes.data ?? []
   const allTrialsRaw  = trialsRes.data ?? []
-  const sessions      = allTrialsRaw.slice(0, 5)
+  const sessions      = allTrialsRaw.slice(0, 3)
   const allSaves      = (savesRes.data ?? []).filter((s: any) => s.listing && (s.listing as any).status === 'active')
   const savedCount    = allSaves.length
   const bookingsCount = allTrialsRaw.length
@@ -414,10 +405,11 @@ export default async function DashboardPage() {
       kidName: kid.name as string,
       bars: sorted.slice(0, 5).map(c => ({
         slug: c.slug,
+        name: c.name,
         pct:  Math.round((c.count / total) * 100),
       })),
     }
-  }).filter(Boolean) as Array<{ kidId: string; kidName: string; bars: Array<{ slug: string; pct: number }> }>
+  }).filter(Boolean) as Array<{ kidId: string; kidName: string; bars: Array<{ slug: string; name: string; pct: number }> }>
 
   // Per-kid activity MIX (bookings only) — top 3 donuts, real % of total, + N others
   const DONUT_PALETTE = [
@@ -515,14 +507,17 @@ export default async function DashboardPage() {
         <StatCard label="Reviews left"    value={0}             sub="Nothing pending" />
       </div>
 
-      {/* Two-col layout — prototype: 1fr + 328px */}
+      {/* Two-col layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_328px] gap-[18px]">
 
-        {/* ── LEFT COLUMN ── */}
+        {/* ── LEFT COLUMN — sessions only ── */}
         <div className="flex flex-col gap-[18px]">
-
-          {/* Upcoming sessions */}
-          <SectionCard title="Upcoming sessions" sub="Confirmed & pending trials" linkText="View all →" linkHref="/bookings">
+          <SectionCard
+            title="Upcoming sessions"
+            sub="Confirmed & pending trials"
+            linkText={bookingsCount > 3 ? `View all (${bookingsCount}) →` : 'View all →'}
+            linkHref="/bookings"
+          >
             {sessions.length === 0 ? (
               <p className="font-display text-sm text-ink-muted">
                 No trial requests yet.{' '}
@@ -531,7 +526,7 @@ export default async function DashboardPage() {
             ) : (
               <div className="flex flex-col gap-[9px]">
                 {sessions.map((s: any) => {
-                  const listing = s.listing as any
+                  const listing  = s.listing as any
                   const dotColor = SESSION_COLOR[s.status] ?? '#f5c542'
                   return (
                     <div key={s.id} className="flex items-center gap-2.5 px-3 py-[11px] rounded-[12px] border border-border" style={{ background: '#f9f8fd' }}>
@@ -552,27 +547,6 @@ export default async function DashboardPage() {
               </div>
             )}
           </SectionCard>
-
-          {/* Per-kid Activity interest + mix, grouped by child */}
-          {kidWidgets.length > 0 ? (
-            kidWidgets.map(k => (
-              <div key={k.kidId} className="flex flex-col gap-[18px]">
-                {k.interest && (
-                  <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} />
-                )}
-                {k.mix && (
-                  <ActivityMixCard kidName={k.mix.kidName} items={k.mix.items} othersCount={k.mix.othersCount} />
-                )}
-              </div>
-            ))
-          ) : (
-            <SectionCard title="Activity interest" sub="Save activities to see what your kids gravitate towards">
-              <p className="font-display text-sm text-ink-muted">
-                <Link href="/browse" className="text-primary font-semibold hover:underline">Browse activities →</Link>
-              </p>
-            </SectionCard>
-          )}
-
         </div>
 
         {/* ── RIGHT COLUMN ── */}
@@ -619,6 +593,30 @@ export default async function DashboardPage() {
 
         </div>
       </div>
+
+      {/* ── Kid activity section — full-width, [interest | mix] per kid ── */}
+      {kidWidgets.length > 0 ? (
+        <div className="mt-[18px] flex flex-col gap-[14px]">
+          {kidWidgets.map(k => (
+            <div key={k.kidId} className="grid grid-cols-1 md:grid-cols-2 gap-[14px]">
+              {k.interest && (
+                <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} />
+              )}
+              {k.mix && (
+                <ActivityMixCard kidName={k.mix.kidName} items={k.mix.items} othersCount={k.mix.othersCount} />
+              )}
+            </div>
+          ))}
+        </div>
+      ) : hasKids ? (
+        <div className="mt-[18px]">
+          <SectionCard title="Activity interest" sub="Save activities to see what your kids gravitate towards">
+            <p className="font-display text-sm text-ink-muted">
+              <Link href="/browse" className="text-primary font-semibold hover:underline">Browse activities →</Link>
+            </p>
+          </SectionCard>
+        </div>
+      ) : null}
 
       {/* Feedback */}
       <div className="mt-5 mb-6">
