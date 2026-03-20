@@ -522,6 +522,11 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
           <span className="font-display text-sm font-semibold">Add a child</span>
         </button>
       )}
+
+      {/* Recommendation — updates when selected kid changes */}
+      {kidRecommendation && selectedKid && (
+        <RecommendedCard listing={kidRecommendation} forKid={selectedKid.name} />
+      )}
     </div>
   )
 
@@ -625,11 +630,6 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
             </div>
           )}
         </div>
-
-        {/* Recommendation — same widget as dashboard, scoped to this kid */}
-        {kidRecommendation && (
-          <RecommendedCard listing={kidRecommendation} forKid={selectedKid.name} />
-        )}
 
         {/* Bookings + saves — key resets collapse state on kid switch */}
         <BookingsSection key={`b-${selectedId}`} bookings={kidBookings} />
