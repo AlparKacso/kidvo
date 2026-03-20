@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     description: 'Descoperă activități pentru copii în Timișoara. Sport, dans, muzică, arte, programare. Rezervă o ședință de probă gratuită.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'kidvo — Activități pentru copii în Timișoara',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'kidvo — Activități pentru copii în Timișoara',
     description: 'Descoperă activități pentru copii în Timișoara. Rezervă o ședință de probă gratuită.',
-    images: ['/og-image.png'],
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,
