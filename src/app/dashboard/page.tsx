@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
 import { FeedbackForm } from '../main/FeedbackForm'
+import { OnboardingWidget } from './OnboardingWidget'
+import type { OnboardingStep } from './OnboardingWidget'
 
 export const dynamic = 'force-dynamic'
 
@@ -245,8 +247,8 @@ export default async function DashboardPage() {
   if (!user) redirect('/auth/login')
 
   const { data: profileRaw } = await supabase
-    .from('users').select('full_name, role').eq('id', user.id).single()
-  const profile = profileRaw as { full_name: string; role: string } | null
+    .from('users').select('full_name, role, onboarding_dismissed').eq('id', user.id).single()
+  const profile = profileRaw as { full_name: string; role: string; onboarding_dismissed: boolean } | null
   const role       = profile?.role ?? 'parent'
   const firstName  = profile?.full_name?.split(' ')[0] ?? ''
   const isProvider = role === 'provider' || role === 'both'
@@ -258,31 +260,45 @@ export default async function DashboardPage() {
     const provider = providerRaw as { id: string } | null
 
     let weekReach = 0, totalViews = 0, pendingTrials = 0, activeCount = 0, tipBody = ''
+    let provHasAnyListing = false, provHasAnyBooking = false, provHasAnyReview = false
 
     if (provider) {
       const { data: listingsRaw } = await supabase
         .from('listings').select('id').eq('provider_id', provider.id)
       const listingIds = (listingsRaw ?? []).map((l: any) => l.id as string)
       const tipIndex   = (new Date().getMonth() % 5) + 1
+      provHasAnyListing = listingIds.length > 0
 
       if (listingIds.length > 0) {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-        const [viewsRes, trialsRes, activeRes, tipRes] = await Promise.all([
+        const [viewsRes, trialsRes, activeRes, tipRes, allBookingsRes, reviewsRes] = await Promise.all([
           supabase.from('listing_views').select('user_id').in('listing_id', listingIds).gte('viewed_at', sevenDaysAgo).not('user_id', 'is', null),
           supabase.from('trial_requests').select('id').in('listing_id', listingIds).eq('status', 'pending'),
           supabase.from('listings').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id).eq('status', 'active'),
           supabase.from('tips').select('body').eq('id', tipIndex).single(),
+          supabase.from('trial_requests').select('id', { count: 'exact', head: true }).in('listing_id', listingIds),
+          supabase.from('reviews').select('id', { count: 'exact', head: true }).in('listing_id', listingIds),
         ])
-        weekReach     = new Set((viewsRes.data ?? []).map((r: any) => r.user_id)).size
-        totalViews    = viewsRes.data?.length ?? 0
-        pendingTrials = trialsRes.data?.length ?? 0
-        activeCount   = activeRes.count ?? 0
-        tipBody       = (tipRes.data as any)?.body ?? ''
+        weekReach          = new Set((viewsRes.data ?? []).map((r: any) => r.user_id)).size
+        totalViews         = viewsRes.data?.length ?? 0
+        pendingTrials      = trialsRes.data?.length ?? 0
+        activeCount        = activeRes.count ?? 0
+        tipBody            = (tipRes.data as any)?.body ?? ''
+        provHasAnyBooking  = (allBookingsRes.count ?? 0) > 0
+        provHasAnyReview   = (reviewsRes.count ?? 0) > 0
       } else {
         const tipRes = await supabase.from('tips').select('body').eq('id', tipIndex).single()
         tipBody = (tipRes.data as any)?.body ?? ''
       }
     }
+
+    const provSteps: OnboardingStep[] = [
+      { label: 'Create your first listing',    done: provHasAnyListing, href: '/listings/new' },
+      { label: 'Receive your first booking',   done: provHasAnyBooking  },
+      { label: 'Get your first review',        done: provHasAnyReview   },
+    ]
+    const provOnboardingDone      = provSteps.every(s => s.done)
+    const showProvOnboarding      = !profile?.onboarding_dismissed && !provOnboardingDone
 
     return (
       <AppShell>
@@ -344,6 +360,12 @@ export default async function DashboardPage() {
             </div>
           )}
 
+          {showProvOnboarding && (
+            <div className="max-w-xs mb-4">
+              <OnboardingWidget steps={provSteps} />
+            </div>
+          )}
+
           <div className="mb-6">
             <div className="bg-white border border-border rounded-xl px-5 py-4">
               <p className="text-sm text-ink-muted mb-3">Tell us what feature or section would help you use kidvo better.</p>
@@ -356,7 +378,7 @@ export default async function DashboardPage() {
   }
 
   /* ── Parent dashboard — fetch everything in parallel ──────── */
-  const [childrenRes, trialsRes, savesRes, topListingRes] = await Promise.all([
+  const [childrenRes, trialsRes, savesRes, topListingRes, parentReviewsRes] = await Promise.all([
     supabase.from('children').select('id, name, birth_year, area_id, interests').eq('user_id', user.id).order('created_at'),
     supabase.from('trial_requests')
       .select('id, status, preferred_day, child_id, listing:listings(id, title, provider:providers(display_name), category:categories(name, slug, accent_color))')
@@ -371,15 +393,26 @@ export default async function DashboardPage() {
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(50),
+    supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
   ])
 
-  const children      = childrenRes.data ?? []
-  const allTrialsRaw  = trialsRes.data ?? []
-  const sessions      = allTrialsRaw.slice(0, 3)
-  const allSaves      = (savesRes.data ?? []).filter((s: any) => s.listing && (s.listing as any).status === 'active')
-  const savedCount    = allSaves.length
-  const bookingsCount = allTrialsRaw.length
-  const childCount    = children.length
+  const children         = childrenRes.data ?? []
+  const allTrialsRaw     = trialsRes.data ?? []
+  const sessions         = allTrialsRaw.slice(0, 3)
+  const allSaves         = (savesRes.data ?? []).filter((s: any) => s.listing && (s.listing as any).status === 'active')
+  const savedCount       = allSaves.length
+  const bookingsCount    = allTrialsRaw.length
+  const childCount       = children.length
+  const parentReviews    = parentReviewsRes.count ?? 0
+
+  /* ── Onboarding widget ────────────────────────────────────── */
+  const parentSteps: OnboardingStep[] = [
+    { label: 'Add your first child', done: childCount > 0,    href: '/kids'     },
+    { label: 'Book a trial',         done: bookingsCount > 0, href: '/browse'   },
+    { label: 'Leave a review',       done: parentReviews > 0, href: '/bookings' },
+  ]
+  const parentOnboardingDone = parentSteps.every(s => s.done)
+  const showParentOnboarding = !profile?.onboarding_dismissed && !parentOnboardingDone
 
   // Helper: count categories from a list of items with a .listing.category shape
   function buildCatCount(items: any[], getCat: (item: any) => any) {
@@ -572,6 +605,9 @@ export default async function DashboardPage() {
         {/* ── RIGHT COLUMN ── */}
         <div className="flex flex-col gap-[14px]">
 
+          {/* Onboarding widget */}
+          {showParentOnboarding && <OnboardingWidget steps={parentSteps} />}
+
           {/* Recommended dark card */}
           <RecommendedCard listing={recommended} forKid={recommendedFor} />
 
@@ -591,11 +627,6 @@ export default async function DashboardPage() {
                   </div>
                 </div>
                 <Link href="/kids" className="font-display text-[12px] font-semibold text-blue hover:opacity-80">Edit →</Link>
-              </div>
-              <div className="flex flex-col gap-[9px]">
-                <ProgRow label="Kids added"   pct={100}              color="#22c55e" val="✓" />
-                <ProgRow label="Trial booked" pct={bookingsCount > 0 ? 100 : 0} color="#2aa7ff" val={bookingsCount > 0 ? '✓' : '—'} />
-                <ProgRow label="First review" pct={0}                color="#7c3aed" val="—" />
               </div>
             </SectionCard>
           )}
