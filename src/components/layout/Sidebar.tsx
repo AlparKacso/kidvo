@@ -89,37 +89,70 @@ const IconSettings  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill
 const IconAdmin     = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 1.5L2.5 4.5v4c0 3.5 2.9 6.5 6.5 7 3.6-.5 6.5-3.5 6.5-7v-4L9 1.5Z"/><path d="M6 9l2 2 4-4"/></svg>
 
 function FeedbackNudge({ isProvider }: { isProvider: boolean }) {
-  const [open, setOpen] = useState(false)
+  const [open,     setOpen]     = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
-  const title    = isProvider ? 'Help us improve for providers' : 'How\'s kidvo working for you?'
+  const title    = isProvider ? 'Help us improve for providers' : "How's kidvo working for you?"
   const subtitle = isProvider
     ? 'What would make managing your listings easier?'
     : 'Tell us what would help you find the right activities for your kids.'
 
+  const BubbleIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15.5 9.5c0 3-2.9 5-6.5 5a7.7 7.7 0 0 1-3-.6L2.5 15l1-3.3A5.3 5.3 0 0 1 2.5 9c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6Z"/>
+    </svg>
+  )
+
   return (
     <>
-      <div className="rounded-[16px] p-4 text-white" style={{ background: '#1c1c27' }}>
-        <div
-          className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-2.5"
-          style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.70)' }}
-        >
-          {/* Speech bubble icon */}
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15.5 9.5c0 3-2.9 5-6.5 5a7.7 7.7 0 0 1-3-.6L2.5 15l1-3.3A5.3 5.3 0 0 1 2.5 9c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6Z"/>
-          </svg>
-        </div>
-        <div className="font-display text-[14px] font-bold mb-1 leading-snug">{title}</div>
-        <div className="font-display text-[12px] leading-[1.5] mb-3" style={{ color: 'rgba(255,255,255,0.50)' }}>
-          {subtitle}
-        </div>
+      {/* Collapsed: icon bubble only */}
+      {!expanded && (
         <button
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-1 font-display text-[12px] font-semibold text-white rounded-[8px] hover:opacity-85 transition-opacity"
-          style={{ background: '#7c3aed', padding: '7px 13px' }}
+          onClick={() => setExpanded(true)}
+          aria-label="Share feedback"
+          className="w-10 h-10 rounded-[12px] flex items-center justify-center text-white active:scale-95 transition-transform"
+          style={{ background: '#1c1c27', color: 'rgba(255,255,255,0.75)' }}
         >
-          Share feedback →
+          <BubbleIcon />
         </button>
-      </div>
+      )}
+
+      {/* Expanded: full card */}
+      {expanded && (
+        <div className="feedback-expand rounded-[16px] p-4 text-white" style={{ background: '#1c1c27' }}>
+          {/* Icon + close row */}
+          <div className="flex items-center justify-between mb-2.5">
+            <div
+              className="w-9 h-9 rounded-[10px] flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.70)' }}
+            >
+              <BubbleIcon />
+            </div>
+            <button
+              onClick={() => setExpanded(false)}
+              aria-label="Collapse"
+              className="w-6 h-6 flex items-center justify-center rounded-full transition-opacity hover:opacity-70"
+              style={{ color: 'rgba(255,255,255,0.45)' }}
+            >
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <div className="font-display text-[14px] font-bold mb-1 leading-snug">{title}</div>
+          <div className="font-display text-[12px] leading-[1.5] mb-3" style={{ color: 'rgba(255,255,255,0.50)' }}>
+            {subtitle}
+          </div>
+          <button
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center gap-1 font-display text-[12px] font-semibold text-white rounded-[8px] hover:opacity-85 transition-opacity"
+            style={{ background: '#7c3aed', padding: '7px 13px' }}
+          >
+            Share feedback →
+          </button>
+        </div>
+      )}
 
       {/* Modal */}
       {open && (
