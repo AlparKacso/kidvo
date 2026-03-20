@@ -8,7 +8,7 @@ export default async function MyKidsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const [{ data: childrenRaw }, { data: areasRaw }, { data: savesRaw }, { data: categoriesRaw }, { data: bookingsRaw }, { data: listingsRaw }] = await Promise.all([
+  const [{ data: childrenRaw }, { data: areasRaw }, { data: savesRaw }, { data: categoriesRaw }, { data: bookingsRaw }] = await Promise.all([
     supabase.from('children').select('*').eq('user_id', user.id).order('created_at'),
     supabase.from('areas').select('*').order('name'),
     supabase
@@ -40,12 +40,6 @@ export default async function MyKidsPage() {
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
-    supabase
-      .from('listings')
-      .select('id, title, price_monthly, age_min, age_max, area_id, trial_available, category:categories(name, slug, accent_color), area:areas(name)')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(60),
   ])
 
   const children   = childrenRaw   as unknown as any[] | null
@@ -53,7 +47,6 @@ export default async function MyKidsPage() {
   const saves      = savesRaw      as unknown as any[] | null
   const categories = categoriesRaw as unknown as any[] | null
   const bookings   = bookingsRaw   as unknown as any[] | null
-  const listings   = listingsRaw   as unknown as any[] | null
 
   const activeSaves = saves?.filter(s => s.listing && (s.listing as any).status === 'active') ?? []
 
@@ -66,7 +59,6 @@ export default async function MyKidsPage() {
         saves={activeSaves}
         categories={categories ?? []}
         bookings={bookings ?? []}
-        listings={listings ?? []}
       />
     </AppShell>
   )
