@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { FeedbackForm } from '../main/FeedbackForm'
 import { OnboardingWidget } from './OnboardingWidget'
 import type { OnboardingStep } from './OnboardingWidget'
+import { RecommendedCard, pickRecommendation } from '@/components/ui/RecommendedCard'
 
 export const dynamic = 'force-dynamic'
 
@@ -182,51 +183,7 @@ function ProgRow({ label, pct, color, val }: { label: string; pct: number; color
   )
 }
 
-/* Recommended (dark) card */
-function RecommendedCard({ listing, forKid }: { listing: any; forKid?: string }) {
-  if (!listing) return null
-  const cat = listing.category as any
-  return (
-    <div className="rounded-[22px] p-[22px] text-white" style={{ background: '#1c1c27', boxShadow: '0 6px 28px rgba(90,70,140,.12)' }}>
-      <div className="font-display text-[10.5px] font-bold tracking-[.1em] uppercase mb-2.5" style={{ color: '#f0e8ff' }}>
-        ⚡ {forKid ? `FOR ${forKid.toUpperCase()}` : 'RECOMMENDED FOR YOU'}
-      </div>
-      <div
-        className="w-[42px] h-[42px] rounded-[11px] flex items-center justify-center mb-3 text-xl"
-        style={{ background: 'rgba(255,255,255,.1)' }}
-      >
-        {cat?.slug === 'sport' ? '⚽' : cat?.slug === 'dance' ? '💃' : cat?.slug === 'music' ? '🎵' : cat?.slug === 'coding' ? '💻' : cat?.slug === 'arts' ? '🎨' : cat?.slug === 'chess' ? '♟️' : cat?.slug === 'gymnastics' ? '🤸' : '✨'}
-      </div>
-      <div className="font-display text-[18px] font-extrabold tracking-[-0.4px] leading-[1.25] mb-1.5">
-        {listing.title}
-      </div>
-      <div className="font-display text-[12px] leading-[1.55] mb-4" style={{ color: 'rgba(255,255,255,.5)' }}>
-        {(listing.provider as any)?.display_name}{listing.trial_available ? ' · Trial session available' : ''}
-      </div>
-      <div className="flex gap-5 mb-4">
-        {listing.price_monthly != null && (
-          <div>
-            <div className="font-display text-[20px] font-extrabold leading-none">{listing.price_monthly}</div>
-            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>RON/mo</div>
-          </div>
-        )}
-        {listing.trial_available && (
-          <div>
-            <div className="font-display text-[20px] font-extrabold leading-none">Free</div>
-            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>Trial</div>
-          </div>
-        )}
-      </div>
-      <Link
-        href={`/browse/${listing.id}`}
-        className="block w-full text-center font-display text-[13.5px] font-bold text-white rounded-[12px] py-[11px] hover:opacity-90 transition-opacity"
-        style={{ background: '#2aa7ff' }}
-      >
-        {listing.trial_available ? 'Book trial →' : 'View listing →'}
-      </Link>
-    </div>
-  )
-}
+/* RecommendedCard and pickRecommendation imported from @/components/ui/RecommendedCard */
 
 /* ─────────────────────────────────────────────────────────────
    PROVIDER STAT CARD
@@ -477,39 +434,18 @@ export default async function DashboardPage() {
     mix:      kidMixes.find(k => k.kidId === kid.id) ?? null,
   })).filter(k => k.interest || k.mix)
 
-  // Recommended listing — random kid + random pick from top-5 scored pool
+  // Recommended listing — random kid + shared pickRecommendation helper
   // Server component re-renders on every navigation → Math.random() rotates naturally
   const savedIds    = new Set(allSaves.map((s: any) => (s.listing as any)?.id))
   const bookedIds   = new Set((trialsRes.data ?? []).map((t: any) => (t.listing as any)?.id))
   const allListings = topListingRes.data ?? []
 
-  // Pick a random kid each render
   const recKid = children.length > 0
     ? (children[Math.floor(Math.random() * children.length)] as any)
     : undefined
-  const recKidYear:      number | undefined  = recKid?.birth_year
-  const recKidAge:       number | null       = recKidYear ? new Date().getFullYear() - recKidYear : null
-  const recKidInterests: string[]            = recKid?.interests ?? []
-  const recKidAreaId:    string | null       = recKid?.area_id ?? null
 
-  const scored = allListings
-    .filter((l: any) => !savedIds.has(l.id) && !bookedIds.has(l.id))
-    .map((l: any) => {
-      const cat = (l.category as any)
-      let score = 0
-      if (recKidInterests.length > 0 && cat?.slug && recKidInterests.includes(cat.slug)) score += 3
-      if (recKidAge !== null && l.age_min <= recKidAge && l.age_max >= recKidAge)          score += 2
-      if (recKidAreaId && l.area_id === recKidAreaId)                                      score += 1
-      return { ...l, _score: score }
-    })
-    .sort((a: any, b: any) => b._score - a._score)
-
-  // Pick randomly from the top-5 so the card feels fresh each visit
-  const topPool    = scored.slice(0, 5)
-  const recListing = topPool.length > 0
-    ? topPool[Math.floor(Math.random() * topPool.length)]
-    : (allListings.find((l: any) => !savedIds.has(l.id)) ?? allListings[0])
-  const recommended    = recListing
+  const excludeIds     = new Set([...savedIds, ...bookedIds]) as Set<string>
+  const recommended    = recKid ? pickRecommendation(recKid, allListings, excludeIds) : (allListings[0] ?? null)
   const recommendedFor = recKid?.name as string | undefined
 
   // First kid for profile card

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { RecommendedCard, pickRecommendation } from '@/components/ui/RecommendedCard'
 
 const CURRENT_YEAR  = new Date().getFullYear()
 const DAYS          = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -330,9 +331,10 @@ interface Props {
   saves:       Save[]
   categories:  Category[]
   bookings:    Booking[]
+  listings:    any[]
 }
 
-export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, categories, bookings: initialBookings }: Props) {
+export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, categories, bookings: initialBookings, listings }: Props) {
   const [kids,           setKids]           = useState<Child[]>(initialKids)
   const [localBookings,  setLocalBookings]  = useState<Booking[]>(initialBookings)
   const [localSaves,     setLocalSaves]     = useState<Save[]>(initialSaves)
@@ -344,6 +346,17 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
   const [deleteId,       setDeleteId]       = useState<string | null>(null)
   const [removedSaveIds, setRemovedSaveIds] = useState<string[]>([])
   const [assignError,    setAssignError]    = useState<string | null>(null)
+
+  // Recommendation for the selected kid (recomputes on kid switch)
+  const kidRecommendation = useMemo(() => {
+    if (!selectedId || selectedId === UNASSIGNED_ID) return null
+    const kid = kids.find(k => k.id === selectedId)
+    if (!kid) return null
+    const savedIds  = new Set(localSaves.filter(s => s.kid_id === kid.id).map(s => (s.listing as any)?.id).filter(Boolean))
+    const bookedIds = new Set(localBookings.filter(b => b.child_id === kid.id).map(b => (b.listing as any)?.id).filter(Boolean))
+    return pickRecommendation(kid, listings, new Set([...savedIds, ...bookedIds]))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, listings])
 
   // Unassigned items (null kid/child id)
   const unassignedBookings = localBookings.filter(b => b.child_id === null)
@@ -612,6 +625,11 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
             </div>
           )}
         </div>
+
+        {/* Recommendation — same widget as dashboard, scoped to this kid */}
+        {kidRecommendation && (
+          <RecommendedCard listing={kidRecommendation} forKid={selectedKid.name} />
+        )}
 
         {/* Bookings + saves — key resets collapse state on kid switch */}
         <BookingsSection key={`b-${selectedId}`} bookings={kidBookings} />
