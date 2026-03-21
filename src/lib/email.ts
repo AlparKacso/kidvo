@@ -1,10 +1,11 @@
 import { Resend } from 'resend'
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY)
-const FROM     = 'kidvo <noreply@kidvo.eu>'
-const APP_URL  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
-const PURPLE   = '#523650'
-const GOLD     = '#F0A500'
+const FROM       = 'kidvo <noreply@kidvo.eu>'
+const APP_URL    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'alpar.kacso@gmail.com'
+const PURPLE     = '#523650'
+const GOLD       = '#F0A500'
 
 function layout(body: string) {
   return `<!DOCTYPE html>
@@ -45,6 +46,10 @@ function h1(text: string) {
 
 function p(text: string) {
   return `<p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#4a3a52;">${text}</p>`
+}
+
+function disclaimer(text: string) {
+  return `<p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">${text}</p>`
 }
 
 function detailRow(label: string, value: string) {
@@ -114,9 +119,7 @@ export async function sendTrialConfirmedToParent(opts: {
       ${p('Reach out to arrange the details:')}
       ${detailTable(rows)}
       ${btn('View your bookings →', `${APP_URL}/bookings`)}
-      <p style="margin:24px 0 8px;font-size:13px;color:#4a3a52;">After attending the trial, you can leave a review to help other parents find great activities.</p>
-      ${btn('Leave a review →', `${APP_URL}/browse/${opts.listingId}`)}
-      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">All arrangements are directly between you and the provider. kidvo is not involved.</p>
+      ${disclaimer('All arrangements are directly between you and the provider. kidvo is not involved.')}
     `),
   })
 }
@@ -137,7 +140,7 @@ export async function sendNewListingToAdmin(opts: {
 
   return getResend().emails.send({
     from:    FROM,
-    to:      'alpar.kacso@gmail.com',
+    to:      ADMIN_EMAIL,
     subject: `New listing pending review — ${opts.listingTitle}`,
     html: layout(`
       ${h1('New listing submitted')}
@@ -167,7 +170,7 @@ export async function sendNewReviewToAdmin(opts: {
 
   return getResend().emails.send({
     from:    FROM,
-    to:      'alpar.kacso@gmail.com',
+    to:      ADMIN_EMAIL,
     subject: `New review pending moderation — ${opts.listingTitle}`,
     html: layout(`
       ${h1('New review to moderate')}
@@ -189,7 +192,7 @@ export async function sendTrialDeclinedToParent(opts: {
     to:      opts.parentEmail,
     subject: `Trial request update — ${opts.listingTitle}`,
     html: layout(`
-      ${h1('Trial request update')}
+      ${h1('Trial not available')}
       ${p(`Hi ${opts.parentName}, unfortunately <strong>${opts.listingTitle}</strong> couldn't accommodate your trial at this time.`)}
       ${p('There are plenty of other great activities in Timișoara — find the right fit for your child.')}
       ${btn('Browse activities →', `${APP_URL}/browse`)}
@@ -224,7 +227,7 @@ export async function sendWelcomeToProvider(opts: { email: string; name: string 
       ${p(`Hi ${opts.name}, you're all set to start listing your activities on kidvo.`)}
       ${p('List your first activity and start receiving trial requests from interested parents. It only takes a few minutes.')}
       ${btn('List your first activity →', `${APP_URL}/listings/new`)}
-      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">Your listing will be reviewed by our team within 24 hours before going live.</p>
+      ${disclaimer('Your listing will be reviewed by our team within 24 hours before going live.')}
     `),
   })
 }
@@ -260,11 +263,11 @@ export async function sendListingRejectedToProvider(opts: {
     to:      opts.email,
     subject: `Listing update — ${opts.listingTitle}`,
     html: layout(`
-      ${h1('Listing update')}
+      ${h1('Listing needs changes')}
       ${p(`Hi ${opts.providerName}, your listing <strong>${opts.listingTitle}</strong> couldn't be approved at this time.`)}
       ${p('Please review your listing details and make sure all information is complete and accurate. You can edit and resubmit from your dashboard.')}
       ${btn('Edit your listing →', `${APP_URL}/listings`)}
-      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">Questions? Reach us at hello@kidvo.eu</p>
+      ${disclaimer('Questions? Reach us at hello@kidvo.eu')}
     `),
   })
 }
@@ -281,7 +284,7 @@ export async function sendReviewApprovedToParent(opts: {
     to:      opts.email,
     subject: `Your review is published — ${opts.listingTitle}`,
     html: layout(`
-      ${h1('Your review is live!')}
+      ${h1('Your review is live! 🎉')}
       ${p(`Hi ${opts.parentName}, your review for <strong>${opts.listingTitle}</strong> has been approved and is now visible to other parents.`)}
       ${p('Thank you for helping families in Timișoara find great activities for their kids!')}
       ${btn('View the listing →', `${APP_URL}/browse/${opts.listingId}`)}
@@ -300,10 +303,11 @@ export async function sendReviewRejectedToParent(opts: {
     to:      opts.email,
     subject: `Review update — ${opts.listingTitle}`,
     html: layout(`
-      ${h1('Review update')}
+      ${h1('Review not approved')}
       ${p(`Hi ${opts.parentName}, unfortunately your review for <strong>${opts.listingTitle}</strong> couldn't be approved for publication.`)}
       ${p('If you have any questions, feel free to reach out to us.')}
-      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">Questions? Reach us at hello@kidvo.eu</p>
+      ${btn('Browse activities →', `${APP_URL}/browse`)}
+      ${disclaimer('Questions? Reach us at hello@kidvo.eu')}
     `),
   })
 }
@@ -329,7 +333,7 @@ export async function sendReviewPublishedToProvider(opts: {
     to:      opts.email,
     subject: `New review on your listing — ${opts.listingTitle}`,
     html: layout(`
-      ${h1('A new review is live on your listing!')}
+      ${h1('A new review is live on your listing! 🎉')}
       ${p(`Hi ${opts.providerName}, a parent left a review for <strong>${opts.listingTitle}</strong> that has been approved and is now public.`)}
       ${detailTable(rows)}
       ${btn('View your listing →', `${APP_URL}/browse/${opts.listingId}`)}
@@ -347,7 +351,7 @@ export async function sendAccountDeletedConfirmation(opts: { email: string; name
       ${h1('Account deleted')}
       ${p(`Hi ${opts.name}, your kidvo account and all associated data have been permanently deleted.`)}
       ${p('We\'re sorry to see you go. If you ever want to return, you\'re always welcome to create a new account.')}
-      <p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">If this was a mistake or you have questions, reach us at hello@kidvo.eu</p>
+      ${disclaimer('If this was a mistake or you have questions, reach us at hello@kidvo.eu')}
     `),
   })
 }
@@ -379,7 +383,7 @@ export async function sendNewListingsDigest(opts: {
         <div style="font-size:13px;font-weight:700;color:#1a0f1e;">${l.title}</div>
         <div style="font-size:12px;color:#9b89a5;margin-top:2px;">
           ${l.categoryName} · by ${l.providerName}
-          ${l.isNewProvider ? '<span style="background:#FFF3CD;color:#856404;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;">NEW PROVIDER</span>' : ''}
+          ${l.isNewProvider ? `<span style="background:${GOLD};color:#1a0f1e;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;">NEW PROVIDER</span>` : ''}
         </div>
         <a href="${APP_URL}/browse/${l.id}" style="font-size:12px;color:${PURPLE};font-weight:600;text-decoration:none;margin-top:4px;display:inline-block;">View activity →</a>
       </td>
@@ -391,13 +395,13 @@ export async function sendNewListingsDigest(opts: {
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: `${count} new ${count === 1 ? 'activity' : 'activities'} from providers you follow`,
+    subject: `${count} new ${count === 1 ? 'activity' : 'activities'} from providers you've saved`,
     html: layout(`
       ${h1('New activities from providers you follow')}
       ${p(`Hi ${opts.parentName}, here's what's new from providers you've saved:`)}
       <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:24px;">${items}</table>
       ${btn('Browse all activities →', `${APP_URL}/browse`)}
-      <p style="margin:16px 0 0;font-size:11px;color:#9b89a5;">You're receiving this because you saved activities from these providers on kidvo.</p>
+      ${disclaimer("You're receiving this because you saved activities from these providers on kidvo.")}
     `),
   })
 }
@@ -414,11 +418,11 @@ export async function sendProviderFeedback(
     subject: `[Provider Feedback] ${providerName}`,
     html: layout(`
       ${h1('New provider feedback')}
-      <p style="margin:0 0 16px;font-size:14px;color:#5C5C60;">
-        <strong style="color:#1C1C1E;">${providerName}</strong>
+      <p style="margin:0 0 16px;font-size:14px;color:#4a3a52;">
+        <strong style="color:#1a0f1e;">${providerName}</strong>
         &nbsp;·&nbsp;${providerEmail}
       </p>
-      <div style="padding:16px;background:#F5F4F6;border-radius:8px;font-size:14px;line-height:1.6;color:#1C1C1E;">
+      <div style="padding:16px;background:#F5F4F6;border-radius:8px;font-size:14px;line-height:1.6;color:#1a0f1e;">
         ${message.replace(/\n/g, '<br>')}
       </div>
     `),

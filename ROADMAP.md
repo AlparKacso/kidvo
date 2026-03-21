@@ -52,7 +52,7 @@
 
 ## General
 - [x] Sidebar feedback nudge — replaced "Book free trial" card; parent/provider variants; opens FeedbackForm modal
-- [ ] Email templates — design language audit `M`
+- [x] Email templates — design language audit `M`
 - [ ] Admin page redesign `M`
 
 ---
