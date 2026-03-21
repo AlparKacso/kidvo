@@ -1,6 +1,6 @@
 # Kidvo Pre-Launch Roadmap
 
-> Last updated: 2026-03-20
+> Last updated: 2026-03-21
 
 ---
 
@@ -45,14 +45,15 @@
 ## Phase 3 — Trust & Quality
 *Needed before any marketing push.*
 
-- [x] Edit review flow (text → moderation, rating → instant update) `M`
+- [x] Edit review flow (text → moderation, rating → instant update) `M` ⚠️ *implemented, needs end-to-end testing*
+- [x] OG image — implemented ⚠️ *needs testing (share preview in social / messaging apps)*
 - [ ] SEO optimization (metadata, structured data, sitemap) `M`
 
 ---
 
 ## General
 - [x] Sidebar feedback nudge — replaced "Book free trial" card; parent/provider variants; opens FeedbackForm modal
-- [x] Email templates — design language audit `M`
+- [x] Email templates — design language audit `M` ⚠️ *implemented, blocked on valid Resend API key to test*
 - [ ] Admin page redesign `M`
 
 ---
