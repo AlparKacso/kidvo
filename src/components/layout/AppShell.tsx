@@ -52,9 +52,9 @@ export async function AppShell({ children }: AppShellProps) {
   const profile = profileRes.data as unknown as { full_name: string; role: string } | null
 
   if (profile) {
-    userName   = profile.full_name
+    userName   = profile.full_name ?? ''
     isProvider = profile.role === 'provider' || profile.role === 'both'
-    initials   = profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    initials   = (profile.full_name ?? '?').split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?'
   }
 
   const pendingBookings = bookingsRes.count ?? 0
