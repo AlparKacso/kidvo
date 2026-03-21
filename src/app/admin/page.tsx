@@ -21,6 +21,7 @@ export default async function AdminPage() {
 
   const adminDb = createAdminClient()
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const twoDaysAgo    = new Date(Date.now() -  2 * 24 * 60 * 60 * 1000).toISOString()
 
   // Fetch all data in parallel
   const [
@@ -30,6 +31,7 @@ export default async function AdminPage() {
     authUsersResult,
     viewsResult,
     trialsResult,
+    slowTrialsResult,
   ] = await Promise.all([
     // All listings with relations (for listing moderation panel)
     supabase
@@ -55,12 +57,24 @@ export default async function AdminPage() {
 
     // Platform-wide trial requests in last 30 days
     supabase.from('trial_requests').select('listing_id').gte('created_at', thirtyDaysAgo),
+
+    // Pending requests older than 2 days — slow providers
+    supabase
+      .from('trial_requests')
+      .select(`id, created_at, preferred_day,
+        listing:listings(id, title, provider:providers(display_name, contact_email, contact_phone)),
+        parent:users(full_name, email)`)
+      .eq('status', 'pending')
+      .lt('created_at', twoDaysAgo)
+      .order('created_at', { ascending: true }),
   ])
 
   const listingsRaw    = (listingsResult.data    as unknown as { status: string }[] | null) ?? []
   const pendingReviews = (pendingReviewsResult.data as unknown as any[] | null)              ?? []
   const usersPublic    = (usersPublicResult.data  as unknown as { id: string; role: string }[] | null) ?? []
   const authUsers      = authUsersResult.data?.users ?? []
+  const slowTrials     = (slowTrialsResult.data  as unknown as any[] | null) ?? []
+  const slowProviderCount = new Set(slowTrials.map((t: any) => t.listing?.provider?.contact_email).filter(Boolean)).size
 
   const pending = listingsRaw.filter(l => l.status === 'pending')
   const active  = listingsRaw.filter(l => l.status === 'active')
@@ -88,6 +102,8 @@ export default async function AdminPage() {
       paused={paused}
       pendingReviews={pendingReviews}
       parentEmails={parentEmails}
+      slowTrials={slowTrials}
+      slowProviderCount={slowProviderCount}
       stats={{
         activeParents,
         activeProviders,

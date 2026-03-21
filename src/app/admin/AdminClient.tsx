@@ -194,13 +194,96 @@ interface Stats {
   platformTrials:  number
 }
 
+function SlowProvidersModal({ trials, onClose }: { trials: any[]; onClose: () => void }) {
+  function timeAgo(iso: string) {
+    const hours = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000)
+    if (hours < 48) return `${hours}h ago`
+    return `${Math.floor(hours / 24)}d ago`
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-ink/40" />
+      <div
+        className="relative bg-white rounded-xl shadow-card-hover w-full max-w-lg flex flex-col"
+        style={{ maxHeight: '82vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <div>
+            <div className="font-display text-sm font-bold text-ink">Slow providers</div>
+            <div className="text-xs text-ink-muted">{trials.length} pending request{trials.length !== 1 ? 's' : ''} older than 2 days</div>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center text-ink-muted hover:bg-surface hover:text-ink transition-colors font-display text-sm">✕</button>
+        </div>
+
+        {/* Scrollable list */}
+        <div className="overflow-y-auto flex-1 px-5 py-3 flex flex-col gap-3">
+          {trials.length === 0 ? (
+            <p className="text-sm text-ink-muted text-center py-6">All providers responding on time 🎉</p>
+          ) : trials.map((t: any) => {
+            const provider = t.listing?.provider
+            const listing  = t.listing
+            const parent   = t.parent
+            return (
+              <div key={t.id} className="border border-border rounded-lg p-3.5 flex flex-col gap-2">
+                {/* Age badge + listing */}
+                <div className="flex items-center justify-between gap-2">
+                  <Link href={`/browse/${listing?.id}`} target="_blank"
+                    className="font-display text-[13px] font-semibold text-ink hover:text-primary transition-colors truncate">
+                    {listing?.title ?? '—'}
+                  </Link>
+                  <span className="flex-shrink-0 font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-danger-lt text-danger">
+                    {timeAgo(t.created_at)}
+                  </span>
+                </div>
+                {/* Provider */}
+                <div className="flex items-start gap-1.5 text-xs text-ink-muted">
+                  <span className="font-semibold text-ink-mid w-16 flex-shrink-0">Provider</span>
+                  <span>{provider?.display_name}</span>
+                  {provider?.contact_email && (
+                    <a href={`mailto:${provider.contact_email}`} className="text-primary hover:underline ml-auto flex-shrink-0">{provider.contact_email}</a>
+                  )}
+                </div>
+                {provider?.contact_phone && (
+                  <div className="flex items-start gap-1.5 text-xs text-ink-muted">
+                    <span className="font-semibold text-ink-mid w-16 flex-shrink-0">Phone</span>
+                    <a href={`tel:${provider.contact_phone}`} className="text-primary hover:underline">{provider.contact_phone}</a>
+                  </div>
+                )}
+                {/* Parent */}
+                <div className="flex items-start gap-1.5 text-xs text-ink-muted border-t border-border/60 pt-2 mt-0.5">
+                  <span className="font-semibold text-ink-mid w-16 flex-shrink-0">Parent</span>
+                  <span>{parent?.full_name ?? '—'}</span>
+                  {parent?.email && (
+                    <a href={`mailto:${parent.email}`} className="text-primary hover:underline ml-auto flex-shrink-0">{parent.email}</a>
+                  )}
+                </div>
+                {t.preferred_day && (
+                  <div className="flex items-start gap-1.5 text-xs text-ink-muted">
+                    <span className="font-semibold text-ink-mid w-16 flex-shrink-0">Preferred</span>
+                    <span>{t.preferred_day}</span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface Props {
-  pending:        Listing[]
-  active:         Listing[]
-  paused:         Listing[]
-  pendingReviews: any[]
-  parentEmails:   string[]
-  stats:          Stats
+  pending:           Listing[]
+  active:            Listing[]
+  paused:            Listing[]
+  pendingReviews:    any[]
+  parentEmails:      string[]
+  slowTrials:        any[]
+  slowProviderCount: number
+  stats:             Stats
 }
 
 function StatCard({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
@@ -283,15 +366,16 @@ function EmailListModal({ emails, onClose }: { emails: string[]; onClose: () => 
   )
 }
 
-export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, stats }: Props) {
+export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, slowTrials, slowProviderCount, stats }: Props) {
   const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([
     ...initialPending,
     ...initialActive,
     ...initialPaused,
   ])
-  const [reviews, setReviews]           = useState<any[]>(initialReviews)
+  const [reviews, setReviews]               = useState<any[]>(initialReviews)
   const [showParentEmails, setShowParentEmails] = useState(false)
+  const [showSlowProviders, setShowSlowProviders] = useState(false)
 
   function handleStatusChange(id: string, status: string) {
     setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l))
@@ -328,17 +412,27 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
         </div>
 
         {/* Platform stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
           <StatCard label="Active parents (30d)"   value={stats.activeParents}   onClick={() => setShowParentEmails(true)} />
           <StatCard label="Active providers (30d)" value={stats.activeProviders} />
           <StatCard label="Active listings"        value={stats.activeListings}  />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
           <StatCard label="Views (30d)"            value={stats.platformViews}   />
           <StatCard label="Trials (30d)"           value={stats.platformTrials}  />
+          <StatCard
+            label="Slow providers (>2d)"
+            value={slowProviderCount}
+            onClick={slowProviderCount > 0 ? () => setShowSlowProviders(true) : undefined}
+          />
         </div>
 
-        {/* Parent emails modal */}
+        {/* Modals */}
         {showParentEmails && (
           <EmailListModal emails={parentEmails} onClose={() => setShowParentEmails(false)} />
+        )}
+        {showSlowProviders && (
+          <SlowProvidersModal trials={slowTrials} onClose={() => setShowSlowProviders(false)} />
         )}
 
         {/* Pending reviews — top priority */}
