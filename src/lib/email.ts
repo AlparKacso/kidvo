@@ -1,33 +1,34 @@
 import { Resend } from 'resend'
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY)
-const FROM       = 'kidvo <noreply@kidvo.eu>'
-const APP_URL    = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
+const FROM        = 'kidvo <noreply@kidvo.eu>'
+const APP_URL     = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'alpar.kacso@gmail.com'
-const PURPLE     = '#523650'
-const GOLD       = '#F0A500'
+const INK         = '#1c1c27'   // ink       — headings, primary text
+const PRIMARY     = '#7c3aed'   // primary   — buttons, links, logo "vo"
+const GOLD        = '#f5c542'   // gold      — accent badges
 
 function layout(body: string) {
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F5F4F6;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a0f1e;">
+<body style="margin:0;padding:0;background:#ece8f5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${INK};">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
 <tr><td align="center">
 <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
 
   <tr><td style="padding-bottom:20px;">
     <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">
-      <span style="color:${PURPLE};">kid</span><span style="color:${GOLD};">vo</span>
+      <span style="color:${INK};">kid</span><span style="color:${PRIMARY};">vo</span>
     </span>
   </td></tr>
 
-  <tr><td style="background:white;border-radius:12px;border:1px solid #e8e0ec;padding:32px;">
+  <tr><td style="background:white;border-radius:12px;border:1px solid #e8e4f0;padding:32px;">
     ${body}
   </td></tr>
 
-  <tr><td style="padding-top:20px;text-align:center;font-size:11px;color:#9b89a5;">
+  <tr><td style="padding-top:20px;text-align:center;font-size:11px;color:#9590b3;">
     kidvo · Timișoara, Romania ·
-    <a href="${APP_URL}" style="color:#9b89a5;">kidvo.eu</a>
+    <a href="${APP_URL}" style="color:#9590b3;">kidvo.eu</a>
   </td></tr>
 
 </table>
@@ -37,30 +38,30 @@ function layout(body: string) {
 }
 
 function btn(text: string, href: string) {
-  return `<a href="${href}" style="display:inline-block;background:${PURPLE};color:white;font-weight:700;font-size:13px;padding:10px 20px;border-radius:8px;text-decoration:none;">${text}</a>`
+  return `<a href="${href}" style="display:inline-block;background:${PRIMARY};color:white;font-weight:700;font-size:13px;padding:10px 20px;border-radius:8px;text-decoration:none;">${text}</a>`
 }
 
 function h1(text: string) {
-  return `<h1 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#1a0f1e;">${text}</h1>`
+  return `<h1 style="margin:0 0 8px;font-size:20px;font-weight:800;color:${INK};">${text}</h1>`
 }
 
 function p(text: string) {
-  return `<p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#4a3a52;">${text}</p>`
+  return `<p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#55527a;">${text}</p>`
 }
 
 function disclaimer(text: string) {
-  return `<p style="margin:16px 0 0;font-size:12px;color:#9b89a5;">${text}</p>`
+  return `<p style="margin:16px 0 0;font-size:12px;color:#9590b3;">${text}</p>`
 }
 
 function detailRow(label: string, value: string) {
   return `<tr>
-    <td style="padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9b89a5;white-space:nowrap;">${label}</td>
-    <td style="padding:8px 12px;font-size:13px;color:#1a0f1e;">${value}</td>
+    <td style="padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9590b3;white-space:nowrap;">${label}</td>
+    <td style="padding:8px 12px;font-size:13px;color:${INK};">${value}</td>
   </tr>`
 }
 
 function detailTable(rows: string) {
-  return `<table cellpadding="0" cellspacing="0" style="width:100%;background:#f9f7fb;border-radius:8px;margin-bottom:24px;">${rows}</table>`
+  return `<table cellpadding="0" cellspacing="0" style="width:100%;background:#f0e8ff;border-radius:8px;margin-bottom:24px;">${rows}</table>`
 }
 
 // ── 1. Provider receives new trial request ───────────────────────────────────
@@ -75,7 +76,7 @@ export async function sendNewTrialRequestToProvider(opts: {
   const rows = [
     detailRow('Activity',      opts.listingTitle),
     detailRow('From',          opts.parentName),
-    detailRow('Email',         `<a href="mailto:${opts.parentEmail}" style="color:${PURPLE};">${opts.parentEmail}</a>`),
+    detailRow('Email',         `<a href="mailto:${opts.parentEmail}" style="color:${PRIMARY};">${opts.parentEmail}</a>`),
     opts.preferredDay ? detailRow('Preferred day', opts.preferredDay) : '',
     opts.message      ? detailRow('Message',       `<em>${opts.message}</em>`)  : '',
   ].join('')
@@ -105,8 +106,8 @@ export async function sendTrialConfirmedToParent(opts: {
 }) {
   const rows = [
     detailRow('Provider', opts.providerName),
-    detailRow('Email',    `<a href="mailto:${opts.providerEmail}" style="color:${PURPLE};">${opts.providerEmail}</a>`),
-    opts.providerPhone ? detailRow('Phone', `<a href="tel:${opts.providerPhone}" style="color:${PURPLE};">${opts.providerPhone}</a>`) : '',
+    detailRow('Email',    `<a href="mailto:${opts.providerEmail}" style="color:${PRIMARY};">${opts.providerEmail}</a>`),
+    opts.providerPhone ? detailRow('Phone', `<a href="tel:${opts.providerPhone}" style="color:${PRIMARY};">${opts.providerPhone}</a>`) : '',
   ].join('')
 
   return getResend().emails.send({
@@ -134,7 +135,7 @@ export async function sendNewListingToAdmin(opts: {
   const rows = [
     detailRow('Activity',       opts.listingTitle),
     detailRow('Provider',       opts.providerName),
-    detailRow('Provider email', `<a href="mailto:${opts.providerEmail}" style="color:${PURPLE};">${opts.providerEmail}</a>`),
+    detailRow('Provider email', `<a href="mailto:${opts.providerEmail}" style="color:${PRIMARY};">${opts.providerEmail}</a>`),
     detailRow('Listing ID',     opts.listingId),
   ].join('')
 
@@ -379,13 +380,13 @@ export async function sendNewListingsDigest(opts: {
 }) {
   const items = opts.listings.map(l => `
     <tr>
-      <td style="padding:12px 0;border-bottom:1px solid #f0ecf4;">
-        <div style="font-size:13px;font-weight:700;color:#1a0f1e;">${l.title}</div>
-        <div style="font-size:12px;color:#9b89a5;margin-top:2px;">
+      <td style="padding:12px 0;border-bottom:1px solid #e8e4f0;">
+        <div style="font-size:13px;font-weight:700;color:${INK};">${l.title}</div>
+        <div style="font-size:12px;color:#9590b3;margin-top:2px;">
           ${l.categoryName} · by ${l.providerName}
-          ${l.isNewProvider ? `<span style="background:${GOLD};color:#1a0f1e;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;">NEW PROVIDER</span>` : ''}
+          ${l.isNewProvider ? `<span style="background:${GOLD};color:${INK};font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;">NEW PROVIDER</span>` : ''}
         </div>
-        <a href="${APP_URL}/browse/${l.id}" style="font-size:12px;color:${PURPLE};font-weight:600;text-decoration:none;margin-top:4px;display:inline-block;">View activity →</a>
+        <a href="${APP_URL}/browse/${l.id}" style="font-size:12px;color:${PRIMARY};font-weight:600;text-decoration:none;margin-top:4px;display:inline-block;">View activity →</a>
       </td>
     </tr>
   `).join('')
@@ -418,11 +419,11 @@ export async function sendProviderFeedback(
     subject: `[Provider Feedback] ${providerName}`,
     html: layout(`
       ${h1('New provider feedback')}
-      <p style="margin:0 0 16px;font-size:14px;color:#4a3a52;">
-        <strong style="color:#1a0f1e;">${providerName}</strong>
+      <p style="margin:0 0 16px;font-size:14px;color:#55527a;">
+        <strong style="color:${INK};">${providerName}</strong>
         &nbsp;·&nbsp;${providerEmail}
       </p>
-      <div style="padding:16px;background:#F5F4F6;border-radius:8px;font-size:14px;line-height:1.6;color:#1a0f1e;">
+      <div style="padding:16px;background:#ece8f5;border-radius:8px;font-size:14px;line-height:1.6;color:${INK};">
         ${message.replace(/\n/g, '<br>')}
       </div>
     `),
