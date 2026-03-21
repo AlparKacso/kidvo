@@ -37,8 +37,8 @@
 - [x] **Featured listings — hybrid ranking** — Auto-qualify by quality floor (photo + description + ≥1 review), sort by review count; capped at 8; manual `featured` flag still works `S`
 - [x] **Dashboard recommendations** — Scored by kid interests (+3), age range (+2), same area (+1); excludes already-saved/booked `S`
 - [x] **Dashboard: Recommended per kid** — Random kid picked on each render, random pick from top-5 scored pool; card shows "FOR [KID]" label
-- [ ] Dashboard: fix Activity Mix + Activity Interest widgets `M`
-- [ ] Dashboard: onboarding card (Kids added / Trials booked / First review) `S`
+- [x] Dashboard: fix Activity Mix + Activity Interest widgets `M`
+- [x] Dashboard: onboarding card (Kids added / Trials booked / First review) `S`
 
 ---
 
