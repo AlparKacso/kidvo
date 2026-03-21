@@ -208,7 +208,7 @@ function StatCard({ label, value, onClick }: { label: string; value: number; onC
     return (
       <button
         onClick={onClick}
-        className="bg-white border border-border rounded-lg p-4 text-left hover:border-primary hover:shadow-sm transition-all w-full"
+        className="bg-white border border-border rounded-lg p-4 text-left hover:border-primary hover:shadow-card transition-all w-full"
       >
         <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-1">{label}</div>
         <div className="font-display text-2xl font-bold text-primary">{value}</div>
@@ -235,9 +235,9 @@ function EmailListModal({ emails, onClose }: { emails: string[]; onClose: () => 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-ink/40" />
       <div
-        className="relative bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col"
+        className="relative bg-white rounded-xl shadow-card-hover w-full max-w-md flex flex-col"
         style={{ maxHeight: '80vh' }}
         onClick={e => e.stopPropagation()}
       >
@@ -308,14 +308,14 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
   const paused  = listings.filter(l => l.status === 'paused')
 
   return (
-    <div className="min-h-screen bg-[#F5F4F6] font-body">
+    <div className="min-h-screen bg-bg font-body">
       <div className="max-w-[900px] mx-auto px-5 py-8">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="font-display leading-none mb-1" style={{ fontSize: '22px', fontWeight: 700, letterSpacing: '-0.03em' }}>
-              <span style={{ color: '#523650' }}>kid</span><span style={{ color: '#F0A500' }}>vo</span>
+              <span style={{ color: '#1c1c27' }}>kid</span><span style={{ color: '#7c3aed' }}>vo</span>
               <span className="text-ink-muted font-body font-normal text-sm ml-2">admin</span>
             </div>
             <p className="text-sm text-ink-muted">
