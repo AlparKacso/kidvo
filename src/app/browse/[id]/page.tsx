@@ -8,6 +8,8 @@ import { SaveButton }            from '@/components/ui/SaveButton'
 import { ContactProviderButton } from '@/components/ui/ContactProviderButton'
 import { StarRating }            from '@/components/ui/StarRating'
 import { ReviewForm }            from '@/components/ui/ReviewForm'
+import { EditReviewForm }        from '@/components/ui/EditReviewForm'
+import { EditableReview }        from '@/components/ui/EditableReview'
 
 const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -65,13 +67,13 @@ export default async function ActivityDetailPage({ params }: Props) {
       ? supabase.from('trial_requests').select('id').eq('user_id', user.id).eq('listing_id', id).eq('status', 'confirmed').limit(1).maybeSingle().then(r => r.data)
       : Promise.resolve(null),
     user
-      ? supabase.from('reviews').select('id, status').eq('user_id', user.id).eq('listing_id', id).maybeSingle().then(r => r.data)
+      ? supabase.from('reviews').select('id, status, rating, comment').eq('user_id', user.id).eq('listing_id', id).maybeSingle().then(r => r.data)
       : Promise.resolve(null),
   ])
 
   const isSaved      = !!saveRowRaw
   const reviews      = (reviewsRaw.data ?? []) as { id: string; rating: number; comment: string | null; created_at: string }[]
-  const ownReview    = ownReviewRaw as { id: string; status: string } | null
+  const ownReview    = ownReviewRaw as { id: string; status: string; rating: number; comment: string | null } | null
   const hasConfirmed = !!confirmedTrialRaw
   const canReview    = hasConfirmed && !ownReview
 
@@ -257,17 +259,33 @@ export default async function ActivityDetailPage({ params }: Props) {
 
               {/* State: own review pending moderation */}
               {ownReview?.status === 'pending' && (
-                <div className="flex items-start gap-2.5 bg-gold-lt border border-gold/20 rounded-lg px-3 py-2.5 mb-4">
-                  <svg className="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" fill="#F0A500" opacity=".2"/><path d="M7.5 4.5v4M7.5 10.5v.5" stroke="#8a6800" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                  <p className="text-xs text-gold-text leading-relaxed">Your review has been submitted and is awaiting moderation. It will appear here once approved.</p>
+                <div className="mb-4">
+                  <div className="flex items-start gap-2.5 bg-gold-lt border border-gold/20 rounded-lg px-3 py-2.5 mb-3">
+                    <svg className="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" fill="#F0A500" opacity=".2"/><path d="M7.5 4.5v4M7.5 10.5v.5" stroke="#8a6800" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    <p className="text-xs text-gold-text leading-relaxed">Your review is awaiting moderation. You can still edit it below.</p>
+                  </div>
+                  <EditReviewForm
+                    reviewId={ownReview.id}
+                    initialRating={ownReview.rating}
+                    initialComment={ownReview.comment}
+                    status="pending"
+                  />
                 </div>
               )}
 
-              {/* State: own review rejected — allow resubmission */}
+              {/* State: own review rejected — show edit form to fix and resubmit */}
               {ownReview?.status === 'rejected' && (
-                <div className="flex items-start gap-2.5 bg-danger-lt border border-danger/20 rounded-lg px-3 py-2.5 mb-4">
-                  <svg className="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" fill="#dc2626" opacity=".15"/><path d="M5 5l5 5M10 5l-5 5" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                  <p className="text-xs text-danger leading-relaxed">Your previous review was not approved. Please contact us if you have questions.</p>
+                <div className="mb-4">
+                  <div className="flex items-start gap-2.5 bg-danger-lt border border-danger/20 rounded-lg px-3 py-2.5 mb-3">
+                    <svg className="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" fill="#dc2626" opacity=".15"/><path d="M5 5l5 5M10 5l-5 5" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    <p className="text-xs text-danger leading-relaxed">Your review wasn't approved. Edit it below and resubmit for moderation.</p>
+                  </div>
+                  <EditReviewForm
+                    reviewId={ownReview.id}
+                    initialRating={ownReview.rating}
+                    initialComment={ownReview.comment}
+                    status="rejected"
+                  />
                 </div>
               )}
 
@@ -293,19 +311,32 @@ export default async function ActivityDetailPage({ params }: Props) {
               )}
 
               {/* State: has reviews to show */}
-              {reviews.map(review => (
-                <div key={review.id} className="py-3 border-b border-border last:border-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <StarRating rating={review.rating} size="sm" />
-                    <span className="text-[11px] text-ink-muted">
-                      {new Date(review.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
-                    </span>
+              {reviews.map(review => {
+                if (ownReview?.id === review.id) {
+                  return (
+                    <EditableReview
+                      key={review.id}
+                      reviewId={review.id}
+                      rating={review.rating}
+                      comment={review.comment}
+                      createdAt={review.created_at}
+                    />
+                  )
+                }
+                return (
+                  <div key={review.id} className="py-3 border-b border-border last:border-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <StarRating rating={review.rating} size="sm" />
+                      <span className="text-[11px] text-ink-muted">
+                        {new Date(review.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    {review.comment && (
+                      <p className="text-sm text-ink-mid leading-relaxed">{review.comment}</p>
+                    )}
                   </div>
-                  {review.comment && (
-                    <p className="text-sm text-ink-mid leading-relaxed">{review.comment}</p>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
 
           </div>

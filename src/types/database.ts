@@ -158,7 +158,7 @@ export interface Database {
           created_at:  string
         }
         Insert: Omit<Database['public']['Tables']['reviews']['Row'], 'id' | 'created_at'>
-        Update: Pick<Database['public']['Tables']['reviews']['Row'], 'status'>
+        Update: { rating?: number; comment?: string | null; status?: ReviewStatus }
       }
     }
   }

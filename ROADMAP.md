@@ -45,7 +45,7 @@
 ## Phase 3 — Trust & Quality
 *Needed before any marketing push.*
 
-- [ ] Edit review flow (text → moderation, rating → instant update) `M`
+- [x] Edit review flow (text → moderation, rating → instant update) `M`
 - [ ] SEO optimization (metadata, structured data, sitemap) `M`
 
 ---
