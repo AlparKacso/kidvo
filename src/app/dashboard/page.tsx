@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { FeedbackForm } from '../main/FeedbackForm'
 import { OnboardingWidget } from './OnboardingWidget'
 import type { OnboardingStep } from './OnboardingWidget'
-import { RecommendedCard, pickRecommendation } from '@/components/ui/RecommendedCard'
+import { RecommendedCard } from '@/components/ui/RecommendedCard'
+import { pickRecommendation } from '@/lib/recommendations'
 
 export const dynamic = 'force-dynamic'
 
