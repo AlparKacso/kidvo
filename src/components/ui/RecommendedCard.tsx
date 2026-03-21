@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 const CAT_EMOJI: Record<string, string> = {
   sport:       '⚽',
@@ -11,10 +14,15 @@ const CAT_EMOJI: Record<string, string> = {
 }
 
 export function RecommendedCard({ listing, forKid }: { listing: any; forKid?: string }) {
+  const router = useRouter()
   if (!listing) return null
   const cat = listing.category as any
   return (
-    <div className="rounded-[22px] p-[22px] text-white" style={{ background: '#1c1c27', boxShadow: '0 6px 28px rgba(90,70,140,.12)' }}>
+    <div
+      className="rounded-[22px] p-[22px] text-white cursor-pointer"
+      style={{ background: '#1c1c27', boxShadow: '0 6px 28px rgba(90,70,140,.12)' }}
+      onClick={() => router.push(`/browse/${listing.id}`)}
+    >
       <div className="font-display text-[10.5px] font-bold tracking-[.1em] uppercase mb-2.5" style={{ color: '#f0e8ff' }}>
         ⚡ {forKid ? `FOR ${forKid.toUpperCase()}` : 'RECOMMENDED FOR YOU'}
       </div>
@@ -46,6 +54,7 @@ export function RecommendedCard({ listing, forKid }: { listing: any; forKid?: st
       </div>
       <Link
         href={`/browse/${listing.id}`}
+        onClick={e => e.stopPropagation()}
         className="block w-full text-center font-display text-[13.5px] font-bold text-white rounded-[12px] py-[11px] hover:opacity-90 transition-opacity"
         style={{ background: '#2aa7ff' }}
       >
