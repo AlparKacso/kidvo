@@ -135,21 +135,30 @@ export default async function ProviderListingsPage({
           </Link>
         </div>
 
-        {/* Stat pills */}
-        <div className="grid grid-cols-5 gap-3 mb-5">
-          {[
+        {/* Stat pills — only show Paused/Draft when non-zero */}
+        {(() => {
+          const stats = [
             { label: 'Active',  value: activeCount,  color: 'text-success'   },
             { label: 'Pending', value: pendingCount, color: 'text-gold-text' },
-            { label: 'Paused',  value: pausedCount,  color: 'text-ink-muted' },
-            { label: 'Draft',   value: draftCount,   color: 'text-ink-muted' },
+            ...(pausedCount > 0 ? [{ label: 'Paused', value: pausedCount, color: 'text-ink-muted' }] : []),
+            ...(draftCount  > 0 ? [{ label: 'Draft',  value: draftCount,  color: 'text-ink-muted' }] : []),
             { label: 'Total',   value: total,        color: 'text-ink'       },
-          ].map(s => (
-            <div key={s.label} className="bg-white rounded-[16px] p-[16px]" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
-              <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase text-ink-muted mb-1">{s.label}</div>
-              <div className={`font-display text-2xl font-extrabold ${s.color}`}>{s.value}</div>
+          ]
+          return (
+            <div className="flex flex-wrap gap-2 mb-5">
+              {stats.map(s => (
+                <div
+                  key={s.label}
+                  className="bg-white rounded-[16px] p-[14px] flex-1 min-w-[72px]"
+                  style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}
+                >
+                  <div className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted mb-1">{s.label}</div>
+                  <div className={`font-display text-xl font-extrabold ${s.color}`}>{s.value}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )
+        })()}
 
         {/* Tab strip */}
         <div className="flex gap-1 bg-surface rounded-[14px] p-1 mb-5 w-fit">
