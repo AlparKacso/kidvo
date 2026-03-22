@@ -65,20 +65,13 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
 
       {/* ── Header: cover photo or gradient + emoji ── */}
       <div
-        className="h-[120px] flex items-center justify-center relative overflow-hidden"
+        className="h-[120px] flex items-center justify-center relative overflow-hidden rounded-t-[20px]"
         style={!(listing as any).cover_image_url ? { background: `linear-gradient(135deg, ${hexToRgba(accent, 0.15)}, ${hexToRgba(accent, 0.40)})` } : {}}
       >
         {(listing as any).cover_image_url
           ? <img src={(listing as any).cover_image_url} alt={listing.title} className="absolute inset-0 w-full h-full object-cover" />
           : <span style={{ fontSize: '52px', lineHeight: 1 }}>{CATEGORY_EMOJI[listing.category.slug] ?? '✨'}</span>
         }
-
-        {/* Save button — top-right overlay */}
-        {!isFull && (
-          <div className="absolute top-3 right-3 z-10 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-border bg-white/90">
-            <SaveButton listingId={listing.id} initialSaved={isSaved} variant="icon" />
-          </div>
-        )}
 
         {/* Featured badge — top-left overlay */}
         {featured && (
@@ -90,6 +83,13 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
           </div>
         )}
       </div>
+
+      {/* Save button — anchored to card root (not image) so dropdown is never clipped */}
+      {!isFull && (
+        <div className="absolute top-3 right-3 z-10 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-border bg-white/90">
+          <SaveButton listingId={listing.id} initialSaved={isSaved} variant="icon" />
+        </div>
+      )}
 
       {/* ── Body ── */}
       <div className="p-4">
