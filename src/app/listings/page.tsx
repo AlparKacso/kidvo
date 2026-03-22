@@ -51,9 +51,19 @@ export default async function ProviderListingsPage({
   const draftCount   = listings.filter(l => l.status === 'draft').length
   const total        = listings.length
 
-  // ── Bookings tab: fetch requests ──────────────────────────────
+  // ── Pending count — always fetched so badge shows on Activities tab too ──
+  const { count: pendingReqsCount } = listingIds.length > 0
+    ? await supabase
+        .from('trial_requests')
+        .select('*', { count: 'exact', head: true })
+        .in('listing_id', listingIds)
+        .eq('status', 'pending')
+    : { count: 0 }
+  const pendingReqs = pendingReqsCount ?? 0
+
+  // ── Bookings tab: fetch full requests ─────────────────────────
   let requests: any[] = []
-  let totalReqs = 0, pendingReqs = 0
+  let totalReqs = 0
 
   if (tab === 'bookings') {
     const { data: requestsRaw } = listingIds.length > 0
@@ -61,18 +71,17 @@ export default async function ProviderListingsPage({
           .from('trial_requests')
           .select('*, listing:listings(id, title, category:categories(name, accent_color)), parent:users(full_name, email, phone)')
           .in('listing_id', listingIds)
-          .order('status', { ascending: true }) // pending sorts before confirmed alphabetically — fixed below
+          .order('status', { ascending: true })
           .order('created_at', { ascending: false })
       : { data: [] }
 
     // Sort: pending first, then by date desc
-    requests    = [...(requestsRaw ?? [])].sort((a, b) => {
+    requests  = [...(requestsRaw ?? [])].sort((a, b) => {
       if (a.status === 'pending' && b.status !== 'pending') return -1
       if (a.status !== 'pending' && b.status === 'pending') return 1
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
-    totalReqs   = requests.length
-    pendingReqs = requests.filter(r => r.status === 'pending').length
+    totalReqs = requests.length
   }
 
   // ── Server action: update booking status ──────────────────────
