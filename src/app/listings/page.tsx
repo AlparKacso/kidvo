@@ -48,8 +48,7 @@ export default async function ProviderListingsPage({
   const activeCount  = listings.filter(l => l.status === 'active').length
   const pendingCount = listings.filter(l => l.status === 'pending').length
   const pausedCount  = listings.filter(l => l.status === 'paused').length
-  const draftCount   = listings.filter(l => l.status === 'draft').length
-  const total        = listings.length
+  const total        = listings.filter(l => l.status !== 'draft').length
 
   // ── Pending count — always fetched so badge shows on Activities tab too ──
   const { count: pendingReqsCount } = listingIds.length > 0
