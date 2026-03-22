@@ -215,11 +215,7 @@ export default async function ProviderListingsPage({
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <Link href={`/listings/${listing.id}/edit`} className="font-display text-[11px] font-semibold text-ink-muted hover:text-primary transition-colors">Edit</Link>
-                      <Link href={`/browse/${listing.id}`} className="font-display text-[11px] font-semibold text-ink-muted hover:text-primary transition-colors">Preview</Link>
-                      <ListingCardMenu listingId={listing.id} />
-                    </div>
+                    <ListingCardMenu listingId={listing.id} />
                   </div>
                 ))}
               </div>
