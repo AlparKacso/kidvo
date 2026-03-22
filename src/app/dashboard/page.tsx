@@ -317,7 +317,7 @@ export default async function DashboardPage() {
           <StatCard
             label="Active listings"
             value={activeCount}
-            sub={`Pending ${pendingListings} · Paused ${pausedCount}`}
+            sub={[pendingListings > 0 && `Pending ${pendingListings}`, pausedCount > 0 && `Paused ${pausedCount}`].filter(Boolean).join(' · ') || 'All active'}
             accent="purple"
           />
           <StatCard
@@ -347,11 +347,17 @@ export default async function DashboardPage() {
             <div className="rounded-[22px] px-7 py-7 relative overflow-hidden" style={{ background: '#1c1c27' }}>
               <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
               <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>
-                Your activities reached
+                {weekReach > 0 ? 'Your activities reached' : 'This week'}
               </p>
               <div className="flex items-baseline gap-2 mb-3">
-                <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>{weekReach}</span>
-                <span className="font-display text-2xl font-bold text-white">parents this week</span>
+                {weekReach > 0 ? (
+                  <>
+                    <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>{weekReach}</span>
+                    <span className="font-display text-2xl font-bold text-white">parents this week</span>
+                  </>
+                ) : (
+                  <span className="font-display text-2xl font-bold text-white">No views yet this week</span>
+                )}
               </div>
               <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
                 {pendingTrials > 0 ? (
@@ -384,7 +390,7 @@ export default async function DashboardPage() {
             <SectionCard
               title="Trial requests"
               sub="Pending · oldest first"
-              linkText={pendingTrials > 3 ? `View all (${pendingTrials}) →` : pendingTrials > 0 ? 'View all →' : undefined}
+              linkText={pendingTrials > 3 ? `View all (${pendingTrials}) →` : undefined}
               linkHref="/listings?tab=bookings"
             >
 
@@ -420,7 +426,7 @@ export default async function DashboardPage() {
             </SectionCard>
 
             {/* ── Mobile-only: Top listings + Conversion (shown between requests and performance) ── */}
-            {topListingsBars.length > 0 && (
+            {topListingsBars.length > 0 && totalAllViews > 0 && (
               <div className="lg:hidden">
                 <SectionCard title="Top listings" sub="By share of views">
                   <div className="flex flex-col gap-[10px]">
@@ -439,7 +445,7 @@ export default async function DashboardPage() {
                 </SectionCard>
               </div>
             )}
-            <div className="lg:hidden rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+            {totalAllViews > 0 && <div className="lg:hidden rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
               <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>Conversion</div>
               <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>Views → Reveals → Trials</div>
               <div className="flex items-start gap-0 mb-5">
@@ -459,7 +465,7 @@ export default async function DashboardPage() {
                 <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>Views → trial rate</span>
                 <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
               </div>
-            </div>
+            </div>}
 
             {/* Per-listing performance table */}
             {allListings.length > 0 && (
@@ -479,8 +485,8 @@ export default async function DashboardPage() {
                     <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-14">Reveals</span>
                     <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-12">Trials</span>
                   </div>
-                  {allListings.slice(0, 5).map((l, i) => (
-                    <div key={l.id} className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center px-[22px] py-[11px] ${i < allListings.length - 1 ? 'border-b border-border' : ''}`}>
+                  {allListings.slice(0, 5).map((l, i, arr) => (
+                    <div key={l.id} className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center px-[22px] py-[11px] ${i < arr.length - 1 ? 'border-b border-border' : ''}`}>
                       <div className="font-display text-[13px] font-semibold text-ink truncate min-w-0">{l.title}</div>
                       <div className="w-16 flex justify-center">
                         <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold capitalize font-display ${
@@ -523,7 +529,7 @@ export default async function DashboardPage() {
             )}
 
             {/* Conversion funnel — dark card */}
-            <div className="hidden lg:block rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+            {totalAllViews > 0 && <div className="hidden lg:block rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
               <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>Conversion</div>
               <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>Views → Reveals → Trials</div>
               <div className="flex items-start gap-0 mb-5">
@@ -543,7 +549,7 @@ export default async function DashboardPage() {
                 <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>Views → trial rate</span>
                 <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
               </div>
-            </div>
+            </div>}
 
             {/* Top listing — white card */}
             {topListing && (
@@ -617,7 +623,7 @@ export default async function DashboardPage() {
   const parentSteps: OnboardingStep[] = [
     { label: 'Add your first child', done: childCount > 0,    href: '/kids'     },
     { label: 'Book a trial',         done: bookingsCount > 0, href: '/browse'   },
-    { label: 'Leave a review',       done: parentReviews > 0, href: '/bookings' },
+    { label: 'Leave a review',       done: parentReviews > 0, href: '/browse'   },
   ]
   const parentOnboardingDone = parentSteps.every(s => s.done)
   const showParentOnboarding = !profile?.onboarding_dismissed && !parentOnboardingDone
@@ -724,7 +730,7 @@ export default async function DashboardPage() {
         <StatCard label="Activities saved" value={savedCount}    sub="+this week"    accent="purple" />
         <StatCard label="Trials booked"   value={bookingsCount} sub="See upcoming →" accent="blue"   />
         <StatCard label="Kids on profile" value={childCount}    sub={kidNames} />
-        <StatCard label="Reviews left"    value={0}             sub="Nothing pending" />
+        <StatCard label="Reviews written"  value={parentReviews} sub={parentReviews > 0 ? 'Thank you! 🙏' : 'Leave your first →'} />
       </div>
 
       {/* Two-col layout */}
@@ -757,7 +763,7 @@ export default async function DashboardPage() {
                         </div>
                         <div className="font-display text-[11.5px] text-ink-muted mt-0.5">
                           {(listing?.provider as any)?.display_name}
-                          {s.preferred_day ? ` · ${s.preferred_day}` : ''}
+                          {s.preferred_day != null ? ` · ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s.preferred_day] ?? ''}` : ''}
                         </div>
                       </div>
                       <SessionBadge status={s.status} />

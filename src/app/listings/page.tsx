@@ -170,13 +170,13 @@ export default async function ProviderListingsPage({
           </Link>
           <Link
             href="/listings?tab=bookings"
-            className={`flex-1 text-center font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 text-center font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
               tab === 'bookings' ? 'bg-primary text-white shadow-sm' : 'text-ink-muted hover:text-ink'
             }`}
           >
             Trial Requests
             {pendingReqs > 0 && (
-              <span className="leading-none" title={`${pendingReqs} pending`}>⚠️</span>
+              <span className="leading-none flex-shrink-0" title={`${pendingReqs} pending`}>⚠️</span>
             )}
           </Link>
         </div>
