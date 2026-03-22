@@ -275,7 +275,7 @@ export default async function DashboardPage() {
     const totalAllViews    = [...viewMap.values()].reduce((s, n) => s + n, 0)
     const totalAllReveals  = [...revealMap.values()].reduce((s, n) => s + n, 0)
     const totalAllTrials   = [...trialMap.values()].reduce((s, n) => s + n, 0)
-    const conversionPct    = totalAllReveals > 0 ? Math.round((totalAllTrials / totalAllReveals) * 100) : 0
+    const conversionPct    = totalAllViews > 0 ? Math.round((totalAllTrials / totalAllViews) * 100) : 0
     const sortedByViews    = [...allListings].sort((a, b) => (viewMap.get(b.id) ?? 0) - (viewMap.get(a.id) ?? 0))
     const topListing       = sortedByViews[0] ?? null
     const topListingsBars  = sortedByViews
@@ -374,6 +374,7 @@ export default async function DashboardPage() {
               linkText={pendingTrials > 3 ? `View all (${pendingTrials}) →` : pendingTrials > 0 ? 'View all →' : undefined}
               linkHref="/listings?tab=bookings"
             >
+
               {pendingRequests.length === 0 ? (
                 <div className="flex flex-col items-center py-6 gap-2">
                   <span className="text-2xl">📬</span>
@@ -404,6 +405,48 @@ export default async function DashboardPage() {
                 </div>
               )}
             </SectionCard>
+
+            {/* ── Mobile-only: Top listings + Conversion (shown between requests and performance) ── */}
+            {topListingsBars.length > 0 && (
+              <div className="lg:hidden">
+                <SectionCard title="Top listings" sub="By share of views">
+                  <div className="flex flex-col gap-[10px]">
+                    {topListingsBars.map(l => (
+                      <div key={l.title} className="flex flex-col gap-[5px]">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-display text-[12.5px] font-semibold text-ink truncate leading-snug">{l.title}</span>
+                          <span className="font-display text-[12px] font-bold text-ink-muted flex-shrink-0">{l.pct}%</span>
+                        </div>
+                        <div className="h-[10px] rounded-full overflow-hidden" style={{ background: '#ece8f5' }}>
+                          <div className="h-full rounded-full" style={{ width: `${l.pct}%`, background: 'linear-gradient(90deg, #5b21b6, #7c3aed)' }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </SectionCard>
+              </div>
+            )}
+            <div className="lg:hidden rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+              <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>Conversion</div>
+              <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>Views → Reveals → Trials</div>
+              <div className="flex items-start gap-0 mb-5">
+                {[
+                  { label: 'Views',   value: totalAllViews,   color: '#a78bfa' },
+                  { label: 'Reveals', value: totalAllReveals, color: '#60a5fa' },
+                  { label: 'Trials',  value: totalAllTrials,  color: '#4ade80' },
+                ].map((s, i) => (
+                  <div key={s.label} className="flex-1 text-center">
+                    <div className="font-display text-[20px] font-extrabold leading-none mb-1" style={{ color: s.color }}>{s.value}</div>
+                    <div className="font-display text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.label}</div>
+                    {i < 2 && <div className="text-[10px] mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>→</div>}
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-[12px] px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>Views → trial rate</span>
+                <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
+              </div>
+            </div>
 
             {/* Per-listing performance table */}
             {allListings.length > 0 && (
@@ -457,49 +500,46 @@ export default async function DashboardPage() {
               </SectionCard>
             )}
 
-            {/* Conversion funnel */}
-            <SectionCard title="Conversion" sub="Reveals → trials">
-              <div className="flex items-end justify-between gap-2 mb-4">
+            {/* Conversion funnel — dark card */}
+            <div className="hidden lg:block rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+              <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>Conversion</div>
+              <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>Views → Reveals → Trials</div>
+              <div className="flex items-start gap-0 mb-5">
                 {[
-                  { label: 'Views',   value: totalAllViews,   color: '#7c3aed' },
-                  { label: 'Reveals', value: totalAllReveals, color: '#2aa7ff' },
-                  { label: 'Trials',  value: totalAllTrials,  color: '#22c55e' },
+                  { label: 'Views',   value: totalAllViews,   color: '#a78bfa' },
+                  { label: 'Reveals', value: totalAllReveals, color: '#60a5fa' },
+                  { label: 'Trials',  value: totalAllTrials,  color: '#4ade80' },
                 ].map((s, i) => (
                   <div key={s.label} className="flex-1 text-center">
-                    <div className="font-display text-[22px] font-extrabold text-ink leading-none mb-1">{s.value}</div>
-                    <div className="font-display text-[10.5px] text-ink-muted">{s.label}</div>
-                    {i < 2 && <div className="text-ink-muted text-[10px] mt-0.5">↓</div>}
+                    <div className="font-display text-[20px] font-extrabold leading-none mb-1" style={{ color: s.color }}>{s.value}</div>
+                    <div className="font-display text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.label}</div>
+                    {i < 2 && <div className="text-[10px] mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>→</div>}
                   </div>
                 ))}
               </div>
-              <div className="rounded-[12px] flex items-center justify-between px-4 py-3" style={{ background: '#f0e8ff' }}>
-                <span className="font-display text-[12.5px] font-semibold text-primary">Reveal → trial rate</span>
-                <span className="font-display text-[20px] font-extrabold text-primary">{conversionPct}%</span>
+              <div className="rounded-[12px] px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>Views → trial rate</span>
+                <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
               </div>
-            </SectionCard>
+            </div>
 
-            {/* Top listing — dark accent */}
+            {/* Top listing — white card */}
             {topListing && (
-              <div className="rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-15 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
-                <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[14px]" style={{ color: 'rgba(255,255,255,0.40)' }}>Top listing</div>
-                <div className="font-display text-[15px] font-extrabold text-white mb-[14px] leading-snug">{topListing.title}</div>
-                <div className="flex gap-3 mb-[16px]">
+              <SectionCard title="Top listing" sub="Most viewed · all-time" linkText="Edit →" linkHref={`/listings/${topListing.id}/edit`}>
+                <div className="font-display text-[14px] font-extrabold text-ink mb-4 leading-snug">{topListing.title}</div>
+                <div className="flex gap-2">
                   {[
-                    { label: 'Views',   value: viewMap.get(topListing.id)   ?? 0 },
-                    { label: 'Reveals', value: revealMap.get(topListing.id) ?? 0 },
-                    { label: 'Trials',  value: trialMap.get(topListing.id)  ?? 0 },
+                    { label: 'Views',   value: viewMap.get(topListing.id)   ?? 0, color: '#7c3aed' },
+                    { label: 'Reveals', value: revealMap.get(topListing.id) ?? 0, color: '#2aa7ff' },
+                    { label: 'Trials',  value: trialMap.get(topListing.id)  ?? 0, color: '#22c55e' },
                   ].map(s => (
-                    <div key={s.label} className="flex-1 text-center">
-                      <div className="font-display text-[20px] font-extrabold text-white leading-none">{s.value}</div>
-                      <div className="font-display text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.40)' }}>{s.label}</div>
+                    <div key={s.label} className="flex-1 text-center rounded-[12px] py-3" style={{ background: '#f9f8fd' }}>
+                      <div className="font-display text-[20px] font-extrabold leading-none" style={{ color: s.color }}>{s.value}</div>
+                      <div className="font-display text-[10px] text-ink-muted mt-1">{s.label}</div>
                     </div>
                   ))}
                 </div>
-                <Link href={`/listings/${topListing.id}/edit`} className="inline-flex items-center font-display text-[12px] font-bold px-4 py-2 rounded-full transition-opacity hover:opacity-80" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}>
-                  Edit listing →
-                </Link>
-              </div>
+              </SectionCard>
             )}
 
             {/* Onboarding */}
