@@ -76,6 +76,7 @@ export default async function ActivityDetailPage({ params }: Props) {
   const ownReview    = ownReviewRaw as { id: string; status: string; rating: number; comment: string | null } | null
   const hasConfirmed = !!confirmedTrialRaw
   const canReview    = hasConfirmed && !ownReview
+  const isOwner      = !!user && (provider as any)?.user_id === user.id
 
   const avgRating    = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
@@ -436,6 +437,23 @@ export default async function ActivityDetailPage({ params }: Props) {
 
           </div>
         </div>
+
+        {/* Owner edit bar */}
+        {isOwner && (
+          <div className="mt-8 flex items-center justify-between gap-4 bg-primary-lt border border-primary/20 rounded-[16px] px-5 py-4">
+            <div>
+              <div className="font-display text-[13px] font-bold text-primary">You own this listing</div>
+              <div className="font-display text-[11.5px] text-ink-muted mt-0.5">Changes go live after a quick review.</div>
+            </div>
+            <Link
+              href={`/listings/${id}/edit`}
+              className="flex-shrink-0 bg-primary text-white font-display text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-primary-deep transition-colors"
+            >
+              Edit listing →
+            </Link>
+          </div>
+        )}
+
       </div>
     </AppShell>
   )
