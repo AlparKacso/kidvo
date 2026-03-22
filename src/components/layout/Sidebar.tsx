@@ -211,9 +211,7 @@ export function Sidebar({
 
         {isProvider && (
           <NavSection label="My Listings">
-            <NavItem href="/listings"           icon={<IconListings />}  label="Activities" excludes={['/listings/bookings', '/listings/analytics']} />
-            <NavItem href="/listings/bookings"  icon={<IconTrials />}    label="Bookings"   exact />
-            <NavItem href="/listings/analytics" icon={<IconAnalytics />} label="Analytics"  exact />
+            <NavItem href="/listings" icon={<IconListings />} label="Activities" />
           </NavSection>
         )}
 

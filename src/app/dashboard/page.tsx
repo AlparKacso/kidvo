@@ -217,118 +217,249 @@ export default async function DashboardPage() {
       .from('providers').select('id').eq('user_id', user.id).single()
     const provider = providerRaw as { id: string } | null
 
-    let weekReach = 0, totalViews = 0, pendingTrials = 0, activeCount = 0, tipBody = ''
+    let weekReach = 0, pendingTrials = 0, tipBody = ''
     let provHasAnyListing = false, provHasAnyBooking = false, provHasAnyReview = false
+    let allListings: { id: string; title: string; status: string }[] = []
+    let viewMap    = new Map<string, number>()
+    let revealMap  = new Map<string, number>()
+    let trialMap   = new Map<string, number>()
+    let pendingRequests: any[] = []
 
     if (provider) {
+      const tipIndex = (new Date().getMonth() % 5) + 1
       const { data: listingsRaw } = await supabase
-        .from('listings').select('id').eq('provider_id', provider.id)
-      const listingIds = (listingsRaw ?? []).map((l: any) => l.id as string)
-      const tipIndex   = (new Date().getMonth() % 5) + 1
+        .from('listings').select('id, title, status').eq('provider_id', provider.id).order('created_at', { ascending: false })
+      allListings       = (listingsRaw ?? []) as { id: string; title: string; status: string }[]
+      const listingIds  = allListings.map(l => l.id)
       provHasAnyListing = listingIds.length > 0
 
       if (listingIds.length > 0) {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-        const [viewsRes, trialsRes, activeRes, tipRes, allBookingsRes, reviewsRes] = await Promise.all([
+        const [weekViewsRes, allViewsRes, revealsRes, pendingTrialsRes, allBookingsRes, reviewsRes, pendingReqRes, tipRes] = await Promise.all([
           supabase.from('listing_views').select('user_id').in('listing_id', listingIds).gte('viewed_at', sevenDaysAgo).not('user_id', 'is', null),
+          supabase.from('listing_views').select('listing_id').in('listing_id', listingIds),
+          supabase.from('contact_reveals').select('listing_id').in('listing_id', listingIds),
           supabase.from('trial_requests').select('id').in('listing_id', listingIds).eq('status', 'pending'),
-          supabase.from('listings').select('id', { count: 'exact', head: true }).eq('provider_id', provider.id).eq('status', 'active'),
-          supabase.from('tips').select('body').eq('id', tipIndex).single(),
           supabase.from('trial_requests').select('id', { count: 'exact', head: true }).in('listing_id', listingIds),
           supabase.from('reviews').select('id', { count: 'exact', head: true }).in('listing_id', listingIds),
+          supabase.from('trial_requests')
+            .select('id, created_at, listing:listings(id, title, category:categories(accent_color)), parent:users(full_name)')
+            .in('listing_id', listingIds).eq('status', 'pending')
+            .order('created_at', { ascending: true }).limit(3),
+          supabase.from('tips').select('body').eq('id', tipIndex).single(),
         ])
-        weekReach          = new Set((viewsRes.data ?? []).map((r: any) => r.user_id)).size
-        totalViews         = viewsRes.data?.length ?? 0
-        pendingTrials      = trialsRes.data?.length ?? 0
-        activeCount        = activeRes.count ?? 0
-        tipBody            = (tipRes.data as any)?.body ?? ''
-        provHasAnyBooking  = (allBookingsRes.count ?? 0) > 0
-        provHasAnyReview   = (reviewsRes.count ?? 0) > 0
+
+        weekReach     = new Set((weekViewsRes.data ?? []).map((r: any) => r.user_id)).size
+        pendingTrials = pendingTrialsRes.data?.length ?? 0
+        tipBody       = (tipRes.data as any)?.body ?? ''
+        provHasAnyBooking = (allBookingsRes.count ?? 0) > 0
+        provHasAnyReview  = (reviewsRes.count ?? 0) > 0
+        pendingRequests   = (pendingReqRes.data ?? []) as any[]
+
+        ;(allViewsRes.data  ?? []).forEach((r: any) => viewMap.set(r.listing_id, (viewMap.get(r.listing_id)  ?? 0) + 1))
+        ;(revealsRes.data   ?? []).forEach((r: any) => revealMap.set(r.listing_id, (revealMap.get(r.listing_id) ?? 0) + 1))
+        // fetch trials per listing for table
+        const { data: allTrialsRaw } = await supabase.from('trial_requests').select('listing_id').in('listing_id', listingIds)
+        ;(allTrialsRaw ?? []).forEach((r: any) => trialMap.set(r.listing_id, (trialMap.get(r.listing_id) ?? 0) + 1))
       } else {
         const tipRes = await supabase.from('tips').select('body').eq('id', tipIndex).single()
         tipBody = (tipRes.data as any)?.body ?? ''
       }
     }
 
+    // Derived metrics
+    const activeCount      = allListings.filter(l => l.status === 'active').length
+    const totalAllViews    = [...viewMap.values()].reduce((s, n) => s + n, 0)
+    const totalAllReveals  = [...revealMap.values()].reduce((s, n) => s + n, 0)
+    const totalAllTrials   = [...trialMap.values()].reduce((s, n) => s + n, 0)
+    const conversionPct    = totalAllReveals > 0 ? Math.round((totalAllTrials / totalAllReveals) * 100) : 0
+    const topListing       = [...allListings].sort((a, b) => (viewMap.get(b.id) ?? 0) - (viewMap.get(a.id) ?? 0))[0] ?? null
+
     const provSteps: OnboardingStep[] = [
-      { label: 'Create your first listing',    done: provHasAnyListing, href: '/listings/new' },
-      { label: 'Receive your first booking',   done: provHasAnyBooking  },
-      { label: 'Get your first review',        done: provHasAnyReview   },
+      { label: 'Create your first listing',  done: provHasAnyListing, href: '/listings/new' },
+      { label: 'Receive your first booking', done: provHasAnyBooking },
+      { label: 'Get your first review',      done: provHasAnyReview  },
     ]
-    const provOnboardingDone      = provSteps.every(s => s.done)
-    const showProvOnboarding      = !profile?.onboarding_dismissed && !provOnboardingDone
+    const provOnboardingDone = provSteps.every(s => s.done)
+    const showProvOnboarding = !profile?.onboarding_dismissed && !provOnboardingDone
+
+    const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
     return (
       <AppShell>
-        <div className="max-w-3xl">
-          {/* Stats row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-5">
-            <StatCard label="Parents reached" value={weekReach}     sub="+this week"  accent="purple" />
-            <StatCard label="Total views"     value={totalViews}    sub="7-day window" accent="blue" />
-            <StatCard label="Pending trials"  value={pendingTrials} sub={pendingTrials > 0 ? 'Awaiting reply' : 'All clear'} />
-            <StatCard label="Active listings" value={activeCount}   />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-[18px]">
 
-          {/* Hero banner */}
-          <div className="rounded-2xl px-7 py-7 md:py-6 mb-5 relative overflow-hidden" style={{ background: '#1c1c27' }}>
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
-            <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>
-              Your activities reached
-            </p>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>{weekReach}</span>
-              <span className="font-display text-2xl font-bold text-white">parents this week</span>
-            </div>
-            <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
-              {pendingTrials > 0 ? (
-                <>You have <span className="text-white font-semibold">{pendingTrials} new trial {pendingTrials === 1 ? 'request' : 'requests'}</span> waiting. Reply fast — parents choose providers who respond quickly.</>
-              ) : activeCount > 0 ? (
-                'Keep your listings complete and active to attract more families in Timișoara.'
-              ) : (
-                'List your first activity to start reaching parents in Timișoara.'
-              )}
-            </p>
-            <div className="flex items-center gap-3 flex-wrap">
-              {pendingTrials > 0 && (
-                <Link href="/listings/bookings" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
-                  View trial requests →
-                </Link>
-              )}
-              {activeCount === 0 ? (
-                <Link href="/listings/new" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
-                  List an activity →
-                </Link>
-              ) : (
-                <Link href="/listings/analytics" className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-full border transition-colors" style={{ color: 'rgba(255,255,255,0.65)', borderColor: 'rgba(255,255,255,0.18)' }}>
-                  Full analytics →
-                </Link>
-              )}
-            </div>
-          </div>
+          {/* ── Left column ───────────────────────────────── */}
+          <div className="flex flex-col gap-[18px]">
 
-          {tipBody && (
-            <div className="mt-4 flex items-start gap-3 bg-white border border-border rounded-xl px-5 py-4 mb-4">
-              <span className="w-8 h-8 rounded-lg bg-gold-lt flex items-center justify-center flex-shrink-0 text-gold-text">
-                <IconBulb />
-              </span>
-              <div>
-                <div className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Tip of the month</div>
-                <p className="text-sm text-ink">{tipBody}</p>
+            {/* Hero card */}
+            <div className="rounded-[22px] px-7 py-7 relative overflow-hidden" style={{ background: '#1c1c27' }}>
+              <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
+              <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>
+                Your activities reached
+              </p>
+              <div className="flex items-baseline gap-2 mb-3">
+                <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>{weekReach}</span>
+                <span className="font-display text-2xl font-bold text-white">parents this week</span>
+              </div>
+              <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
+                {pendingTrials > 0 ? (
+                  <>You have <span className="text-white font-semibold">{pendingTrials} new trial {pendingTrials === 1 ? 'request' : 'requests'}</span> waiting. Reply fast — parents choose providers who respond quickly.</>
+                ) : activeCount > 0 ? (
+                  'Keep your listings complete and active to attract more families in Timișoara.'
+                ) : (
+                  'List your first activity to start reaching parents in Timișoara.'
+                )}
+              </p>
+              <div className="flex items-center gap-3 flex-wrap">
+                {pendingTrials > 0 && (
+                  <Link href="/listings?tab=bookings" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                    View trial requests →
+                  </Link>
+                )}
+                {activeCount === 0 ? (
+                  <Link href="/listings/new" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                    List an activity →
+                  </Link>
+                ) : (
+                  <Link href="/listings" className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-full border transition-colors" style={{ color: 'rgba(255,255,255,0.65)', borderColor: 'rgba(255,255,255,0.18)' }}>
+                    My activities →
+                  </Link>
+                )}
               </div>
             </div>
-          )}
 
-          {showProvOnboarding && (
-            <div className="max-w-xs mb-4">
-              <OnboardingWidget steps={provSteps} />
-            </div>
-          )}
+            {/* Pending trial requests */}
+            <SectionCard
+              title="Trial requests"
+              sub="Pending · oldest first"
+              linkText={pendingTrials > 3 ? `View all (${pendingTrials}) →` : pendingTrials > 0 ? 'View all →' : undefined}
+              linkHref="/listings?tab=bookings"
+            >
+              {pendingRequests.length === 0 ? (
+                <div className="flex flex-col items-center py-6 gap-2">
+                  <span className="text-2xl">📬</span>
+                  <span className="font-display text-[13px] text-ink-muted">No pending requests — you&apos;re all caught up!</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-[10px]">
+                  {pendingRequests.map((req: any) => {
+                    const hoursAgo = Math.floor((Date.now() - new Date(req.created_at).getTime()) / 3_600_000)
+                    const isUrgent = hoursAgo >= 48
+                    const accent   = (req.listing as any)?.category?.accent_color ?? '#7c3aed'
+                    return (
+                      <Link key={req.id} href="/listings?tab=bookings"
+                        className="flex items-center gap-3 px-4 py-3 rounded-[14px] border border-border hover:border-primary/30 transition-colors"
+                        style={{ background: '#f9f8fd' }}
+                      >
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: accent }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-display text-[13px] font-semibold text-ink truncate">{(req.parent as any)?.full_name ?? '—'}</div>
+                          <div className="font-display text-[11.5px] text-ink-muted truncate">{(req.listing as any)?.title}</div>
+                        </div>
+                        <span className={`font-display text-[11px] font-semibold flex-shrink-0 ${isUrgent ? 'text-danger' : 'text-ink-muted'}`}>
+                          {hoursAgo < 1 ? 'Just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo / 24)}d ago`}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </SectionCard>
 
-          <div className="mb-6">
-            <div className="bg-white border border-border rounded-xl px-5 py-4">
-              <p className="text-sm text-ink-muted mb-3">Tell us what feature or section would help you use kidvo better.</p>
-              <FeedbackForm />
-            </div>
+            {/* Per-listing performance table */}
+            {allListings.length > 0 && (
+              <SectionCard title="Performance" sub="All-time · all listings" linkText="Manage →" linkHref="/listings">
+                <div className="flex flex-col gap-0 -mx-[22px]">
+                  {/* Header */}
+                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-[22px] pb-[10px] border-b border-border">
+                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted">Listing</span>
+                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-12">Views</span>
+                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-14">Reveals</span>
+                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-12">Trials</span>
+                  </div>
+                  {allListings.map((l, i) => (
+                    <div key={l.id} className={`grid grid-cols-[1fr_auto_auto_auto] gap-3 px-[22px] py-[11px] ${i < allListings.length - 1 ? 'border-b border-border' : ''}`}>
+                      <div className="min-w-0">
+                        <div className="font-display text-[13px] font-semibold text-ink truncate">{l.title}</div>
+                        <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold capitalize font-display ${
+                          l.status === 'active' ? 'bg-success-lt text-success' :
+                          l.status === 'pending' ? 'bg-gold-lt text-gold-text' : 'bg-surface text-ink-muted'
+                        }`}>{l.status}</span>
+                      </div>
+                      <span className="font-display text-[13px] font-bold text-ink text-right w-12 tabular-nums">{viewMap.get(l.id) ?? 0}</span>
+                      <span className="font-display text-[13px] font-bold text-primary text-right w-14 tabular-nums">{revealMap.get(l.id) ?? 0}</span>
+                      <span className="font-display text-[13px] font-bold text-ink text-right w-12 tabular-nums">{trialMap.get(l.id) ?? 0}</span>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            )}
+          </div>
+
+          {/* ── Right column ──────────────────────────────── */}
+          <div className="flex flex-col gap-[18px]">
+
+            {/* Conversion funnel */}
+            <SectionCard title="Conversion" sub="Reveals → trials">
+              <div className="flex items-end justify-between gap-2 mb-4">
+                {[
+                  { label: 'Views',   value: totalAllViews,   color: '#7c3aed' },
+                  { label: 'Reveals', value: totalAllReveals, color: '#2aa7ff' },
+                  { label: 'Trials',  value: totalAllTrials,  color: '#22c55e' },
+                ].map((s, i) => (
+                  <div key={s.label} className="flex-1 text-center">
+                    <div className="font-display text-[22px] font-extrabold text-ink leading-none mb-1">{s.value}</div>
+                    <div className="font-display text-[10.5px] text-ink-muted">{s.label}</div>
+                    {i < 2 && <div className="text-ink-muted text-[10px] mt-0.5">↓</div>}
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-[12px] flex items-center justify-between px-4 py-3" style={{ background: '#f0e8ff' }}>
+                <span className="font-display text-[12.5px] font-semibold text-primary">Reveal → trial rate</span>
+                <span className="font-display text-[20px] font-extrabold text-primary">{conversionPct}%</span>
+              </div>
+            </SectionCard>
+
+            {/* Top listing */}
+            {topListing && (
+              <SectionCard title="Top listing" sub="Most viewed all-time">
+                <div className="rounded-[14px] border border-border px-4 py-[14px]" style={{ background: '#f9f8fd' }}>
+                  <div className="font-display text-[14px] font-extrabold text-ink mb-[10px] leading-snug">{topListing.title}</div>
+                  <div className="flex gap-3">
+                    {[
+                      { label: 'Views',   value: viewMap.get(topListing.id)   ?? 0 },
+                      { label: 'Reveals', value: revealMap.get(topListing.id) ?? 0 },
+                      { label: 'Trials',  value: trialMap.get(topListing.id)  ?? 0 },
+                    ].map(s => (
+                      <div key={s.label} className="flex-1 text-center">
+                        <div className="font-display text-[18px] font-extrabold text-ink leading-none">{s.value}</div>
+                        <div className="font-display text-[10px] text-ink-muted mt-0.5">{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <Link href={`/listings/${topListing.id}/edit`} className="mt-3 flex items-center justify-center font-display text-[12.5px] font-semibold text-blue hover:opacity-75">
+                  Edit listing →
+                </Link>
+              </SectionCard>
+            )}
+
+            {/* Onboarding */}
+            {showProvOnboarding && <OnboardingWidget steps={provSteps} />}
+
+            {/* Tip */}
+            {tipBody && (
+              <div className="flex items-start gap-3 bg-white rounded-[22px] px-5 py-4" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+                <span className="w-8 h-8 rounded-lg bg-gold-lt flex items-center justify-center flex-shrink-0 text-gold-text">
+                  <IconBulb />
+                </span>
+                <div>
+                  <div className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Tip of the month</div>
+                  <p className="text-sm text-ink">{tipBody}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </AppShell>
