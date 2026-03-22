@@ -178,17 +178,7 @@ export default async function ProviderListingsPage({
           >
             Trial Requests
             {pendingReqs > 0 && (
-              <>
-                {/* Desktop: ⚠️ with native tooltip */}
-                <span
-                  className="hidden md:inline leading-none"
-                  title={`${pendingReqs} pending`}
-                >⚠️</span>
-                {/* Mobile: numeric badge */}
-                <span className="md:hidden inline-flex items-center justify-center w-4 h-4 rounded-full bg-gold text-[10px] font-bold text-white leading-none">
-                  {pendingReqs > 9 ? '9+' : pendingReqs}
-                </span>
-              </>
+              <span className="leading-none" title={`${pendingReqs} pending`}>⚠️</span>
             )}
           </Link>
         </div>
