@@ -217,7 +217,7 @@ export default async function DashboardPage() {
       .from('providers').select('id').eq('user_id', user.id).single()
     const provider = providerRaw as { id: string } | null
 
-    let weekReach = 0, pendingTrials = 0, tipBody = ''
+    let weekReach = 0, pendingTrials = 0, confirmedTrials = 0, tipBody = ''
     let provHasAnyListing = false, provHasAnyBooking = false, provHasAnyReview = false
     let allListings: { id: string; title: string; status: string }[] = []
     let viewMap    = new Map<string, number>()
@@ -258,9 +258,10 @@ export default async function DashboardPage() {
 
         ;(allViewsRes.data  ?? []).forEach((r: any) => viewMap.set(r.listing_id, (viewMap.get(r.listing_id)  ?? 0) + 1))
         ;(revealsRes.data   ?? []).forEach((r: any) => revealMap.set(r.listing_id, (revealMap.get(r.listing_id) ?? 0) + 1))
-        // fetch trials per listing for table
-        const { data: allTrialsRaw } = await supabase.from('trial_requests').select('listing_id').in('listing_id', listingIds)
+        // fetch trials per listing (with status for breakdown)
+        const { data: allTrialsRaw } = await supabase.from('trial_requests').select('listing_id, status').in('listing_id', listingIds)
         ;(allTrialsRaw ?? []).forEach((r: any) => trialMap.set(r.listing_id, (trialMap.get(r.listing_id) ?? 0) + 1))
+        confirmedTrials = (allTrialsRaw ?? []).filter((r: any) => r.status === 'confirmed').length
       } else {
         const tipRes = await supabase.from('tips').select('body').eq('id', tipIndex).single()
         tipBody = (tipRes.data as any)?.body ?? ''
@@ -269,11 +270,22 @@ export default async function DashboardPage() {
 
     // Derived metrics
     const activeCount      = allListings.filter(l => l.status === 'active').length
+    const pausedCount      = allListings.filter(l => l.status === 'paused').length
+    const pendingListings  = allListings.filter(l => l.status === 'pending').length
     const totalAllViews    = [...viewMap.values()].reduce((s, n) => s + n, 0)
     const totalAllReveals  = [...revealMap.values()].reduce((s, n) => s + n, 0)
     const totalAllTrials   = [...trialMap.values()].reduce((s, n) => s + n, 0)
     const conversionPct    = totalAllReveals > 0 ? Math.round((totalAllTrials / totalAllReveals) * 100) : 0
-    const topListing       = [...allListings].sort((a, b) => (viewMap.get(b.id) ?? 0) - (viewMap.get(a.id) ?? 0))[0] ?? null
+    const sortedByViews    = [...allListings].sort((a, b) => (viewMap.get(b.id) ?? 0) - (viewMap.get(a.id) ?? 0))
+    const topListing       = sortedByViews[0] ?? null
+    const topListingsBars  = sortedByViews
+      .filter(l => (viewMap.get(l.id) ?? 0) > 0)
+      .slice(0, 3)
+      .map(l => ({
+        title: l.title,
+        views: viewMap.get(l.id) ?? 0,
+        pct:   totalAllViews > 0 ? Math.round(((viewMap.get(l.id) ?? 0) / totalAllViews) * 100) : 0,
+      }))
 
     const provSteps: OnboardingStep[] = [
       { label: 'Create your first listing',  done: provHasAnyListing, href: '/listings/new' },
@@ -287,6 +299,32 @@ export default async function DashboardPage() {
 
     return (
       <AppShell>
+        {/* ── 4 stat cards ──────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-[18px]">
+          <StatCard
+            label="Active listings"
+            value={activeCount}
+            sub={`Pending ${pendingListings} · Paused ${pausedCount}`}
+            accent="purple"
+          />
+          <StatCard
+            label="Total views"
+            value={totalAllViews}
+            sub="All-time"
+            accent="blue"
+          />
+          <StatCard
+            label="Trial requests"
+            value={totalAllTrials}
+            sub={`Confirmed ${confirmedTrials} · Pending ${pendingTrials}`}
+          />
+          <StatCard
+            label="Contact reveals"
+            value={totalAllReveals}
+            sub="Parents who unlocked details"
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-[18px]">
 
           {/* ── Left column ───────────────────────────────── */}
@@ -400,6 +438,25 @@ export default async function DashboardPage() {
           {/* ── Right column ──────────────────────────────── */}
           <div className="flex flex-col gap-[18px]">
 
+            {/* Top listings bar chart */}
+            {topListingsBars.length > 0 && (
+              <SectionCard title="Top listings" sub="By share of views">
+                <div className="flex flex-col gap-[10px]">
+                  {topListingsBars.map(l => (
+                    <div key={l.title} className="flex flex-col gap-[5px]">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-display text-[12.5px] font-semibold text-ink truncate leading-snug">{l.title}</span>
+                        <span className="font-display text-[12px] font-bold text-ink-muted flex-shrink-0">{l.pct}%</span>
+                      </div>
+                      <div className="h-[10px] rounded-full overflow-hidden" style={{ background: '#ece8f5' }}>
+                        <div className="h-full rounded-full" style={{ width: `${l.pct}%`, background: 'linear-gradient(90deg, #5b21b6, #7c3aed)' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+            )}
+
             {/* Conversion funnel */}
             <SectionCard title="Conversion" sub="Reveals → trials">
               <div className="flex items-end justify-between gap-2 mb-4">
@@ -421,28 +478,28 @@ export default async function DashboardPage() {
               </div>
             </SectionCard>
 
-            {/* Top listing */}
+            {/* Top listing — dark accent */}
             {topListing && (
-              <SectionCard title="Top listing" sub="Most viewed all-time">
-                <div className="rounded-[14px] border border-border px-4 py-[14px]" style={{ background: '#f9f8fd' }}>
-                  <div className="font-display text-[14px] font-extrabold text-ink mb-[10px] leading-snug">{topListing.title}</div>
-                  <div className="flex gap-3">
-                    {[
-                      { label: 'Views',   value: viewMap.get(topListing.id)   ?? 0 },
-                      { label: 'Reveals', value: revealMap.get(topListing.id) ?? 0 },
-                      { label: 'Trials',  value: trialMap.get(topListing.id)  ?? 0 },
-                    ].map(s => (
-                      <div key={s.label} className="flex-1 text-center">
-                        <div className="font-display text-[18px] font-extrabold text-ink leading-none">{s.value}</div>
-                        <div className="font-display text-[10px] text-ink-muted mt-0.5">{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
+              <div className="rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-15 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
+                <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[14px]" style={{ color: 'rgba(255,255,255,0.40)' }}>Top listing</div>
+                <div className="font-display text-[15px] font-extrabold text-white mb-[14px] leading-snug">{topListing.title}</div>
+                <div className="flex gap-3 mb-[16px]">
+                  {[
+                    { label: 'Views',   value: viewMap.get(topListing.id)   ?? 0 },
+                    { label: 'Reveals', value: revealMap.get(topListing.id) ?? 0 },
+                    { label: 'Trials',  value: trialMap.get(topListing.id)  ?? 0 },
+                  ].map(s => (
+                    <div key={s.label} className="flex-1 text-center">
+                      <div className="font-display text-[20px] font-extrabold text-white leading-none">{s.value}</div>
+                      <div className="font-display text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.40)' }}>{s.label}</div>
+                    </div>
+                  ))}
                 </div>
-                <Link href={`/listings/${topListing.id}/edit`} className="mt-3 flex items-center justify-center font-display text-[12.5px] font-semibold text-blue hover:opacity-75">
+                <Link href={`/listings/${topListing.id}/edit`} className="inline-flex items-center font-display text-[12px] font-bold px-4 py-2 rounded-full transition-opacity hover:opacity-80" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}>
                   Edit listing →
                 </Link>
-              </SectionCard>
+              </div>
             )}
 
             {/* Onboarding */}
