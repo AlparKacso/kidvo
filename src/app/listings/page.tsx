@@ -48,6 +48,7 @@ export default async function ProviderListingsPage({
   const activeCount  = listings.filter(l => l.status === 'active').length
   const pendingCount = listings.filter(l => l.status === 'pending').length
   const pausedCount  = listings.filter(l => l.status === 'paused').length
+  const draftCount   = listings.filter(l => l.status === 'draft').length
   const total        = listings.length
 
   // ── Bookings tab: fetch requests ──────────────────────────────
@@ -126,12 +127,13 @@ export default async function ProviderListingsPage({
         </div>
 
         {/* Stat pills */}
-        <div className="grid grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-5 gap-3 mb-5">
           {[
-            { label: 'Active',  value: activeCount,  color: 'text-success'    },
-            { label: 'Pending', value: pendingCount, color: 'text-gold-text'  },
-            { label: 'Paused',  value: pausedCount,  color: 'text-ink-muted'  },
-            { label: 'Total',   value: total,        color: 'text-ink'        },
+            { label: 'Active',  value: activeCount,  color: 'text-success'   },
+            { label: 'Pending', value: pendingCount, color: 'text-gold-text' },
+            { label: 'Paused',  value: pausedCount,  color: 'text-ink-muted' },
+            { label: 'Draft',   value: draftCount,   color: 'text-ink-muted' },
+            { label: 'Total',   value: total,        color: 'text-ink'       },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-[16px] p-[16px]" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
               <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase text-ink-muted mb-1">{s.label}</div>
