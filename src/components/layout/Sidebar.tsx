@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { FeedbackForm } from '@/app/main/FeedbackForm'
@@ -156,8 +157,8 @@ function FeedbackNudge({ isProvider }: { isProvider: boolean }) {
         </div>
       )}
 
-      {/* Modal */}
-      {open && (
+      {/* Modal — portal to escape sidebar stacking context */}
+      {open && createPortal(
         <div className="fixed inset-0 z-[500] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
           <div className="relative z-10 bg-white rounded-lg shadow-xl w-full max-w-[400px] p-6" onClick={e => e.stopPropagation()}>
@@ -171,7 +172,8 @@ function FeedbackNudge({ isProvider }: { isProvider: boolean }) {
             <p className="text-sm text-ink-muted mb-4">{subtitle}</p>
             <FeedbackForm />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
