@@ -55,7 +55,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
 
   return (
     <div className={cn(
-      'bg-white rounded-[22px] border-[1.5px] border-border overflow-hidden shadow-card relative',
+      'bg-white rounded-[22px] border-[1.5px] border-border shadow-card relative',
       isFull ? 'opacity-65' : 'card-hover',
     )}>
       {/* Stretched link */}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface PerformanceRow {
   id:      string
@@ -42,7 +43,7 @@ export function PerformanceModal({ rows }: { rows: PerformanceRow[] }) {
         View all ({rows.length}) →
       </button>
 
-      {open && (
+      {open && createPortal(
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div className="relative bg-white rounded-[22px] w-full max-w-[680px] max-h-[80vh] flex flex-col" style={{ boxShadow: '0 8px 40px rgba(90,70,140,.18)' }}>
@@ -68,31 +69,32 @@ export function PerformanceModal({ rows }: { rows: PerformanceRow[] }) {
               {/* Col headers */}
               <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-[22px] py-[10px] border-b border-border sticky top-0 bg-white">
                 <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted">Listing</span>
-                <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-14">Status</span>
-                <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-12">Views</span>
-                <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-14">Reveals</span>
-                <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-12">Trials</span>
+                <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-16">Status</span>
+                <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-12">Views</span>
+                <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-14">Reveals</span>
+                <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-12">Trials</span>
               </div>
               {rows.map((r, i) => (
                 <div
                   key={r.id}
-                  className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-[22px] py-[12px] ${i < rows.length - 1 ? 'border-b border-border' : ''}`}
+                  className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center px-[22px] py-[12px] ${i < rows.length - 1 ? 'border-b border-border' : ''}`}
                 >
                   <div className="font-display text-[13px] font-semibold text-ink truncate min-w-0">{r.title}</div>
-                  <div className="w-14 flex justify-end">
+                  <div className="w-16 flex justify-center">
                     <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold font-display capitalize ${STATUS_CLS[r.status] ?? STATUS_CLS.draft}`}>
                       {r.status}
                     </span>
                   </div>
-                  <span className="font-display text-[13px] font-bold text-ink text-right w-12 tabular-nums">{r.views}</span>
-                  <span className="font-display text-[13px] font-bold text-primary text-right w-14 tabular-nums">{r.reveals}</span>
-                  <span className="font-display text-[13px] font-bold text-ink text-right w-12 tabular-nums">{r.trials}</span>
+                  <span className="font-display text-[13px] font-bold text-ink text-center w-12 tabular-nums">{r.views}</span>
+                  <span className="font-display text-[13px] font-bold text-primary text-center w-14 tabular-nums">{r.reveals}</span>
+                  <span className="font-display text-[13px] font-bold text-ink text-center w-12 tabular-nums">{r.trials}</span>
                 </div>
               ))}
             </div>
 
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

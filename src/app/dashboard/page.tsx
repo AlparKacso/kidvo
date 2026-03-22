@@ -472,24 +472,25 @@ export default async function DashboardPage() {
               >
                 <div className="flex flex-col gap-0 -mx-[22px]">
                   {/* Header */}
-                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-[22px] pb-[10px] border-b border-border">
+                  <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-[22px] pb-[10px] border-b border-border">
                     <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted">Listing</span>
-                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-12">Views</span>
-                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-14">Reveals</span>
-                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-12">Trials</span>
+                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-16">Status</span>
+                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-12">Views</span>
+                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-14">Reveals</span>
+                    <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-center w-12">Trials</span>
                   </div>
                   {allListings.slice(0, 5).map((l, i) => (
-                    <div key={l.id} className={`grid grid-cols-[1fr_auto_auto_auto] gap-3 px-[22px] py-[11px] ${i < allListings.length - 1 ? 'border-b border-border' : ''}`}>
-                      <div className="min-w-0">
-                        <div className="font-display text-[13px] font-semibold text-ink truncate">{l.title}</div>
+                    <div key={l.id} className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-center px-[22px] py-[11px] ${i < allListings.length - 1 ? 'border-b border-border' : ''}`}>
+                      <div className="font-display text-[13px] font-semibold text-ink truncate min-w-0">{l.title}</div>
+                      <div className="w-16 flex justify-center">
                         <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold capitalize font-display ${
                           l.status === 'active' ? 'bg-success-lt text-success' :
                           l.status === 'pending' ? 'bg-gold-lt text-gold-text' : 'bg-surface text-ink-muted'
                         }`}>{l.status}</span>
                       </div>
-                      <span className="font-display text-[13px] font-bold text-ink text-right w-12 tabular-nums">{viewMap.get(l.id) ?? 0}</span>
-                      <span className="font-display text-[13px] font-bold text-primary text-right w-14 tabular-nums">{revealMap.get(l.id) ?? 0}</span>
-                      <span className="font-display text-[13px] font-bold text-ink text-right w-12 tabular-nums">{trialMap.get(l.id) ?? 0}</span>
+                      <span className="font-display text-[13px] font-bold text-ink text-center w-12 tabular-nums">{viewMap.get(l.id) ?? 0}</span>
+                      <span className="font-display text-[13px] font-bold text-primary text-center w-14 tabular-nums">{revealMap.get(l.id) ?? 0}</span>
+                      <span className="font-display text-[13px] font-bold text-ink text-center w-12 tabular-nums">{trialMap.get(l.id) ?? 0}</span>
                     </div>
                   ))}
                 </div>

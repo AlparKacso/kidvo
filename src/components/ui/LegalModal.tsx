@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Props {
   title: string
@@ -22,7 +23,7 @@ export function LegalModal({ title, onClose, children }: Props) {
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -57,6 +58,7 @@ export function LegalModal({ title, onClose, children }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
