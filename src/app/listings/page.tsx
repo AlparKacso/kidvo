@@ -140,7 +140,6 @@ export default async function ProviderListingsPage({
             { label: 'Active',  value: activeCount,  color: 'text-success'   },
             { label: 'Pending', value: pendingCount, color: 'text-gold-text' },
             ...(pausedCount > 0 ? [{ label: 'Paused', value: pausedCount, color: 'text-ink-muted' }] : []),
-            ...(draftCount  > 0 ? [{ label: 'Draft',  value: draftCount,  color: 'text-ink-muted' }] : []),
             { label: 'Total',   value: total,        color: 'text-ink'       },
           ]
           return (
