@@ -225,6 +225,11 @@ export function Sidebar({
         {/* Feedback nudge — pushed to bottom, shown for all roles */}
         <div className="mt-auto pt-3">
           <FeedbackNudge isProvider={isProvider} />
+          <div className="flex items-center gap-3 px-[10px] pt-4">
+            <Link href="/terms"   className="font-display text-[11px] text-ink-muted hover:text-ink-mid transition-colors">Terms</Link>
+            <span className="text-border">·</span>
+            <Link href="/privacy" className="font-display text-[11px] text-ink-muted hover:text-ink-mid transition-colors">Privacy</Link>
+          </div>
         </div>
 
       </nav>
