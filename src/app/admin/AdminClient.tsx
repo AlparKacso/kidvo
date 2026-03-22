@@ -202,7 +202,7 @@ function SlowProvidersModal({ trials, onClose }: { trials: any[]; onClose: () =>
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-ink/40" />
       <div
         className="relative bg-white rounded-xl shadow-card-hover w-full max-w-lg flex flex-col"
@@ -317,7 +317,7 @@ function EmailListModal({ emails, onClose }: { emails: string[]; onClose: () => 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-ink/40" />
       <div
         className="relative bg-white rounded-xl shadow-card-hover w-full max-w-md flex flex-col"

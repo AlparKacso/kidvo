@@ -98,7 +98,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
       </button>
 
       {(state === 'open' || state === 'submitting' || state === 'error') && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-[500] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setState('idle')} />
 
           <div className="relative z-10 bg-white rounded-lg shadow-xl w-full max-w-[420px] p-6" onClick={e => e.stopPropagation()}>

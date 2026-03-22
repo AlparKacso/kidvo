@@ -43,7 +43,7 @@ export function PerformanceModal({ rows }: { rows: PerformanceRow[] }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div className="relative bg-white rounded-[22px] w-full max-w-[680px] max-h-[80vh] flex flex-col" style={{ boxShadow: '0 8px 40px rgba(90,70,140,.18)' }}>
 
