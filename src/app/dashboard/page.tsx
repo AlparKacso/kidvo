@@ -7,6 +7,8 @@ import { OnboardingWidget } from './OnboardingWidget'
 import type { OnboardingStep } from './OnboardingWidget'
 import { RecommendedCard } from '@/components/ui/RecommendedCard'
 import { pickRecommendation } from '@/lib/recommendations'
+import { PerformanceModal } from '@/components/ui/PerformanceModal'
+import type { PerformanceRow } from '@/components/ui/PerformanceModal'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,12 +16,13 @@ export const dynamic = 'force-dynamic'
    SHARED PRIMITIVES
 ───────────────────────────────────────────────────────────── */
 
-function SectionCard({ title, sub, linkText, linkHref, children }: {
-  title:      string
-  sub?:       string
-  linkText?:  string
-  linkHref?:  string
-  children:   React.ReactNode
+function SectionCard({ title, sub, linkText, linkHref, extraHeader, children }: {
+  title:        string
+  sub?:         string
+  linkText?:    string
+  linkHref?:    string
+  extraHeader?: React.ReactNode
+  children:     React.ReactNode
 }) {
   return (
     <div className="bg-white rounded-[22px] p-[22px]" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
@@ -28,6 +31,7 @@ function SectionCard({ title, sub, linkText, linkHref, children }: {
           <div className="font-display text-[17px] font-extrabold tracking-[-0.3px] text-ink">{title}</div>
           {sub && <div className="font-display text-[12.5px] text-ink-muted mt-0.5">{sub}</div>}
         </div>
+        {extraHeader}
         {linkText && linkHref && (
           <Link href={linkHref} className="font-display text-[12.5px] font-semibold text-blue whitespace-nowrap hover:opacity-80">
             {linkText}
@@ -297,6 +301,15 @@ export default async function DashboardPage() {
 
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
+    const perfRows: PerformanceRow[] = allListings.map(l => ({
+      id:      l.id,
+      title:   l.title,
+      status:  l.status,
+      views:   viewMap.get(l.id)   ?? 0,
+      reveals: revealMap.get(l.id) ?? 0,
+      trials:  trialMap.get(l.id)  ?? 0,
+    }))
+
     return (
       <AppShell>
         {/* ── 4 stat cards ──────────────────────────────────── */}
@@ -453,8 +466,9 @@ export default async function DashboardPage() {
               <SectionCard
                 title="Performance"
                 sub="All-time · all listings"
-                linkText={allListings.length > 5 ? `View all (${allListings.length}) →` : 'Manage →'}
-                linkHref="/listings"
+                linkText={allListings.length <= 5 ? 'Manage →' : undefined}
+                linkHref={allListings.length <= 5 ? '/listings' : undefined}
+                extraHeader={allListings.length > 5 ? <PerformanceModal rows={perfRows} /> : undefined}
               >
                 <div className="flex flex-col gap-0 -mx-[22px]">
                   {/* Header */}
