@@ -47,6 +47,7 @@ export default async function ProviderListingsPage({
 
   const activeCount  = listings.filter(l => l.status === 'active').length
   const pendingCount = listings.filter(l => l.status === 'pending').length
+  const pausedCount  = listings.filter(l => l.status === 'paused').length
   const total        = listings.length
 
   // ── Bookings tab: fetch requests ──────────────────────────────
@@ -125,10 +126,11 @@ export default async function ProviderListingsPage({
         </div>
 
         {/* Stat pills */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-4 gap-3 mb-5">
           {[
             { label: 'Active',  value: activeCount,  color: 'text-success'    },
             { label: 'Pending', value: pendingCount, color: 'text-gold-text'  },
+            { label: 'Paused',  value: pausedCount,  color: 'text-ink-muted'  },
             { label: 'Total',   value: total,        color: 'text-ink'        },
           ].map(s => (
             <div key={s.label} className="bg-white rounded-[16px] p-[16px]" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
@@ -140,21 +142,35 @@ export default async function ProviderListingsPage({
 
         {/* Tab strip */}
         <div className="flex gap-1 bg-surface rounded-[14px] p-1 mb-5 w-fit">
-          {(['activities', 'bookings'] as const).map(t => (
-            <Link
-              key={t}
-              href={t === 'activities' ? '/listings' : '/listings?tab=bookings'}
-              className={`font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] capitalize transition-all ${
-                tab === t
-                  ? 'bg-white text-ink shadow-sm'
-                  : 'text-ink-muted hover:text-ink'
-              }`}
-            >
-              {t === 'bookings' && pendingReqs > 0
-                ? `Bookings · ${pendingReqs} pending`
-                : t.charAt(0).toUpperCase() + t.slice(1)}
-            </Link>
-          ))}
+          <Link
+            href="/listings"
+            className={`font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] transition-all ${
+              tab === 'activities' ? 'bg-primary text-white shadow-sm' : 'text-ink-muted hover:text-ink'
+            }`}
+          >
+            Activity Listings
+          </Link>
+          <Link
+            href="/listings?tab=bookings"
+            className={`font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] transition-all flex items-center gap-1.5 ${
+              tab === 'bookings' ? 'bg-primary text-white shadow-sm' : 'text-ink-muted hover:text-ink'
+            }`}
+          >
+            Trial Requests
+            {pendingReqs > 0 && (
+              <>
+                {/* Desktop: ⚠️ with native tooltip */}
+                <span
+                  className="hidden md:inline leading-none"
+                  title={`${pendingReqs} pending`}
+                >⚠️</span>
+                {/* Mobile: numeric badge */}
+                <span className="md:hidden inline-flex items-center justify-center w-4 h-4 rounded-full bg-gold text-[10px] font-bold text-white leading-none">
+                  {pendingReqs > 9 ? '9+' : pendingReqs}
+                </span>
+              </>
+            )}
+          </Link>
         </div>
 
         {/* ── Activities tab ─────────────────────────────────── */}
