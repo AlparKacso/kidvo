@@ -154,6 +154,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   const [saving, setSaving]         = useState(false)
   const [error,  setError]          = useState('')
   const [showTerms, setShowTerms]   = useState(false)
+  const [agreed, setAgreed]         = useState(false)
   const [coverFile, setCoverFile]       = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string>(initialData?.cover_image_url ?? '')
   const [rawImageSrc, setRawImageSrc]   = useState<string>('')
@@ -173,7 +174,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   function removeInclude(i: number) { set('includes', data.includes.filter((_, idx) => idx !== i)) }
 
   function canProceed(): boolean {
-    if (step === 0) return true
+    if (step === 0) return agreed
     if (step === 1) return !!(data.title && data.category_id && data.area_id)
     if (step === 2) return !!(data.age_min && data.age_max && data.schedules.length > 0)
     if (step === 3) return !!(data.price_monthly && data.description)
@@ -297,12 +298,20 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-ink-muted text-center">
-                By continuing, you agree to these rules and kidvo&apos;s{' '}
-                <button type="button" onClick={() => setShowTerms(true)} className="text-primary font-semibold hover:underline">
-                  Terms of Use
-                </button>.
-              </p>
+              <label className="flex items-start gap-3 p-4 rounded-lg border border-border bg-bg cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={e => setAgreed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0 cursor-pointer"
+                />
+                <span className="text-sm text-ink-mid leading-relaxed">
+                  I have read and agree to the above rules and kidvo&apos;s{' '}
+                  <button type="button" onClick={e => { e.preventDefault(); setShowTerms(true) }} className="text-primary font-semibold hover:underline">
+                    Terms of Use
+                  </button>.
+                </span>
+              </label>
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { FooterLegalLinks } from '@/components/ui/FooterLegalLinks'
 
 // ── Category emoji mapping (matches DB slugs) ──────────────────────────────
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -431,8 +432,7 @@ export default async function LandingPage() {
           <div className="flex items-center gap-5">
             <Link href="/browse"      className="text-xs text-ink-mid hover:text-ink transition-colors font-display font-semibold">Browse</Link>
             <Link href="/auth/signup" className="text-xs text-ink-mid hover:text-ink transition-colors font-display font-semibold">Sign up</Link>
-            <Link href="/privacy"     className="text-xs text-ink-mid hover:text-ink transition-colors font-display font-semibold">Privacy</Link>
-            <Link href="/terms"       className="text-xs text-ink-mid hover:text-ink transition-colors font-display font-semibold">Terms</Link>
+            <FooterLegalLinks />
           </div>
 
         </div>

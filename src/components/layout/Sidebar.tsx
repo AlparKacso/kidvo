@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { FeedbackForm } from '@/app/main/FeedbackForm'
+import { LegalModal } from '@/components/ui/LegalModal'
+import { TermsContent, PrivacyContent } from '@/components/ui/LegalContent'
 
 /* Logo — prototype: padding 2px 8px 22px inside the aside's 14px base */
 const KidvoLogo = () => (
@@ -189,6 +191,7 @@ export function Sidebar({
   userEmail        = '',
 }: SidebarProps) {
   const isAdmin = userEmail === ADMIN_EMAIL
+  const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
 
   /* Prototype aside: padding 20px 14px 16px, flex column */
   return (
@@ -226,10 +229,13 @@ export function Sidebar({
         <div className="mt-auto pt-3">
           <FeedbackNudge isProvider={isProvider} />
           <div className="flex items-center gap-3 px-[10px] pt-4">
-            <Link href="/terms"   className="font-display text-[11px] text-ink-muted hover:text-ink-mid transition-colors">Terms</Link>
-            <span className="text-border">·</span>
-            <Link href="/privacy" className="font-display text-[11px] text-ink-muted hover:text-ink-mid transition-colors">Privacy</Link>
+            <button onClick={() => setLegalOpen('terms')}   className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">Terms</button>
+            <span className="text-border select-none">·</span>
+            <button onClick={() => setLegalOpen('privacy')} className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">Privacy</button>
           </div>
+
+      {legalOpen === 'terms'   && <LegalModal title="Terms of Use"    onClose={() => setLegalOpen(null)}><TermsContent /></LegalModal>}
+      {legalOpen === 'privacy' && <LegalModal title="Privacy Policy"  onClose={() => setLegalOpen(null)}><PrivacyContent /></LegalModal>}
         </div>
 
       </nav>

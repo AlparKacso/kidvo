@@ -450,7 +450,12 @@ export default async function DashboardPage() {
 
             {/* Per-listing performance table */}
             {allListings.length > 0 && (
-              <SectionCard title="Performance" sub="All-time · all listings" linkText="Manage →" linkHref="/listings">
+              <SectionCard
+                title="Performance"
+                sub="All-time · all listings"
+                linkText={allListings.length > 5 ? `View all (${allListings.length}) →` : 'Manage →'}
+                linkHref="/listings"
+              >
                 <div className="flex flex-col gap-0 -mx-[22px]">
                   {/* Header */}
                   <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-[22px] pb-[10px] border-b border-border">
@@ -459,7 +464,7 @@ export default async function DashboardPage() {
                     <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-14">Reveals</span>
                     <span className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted text-right w-12">Trials</span>
                   </div>
-                  {allListings.map((l, i) => (
+                  {allListings.slice(0, 5).map((l, i) => (
                     <div key={l.id} className={`grid grid-cols-[1fr_auto_auto_auto] gap-3 px-[22px] py-[11px] ${i < allListings.length - 1 ? 'border-b border-border' : ''}`}>
                       <div className="min-w-0">
                         <div className="font-display text-[13px] font-semibold text-ink truncate">{l.title}</div>
@@ -481,8 +486,9 @@ export default async function DashboardPage() {
           {/* ── Right column ──────────────────────────────── */}
           <div className="flex flex-col gap-[18px]">
 
-            {/* Top listings bar chart */}
+            {/* Top listings bar chart — desktop only (mobile copy lives in left col) */}
             {topListingsBars.length > 0 && (
+              <div className="hidden lg:block">
               <SectionCard title="Top listings" sub="By share of views">
                 <div className="flex flex-col gap-[10px]">
                   {topListingsBars.map(l => (
@@ -498,6 +504,7 @@ export default async function DashboardPage() {
                   ))}
                 </div>
               </SectionCard>
+              </div>
             )}
 
             {/* Conversion funnel — dark card */}
