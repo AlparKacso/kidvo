@@ -159,10 +159,10 @@ export default async function ProviderListingsPage({
         })()}
 
         {/* Tab strip */}
-        <div className="flex gap-1 bg-surface rounded-[14px] p-1 mb-5 w-fit">
+        <div className="flex gap-1 bg-surface rounded-[14px] p-1 mb-5 w-full">
           <Link
             href="/listings"
-            className={`font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] transition-all ${
+            className={`flex-1 text-center font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] transition-all ${
               tab === 'activities' ? 'bg-primary text-white shadow-sm' : 'text-ink-muted hover:text-ink'
             }`}
           >
@@ -170,7 +170,7 @@ export default async function ProviderListingsPage({
           </Link>
           <Link
             href="/listings?tab=bookings"
-            className={`font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] transition-all flex items-center gap-1.5 ${
+            className={`flex-1 text-center font-display text-[13px] font-semibold px-5 py-2 rounded-[10px] transition-all flex items-center justify-center gap-1.5 ${
               tab === 'bookings' ? 'bg-primary text-white shadow-sm' : 'text-ink-muted hover:text-ink'
             }`}
           >
