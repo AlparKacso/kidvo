@@ -430,6 +430,43 @@ export async function sendTrialCancelledByParent({
   })
 }
 
+// ── 17. Parent — provider account deleted, trial cancelled ───────────────────
+export async function sendTrialCancelledProviderDeleted(opts: {
+  parentEmail:  string
+  parentName:   string
+  listingTitle: string
+}) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.parentEmail,
+    subject: `Actualizare cerere de probă — ${opts.listingTitle}`,
+    html: layout(`
+      ${h1('Cererea ta de probă a fost anulată')}
+      ${p(`Bună ${opts.parentName},`)}
+      ${p(`Ne pare rău să-ți comunicăm că furnizorul activității <strong>${opts.listingTitle}</strong> și-a închis contul, astfel cererea ta de probă a fost anulată automat.`)}
+      ${p('Există o mulțime de alte activități minunate în Timișoara — găsește ce se potrivește copilului tău.')}
+      ${btn('Explorează activitățile →', `${APP_URL}/browse`)}
+    `),
+  })
+}
+
+// ── 18. Admin — provider left ────────────────────────────────────────────────
+export async function sendAdminProviderLeft(opts: {
+  providerEmail: string
+  providerName:  string
+}) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      ADMIN_EMAIL,
+    subject: `[kidvo] Provider left — ${opts.providerName}`,
+    html: layout(`
+      ${h1('A provider deleted their account')}
+      ${p(`<strong>${opts.providerName}</strong> (${opts.providerEmail}) has deleted their account.`)}
+      ${p('Their listings and all pending trial requests have been removed. Affected parents have been notified by email.')}
+    `),
+  })
+}
+
 // ── Provider feedback ─────────────────────────────────────────────────────────
 export async function sendProviderFeedback(
   providerName:  string,

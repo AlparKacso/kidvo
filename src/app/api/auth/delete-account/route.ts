@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendAccountDeletedConfirmation } from '@/lib/email'
+import { sendAccountDeletedConfirmation, sendTrialCancelledProviderDeleted, sendAdminProviderLeft } from '@/lib/email'
 
 // POST /api/auth/delete-account
 // Permanently deletes the authenticated user's account.
@@ -37,17 +37,42 @@ export async function POST() {
   if (providerData?.id) {
     const { data: listingRows } = await adminDb
       .from('listings')
-      .select('id')
+      .select('id, title')
       .eq('provider_id', providerData.id)
 
     if (listingRows?.length) {
       const ids = listingRows.map((l: any) => l.id)
+
+      // Fetch pending trial requests with parent details before deletion
+      const { data: pendingTrials } = await adminDb
+        .from('trial_requests')
+        .select('id, listing_id, users(email, full_name)')
+        .in('listing_id', ids)
+        .eq('status', 'pending')
+
       await Promise.all([
         adminDb.from('saves').delete().in('listing_id', ids),
         adminDb.from('trial_requests').delete().in('listing_id', ids),
         adminDb.from('listing_schedules').delete().in('listing_id', ids),
       ])
       await adminDb.from('listings').delete().eq('provider_id', providerData.id)
+
+      // Notify each affected parent (fire-and-forget)
+      if (pendingTrials?.length) {
+        const listingMap = Object.fromEntries(listingRows.map((l: any) => [l.id, l.title]))
+        await Promise.allSettled(
+          pendingTrials.map((tr: any) => {
+            const parent = tr.users
+            const title  = listingMap[tr.listing_id] ?? 'activitate'
+            if (!parent?.email) return Promise.resolve()
+            return sendTrialCancelledProviderDeleted({
+              parentEmail:  parent.email,
+              parentName:   parent.full_name ?? 'there',
+              listingTitle: title,
+            })
+          })
+        )
+      }
     }
   }
 
@@ -63,6 +88,14 @@ export async function POST() {
     email: user.email!,
     name:  (profile as any)?.full_name ?? 'there',
   }).catch(console.error)
+
+  // Notify admin if a provider left
+  if (providerData?.id) {
+    await sendAdminProviderLeft({
+      providerEmail: user.email!,
+      providerName:  (profile as any)?.full_name ?? 'Unknown',
+    }).catch(console.error)
+  }
 
   return NextResponse.json({ ok: true })
 }
