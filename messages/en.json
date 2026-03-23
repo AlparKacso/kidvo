@@ -24,7 +24,8 @@
     "feedbackProviderSub": "What would make managing your listings easier?",
     "feedbackParent": "How's kidvo working for you?",
     "feedbackParentSub": "Tell us what would help you find the right activities for your kids.",
-    "shareFeedback": "Share feedback →"
+    "shareFeedback": "Share feedback →",
+    "kids": "Kids & Activities"
   },
   "topbar": {
     "location": "Timișoara · {count} activities",
@@ -624,5 +625,37 @@
     "fullyBooked": "Fully booked",
     "bookTrial": "Book trial →",
     "viewListing": "View listing →"
+  },
+  "search": {
+    "placeholder": "Search activities or providers…",
+    "allAreas": "All areas",
+    "allAges": "All ages",
+    "allLanguages": "All languages",
+    "ageX": "Age {age}",
+    "searchBtn": "Search",
+    "clearAll": "Clear all"
+  },
+  "recommended": {
+    "forKid": "FOR {kid}",
+    "forYou": "RECOMMENDED FOR YOU",
+    "trialAvailable": "Trial session available",
+    "ronPerMonth": "RON/mo",
+    "free": "Free",
+    "trial": "Trial"
+  },
+  "categories": {
+    "all": "All",
+    "sport": "Sport",
+    "dance": "Dance",
+    "music": "Music",
+    "coding": "Coding",
+    "arts": "Arts & Crafts",
+    "language": "Languages",
+    "languages": "Languages",
+    "chess": "Chess",
+    "gym": "Gymnastics",
+    "gymnastics": "Gymnastics",
+    "babysitting": "Babysitting",
+    "other": "Other"
   }
 }

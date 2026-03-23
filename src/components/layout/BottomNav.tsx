@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
@@ -43,20 +44,21 @@ function NavItem({ href, icon, label, exact, excludes }: { href: string; icon: R
 }
 
 export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
+  const t       = useTranslations('nav')
   const isAdmin = userEmail === ADMIN_EMAIL
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border flex items-stretch safe-area-bottom">
-      <NavItem href="/dashboard" icon={<IconDashboard />} label="Dashboard" exact />
-      <NavItem href="/browse"    icon={<IconBrowse />}    label="Browse"    exact />
+      <NavItem href="/dashboard" icon={<IconDashboard />} label={t('dashboard')} exact />
+      <NavItem href="/browse"    icon={<IconBrowse />}    label={t('browse')}    exact />
       {!isProvider && (
-        <NavItem href="/kids" icon={<IconKids />} label="Kids & Activities" exact />
+        <NavItem href="/kids" icon={<IconKids />} label={t('kidsActivities')} exact />
       )}
       {isProvider && (
-        <NavItem href="/listings" icon={<IconListings />} label="Activities" />
+        <NavItem href="/listings" icon={<IconListings />} label={t('activities')} />
       )}
-      <NavItem href="/settings" icon={<IconSettings />} label="Settings" exact />
+      <NavItem href="/settings" icon={<IconSettings />} label={t('settings')} exact />
       {isAdmin && (
-        <NavItem href="/admin" icon={<IconAdmin />} label="Admin" exact />
+        <NavItem href="/admin" icon={<IconAdmin />} label={t('admin')} exact />
       )}
     </nav>
   )

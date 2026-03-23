@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 const CAT_EMOJI: Record<string, string> = {
   sport:       '⚽',
@@ -15,6 +16,8 @@ const CAT_EMOJI: Record<string, string> = {
 
 export function RecommendedCard({ listing, forKid }: { listing: any; forKid?: string }) {
   const router = useRouter()
+  const t      = useTranslations('recommended')
+  const tCard  = useTranslations('card')
   if (!listing) return null
   const cat = listing.category as any
   return (
@@ -24,7 +27,7 @@ export function RecommendedCard({ listing, forKid }: { listing: any; forKid?: st
       onClick={() => router.push(`/browse/${listing.id}`)}
     >
       <div className="font-display text-[10.5px] font-bold tracking-[.1em] uppercase mb-2.5" style={{ color: '#f0e8ff' }}>
-        ⚡ {forKid ? `FOR ${forKid.toUpperCase()}` : 'RECOMMENDED FOR YOU'}
+        ⚡ {forKid ? t('forKid', { kid: forKid.toUpperCase() }) : t('forYou')}
       </div>
       <div
         className="w-[42px] h-[42px] rounded-[11px] flex items-center justify-center mb-3 text-xl"
@@ -36,19 +39,19 @@ export function RecommendedCard({ listing, forKid }: { listing: any; forKid?: st
         {listing.title}
       </div>
       <div className="font-display text-[12px] leading-[1.55] mb-4" style={{ color: 'rgba(255,255,255,.5)' }}>
-        {(listing.provider as any)?.display_name}{listing.trial_available ? ' · Trial session available' : ''}
+        {(listing.provider as any)?.display_name}{listing.trial_available ? ` · ${t('trialAvailable')}` : ''}
       </div>
       <div className="flex gap-5 mb-4">
         {listing.price_monthly != null && (
           <div>
             <div className="font-display text-[20px] font-extrabold leading-none">{listing.price_monthly}</div>
-            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>RON/mo</div>
+            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>{t('ronPerMonth')}</div>
           </div>
         )}
         {listing.trial_available && (
           <div>
-            <div className="font-display text-[20px] font-extrabold leading-none">Free</div>
-            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>Trial</div>
+            <div className="font-display text-[20px] font-extrabold leading-none">{t('free')}</div>
+            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>{t('trial')}</div>
           </div>
         )}
       </div>
@@ -58,7 +61,7 @@ export function RecommendedCard({ listing, forKid }: { listing: any; forKid?: st
         className="block w-full text-center font-display text-[13.5px] font-bold text-white rounded-[12px] py-[11px] hover:opacity-90 transition-opacity"
         style={{ background: '#2aa7ff' }}
       >
-        {listing.trial_available ? 'Book trial →' : 'View listing →'}
+        {listing.trial_available ? tCard('bookTrial') : tCard('viewListing')}
       </Link>
     </div>
   )

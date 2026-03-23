@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 export function SearchBar({ areas, languages }: Props) {
   const router              = useRouter()
   const params              = useSearchParams()
+  const t                   = useTranslations('search')
   const [, startTransition] = useTransition()
 
   const [q,    setQ]    = useState(params.get('q')    ?? '')
@@ -59,7 +61,7 @@ export function SearchBar({ areas, languages }: Props) {
           value={q}
           onChange={e => setQ(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && apply()}
-          placeholder="Search activities or providers…"
+          placeholder={t('placeholder')}
           className="flex-1 bg-transparent font-display text-sm text-ink placeholder:text-ink-muted outline-none min-w-0"
         />
 
@@ -69,14 +71,14 @@ export function SearchBar({ areas, languages }: Props) {
           {/* Wrapper sized by hidden mirror span; select is absolute-fill over it */}
           <span className="relative inline-block">
             <span aria-hidden className="font-display text-xs font-semibold invisible whitespace-nowrap">
-              {area ? (areas.find(a => a.slug === area)?.name ?? 'All areas') : 'All areas'}
+              {area ? (areas.find(a => a.slug === area)?.name ?? t('allAreas')) : t('allAreas')}
             </span>
             <select
               value={area}
               onChange={e => { setArea(e.target.value); apply({ area: e.target.value }) }}
               className="absolute inset-0 w-full bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
             >
-              <option value="">All areas</option>
+              <option value="">{t('allAreas')}</option>
               {areas.map(a => <option key={a.id} value={a.slug}>{a.name}</option>)}
             </select>
           </span>
@@ -86,9 +88,9 @@ export function SearchBar({ areas, languages }: Props) {
             onChange={e => { setAge(e.target.value); apply({ age: e.target.value }) }}
             className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
           >
-            <option value="">All ages</option>
+            <option value="">{t('allAges')}</option>
             {[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(a => (
-              <option key={a} value={a}>Age {a}</option>
+              <option key={a} value={a}>{t('ageX', { age: a })}</option>
             ))}
           </select>
           {languages.length > 0 && (
@@ -99,7 +101,7 @@ export function SearchBar({ areas, languages }: Props) {
                 onChange={e => { setLang(e.target.value); apply({ lang: e.target.value }) }}
                 className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
               >
-                <option value="">All languages</option>
+                <option value="">{t('allLanguages')}</option>
                 {languages.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
             </>
@@ -110,7 +112,7 @@ export function SearchBar({ areas, languages }: Props) {
           onClick={() => apply()}
           className="flex-shrink-0 px-3 py-1.5 rounded-lg font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors"
         >
-          Search
+          {t('searchBtn')}
         </button>
       </div>
 
@@ -125,7 +127,7 @@ export function SearchBar({ areas, languages }: Props) {
             area ? 'bg-primary-lt border-primary-border text-primary' : 'bg-white border-border text-ink-mid'
           )}
         >
-          <option value="">All areas</option>
+          <option value="">{t('allAreas')}</option>
           {areas.map(a => <option key={a.id} value={a.slug}>{a.name}</option>)}
         </select>
 
@@ -138,9 +140,9 @@ export function SearchBar({ areas, languages }: Props) {
             age ? 'bg-primary-lt border-primary-border text-primary' : 'bg-white border-border text-ink-mid'
           )}
         >
-          <option value="">All ages</option>
+          <option value="">{t('allAges')}</option>
           {[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(a => (
-            <option key={a} value={a}>Age {a}</option>
+            <option key={a} value={a}>{t('ageX', { age: a })}</option>
           ))}
         </select>
 
@@ -154,7 +156,7 @@ export function SearchBar({ areas, languages }: Props) {
               lang ? 'bg-primary-lt border-primary-border text-primary' : 'bg-white border-border text-ink-mid'
             )}
           >
-            <option value="">All languages</option>
+            <option value="">{t('allLanguages')}</option>
             {languages.map(l => <option key={l} value={l}>{l}</option>)}
           </select>
         )}
@@ -165,7 +167,7 @@ export function SearchBar({ areas, languages }: Props) {
         <div className="flex items-center gap-2 mt-2.5 flex-wrap">
           {q && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-lt border border-primary-border rounded-full font-display text-xs font-semibold text-primary">
-              "{q}"
+              &ldquo;{q}&rdquo;
               <button onClick={() => { setQ(''); apply({ q: '' }) }} className="hover:opacity-70 transition-opacity"><XIcon /></button>
             </span>
           )}
@@ -177,7 +179,7 @@ export function SearchBar({ areas, languages }: Props) {
           )}
           {age && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-lt border border-primary-border rounded-full font-display text-xs font-semibold text-primary">
-              Age {age}
+              {t('ageX', { age })}
               <button onClick={() => { setAge(''); apply({ age: '' }) }} className="hover:opacity-70 transition-opacity"><XIcon /></button>
             </span>
           )}
@@ -188,7 +190,7 @@ export function SearchBar({ areas, languages }: Props) {
             </span>
           )}
           <button onClick={clear} className="font-display text-xs font-semibold text-ink-muted hover:text-danger transition-colors ml-1">
-            Clear all
+            {t('clearAll')}
           </button>
         </div>
       )}

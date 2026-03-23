@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import type { Category } from '@/types/database'
 
@@ -29,6 +30,7 @@ type PillItem = { slug: string; name: string }
 export function CategoryPills({ categories }: CategoryPillsProps) {
   const router = useRouter()
   const params = useSearchParams()
+  const t      = useTranslations('categories')
   const active = params.get('category') ?? 'all'
 
   function select(slug: string) {
@@ -39,7 +41,7 @@ export function CategoryPills({ categories }: CategoryPillsProps) {
   }
 
   const pills: PillItem[] = [
-    { slug: 'all', name: 'All' },
+    { slug: 'all', name: t('all') },
     ...categories,
   ]
 
@@ -48,6 +50,8 @@ export function CategoryPills({ categories }: CategoryPillsProps) {
       <div className="flex gap-2 sm:flex-wrap" style={{ width: 'max-content' }}>
         {pills.map(cat => {
           const isActive = active === cat.slug
+          // Use translated name if available, fall back to DB name
+          const label = cat.slug !== 'all' ? (t.has(cat.slug) ? t(cat.slug as any) : cat.name) : cat.name
 
           const activeStyle = isActive
             ? cat.slug === 'all'
@@ -68,7 +72,7 @@ export function CategoryPills({ categories }: CategoryPillsProps) {
               style={{ padding: '6px 14px', ...activeStyle }}
             >
               <span style={{ fontSize: '13px', lineHeight: 1 }}>{CATEGORY_EMOJI[cat.slug] ?? '✨'}</span>
-              {cat.name}
+              {label}
             </button>
           )
         })}

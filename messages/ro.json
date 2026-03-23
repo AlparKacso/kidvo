@@ -24,7 +24,8 @@
     "feedbackProviderSub": "Ce ar face gestionarea activităților mai ușoară?",
     "feedbackParent": "Cum funcționează kidvo pentru tine?",
     "feedbackParentSub": "Spune-ne ce te-ar ajuta să găsești activitățile potrivite pentru copiii tăi.",
-    "shareFeedback": "Trimite feedback →"
+    "shareFeedback": "Trimite feedback →",
+    "kids": "Copii & Activități"
   },
   "topbar": {
     "location": "Timișoara · {count} activități",
@@ -624,5 +625,37 @@
     "fullyBooked": "Complet ocupat",
     "bookTrial": "Rezervă probă →",
     "viewListing": "Vezi anunțul →"
+  },
+  "search": {
+    "placeholder": "Caută activități sau furnizori…",
+    "allAreas": "Toate zonele",
+    "allAges": "Toate vârstele",
+    "allLanguages": "Toate limbile",
+    "ageX": "Vârsta {age}",
+    "searchBtn": "Caută",
+    "clearAll": "Șterge tot"
+  },
+  "recommended": {
+    "forKid": "PENTRU {kid}",
+    "forYou": "RECOMANDAT PENTRU TINE",
+    "trialAvailable": "Sesiune de probă disponibilă",
+    "ronPerMonth": "RON/lună",
+    "free": "Gratuit",
+    "trial": "Probă"
+  },
+  "categories": {
+    "all": "Toate",
+    "sport": "Sport",
+    "dance": "Dans",
+    "music": "Muzică",
+    "coding": "Programare",
+    "arts": "Arte & Meșteșuguri",
+    "language": "Limbi",
+    "languages": "Limbi",
+    "chess": "Șah",
+    "gym": "Gimnastică",
+    "gymnastics": "Gimnastică",
+    "babysitting": "Babysitting",
+    "other": "Altele"
   }
 }
