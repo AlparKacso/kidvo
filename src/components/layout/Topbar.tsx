@@ -151,7 +151,6 @@ export function Topbar({
             <Link href="/dashboard" className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
               <span style={{ color: '#1c1c27' }}>kid</span><span style={{ color: '#7c3aed' }}>vo</span>
             </Link>
-            {locationLine}
             <div className="flex-1" />
             <LocaleToggle />
             {!isBrowse && (

@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { CategoryIconChip } from '@/components/ui/CategoryIcon'
 import type { ListingWithRelations } from '@/types/database'
+import { getTranslations } from 'next-intl/server'
 
 const CATEGORY_EMOJI: Record<string, string> = {
   sport:       '⚽',
@@ -44,7 +45,8 @@ interface ActivityCardProps {
   reviewCount?: number
 }
 
-export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount }: ActivityCardProps) {
+export async function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount }: ActivityCardProps) {
+  const t = await getTranslations('card')
   const isFull   = (listing.spots_available ?? 1) === 0
   const accent   = listing.category.accent_color
   const isSaved  = savedIds?.includes(listing.id) ?? false
@@ -165,7 +167,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
           <span className="font-display font-extrabold text-ink" style={{ fontSize: '16px' }}>
             {listing.price_monthly} RON
           </span>
-          <span className="text-[11px] text-ink-muted">/mo</span>
+          <span className="text-[11px] text-ink-muted">{t('perMonth')}</span>
         </div>
 
         {isFull ? (
@@ -173,7 +175,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
             className="ml-auto whitespace-nowrap rounded-full font-display text-[12px] font-semibold"
             style={{ background: '#f1f0f5', color: '#55527a', padding: '5px 12px' }}
           >
-            Fully booked
+            {t('fullyBooked')}
           </span>
         ) : listing.trial_available ? (
           <Link
@@ -181,7 +183,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
             className="ml-auto whitespace-nowrap rounded-[8px] font-display text-[12px] font-semibold bg-blue text-white hover:bg-blue-deep transition-colors"
             style={{ padding: '6px 12px' }}
           >
-            Book trial →
+            {t('bookTrial')}
           </Link>
         ) : (
           <Link
@@ -189,7 +191,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
             className="ml-auto whitespace-nowrap rounded-[8px] font-display text-[12px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
             style={{ padding: '6px 12px' }}
           >
-            View listing →
+            {t('viewListing')}
           </Link>
         )}
       </div>

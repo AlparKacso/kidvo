@@ -201,7 +201,76 @@
   },
   "dashboard": {
     "activityInterest": "Activity interest · {kidName}",
-    "basedOnSaves": "Based on saves"
+    "basedOnSaves": "Based on saves",
+    "greeting": "Hello, {name}! Here's what's happening 👋",
+    "activeSaved": "Activities saved",
+    "trialsBooked": "Trials booked",
+    "kidsOnProfile": "Kids on profile",
+    "reviewsWritten": "Reviews written",
+    "thisWeek": "+this week",
+    "seeUpcoming": "See upcoming →",
+    "thankYou": "Thank you! 🙏",
+    "leaveFirst": "Leave your first →",
+    "upcomingSessions": "Upcoming sessions",
+    "confirmedPending": "Confirmed & pending trials",
+    "viewAll": "View all →",
+    "viewAllCount": "View all ({count}) →",
+    "noTrialsYet": "No trial requests yet.",
+    "browseActivities": "Browse activities →",
+    "activityFallback": "Activity",
+    "activityInterestEmpty": "Activity interest",
+    "activityInterestEmptySub": "Save activities to see what your kids gravitate towards",
+    "yourChild": "Your child",
+    "yourChildren": "Your children",
+    "editKids": "Edit →",
+    "savedCount": "{count} saved",
+    "trialsCount": "{count} {count, plural, one {trial} other {trials}} booked",
+    "providerActiveListings": "Active listings",
+    "providerTotalViews": "Total views",
+    "providerTrialRequests": "Trial requests",
+    "providerContactReveals": "Contact reveals",
+    "allActive": "All active",
+    "allTime": "All-time",
+    "pendingN": "Pending {n}",
+    "pausedN": "Paused {n}",
+    "confirmedN": "Confirmed {n}",
+    "parentsUnlocked": "Parents who unlocked details",
+    "heroReachedPre": "Your activities reached",
+    "heroThisWeek": "This week",
+    "heroParentsWeek": "parents this week",
+    "heroNoViews": "No views yet this week",
+    "heroPendingTrials": "You have <b>{n}</b> new trial {n, plural, one {request} other {requests}} waiting. Reply fast — parents choose providers who respond quickly.",
+    "heroKeepListings": "Keep your listings complete and active to attract more families in Timișoara.",
+    "heroListFirst": "List your first activity to start reaching parents in Timișoara.",
+    "viewTrialRequests": "View trial requests →",
+    "listActivity": "List an activity →",
+    "myActivities": "My activities →",
+    "trialRequestsTitle": "Trial requests",
+    "pendingOldestFirst": "Pending · oldest first",
+    "topListings": "Top listings",
+    "byShareOfViews": "By share of views",
+    "performance": "Performance",
+    "topListing": "Top listing",
+    "mostViewedAllTime": "Most viewed · all-time",
+    "activityMix": "Activity mix · {kidName}",
+    "basedOnTrials": "Based on booked trials",
+    "noPendingRequests": "No pending requests — you're all caught up!",
+    "performanceSub": "All-time · all listings",
+    "conversionTitle": "Conversion",
+    "conversionSub": "Views → Reveals → Trials",
+    "conversionRate": "Views → trial rate",
+    "tipOfMonth": "Tip of the month",
+    "addYourKids": "Add your kids",
+    "trackActivities": "Track activities and trials per child.",
+    "addChild": "Add a child →",
+    "feedbackPrompt": "Tell us what would help you find the right activities for your kids.",
+    "sessionPending": "Pending",
+    "sessionConfirmed": "Confirmed ✓",
+    "sessionDeclined": "Declined",
+    "justNow": "Just now",
+    "hoursAgo": "{h}h ago",
+    "daysAgo": "{d}d ago",
+    "manageListings": "Manage →"
   },
   "kids": {
     "title": "Kids & Activities",
@@ -252,7 +321,15 @@
     "open": "Open",
     "bookTrial": "Book trial",
     "preferred": "Preferred: {day}",
-    "days": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    "days": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday"
+    ],
     "couldNotAccommodate": "The provider couldn't accommodate this request. Try another activity.",
     "assignTo": "Assign to:",
     "assignToChild": "Assign to child →",
@@ -357,7 +434,15 @@
     "daysAgo": "{d}d ago",
     "overdue": "· overdue",
     "preferred": "Preferred: {day}",
-    "days": ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+    "days": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ]
   },
   "cookie": {
     "text": "kidvo uses only essential cookies required for authentication and session management. No tracking or advertising cookies.",
@@ -370,7 +455,15 @@
     "en": "EN"
   },
   "trial": {
-    "days": {"0":"Monday","1":"Tuesday","2":"Wednesday","3":"Thursday","4":"Friday","5":"Saturday","6":"Sunday"},
+    "days": {
+      "0": "Monday",
+      "1": "Tuesday",
+      "2": "Wednesday",
+      "3": "Thursday",
+      "4": "Friday",
+      "5": "Saturday",
+      "6": "Sunday"
+    },
     "notLoggedIn": "You must be logged in.",
     "successTitle": "Request sent!",
     "successSub": "The provider will get back to you within 24 hours.",
@@ -406,7 +499,13 @@
     "edit": "Edit"
   },
   "wizard": {
-    "steps": ["Before you start","Basic info","Schedule","Details","Preview & publish"],
+    "steps": [
+      "Before you start",
+      "Basic info",
+      "Schedule",
+      "Details",
+      "Preview & publish"
+    ],
     "previewEmpty": "Fill in the form to see a preview",
     "titleEdit": "Edit activity",
     "titleNew": "List an activity",
@@ -415,10 +514,26 @@
     "beforeTitle": "Before you list your activity",
     "beforeSub": "Please read the following before creating your listing on kidvo.",
     "rules": [
-      {"icon":"🎯","title":"Trial sessions are on by default","desc":"Every listing should offer a trial session. If your activity has a genuine reason it can't (cohort schedule, full capacity), you can explain this — parents will see your reason."},
-      {"icon":"🤝","title":"Direct relationship with parents","desc":"kidvo connects you with parents, but all contracts, payments, and agreements happen directly between you and the family. kidvo is not involved in any financial transactions."},
-      {"icon":"📋","title":"You are responsible for compliance","desc":"You must hold all required licenses, certifications, and insurance for your activity. kidvo does not verify credentials and is not liable for any incidents."},
-      {"icon":"⏱️","title":"Listings are reviewed before going live","desc":"Every new listing is reviewed by the kidvo team within 24 hours. Listings that do not meet our quality standards may be rejected."}
+      {
+        "icon": "🎯",
+        "title": "Trial sessions are on by default",
+        "desc": "Every listing should offer a trial session. If your activity has a genuine reason it can't (cohort schedule, full capacity), you can explain this — parents will see your reason."
+      },
+      {
+        "icon": "🤝",
+        "title": "Direct relationship with parents",
+        "desc": "kidvo connects you with parents, but all contracts, payments, and agreements happen directly between you and the family. kidvo is not involved in any financial transactions."
+      },
+      {
+        "icon": "📋",
+        "title": "You are responsible for compliance",
+        "desc": "You must hold all required licenses, certifications, and insurance for your activity. kidvo does not verify credentials and is not liable for any incidents."
+      },
+      {
+        "icon": "⏱️",
+        "title": "Listings are reviewed before going live",
+        "desc": "Every new listing is reviewed by the kidvo team within 24 hours. Listings that do not meet our quality standards may be rejected."
+      }
     ],
     "agreeText": "I have read and agree to the above rules and kidvo's",
     "termsLink": "Terms of Use",
@@ -439,7 +554,15 @@
     "mapsHint": "Paste the Google Maps share link so parents can find you easily",
     "mapsPlaceholder": "https://maps.app.goo.gl/...",
     "languages": "Languages spoken",
-    "days": {"0":"Mon","1":"Tue","2":"Wed","3":"Thu","4":"Fri","5":"Sat","6":"Sun"},
+    "days": {
+      "0": "Mon",
+      "1": "Tue",
+      "2": "Wed",
+      "3": "Thu",
+      "4": "Fri",
+      "5": "Sat",
+      "6": "Sun"
+    },
     "scheduleHint": "Add one row per session slot",
     "scheduleLabel": "Weekly schedule",
     "groupLabelPlaceholder": "Group label (optional)",
@@ -483,8 +606,23 @@
   },
   "grades": {
     "preschool": "Preschool",
-    "grade1": "Grade 1","grade2": "Grade 2","grade3": "Grade 3","grade4": "Grade 4",
-    "grade5": "Grade 5","grade6": "Grade 6","grade7": "Grade 7","grade8": "Grade 8",
-    "hs1": "High School Year 1","hs2": "High School Year 2","hs3": "High School Year 3","hs4": "High School Year 4"
+    "grade1": "Grade 1",
+    "grade2": "Grade 2",
+    "grade3": "Grade 3",
+    "grade4": "Grade 4",
+    "grade5": "Grade 5",
+    "grade6": "Grade 6",
+    "grade7": "Grade 7",
+    "grade8": "Grade 8",
+    "hs1": "High School Year 1",
+    "hs2": "High School Year 2",
+    "hs3": "High School Year 3",
+    "hs4": "High School Year 4"
+  },
+  "card": {
+    "perMonth": "/mo",
+    "fullyBooked": "Fully booked",
+    "bookTrial": "Book trial →",
+    "viewListing": "View listing →"
   }
 }

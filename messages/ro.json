@@ -8,7 +8,7 @@
     "loading": "Se încarcă…"
   },
   "nav": {
-    "dashboard": "Panou",
+    "dashboard": "Dashboard",
     "browse": "Explorează",
     "kidsActivities": "Copii & Activități",
     "myListings": "Activitățile mele",
@@ -201,7 +201,76 @@
   },
   "dashboard": {
     "activityInterest": "Interesul pentru activitate · {kidName}",
-    "basedOnSaves": "Pe baza salvărilor"
+    "basedOnSaves": "Pe baza salvărilor",
+    "greeting": "Salut, {name}! Iată ce se întâmplă 👋",
+    "activeSaved": "Activități salvate",
+    "trialsBooked": "Probe rezervate",
+    "kidsOnProfile": "Copii în profil",
+    "reviewsWritten": "Recenzii scrise",
+    "thisWeek": "+săptămâna aceasta",
+    "seeUpcoming": "Vezi viitoare →",
+    "thankYou": "Mulțumim! 🙏",
+    "leaveFirst": "Lasă prima →",
+    "upcomingSessions": "Sesiuni viitoare",
+    "confirmedPending": "Confirmate & probe în așteptare",
+    "viewAll": "Vezi toate →",
+    "viewAllCount": "Vezi toate ({count}) →",
+    "noTrialsYet": "Nicio cerere de probă încă.",
+    "browseActivities": "Explorează activități →",
+    "activityFallback": "Activitate",
+    "activityInterestEmpty": "Interesul pentru activitate",
+    "activityInterestEmptySub": "Salvează activități pentru a vedea spre ce gravitează copiii tăi",
+    "yourChild": "Copilul tău",
+    "yourChildren": "Copiii tăi",
+    "editKids": "Editează →",
+    "savedCount": "{count} salvate",
+    "trialsCount": "{count} {count, plural, one {probă} other {probe}} rezervate",
+    "providerActiveListings": "Anunțuri active",
+    "providerTotalViews": "Total vizualizări",
+    "providerTrialRequests": "Cereri de probă",
+    "providerContactReveals": "Detalii dezvăluite",
+    "allActive": "Toate active",
+    "allTime": "Tot timpul",
+    "pendingN": "În așteptare {n}",
+    "pausedN": "Pauze {n}",
+    "confirmedN": "Confirmate {n}",
+    "parentsUnlocked": "Părinți care au deblocat detaliile",
+    "heroReachedPre": "Activitățile tale au ajuns la",
+    "heroThisWeek": "Săptămâna aceasta",
+    "heroParentsWeek": "părinți săptămâna aceasta",
+    "heroNoViews": "Nicio vizualizare încă săptămâna aceasta",
+    "heroPendingTrials": "Ai <b>{n}</b> {n, plural, one {cerere de probă nouă} other {cereri de probă noi}} în așteptare. Răspunde repede — părinții aleg furnizorii care răspund rapid.",
+    "heroKeepListings": "Menține anunțurile complete și active pentru a atrage mai multe familii în Timișoara.",
+    "heroListFirst": "Listează prima activitate pentru a ajunge la părinți în Timișoara.",
+    "viewTrialRequests": "Vezi cereri de probă →",
+    "listActivity": "Listează o activitate →",
+    "myActivities": "Activitățile mele →",
+    "trialRequestsTitle": "Cereri de probă",
+    "pendingOldestFirst": "În așteptare · cele mai vechi primele",
+    "topListings": "Top anunțuri",
+    "byShareOfViews": "După cota de vizualizări",
+    "performance": "Performanță",
+    "topListing": "Top anunț",
+    "mostViewedAllTime": "Cel mai vizualizat · tot timpul",
+    "activityMix": "Mix activități · {kidName}",
+    "basedOnTrials": "Pe baza probelor rezervate",
+    "noPendingRequests": "Nicio cerere în așteptare — ești la zi!",
+    "performanceSub": "Tot timpul · toate anunțurile",
+    "conversionTitle": "Conversie",
+    "conversionSub": "Vizualizări → Dezvăluiri → Probe",
+    "conversionRate": "Rată vizualizări → probă",
+    "tipOfMonth": "Sfatul lunii",
+    "addYourKids": "Adaugă copiii",
+    "trackActivities": "Urmărește activitățile și probele per copil.",
+    "addChild": "Adaugă un copil →",
+    "feedbackPrompt": "Spune-ne ce te-ar ajuta să găsești activitățile potrivite pentru copiii tăi.",
+    "sessionPending": "În așteptare",
+    "sessionConfirmed": "Confirmat ✓",
+    "sessionDeclined": "Respins",
+    "justNow": "Acum",
+    "hoursAgo": "Acum {h}h",
+    "daysAgo": "Acum {d}z",
+    "manageListings": "Gestionează →"
   },
   "kids": {
     "title": "Copii & Activități",
@@ -252,7 +321,15 @@
     "open": "Disponibil",
     "bookTrial": "Rezervă probă",
     "preferred": "Preferat: {day}",
-    "days": ["Luni","Marți","Miercuri","Joi","Vineri","Sâmbătă","Duminică"],
+    "days": [
+      "Luni",
+      "Marți",
+      "Miercuri",
+      "Joi",
+      "Vineri",
+      "Sâmbătă",
+      "Duminică"
+    ],
     "couldNotAccommodate": "Furnizorul nu a putut onora această cerere. Încearcă altă activitate.",
     "assignTo": "Atribuie:",
     "assignToChild": "Atribuie copilului →",
@@ -357,7 +434,15 @@
     "daysAgo": "acum {d}z",
     "overdue": "· întârziat",
     "preferred": "Preferat: {day}",
-    "days": ["Lun","Mar","Mie","Joi","Vin","Sâm","Dum"]
+    "days": [
+      "Lun",
+      "Mar",
+      "Mie",
+      "Joi",
+      "Vin",
+      "Sâm",
+      "Dum"
+    ]
   },
   "cookie": {
     "text": "kidvo folosește doar cookie-uri esențiale necesare pentru autentificare și gestionarea sesiunii. Fără cookie-uri de urmărire sau publicitate.",
@@ -370,7 +455,15 @@
     "en": "EN"
   },
   "trial": {
-    "days": {"0":"Luni","1":"Marți","2":"Miercuri","3":"Joi","4":"Vineri","5":"Sâmbătă","6":"Duminică"},
+    "days": {
+      "0": "Luni",
+      "1": "Marți",
+      "2": "Miercuri",
+      "3": "Joi",
+      "4": "Vineri",
+      "5": "Sâmbătă",
+      "6": "Duminică"
+    },
     "notLoggedIn": "Trebuie să fii autentificat.",
     "successTitle": "Cerere trimisă!",
     "successSub": "Furnizorul îți va răspunde în 24 de ore.",
@@ -406,7 +499,13 @@
     "edit": "Editează"
   },
   "wizard": {
-    "steps": ["Înainte de a începe","Informații de bază","Program","Detalii","Previzualizare & publicare"],
+    "steps": [
+      "Înainte de a începe",
+      "Informații de bază",
+      "Program",
+      "Detalii",
+      "Previzualizare & publicare"
+    ],
     "previewEmpty": "Completează formularul pentru a vedea o previzualizare",
     "titleEdit": "Editează activitatea",
     "titleNew": "Listează o activitate",
@@ -415,10 +514,26 @@
     "beforeTitle": "Înainte de a lista activitatea",
     "beforeSub": "Te rugăm să citești următoarele înainte de a crea anunțul pe kidvo.",
     "rules": [
-      {"icon":"🎯","title":"Ședințele de probă sunt activate implicit","desc":"Fiecare anunț trebuie să ofere o ședință de probă. Dacă activitatea ta are un motiv legitim pentru care nu poate (program pe cohorte, capacitate maximă), poți explica — părinții vor vedea motivul tău."},
-      {"icon":"🤝","title":"Relație directă cu părinții","desc":"kidvo te conectează cu părinții, dar toate contractele, plățile și acordurile au loc direct între tine și familie. kidvo nu este implicat în nicio tranzacție financiară."},
-      {"icon":"📋","title":"Ești responsabil pentru conformitate","desc":"Trebuie să deții toate licențele, certificările și asigurările necesare pentru activitatea ta. kidvo nu verifică acreditările și nu este răspunzător pentru incidente."},
-      {"icon":"⏱️","title":"Anunțurile sunt verificate înainte de publicare","desc":"Fiecare anunț nou este verificat de echipa kidvo în 24 de ore. Anunțurile care nu îndeplinesc standardele noastre pot fi respinse."}
+      {
+        "icon": "🎯",
+        "title": "Ședințele de probă sunt activate implicit",
+        "desc": "Fiecare anunț trebuie să ofere o ședință de probă. Dacă activitatea ta are un motiv legitim pentru care nu poate (program pe cohorte, capacitate maximă), poți explica — părinții vor vedea motivul tău."
+      },
+      {
+        "icon": "🤝",
+        "title": "Relație directă cu părinții",
+        "desc": "kidvo te conectează cu părinții, dar toate contractele, plățile și acordurile au loc direct între tine și familie. kidvo nu este implicat în nicio tranzacție financiară."
+      },
+      {
+        "icon": "📋",
+        "title": "Ești responsabil pentru conformitate",
+        "desc": "Trebuie să deții toate licențele, certificările și asigurările necesare pentru activitatea ta. kidvo nu verifică acreditările și nu este răspunzător pentru incidente."
+      },
+      {
+        "icon": "⏱️",
+        "title": "Anunțurile sunt verificate înainte de publicare",
+        "desc": "Fiecare anunț nou este verificat de echipa kidvo în 24 de ore. Anunțurile care nu îndeplinesc standardele noastre pot fi respinse."
+      }
     ],
     "agreeText": "Am citit și sunt de acord cu regulile de mai sus și cu",
     "termsLink": "Termenii de utilizare",
@@ -439,7 +554,15 @@
     "mapsHint": "Lipește link-ul de distribuire Google Maps pentru ca părinții să te găsească ușor",
     "mapsPlaceholder": "https://maps.app.goo.gl/...",
     "languages": "Limbi vorbite",
-    "days": {"0":"Lun","1":"Mar","2":"Mie","3":"Joi","4":"Vin","5":"Sâm","6":"Dum"},
+    "days": {
+      "0": "Lun",
+      "1": "Mar",
+      "2": "Mie",
+      "3": "Joi",
+      "4": "Vin",
+      "5": "Sâm",
+      "6": "Dum"
+    },
     "scheduleHint": "Adaugă câte un rând pentru fiecare slot de sesiune",
     "scheduleLabel": "Program săptămânal",
     "groupLabelPlaceholder": "Etichetă grup (opțional)",
@@ -483,8 +606,23 @@
   },
   "grades": {
     "preschool": "Preșcolar",
-    "grade1": "Clasa 1","grade2": "Clasa 2","grade3": "Clasa 3","grade4": "Clasa 4",
-    "grade5": "Clasa 5","grade6": "Clasa 6","grade7": "Clasa 7","grade8": "Clasa 8",
-    "hs1": "Liceu Clasa 9","hs2": "Liceu Clasa 10","hs3": "Liceu Clasa 11","hs4": "Liceu Clasa 12"
+    "grade1": "Clasa 1",
+    "grade2": "Clasa 2",
+    "grade3": "Clasa 3",
+    "grade4": "Clasa 4",
+    "grade5": "Clasa 5",
+    "grade6": "Clasa 6",
+    "grade7": "Clasa 7",
+    "grade8": "Clasa 8",
+    "hs1": "Liceu Clasa 9",
+    "hs2": "Liceu Clasa 10",
+    "hs3": "Liceu Clasa 11",
+    "hs4": "Liceu Clasa 12"
+  },
+  "card": {
+    "perMonth": "/lună",
+    "fullyBooked": "Complet ocupat",
+    "bookTrial": "Rezervă probă →",
+    "viewListing": "Vezi anunțul →"
   }
 }

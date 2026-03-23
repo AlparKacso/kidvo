@@ -77,16 +77,16 @@ function StatCard({ label, value, sub, accent = 'none' }: {
 }
 
 /* Session badge */
-function SessionBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    pending:   { label: 'Pending',        cls: 'bg-[#fef9c3] text-[#92400e]' },
-    confirmed: { label: 'Confirmed ✓',   cls: 'bg-[#dcfce7] text-[#15803d]' },
-    declined:  { label: 'Declined',       cls: 'bg-[#fee2e2] text-[#b91c1c]' },
+function SessionBadge({ status, label }: { status: string; label: string }) {
+  const clsMap: Record<string, string> = {
+    pending:   'bg-[#fef9c3] text-[#92400e]',
+    confirmed: 'bg-[#dcfce7] text-[#15803d]',
+    declined:  'bg-[#fee2e2] text-[#b91c1c]',
   }
-  const s = map[status] ?? map.pending
+  const cls = clsMap[status] ?? clsMap.pending
   return (
-    <span className={`ml-auto font-display text-[11px] font-bold px-[9px] py-[3px] rounded-full whitespace-nowrap flex-shrink-0 ${s.cls}`}>
-      {s.label}
+    <span className={`ml-auto font-display text-[11px] font-bold px-[9px] py-[3px] rounded-full whitespace-nowrap flex-shrink-0 ${cls}`}>
+      {label}
     </span>
   )
 }
@@ -157,13 +157,15 @@ function Donut({ pct, color, softColor, label }: { pct: number; color: string; s
 }
 
 /* Per-kid activity mix card */
-function ActivityMixCard({ kidName, items, othersCount }: {
+function ActivityMixCard({ kidName, items, othersCount, titleText, subText }: {
   kidName:     string
   items:       Array<{ slug: string; name: string; pct: number; color: string; soft: string }>
   othersCount: number
+  titleText:   string
+  subText:     string
 }) {
   return (
-    <SectionCard title={`Activity mix · ${kidName}`} sub="Based on booked trials">
+    <SectionCard title={titleText} sub={subText}>
       <div className="flex items-end gap-5">
         {items.map(d => (
           <Donut key={d.slug} pct={d.pct} color={d.color} softColor={d.soft} label={d.name} />
@@ -319,26 +321,26 @@ export default async function DashboardPage() {
         {/* ── 4 stat cards ──────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-[18px]">
           <StatCard
-            label="Active listings"
+            label={tDash('providerActiveListings')}
             value={activeCount}
-            sub={[pendingListings > 0 && `Pending ${pendingListings}`, pausedCount > 0 && `Paused ${pausedCount}`].filter(Boolean).join(' · ') || 'All active'}
+            sub={[pendingListings > 0 && tDash('pendingN', { n: pendingListings }), pausedCount > 0 && tDash('pausedN', { n: pausedCount })].filter(Boolean).join(' · ') || tDash('allActive')}
             accent="purple"
           />
           <StatCard
-            label="Total views"
+            label={tDash('providerTotalViews')}
             value={totalAllViews}
-            sub="All-time"
+            sub={tDash('allTime')}
             accent="blue"
           />
           <StatCard
-            label="Trial requests"
+            label={tDash('providerTrialRequests')}
             value={totalAllTrials}
-            sub={`Confirmed ${confirmedTrials} · Pending ${pendingTrials}`}
+            sub={`${tDash('confirmedN', { n: confirmedTrials })} · ${tDash('pendingN', { n: pendingTrials })}`}
           />
           <StatCard
-            label="Contact reveals"
+            label={tDash('providerContactReveals')}
             value={totalAllReveals}
-            sub="Parents who unlocked details"
+            sub={tDash('parentsUnlocked')}
           />
         </div>
 
@@ -351,40 +353,39 @@ export default async function DashboardPage() {
             <div className="rounded-[22px] px-7 py-7 relative overflow-hidden" style={{ background: '#1c1c27' }}>
               <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
               <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>
-                {weekReach > 0 ? 'Your activities reached' : 'This week'}
+                {weekReach > 0 ? tDash('heroReachedPre') : tDash('heroThisWeek')}
               </p>
               <div className="flex items-baseline gap-2 mb-3">
                 {weekReach > 0 ? (
                   <>
                     <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>{weekReach}</span>
-                    <span className="font-display text-2xl font-bold text-white">parents this week</span>
+                    <span className="font-display text-2xl font-bold text-white">{tDash('heroParentsWeek')}</span>
                   </>
                 ) : (
-                  <span className="font-display text-2xl font-bold text-white">No views yet this week</span>
+                  <span className="font-display text-2xl font-bold text-white">{tDash('heroNoViews')}</span>
                 )}
               </div>
               <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
-                {pendingTrials > 0 ? (
-                  <>You have <span className="text-white font-semibold">{pendingTrials} new trial {pendingTrials === 1 ? 'request' : 'requests'}</span> waiting. Reply fast — parents choose providers who respond quickly.</>
-                ) : activeCount > 0 ? (
-                  'Keep your listings complete and active to attract more families in Timișoara.'
-                ) : (
-                  'List your first activity to start reaching parents in Timișoara.'
-                )}
+                {pendingTrials > 0
+                  ? tDash.rich('heroPendingTrials', { n: pendingTrials, b: (c) => <span className="text-white font-semibold">{c}</span> })
+                  : activeCount > 0
+                    ? tDash('heroKeepListings')
+                    : tDash('heroListFirst')
+                }
               </p>
               <div className="flex items-center gap-3 flex-wrap">
                 {pendingTrials > 0 && (
                   <Link href="/listings?tab=bookings" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
-                    View trial requests →
+                    {tDash('viewTrialRequests')}
                   </Link>
                 )}
                 {activeCount === 0 ? (
                   <Link href="/listings/new" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
-                    List an activity →
+                    {tDash('listActivity')}
                   </Link>
                 ) : (
                   <Link href="/listings" className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-full border transition-colors" style={{ color: 'rgba(255,255,255,0.65)', borderColor: 'rgba(255,255,255,0.18)' }}>
-                    My activities →
+                    {tDash('myActivities')}
                   </Link>
                 )}
               </div>
@@ -392,16 +393,16 @@ export default async function DashboardPage() {
 
             {/* Pending trial requests */}
             <SectionCard
-              title="Trial requests"
-              sub="Pending · oldest first"
-              linkText={pendingTrials > 3 ? `View all (${pendingTrials}) →` : undefined}
+              title={tDash('trialRequestsTitle')}
+              sub={tDash('pendingOldestFirst')}
+              linkText={pendingTrials > 3 ? tDash('viewAllCount', { count: pendingTrials }) : undefined}
               linkHref="/listings?tab=bookings"
             >
 
               {pendingRequests.length === 0 ? (
                 <div className="flex flex-col items-center py-6 gap-2">
                   <span className="text-2xl">📬</span>
-                  <span className="font-display text-[13px] text-ink-muted">No pending requests — you&apos;re all caught up!</span>
+                  <span className="font-display text-[13px] text-ink-muted">{tDash('noPendingRequests')}</span>
                 </div>
               ) : (
                 <div className="flex flex-col gap-[10px]">
@@ -432,7 +433,7 @@ export default async function DashboardPage() {
             {/* ── Mobile-only: Top listings + Conversion (shown between requests and performance) ── */}
             {topListingsBars.length > 0 && totalAllViews > 0 && (
               <div className="lg:hidden">
-                <SectionCard title="Top listings" sub="By share of views">
+                <SectionCard title={tDash('topListings')} sub={tDash('byShareOfViews')}>
                   <div className="flex flex-col gap-[10px]">
                     {topListingsBars.map(l => (
                       <div key={l.title} className="flex flex-col gap-[5px]">
@@ -450,8 +451,8 @@ export default async function DashboardPage() {
               </div>
             )}
             {totalAllViews > 0 && <div className="lg:hidden rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
-              <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>Conversion</div>
-              <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>Views → Reveals → Trials</div>
+              <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>{tDash('conversionTitle')}</div>
+              <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>{tDash('conversionSub')}</div>
               <div className="flex items-start gap-0 mb-5">
                 {[
                   { label: 'Views',   value: totalAllViews,   color: '#a78bfa' },
@@ -466,7 +467,7 @@ export default async function DashboardPage() {
                 ))}
               </div>
               <div className="rounded-[12px] px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>Views → trial rate</span>
+                <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>{tDash('conversionRate')}</span>
                 <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
               </div>
             </div>}
@@ -474,9 +475,9 @@ export default async function DashboardPage() {
             {/* Per-listing performance table */}
             {allListings.length > 0 && (
               <SectionCard
-                title="Performance"
-                sub="All-time · all listings"
-                linkText={allListings.length <= 5 ? 'Manage →' : undefined}
+                title={tDash('performance')}
+                sub={tDash('performanceSub')}
+                linkText={allListings.length <= 5 ? tDash('manageListings') : undefined}
                 linkHref={allListings.length <= 5 ? '/listings' : undefined}
                 extraHeader={allListings.length > 5 ? <PerformanceModal rows={perfRows} /> : undefined}
               >
@@ -514,7 +515,7 @@ export default async function DashboardPage() {
             {/* Top listings bar chart — desktop only (mobile copy lives in left col) */}
             {topListingsBars.length > 0 && (
               <div className="hidden lg:block">
-              <SectionCard title="Top listings" sub="By share of views">
+              <SectionCard title={tDash('topListings')} sub={tDash('byShareOfViews')}>
                 <div className="flex flex-col gap-[10px]">
                   {topListingsBars.map(l => (
                     <div key={l.title} className="flex flex-col gap-[5px]">
@@ -534,8 +535,8 @@ export default async function DashboardPage() {
 
             {/* Conversion funnel — dark card */}
             {totalAllViews > 0 && <div className="hidden lg:block rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
-              <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>Conversion</div>
-              <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>Views → Reveals → Trials</div>
+              <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>{tDash('conversionTitle')}</div>
+              <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>{tDash('conversionSub')}</div>
               <div className="flex items-start gap-0 mb-5">
                 {[
                   { label: 'Views',   value: totalAllViews,   color: '#a78bfa' },
@@ -550,14 +551,14 @@ export default async function DashboardPage() {
                 ))}
               </div>
               <div className="rounded-[12px] px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>Views → trial rate</span>
+                <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>{tDash('conversionRate')}</span>
                 <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
               </div>
             </div>}
 
             {/* Top listing — white card */}
             {topListing && (
-              <SectionCard title="Top listing" sub="Most viewed · all-time" linkText="Edit →" linkHref={`/listings/${topListing.id}/edit`}>
+              <SectionCard title={tDash('topListing')} sub={tDash('mostViewedAllTime')} linkText={tDash('editKids')} linkHref={`/listings/${topListing.id}/edit`}>
                 <div className="font-display text-[14px] font-extrabold text-ink mb-4 leading-snug">{topListing.title}</div>
                 <div className="flex gap-2">
                   {[
@@ -584,7 +585,7 @@ export default async function DashboardPage() {
                   <IconBulb />
                 </span>
                 <div>
-                  <div className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">Tip of the month</div>
+                  <div className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">{tDash('tipOfMonth')}</div>
                   <p className="text-sm text-ink">{tipBody}</p>
                 </div>
               </div>
@@ -726,15 +727,15 @@ export default async function DashboardPage() {
     <AppShell>
       {/* Greeting */}
       <p className="font-display text-[13px] font-semibold text-ink-muted mb-4">
-        Hello, {firstName}! Here&apos;s what&apos;s happening 👋
+        {tDash('greeting', { name: firstName })}
       </p>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-[18px]">
-        <StatCard label="Activities saved" value={savedCount}    sub="+this week"    accent="purple" />
-        <StatCard label="Trials booked"   value={bookingsCount} sub="See upcoming →" accent="blue"   />
-        <StatCard label="Kids on profile" value={childCount}    sub={kidNames} />
-        <StatCard label="Reviews written"  value={parentReviews} sub={parentReviews > 0 ? 'Thank you! 🙏' : 'Leave your first →'} />
+        <StatCard label={tDash('activeSaved')}    value={savedCount}    sub={tDash('thisWeek')}    accent="purple" />
+        <StatCard label={tDash('trialsBooked')}   value={bookingsCount} sub={tDash('seeUpcoming')} accent="blue"   />
+        <StatCard label={tDash('kidsOnProfile')}  value={childCount}    sub={kidNames} />
+        <StatCard label={tDash('reviewsWritten')} value={parentReviews} sub={parentReviews > 0 ? tDash('thankYou') : tDash('leaveFirst')} />
       </div>
 
       {/* Two-col layout */}
@@ -743,15 +744,15 @@ export default async function DashboardPage() {
         {/* ── LEFT COLUMN — sessions + kid activity widgets ── */}
         <div className="flex flex-col gap-[18px]">
           <SectionCard
-            title="Upcoming sessions"
-            sub="Confirmed & pending trials"
-            linkText={bookingsCount > 3 ? `View all (${bookingsCount}) →` : 'View all →'}
+            title={tDash('upcomingSessions')}
+            sub={tDash('confirmedPending')}
+            linkText={bookingsCount > 3 ? tDash('viewAllCount', { count: bookingsCount }) : tDash('viewAll')}
             linkHref="/bookings"
           >
             {sessions.length === 0 ? (
               <p className="font-display text-sm text-ink-muted">
-                No trial requests yet.{' '}
-                <Link href="/browse" className="text-primary font-semibold hover:underline">Browse activities →</Link>
+                {tDash('noTrialsYet')}{' '}
+                <Link href="/browse" className="text-primary font-semibold hover:underline">{tDash('browseActivities')}</Link>
               </p>
             ) : (
               <div className="flex flex-col gap-[9px]">
@@ -763,14 +764,18 @@ export default async function DashboardPage() {
                       <span className="w-[9px] h-[9px] rounded-full flex-shrink-0" style={{ background: dotColor }} />
                       <div className="flex-1 min-w-0">
                         <div className="font-display text-[13.5px] font-semibold text-ink leading-snug truncate">
-                          {listing?.title ?? 'Activity'}
+                          {listing?.title ?? tDash('activityFallback')}
                         </div>
                         <div className="font-display text-[11.5px] text-ink-muted mt-0.5">
                           {(listing?.provider as any)?.display_name}
                           {s.preferred_day != null ? ` · ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s.preferred_day] ?? ''}` : ''}
                         </div>
                       </div>
-                      <SessionBadge status={s.status} />
+                      <SessionBadge status={s.status} label={
+                        s.status === 'confirmed' ? tDash('sessionConfirmed') :
+                        s.status === 'declined'  ? tDash('sessionDeclined')  :
+                        tDash('sessionPending')
+                      } />
                     </div>
                   )
                 })}
@@ -786,14 +791,14 @@ export default async function DashboardPage() {
                   <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} titleText={tDash('activityInterest', { kidName: k.interest.kidName })} subText={tDash('basedOnSaves')} />
                 )}
                 {k.mix && (
-                  <ActivityMixCard kidName={k.mix.kidName} items={k.mix.items} othersCount={k.mix.othersCount} />
+                  <ActivityMixCard kidName={k.mix.kidName} items={k.mix.items} othersCount={k.mix.othersCount} titleText={tDash('activityMix', { kidName: k.mix.kidName })} subText={tDash('basedOnTrials')} />
                 )}
               </div>
             ))
           ) : hasKids ? (
-            <SectionCard title="Activity interest" sub="Save activities to see what your kids gravitate towards">
+            <SectionCard title={tDash('activityInterestEmpty')} sub={tDash('activityInterestEmptySub')}>
               <p className="font-display text-sm text-ink-muted">
-                <Link href="/browse" className="text-primary font-semibold hover:underline">Browse activities →</Link>
+                <Link href="/browse" className="text-primary font-semibold hover:underline">{tDash('browseActivities')}</Link>
               </p>
             </SectionCard>
           ) : null}
@@ -811,8 +816,8 @@ export default async function DashboardPage() {
           {/* Kid profile card */}
           {hasKids && (
             <SectionCard
-              title={children.length > 1 ? 'Your children' : 'Your child'}
-              linkText="Edit →"
+              title={children.length > 1 ? tDash('yourChildren') : tDash('yourChild')}
+              linkText={tDash('editKids')}
               linkHref="/kids"
             >
               <div className="flex flex-col gap-[9px]">
@@ -829,7 +834,7 @@ export default async function DashboardPage() {
                       <div className="flex-1 min-w-0">
                         <div className="font-display text-[13.5px] font-semibold text-ink">{kid.name}</div>
                         <div className="font-display text-[11.5px] text-ink-muted">
-                          {kidSaves} saved · {kidBookings} trial{kidBookings !== 1 ? 's' : ''} booked
+                          {tDash('savedCount', { count: kidSaves })} · {tDash('trialsCount', { count: kidBookings })}
                         </div>
                       </div>
                     </div>
@@ -842,10 +847,10 @@ export default async function DashboardPage() {
           {/* CTA if no kids */}
           {!hasKids && (
             <div className="bg-white rounded-[22px] p-[22px] text-center" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
-              <div className="font-display text-[15px] font-bold text-ink mb-1">Add your kids</div>
-              <p className="font-display text-[12.5px] text-ink-muted mb-4">Track activities and trials per child.</p>
+              <div className="font-display text-[15px] font-bold text-ink mb-1">{tDash('addYourKids')}</div>
+              <p className="font-display text-[12.5px] text-ink-muted mb-4">{tDash('trackActivities')}</p>
               <Link href="/kids" className="inline-block font-display text-sm font-semibold bg-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
-                Add a child →
+                {tDash('addChild')}
               </Link>
             </div>
           )}
@@ -856,7 +861,7 @@ export default async function DashboardPage() {
       {/* Feedback */}
       <div className="mt-5 mb-6">
         <div className="bg-white border border-border rounded-xl px-5 py-4">
-          <p className="text-sm text-ink-muted mb-3">Tell us what would help you find the right activities for your kids.</p>
+          <p className="text-sm text-ink-muted mb-3">{tDash('feedbackPrompt')}</p>
           <FeedbackForm />
         </div>
       </div>
