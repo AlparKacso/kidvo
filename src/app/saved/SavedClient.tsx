@@ -39,7 +39,7 @@ export function SavedClient({ initialSaves }: Props) {
     <div>
       <div className="mb-6">
         <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">{t('title')}</h1>
-        <p className="text-sm text-ink-muted">{total} {total === 1 ? 'activity' : 'activities'} saved</p>
+        <p className="text-sm text-ink-muted">{total} {t('activityCount', { count: total })} saved</p>
       </div>
 
       {total === 0 && (
@@ -84,9 +84,9 @@ export function SavedClient({ initialSaves }: Props) {
                     </div>
                     {pendingRemove === save.id ? (
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className="text-xs text-ink-muted">Remove?</span>
-                        <button onClick={() => handleRemove(save.id, listing?.id)} className="px-2 py-1 rounded font-display text-xs font-semibold bg-danger text-white">Yes</button>
-                        <button onClick={() => setPendingRemove(null)} className="px-2 py-1 rounded font-display text-xs font-semibold border border-border text-ink-mid">No</button>
+                        <span className="text-xs text-ink-muted">{t('removeConfirm')}</span>
+                        <button onClick={() => handleRemove(save.id, listing?.id)} className="px-2 py-1 rounded font-display text-xs font-semibold bg-danger text-white">{t('yes')}</button>
+                        <button onClick={() => setPendingRemove(null)} className="px-2 py-1 rounded font-display text-xs font-semibold border border-border text-ink-mid">{t('no')}</button>
                       </div>
                     ) : (
                       <button
@@ -100,15 +100,15 @@ export function SavedClient({ initialSaves }: Props) {
                   <div className="flex items-center justify-between mt-3">
                     <div>
                       <span className="font-display text-sm font-bold text-ink">{listing?.price_monthly} RON</span>
-                      <span className="text-xs text-ink-muted">/mo</span>
+                      <span className="text-xs text-ink-muted">{t('perMonth')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={cn('inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold', isFull ? 'bg-danger-lt text-danger' : 'bg-success-lt text-success')}>
-                        {isFull ? 'Full' : 'Available'}
+                        {isFull ? t('full') : t('available')}
                       </span>
                       {!isFull && listing?.trial_available && (
                         <Link href={`/browse/${listing?.id}?book=1`} className="px-2.5 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
-                          Book trial
+                          {t('bookTrial')}
                         </Link>
                       )}
                     </div>
@@ -132,21 +132,21 @@ export function SavedClient({ initialSaves }: Props) {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="text-right mr-1">
                       <span className="font-display text-sm font-bold text-ink">{listing?.price_monthly} RON</span>
-                      <span className="text-xs text-ink-muted">/mo</span>
+                      <span className="text-xs text-ink-muted">{t('perMonth')}</span>
                     </div>
                     <span className={cn('inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold', isFull ? 'bg-danger-lt text-danger' : 'bg-success-lt text-success')}>
-                      {isFull ? 'Full' : 'Available'}
+                      {isFull ? t('full') : t('available')}
                     </span>
                     {!isFull && listing?.trial_available && (
                       <Link href={`/browse/${listing?.id}?book=1`} className="px-2.5 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
-                        Book trial
+                        {t('bookTrial')}
                       </Link>
                     )}
                     {pendingRemove === save.id ? (
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className="text-xs text-ink-muted">Remove?</span>
-                        <button onClick={() => handleRemove(save.id, listing?.id)} className="px-2 py-1 rounded font-display text-xs font-semibold bg-danger text-white">Yes</button>
-                        <button onClick={() => setPendingRemove(null)} className="px-2 py-1 rounded font-display text-xs font-semibold border border-border text-ink-mid">No</button>
+                        <span className="text-xs text-ink-muted">{t('removeConfirm')}</span>
+                        <button onClick={() => handleRemove(save.id, listing?.id)} className="px-2 py-1 rounded font-display text-xs font-semibold bg-danger text-white">{t('yes')}</button>
+                        <button onClick={() => setPendingRemove(null)} className="px-2 py-1 rounded font-display text-xs font-semibold border border-border text-ink-mid">{t('no')}</button>
                       </div>
                     ) : (
                     <button

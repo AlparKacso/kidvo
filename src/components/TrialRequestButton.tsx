@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 interface Kid { id: string; name: string }
 
@@ -26,6 +25,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
   const [errorMsg, setErrorMsg] = useState('')
   const [kids,     setKids]     = useState<Kid[] | null>(null)
   const [childId,  setChildId]  = useState<string | null>(null)
+  const t = useTranslations('trial')
 
   useEffect(() => {
     if (searchParams.get('book') === '1' && !isFull) openModal()
@@ -59,7 +59,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
 
     if (res.status === 401) {
       setState('error')
-      setErrorMsg('You must be logged in.')
+      setErrorMsg(t('notLoggedIn'))
       return
     }
 
@@ -77,8 +77,8 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
     return (
       <div className="w-full flex flex-col items-center gap-2 py-4 px-3 bg-success-lt border border-success/20 rounded text-center">
         <div className="text-2xl">🎉</div>
-        <div className="font-display text-sm font-semibold text-success">Request sent!</div>
-        <p className="text-xs text-ink-muted">The provider will get back to you within 24 hours.</p>
+        <div className="font-display text-sm font-semibold text-success">{t('successTitle')}</div>
+        <p className="text-xs text-ink-muted">{t('successSub')}</p>
       </div>
     )
   }
@@ -94,7 +94,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><rect x="2" y="2" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M2 6h11M6 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-        Book a trial session
+        {t('bookTrial')}
       </button>
 
       {(state === 'open' || state === 'submitting' || state === 'error') && (
@@ -109,14 +109,14 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </button>
 
-            <h2 className="font-display text-base font-bold text-ink mb-0.5">Book a trial session</h2>
+            <h2 className="font-display text-base font-bold text-ink mb-0.5">{t('bookTrial')}</h2>
             <p className="text-sm text-ink-muted mb-5">{listingTitle}</p>
 
             {/* Kid picker — only shown when the parent has children */}
             {kids && kids.length > 0 && (
               <div className="mb-4">
                 <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">
-                  For <span className="text-ink-muted font-normal normal-case">(optional)</span>
+                  {t('forLabel')} <span className="text-ink-muted font-normal normal-case">{t('optional')}</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {kids.map(kid => (
@@ -140,7 +140,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
 
             <div className="mb-4">
               <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">
-                Preferred day
+                {t('preferredDay')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {schedules.map(s => (
@@ -155,7 +155,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
                         : 'bg-bg border-border text-ink-mid hover:border-primary'
                     )}
                   >
-                    {DAYS[s.day_of_week]} · {s.time_start?.slice(0,5)}–{s.time_end?.slice(0,5)}
+                    {t(`days.${s.day_of_week}` as any)} · {s.time_start?.slice(0,5)}–{s.time_end?.slice(0,5)}
                   </button>
                 ))}
               </div>
@@ -163,11 +163,11 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
 
             <div className="mb-5">
               <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">
-                Message <span className="text-ink-muted font-normal normal-case">(optional)</span>
+                {t('messageLabel')} <span className="text-ink-muted font-normal normal-case">{t('optional')}</span>
               </label>
               <textarea
                 rows={3}
-                placeholder="e.g. My son is 7 years old and has no prior experience..."
+                placeholder={t('messagePlaceholder')}
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded bg-bg font-body text-sm text-ink placeholder:text-ink-muted outline-none focus:border-primary transition-all resize-none"
@@ -183,19 +183,19 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
                 onClick={() => setState('idle')}
                 className="flex-1 py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={submit}
                 disabled={state === 'submitting' || preferredDay === null}
                 className="flex-1 py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors"
               >
-                {state === 'submitting' ? 'Sending...' : 'Send request'}
+                {state === 'submitting' ? t('sending') : t('sendRequest')}
               </button>
             </div>
 
             <p className="text-[11px] text-ink-muted text-center mt-3">
-              No payment required · Provider responds within 24h
+              {t('noPayment')}
             </p>
           </div>
         </div>

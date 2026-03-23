@@ -12,12 +12,6 @@ const CURRENT_YEAR  = new Date().getFullYear()
 const CAP           = 3
 const UNASSIGNED_ID = '__unassigned__'
 
-const GRADES = [
-  'Preschool', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4',
-  'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8',
-  'High School Year 1', 'High School Year 2', 'High School Year 3', 'High School Year 4',
-]
-
 const STATUS_PILL: Record<string, string> = {
   pending:   'bg-gold-lt text-gold-text',
   confirmed: 'bg-success-lt text-success',
@@ -46,6 +40,13 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
   saving:     boolean
 }) {
   const t = useTranslations('kids')
+  const tGrades = useTranslations('grades')
+  const GRADES = [
+    tGrades('preschool'),
+    tGrades('grade1'), tGrades('grade2'), tGrades('grade3'), tGrades('grade4'),
+    tGrades('grade5'), tGrades('grade6'), tGrades('grade7'), tGrades('grade8'),
+    tGrades('hs1'), tGrades('hs2'), tGrades('hs3'), tGrades('hs4'),
+  ]
   const [name,      setName]      = useState(initial?.name         ?? '')
   const [year,      setYear]      = useState(initial?.birth_year   ?? CURRENT_YEAR - 7)
   const [grade,     setGrade]     = useState(initial?.school_grade ?? '')

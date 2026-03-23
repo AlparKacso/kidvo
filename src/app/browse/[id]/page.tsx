@@ -138,7 +138,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                   </span>
                   <span className="flex items-center gap-1.5 px-2.5 py-1 bg-surface rounded text-xs text-ink-mid">
                     <svg width="11" height="11" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 13.5c0-2.5 2.4-4.5 5.5-4.5s5.5 2 5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none"/></svg>
-                    Ages {listing.age_min}–{listing.age_max}
+                    {t('ages')}{listing.age_min}–{listing.age_max}
                   </span>
                   {schedules?.length > 0 && (
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-surface rounded text-xs text-ink-mid">
@@ -211,7 +211,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                   </div>
                   <div>
                     <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">{t('ageRange')}</div>
-                    <div className="text-sm text-ink">{listing.age_min} – {listing.age_max} years</div>
+                    <div className="text-sm text-ink">{listing.age_min} – {listing.age_max}{t('years')}</div>
                   </div>
                 </div>
                 <div className="flex gap-3 items-start">
@@ -220,7 +220,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                   </div>
                   <div>
                     <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">{t('pricing')}</div>
-                    <div className="text-sm text-ink">{listing.price_monthly} RON / month{listing.trial_available ? ' · Trial session free' : ''}</div>
+                    <div className="text-sm text-ink">{listing.price_monthly}{t('ronPerMonth')}{listing.trial_available ? t('trialSessionFree') : ''}</div>
                   </div>
                 </div>
                 <div className="flex gap-3 items-start">

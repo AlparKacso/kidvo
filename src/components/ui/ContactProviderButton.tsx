@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   listingId:    string
@@ -12,6 +13,7 @@ interface Props {
 
 export function ContactProviderButton({ listingId, displayName, contactEmail, contactPhone, isLoggedIn }: Props) {
   const [open, setOpen] = useState(false)
+  const t = useTranslations('contact')
 
   function handleReveal() {
     if (!isLoggedIn) {
@@ -36,7 +38,7 @@ export function ContactProviderButton({ listingId, displayName, contactEmail, co
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
       >
         <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><path d="M2 3.5h11M2 7.5h8M2 11.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-        Show contact details
+        {t('showContact')}
       </button>
 
       {open && (
@@ -51,7 +53,7 @@ export function ContactProviderButton({ listingId, displayName, contactEmail, co
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </button>
 
-            <h2 className="font-display text-base font-bold text-ink mb-0.5">Contact details</h2>
+            <h2 className="font-display text-base font-bold text-ink mb-0.5">{t('title')}</h2>
             <p className="text-sm text-ink-muted mb-5">{displayName}</p>
 
             <div className="flex flex-col gap-3">
@@ -66,7 +68,7 @@ export function ContactProviderButton({ listingId, displayName, contactEmail, co
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted mb-0.5">Email</div>
+                  <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted mb-0.5">{t('email')}</div>
                   <div className="text-sm text-ink truncate">{contactEmail}</div>
                 </div>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-ink-muted flex-shrink-0">
@@ -85,7 +87,7 @@ export function ContactProviderButton({ listingId, displayName, contactEmail, co
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted mb-0.5">Phone</div>
+                    <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted mb-0.5">{t('phone')}</div>
                     <div className="text-sm text-ink">{contactPhone}</div>
                   </div>
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-ink-muted flex-shrink-0">
@@ -96,7 +98,7 @@ export function ContactProviderButton({ listingId, displayName, contactEmail, co
             </div>
 
             <p className="text-[11px] text-ink-muted text-center mt-4 leading-relaxed">
-              You&apos;re contacting this provider directly.<br />kidvo is not involved in this communication.
+              {t('disclaimer1')}<br />{t('disclaimer2')}
             </p>
           </div>
         </div>

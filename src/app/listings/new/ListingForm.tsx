@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { LegalModal } from '@/components/ui/LegalModal'
@@ -35,14 +36,12 @@ interface FormData {
   cover_image_url:       string
 }
 
-const DAYS  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const TIMES = [
   '07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30',
   '11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30',
   '15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30',
   '19:00','19:30','20:00','20:30','21:00',
 ]
-const STEPS = ['Before you start', 'Basic info', 'Schedule', 'Details', 'Preview & publish']
 const EMPTY_SCHEDULE: ScheduleRow = { day_of_week: 0, time_start: '16:00', time_end: '17:00', group_label: '' }
 const INITIAL: FormData = {
   title: '', category_id: '', area_id: '', address: '', maps_url: '', language: ['Romanian'],
@@ -51,10 +50,10 @@ const INITIAL: FormData = {
   includes: [''], trial_available: true, trial_disabled_reason: 'cohort', cover_image_url: '',
 }
 
-function StepIndicator({ current }: { current: number }) {
+function StepIndicator({ current, steps }: { current: number; steps: string[] }) {
   return (
     <div className="flex items-start mb-8">
-      {STEPS.map((label, i) => {
+      {steps.map((label, i) => {
         const done   = i < current
         const active = i === current
         return (
@@ -73,7 +72,7 @@ function StepIndicator({ current }: { current: number }) {
                   </svg>
                 ) : i + 1}
               </div>
-              <div className={cn('flex-1 h-px', i === STEPS.length - 1 ? 'invisible' : done ? 'bg-primary' : 'bg-border')} />
+              <div className={cn('flex-1 h-px', i === steps.length - 1 ? 'invisible' : done ? 'bg-primary' : 'bg-border')} />
             </div>
             <div className={cn('hidden md:block font-display text-[11px] font-semibold mt-1.5', active ? 'text-primary' : done ? 'text-ink-mid' : 'text-ink-muted')}>
               {label}
@@ -98,13 +97,15 @@ const inputCls  = 'w-full px-3 py-2 border border-border rounded bg-bg font-body
 const selectCls = inputCls + ' cursor-pointer appearance-none'
 
 function PreviewCard({ data, categories, areas }: { data: FormData; categories: Category[]; areas: Area[] }) {
+  const t = useTranslations('wizard')
+  const DAYS = [0,1,2,3,4,5,6].map(i => t(`days.${i}` as any))
   const cat     = categories.find(c => c.id === data.category_id)
   const area    = areas.find(a => a.id === data.area_id)
   const hasData = data.title || cat || area
 
   if (!hasData) return (
     <div className="bg-white border border-border rounded-lg p-6 text-center text-ink-muted text-sm">
-      Fill in the form to see a preview
+      {t('previewEmpty')}
     </div>
   )
 
@@ -115,7 +116,7 @@ function PreviewCard({ data, categories, areas }: { data: FormData; categories: 
         <div className="flex items-center gap-1.5 mb-1">
           {cat && <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: cat.accent_color }} />}
           <span className="text-xs text-ink-muted">
-            {[cat?.name, data.age_min && data.age_max ? `Ages ${data.age_min}-${data.age_max}` : null, area?.name].filter(Boolean).join(' - ')}
+            {[cat?.name, data.age_min && data.age_max ? t('previewAges', { min: data.age_min, max: data.age_max }) : null, area?.name].filter(Boolean).join(' - ')}
           </span>
         </div>
         <div className="font-display text-sm font-semibold text-ink mb-2">{data.title || 'Activity title'}</div>
@@ -131,8 +132,8 @@ function PreviewCard({ data, categories, areas }: { data: FormData; categories: 
           </div>
         )}
         <div className="flex gap-1.5">
-          <div className="px-3 py-1.5 rounded font-display text-sm font-semibold bg-primary text-white">Book trial</div>
-          <div className="px-3 py-1.5 rounded font-display text-sm font-semibold border border-border text-ink-mid">Details</div>
+          <div className="px-3 py-1.5 rounded font-display text-sm font-semibold bg-primary text-white">{t('previewBookTrial')}</div>
+          <div className="px-3 py-1.5 rounded font-display text-sm font-semibold border border-border text-ink-mid">{t('previewDetails')}</div>
         </div>
       </div>
     </div>
@@ -159,6 +160,11 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   const [coverPreview, setCoverPreview] = useState<string>(initialData?.cover_image_url ?? '')
   const [rawImageSrc, setRawImageSrc]   = useState<string>('')
   const [showCropModal, setShowCropModal] = useState(false)
+
+  const t = useTranslations('wizard')
+  const STEPS = t.raw('steps') as string[]
+  const DAYS  = [0,1,2,3,4,5,6].map(i => t(`days.${i}` as any))
+  const rules = t.raw('rules') as { icon: string; title: string; desc: string }[]
 
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
     setData(prev => ({ ...prev, [key]: value }))
@@ -264,13 +270,13 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   return (
     <div>
       <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">
-        {isEdit ? 'Edit activity' : 'List an activity'}
+        {isEdit ? t('titleEdit') : t('titleNew')}
       </h1>
       <p className="text-sm text-ink-muted mb-8">
-        {isEdit ? 'Update the details of your activity.' : 'Fill in the details to publish your activity on kidvo.'}
+        {isEdit ? t('subtitleEdit') : t('subtitleNew')}
       </p>
 
-      <StepIndicator current={step} />
+      <StepIndicator current={step} steps={STEPS} />
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_280px] gap-6 items-start">
         <div className="bg-white border border-border rounded-lg p-6">
@@ -279,16 +285,11 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           {step === 0 && (
             <div className="flex flex-col gap-5">
               <div>
-                <h2 className="font-display text-base font-bold text-ink mb-1">Before you list your activity</h2>
-                <p className="text-sm text-ink-muted">Please read the following before creating your listing on kidvo.</p>
+                <h2 className="font-display text-base font-bold text-ink mb-1">{t('beforeTitle')}</h2>
+                <p className="text-sm text-ink-muted">{t('beforeSub')}</p>
               </div>
               <div className="flex flex-col gap-3">
-                {[
-                  { icon: "🎯", title: "Trial sessions are on by default", desc: "Every listing should offer a trial session. If your activity has a genuine reason it can't (cohort schedule, full capacity), you can explain this — parents will see your reason. Listings with no valid reason to disable trials may be reviewed." },
-                  { icon: "🤝", title: "Direct relationship with parents", desc: "kidvo connects you with parents, but all contracts, payments, and agreements happen directly between you and the family. kidvo is not involved in any financial transactions." },
-                  { icon: "📋", title: "You are responsible for compliance", desc: "You must hold all required licenses, certifications, and insurance for your activity. kidvo does not verify credentials and is not liable for any incidents." },
-                  { icon: "⏱️", title: "Listings are reviewed before going live", desc: "Every new listing is reviewed by the kidvo team within 24 hours. Listings that do not meet our quality standards may be rejected." },
-                ].map(({ icon, title, desc }) => (
+                {rules.map(({ icon, title, desc }) => (
                   <div key={title} className="flex gap-3 p-4 bg-bg rounded-lg border border-border">
                     <span className="text-xl flex-shrink-0">{icon}</span>
                     <div>
@@ -306,10 +307,11 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                   className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0 cursor-pointer"
                 />
                 <span className="text-sm text-ink-mid leading-relaxed">
-                  I have read and agree to the above rules and kidvo&apos;s{' '}
+                  {t('agreeText')}{' '}
                   <button type="button" onClick={e => { e.preventDefault(); setShowTerms(true) }} className="text-primary font-semibold hover:underline">
-                    Terms of Use
-                  </button>.
+                    {t('termsLink')}
+                  </button>
+                  {t('agreeTextSuffix') ? ` ${t('agreeTextSuffix')}` : '.'}
                 </span>
               </label>
             </div>
@@ -319,11 +321,11 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           {step === 1 && (
             <div className="flex flex-col gap-5">
               <div>
-                <Label>Activity title</Label>
-                <input className={inputCls} placeholder="e.g. Academia de Fotbal Timisoara" value={data.title} onChange={e => set('title', e.target.value)} />
+                <Label>{t('activityTitle')}</Label>
+                <input className={inputCls} placeholder={t('activityTitlePlaceholder')} value={data.title} onChange={e => set('title', e.target.value)} />
               </div>
               <div>
-                <Label>Category</Label>
+                <Label>{t('category')}</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {categories.map(cat => (
                     <button key={cat.id} type="button" onClick={() => set('category_id', cat.id)}
@@ -340,35 +342,35 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Minimum age</Label>
-                  <input className={inputCls} type="number" min={1} max={18} placeholder="e.g. 5" value={data.age_min} onChange={e => set('age_min', e.target.value)} />
+                  <Label>{t('minAge')}</Label>
+                  <input className={inputCls} type="number" min={1} max={18} placeholder={t('minAgePlaceholder')} value={data.age_min} onChange={e => set('age_min', e.target.value)} />
                 </div>
                 <div>
-                  <Label>Maximum age</Label>
-                  <input className={inputCls} type="number" min={1} max={18} placeholder="e.g. 14" value={data.age_max} onChange={e => set('age_max', e.target.value)} />
+                  <Label>{t('maxAge')}</Label>
+                  <input className={inputCls} type="number" min={1} max={18} placeholder={t('maxAgePlaceholder')} value={data.age_max} onChange={e => set('age_max', e.target.value)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div className="flex flex-col gap-4">
                   <div>
-                    <Label>Neighborhood</Label>
+                    <Label>{t('neighborhood')}</Label>
                     <select className={selectCls} value={data.area_id} onChange={e => set('area_id', e.target.value)}>
-                      <option value="">Select area...</option>
+                      <option value="">{t('selectArea')}</option>
                       {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <Label hint="Street address where the activity takes place">Address</Label>
-                    <input className={inputCls} placeholder="e.g. Str. Muresului 12, Fabric" value={data.address} onChange={e => set('address', e.target.value)} />
+                    <Label hint={t('addressHint')}>{t('address')}</Label>
+                    <input className={inputCls} placeholder={t('addressPlaceholder')} value={data.address} onChange={e => set('address', e.target.value)} />
                   </div>
                   <div>
-                    <Label hint="Paste the Google Maps share link so parents can find you easily">Google Maps link (optional)</Label>
-                    <input className={inputCls} placeholder="https://maps.app.goo.gl/..." value={data.maps_url} onChange={e => set('maps_url', e.target.value)} />
+                    <Label hint={t('mapsHint')}>{t('mapsLink')}</Label>
+                    <input className={inputCls} placeholder={t('mapsPlaceholder')} value={data.maps_url} onChange={e => set('maps_url', e.target.value)} />
                   </div>
                 </div>
                 <div>
-                  <Label>Languages spoken</Label>
+                  <Label>{t('languages')}</Label>
                   <div className="flex flex-col gap-2 mt-1">
                     {['Romanian', 'English', 'Hungarian', 'German', 'Serbian'].map(lang => {
                       const checked = data.language.includes(lang)
@@ -400,7 +402,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           {step === 2 && (
             <div className="flex flex-col gap-5">
               <div>
-                <Label hint="Add one row per session slot">Weekly schedule</Label>
+                <Label hint={t('scheduleHint')}>{t('scheduleLabel')}</Label>
                 <div className="flex flex-col gap-2">
                   {data.schedules.map((s, i) => (
                     <div key={i} className="flex flex-wrap gap-2 items-center p-2 bg-bg rounded-lg border border-border md:p-0 md:bg-transparent md:border-0 md:flex-nowrap">
@@ -408,12 +410,12 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                         {DAYS.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
                       </select>
                       <select className={cn(selectCls, 'flex-1 min-w-[90px]')} value={s.time_start} onChange={e => updateSchedule(i, 'time_start', e.target.value)}>
-                        {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+                        {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
                       </select>
                       <select className={cn(selectCls, 'flex-1 min-w-[90px]')} value={s.time_end} onChange={e => updateSchedule(i, 'time_end', e.target.value)}>
-                        {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+                        {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
                       </select>
-                      <input className={cn(inputCls, 'flex-1 min-w-[130px]')} placeholder="Group label (optional)" value={s.group_label} onChange={e => updateSchedule(i, 'group_label', e.target.value)} />
+                      <input className={cn(inputCls, 'flex-1 min-w-[130px]')} placeholder={t('groupLabelPlaceholder')} value={s.group_label} onChange={e => updateSchedule(i, 'group_label', e.target.value)} />
                       <button type="button" onClick={() => removeSchedule(i)} disabled={data.schedules.length === 1}
                         className="w-8 h-8 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -422,7 +424,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                   ))}
                   <button type="button" onClick={addSchedule} className="flex items-center gap-2 text-sm font-display font-semibold text-primary hover:text-primary-deep transition-colors mt-1">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3"/><path d="M7 4v6M4 7h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                    Add another slot
+                    {t('addSlot')}
                   </button>
                 </div>
               </div>
@@ -435,7 +437,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
 
               {/* Cover photo */}
               <div>
-                <Label hint="Square or landscape photo works best. It will be displayed on your activity card.">Cover photo (optional)</Label>
+                <Label hint={t('coverHint')}>{t('coverLabel')}</Label>
                 <div className="flex items-start gap-4 mt-1">
                   {/* Preview or placeholder */}
                   <div
@@ -450,7 +452,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                   <div className="flex flex-col gap-2">
                     <label className="inline-flex items-center gap-2 cursor-pointer px-3 py-2 rounded border border-border bg-bg font-display text-xs font-semibold text-ink-mid hover:border-primary hover:text-primary transition-all">
                       <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 4l3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 10v1.5A1.5 1.5 0 0 0 2.5 13h9a1.5 1.5 0 0 0 1.5-1.5V10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-                      {coverPreview ? 'Change photo' : 'Upload photo'}
+                      {coverPreview ? t('changePhoto') : t('uploadPhoto')}
                       <input
                         type="file"
                         accept="image/jpeg,image/jpg,image/png,image/webp"
@@ -472,38 +474,38 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                     {coverPreview && (
                       <button type="button" onClick={() => { setCoverFile(null); setCoverPreview(''); set('cover_image_url', '') }}
                         className="text-xs text-ink-muted hover:text-danger transition-colors text-left">
-                        Remove photo
+                        {t('removePhoto')}
                       </button>
                     )}
-                    <p className="text-[11px] text-ink-muted">JPG, PNG or WebP · max 5 MB</p>
+                    <p className="text-[11px] text-ink-muted">{t('photoFormats')}</p>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 <div>
-                  <Label hint="Consider fair local pricing">Monthly price (RON)</Label>
-                  <input className={inputCls} type="number" min={0} placeholder="e.g. 120" value={data.price_monthly} onChange={e => set('price_monthly', e.target.value)} />
+                  <Label hint={t('priceHint')}>{t('priceLabel')}</Label>
+                  <input className={inputCls} type="number" min={0} placeholder={t('pricePlaceholder')} value={data.price_monthly} onChange={e => set('price_monthly', e.target.value)} />
                 </div>
                 <div>
-                  <Label hint="Total group capacity">Spots total</Label>
-                  <input className={inputCls} type="number" min={1} placeholder="e.g. 20" value={data.spots_total} onChange={e => set('spots_total', e.target.value)} />
+                  <Label hint={t('spotsTotalHint')}>{t('spotsTotal')}</Label>
+                  <input className={inputCls} type="number" min={1} placeholder={t('spotsTotalPlaceholder')} value={data.spots_total} onChange={e => set('spots_total', e.target.value)} />
                 </div>
                 <div>
-                  <Label hint="How many spots are open now">Spots available</Label>
-                  <input className={inputCls} type="number" min={0} placeholder="e.g. 8" value={data.spots_available} onChange={e => set('spots_available', e.target.value)} />
+                  <Label hint={t('spotsAvailableHint')}>{t('spotsAvailable')}</Label>
+                  <input className={inputCls} type="number" min={0} placeholder={t('spotsAvailablePlaceholder')} value={data.spots_available} onChange={e => set('spots_available', e.target.value)} />
                 </div>
               </div>
               <div>
-                <Label hint="Tell parents what makes your activity special">About</Label>
-                <textarea className={inputCls} rows={5} placeholder="Describe the activity..." value={data.description} onChange={e => set('description', e.target.value)} />
+                <Label hint={t('aboutHint')}>{t('aboutLabel')}</Label>
+                <textarea className={inputCls} rows={5} placeholder={t('aboutPlaceholder')} value={data.description} onChange={e => set('description', e.target.value)} />
               </div>
               <div>
-                <Label hint="e.g. UEFA-licensed coaches, free trial session">What&apos;s included</Label>
+                <Label hint={t('includesHint')}>{t('includesLabel')}</Label>
                 <div className="flex flex-col gap-2">
                   {data.includes.map((item, i) => (
                     <div key={i} className="flex gap-2 items-center">
-                      <input className={inputCls} placeholder={`Item ${i + 1}`} value={item} onChange={e => updateInclude(i, e.target.value)} />
+                      <input className={inputCls} placeholder={t('itemPlaceholder', { n: i + 1 })} value={item} onChange={e => updateInclude(i, e.target.value)} />
                       <button type="button" onClick={() => removeInclude(i)} disabled={data.includes.length === 1}
                         className="w-8 h-8 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -512,7 +514,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                   ))}
                   <button type="button" onClick={addInclude} className="flex items-center gap-2 text-sm font-display font-semibold text-primary hover:text-primary-deep transition-colors mt-1">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3"/><path d="M7 4v6M4 7h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                    Add item
+                    {t('addItem')}
                   </button>
                 </div>
               </div>
@@ -520,9 +522,9 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
               <div className="border border-border rounded-lg p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="font-display text-sm font-semibold text-ink">Trial sessions</div>
+                    <div className="font-display text-sm font-semibold text-ink">{t('trialLabel')}</div>
                     <div className="text-xs text-ink-muted mt-0.5">
-                      {data.trial_available ? 'Parents can book a free first session' : 'Parents will see a reason instead of a booking button'}
+                      {data.trial_available ? t('trialOn') : t('trialOff')}
                     </div>
                   </div>
                   <button type="button" onClick={() => set('trial_available', !data.trial_available)}
@@ -535,10 +537,10 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                     <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted">Reason shown to parents</div>
                     <div className="flex flex-col gap-1.5">
                       {([
-                        { key: 'cohort',     label: 'Cohort-based',      desc: 'Fixed class groups — parents can ask about the next intake' },
-                        { key: 'full',       label: 'At full capacity',   desc: 'Currently no open spots — check back soon' },
-                        { key: 'contact_us', label: 'Arrange directly',   desc: 'Contact us to set up a visit' },
-                      ] as const).map(({ key, label, desc }) => (
+                        { key: 'cohort',     labelKey: 'reasonCohort' as const,  desc: 'Fixed class groups — parents can ask about the next intake' },
+                        { key: 'full',       labelKey: 'reasonFull' as const,    desc: 'Currently no open spots — check back soon' },
+                        { key: 'contact_us', labelKey: 'reasonDirect' as const,  desc: 'Contact us to set up a visit' },
+                      ]).map(({ key, labelKey, desc }) => (
                         <button key={key} type="button" onClick={() => set('trial_disabled_reason', key)}
                           className={cn('flex items-start gap-3 px-3 py-2.5 rounded-lg border text-left transition-all',
                             data.trial_disabled_reason === key ? 'border-primary bg-primary-lt' : 'border-border hover:border-primary/40')}>
@@ -547,7 +549,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                             {data.trial_disabled_reason === key && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                           </div>
                           <div>
-                            <div className="font-display text-sm font-semibold text-ink">{label}</div>
+                            <div className="font-display text-sm font-semibold text-ink">{t(labelKey)}</div>
                             <div className="text-xs text-ink-muted">{desc}</div>
                           </div>
                         </button>
@@ -570,7 +572,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 <div className="flex justify-between"><span className="text-ink-muted">Ages</span><span className="font-semibold text-ink">{data.age_min}-{data.age_max}</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">Price</span><span className="font-semibold text-ink">{data.price_monthly} RON/mo</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">Sessions</span><span className="font-semibold text-ink">{data.schedules.length} slot{data.schedules.length !== 1 ? 's' : ''}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Trial</span><span className="font-semibold text-ink">{data.trial_available ? 'Available' : { cohort: 'Cohort-based', full: 'At capacity', contact_us: 'Arrange directly' }[data.trial_disabled_reason] ?? 'Unavailable'}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">Trial</span><span className="font-semibold text-ink">{data.trial_available ? t('previewTrialAvailable') : { cohort: t('reasonCohort'), full: t('reasonFull'), contact_us: t('reasonDirect') }[data.trial_disabled_reason] ?? 'Unavailable'}</span></div>
               </div>
               {error && <div className="bg-danger-lt border border-danger/20 text-danger text-sm rounded p-3">{error}</div>}
             </div>
@@ -588,14 +590,14 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
         <div className="flex flex-col items-start gap-1">
           <button type="button" onClick={() => setStep(s => s - 1)} disabled={step === 0}
             className="px-4 py-2 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-            Back
+            {t('back')}
           </button>
           <span className="font-display text-[10px] text-ink-muted pl-1">Step {step + 1} of {STEPS.length}</span>
         </div>
         {step < STEPS.length - 1 ? (
           <button type="button" onClick={() => setStep(s => s + 1)} disabled={!canProceed()}
             className="px-5 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            Continue
+            {t('next')}
           </button>
         ) : (
           <div className="flex flex-col items-end gap-1.5">
@@ -606,14 +608,14 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
             )}
             <button type="button" onClick={publish} disabled={saving}
               className="px-5 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-60 transition-colors">
-              {saving ? 'Saving...' : isEdit ? 'Save changes' : 'Publish listing'}
+              {saving ? t('saving') : t('publish')}
             </button>
           </div>
         )}
       </div>
 
       {showTerms && (
-        <LegalModal title="Terms of Use" onClose={() => setShowTerms(false)}>
+        <LegalModal title={t('termsLink')} onClose={() => setShowTerms(false)}>
           <TermsContent />
         </LegalModal>
       )}

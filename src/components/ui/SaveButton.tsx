@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +21,7 @@ export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveBu
   const [kids,       setKids]       = useState<Kid[] | null>(null) // null = not fetched yet
   const [showPicker, setShowPicker] = useState(false)
   const pickerRef                   = useRef<HTMLDivElement>(null)
+  const t = useTranslations('saveBtn')
 
   // Dismiss picker on click-outside
   useEffect(() => {
@@ -100,7 +102,7 @@ export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveBu
       className="absolute z-50 right-0 top-full mt-1 bg-white border border-border rounded-lg shadow-lg p-1.5 min-w-[150px]"
     >
       <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted px-2 py-1">
-        Save for
+        {t('saveFor')}
       </div>
       {kids.map(kid => (
         <button
@@ -120,7 +122,7 @@ export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveBu
         <button
           onClick={toggle}
           disabled={loading}
-          title={saved ? 'Remove from saved' : 'Save activity'}
+          title={saved ? t('removeTitle') : t('saveTitle')}
           className={cn(
             'w-[30px] h-[30px] rounded flex items-center justify-center border transition-all',
             saved
@@ -152,7 +154,7 @@ export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveBu
         <svg width="13" height="13" viewBox="0 0 15 15" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
           <path d="M7.5 13S2 9 2 5.5a3.5 3.5 0 0 1 5.5-2.9A3.5 3.5 0 0 1 13 5.5C13 9 7.5 13 7.5 13Z"/>
         </svg>
-        {saved ? 'Saved' : 'Save to list'}
+        {saved ? t('saved') : t('saveToList')}
       </button>
       {Picker}
     </div>
