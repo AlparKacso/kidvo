@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { Sidebar }    from './Sidebar'
 import { Topbar }     from './Topbar'
 import { BottomNav }  from './BottomNav'
+import { getTranslations } from 'next-intl/server'
+import { LocaleToggle } from '@/components/ui/LocaleToggle'
 
 interface AppShellProps {
   children:     React.ReactNode
@@ -12,6 +14,7 @@ interface AppShellProps {
 export async function AppShell({ children }: AppShellProps) {
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()
+  const t = await getTranslations('appshell')
 
   // Guest shell — for public browse pages when not logged in
   if (!authUser) {
@@ -23,11 +26,12 @@ export async function AppShell({ children }: AppShellProps) {
           </Link>
           <div className="flex-1" />
           <div className="flex items-center gap-2">
+            <LocaleToggle />
             <Link href="/auth/login" className="font-display text-sm font-semibold text-ink-mid hover:text-ink px-3 py-1.5 transition-colors">
-              Sign in
+              {t('signIn')}
             </Link>
             <Link href="/auth/signup" className="font-display text-sm font-semibold bg-primary text-white px-4 py-1.5 rounded-full hover:bg-primary-deep transition-colors">
-              Get started
+              {t('getStarted')}
             </Link>
           </div>
         </header>

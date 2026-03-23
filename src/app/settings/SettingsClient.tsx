@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations } from 'next-intl'
 
 interface Profile {
   id:        string
@@ -54,6 +55,7 @@ const disabledCls = "w-full px-3 py-2 border border-border rounded bg-surface fo
 
 export function SettingsClient({ profile, provider, email }: Props) {
   const isProvider = profile?.role === 'provider' || profile?.role === 'both'
+  const t = useTranslations('settings')
 
   // Profile fields
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
@@ -80,7 +82,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
   const [deleteError,  setDeleteError]  = useState('')
 
   async function saveProfile() {
-    if (!fullName.trim()) { setProfileError('Name is required.'); return }
+    if (!fullName.trim()) { setProfileError(t('nameRequired')); return }
     setProfileError('')
     setProfileState('saving')
     const supabase = createClient()
@@ -94,13 +96,13 @@ export function SettingsClient({ profile, provider, email }: Props) {
   }
 
   async function saveProvider() {
-    if (!displayName.trim()) { setProviderError('Display name is required.'); return }
-    if (!contactEmail.trim()) { setProviderError('Contact email is required.'); return }
+    if (!displayName.trim()) { setProviderError(t('displayNameRequired')); return }
+    if (!contactEmail.trim()) { setProviderError(t('contactEmailRequired')); return }
     setProviderError('')
     setProviderState('saving')
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setProviderError('Not authenticated.'); setProviderState('error'); return }
+    if (!user) { setProviderError(t('notAuthenticated')); setProviderState('error'); return }
 
     const { error } = await supabase
       .from('providers')
@@ -146,7 +148,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
         disabled={state === 'saving'}
         className="px-4 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors"
       >
-        {state === 'saving' ? 'Saving...' : state === 'saved' ? '✓ Saved' : 'Save changes'}
+        {state === 'saving' ? t('saving') : state === 'saved' ? t('savedCheck') : t('saveChanges')}
       </button>
     )
   }
@@ -154,29 +156,29 @@ export function SettingsClient({ profile, provider, email }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">Settings</h1>
-        <p className="text-sm text-ink-muted">Manage your account and profile</p>
+        <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">{t('title')}</h1>
+        <p className="text-sm text-ink-muted">{t('subtitle')}</p>
       </div>
 
       <div className="flex flex-col gap-5 max-w-[600px]">
 
         {/* Account */}
-        <Section title="Account">
+        <Section title={t('account')}>
           <div className="flex flex-col gap-4">
-            <Field label="Email">
+            <Field label={t('emailLabel')}>
               <input type="email" value={email} disabled className={disabledCls} />
-              <p className="text-[11px] text-ink-muted mt-1">Email cannot be changed.</p>
+              <p className="text-[11px] text-ink-muted mt-1">{t('emailHint')}</p>
             </Field>
-            <Field label="Full name">
+            <Field label={t('fullNameLabel')}>
               <input
                 type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-                placeholder="Your full name" className={inputCls}
+                placeholder={t('fullNamePlaceholder')} className={inputCls}
               />
             </Field>
-            <Field label="Phone" optional>
+            <Field label={t('phoneLabel')} optional>
               <input
                 type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                placeholder="+40 7xx xxx xxx" className={inputCls}
+                placeholder={t('phonePlaceholder')} className={inputCls}
               />
             </Field>
 
@@ -186,7 +188,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
             <div className="flex items-center justify-between pt-1">
               {profileState === 'saved' && (
-                <span className="text-sm text-success font-display font-semibold">Changes saved.</span>
+                <span className="text-sm text-success font-display font-semibold">{t('saved')}</span>
               )}
               <div className="ml-auto">
                 <SaveButton state={profileState} onClick={saveProfile} />
@@ -197,32 +199,32 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
         {/* Provider profile */}
         {isProvider && provider && (
-          <Section title="Provider profile">
+          <Section title={t('providerProfile')}>
             <div className="flex flex-col gap-4">
-              <Field label="Display name">
+              <Field label={t('displayNameLabel')}>
                 <input
                   type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
-                  placeholder="Your school or club name" className={inputCls}
+                  placeholder={t('displayNamePlaceholder')} className={inputCls}
                 />
               </Field>
-              <Field label="Bio" optional>
+              <Field label={t('bioLabel')} optional>
                 <textarea
                   rows={4} value={bio} onChange={e => setBio(e.target.value)}
-                  placeholder="Tell parents about your program, experience, and approach..."
+                  placeholder={t('bioPlaceholder')}
                   className={`${inputCls} resize-none`}
                 />
               </Field>
-              <Field label="Contact email">
+              <Field label={t('contactEmailLabel')}>
                 <input
                   type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)}
-                  placeholder="contact@yourschool.ro" className={inputCls}
+                  placeholder={t('contactEmailPlaceholder')} className={inputCls}
                 />
-                <p className="text-[11px] text-ink-muted mt-1">Shown to parents after a confirmed trial request.</p>
+                <p className="text-[11px] text-ink-muted mt-1">{t('contactEmailHint')}</p>
               </Field>
-              <Field label="Contact phone" optional>
+              <Field label={t('contactPhoneLabel')} optional>
                 <input
                   type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)}
-                  placeholder="+40 7xx xxx xxx" className={inputCls}
+                  placeholder={t('contactPhonePlaceholder')} className={inputCls}
                 />
               </Field>
 
@@ -232,7 +234,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
               <div className="flex items-center justify-between pt-1">
                 {providerState === 'saved' && (
-                  <span className="text-sm text-success font-display font-semibold">Changes saved.</span>
+                  <span className="text-sm text-success font-display font-semibold">{t('saved')}</span>
                 )}
                 <div className="ml-auto">
                   <SaveButton state={providerState} onClick={saveProvider} />
@@ -243,11 +245,11 @@ export function SettingsClient({ profile, provider, email }: Props) {
         )}
 
         {/* Plan */}
-        <Section title="Plan">
+        <Section title={t('plan')}>
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-display text-sm font-semibold text-ink capitalize">{profile?.role === 'provider' ? 'Provider' : 'Parent'} · Free plan</div>
-              <div className="text-xs text-ink-muted mt-0.5">You're on the free plan. Premium features coming soon.</div>
+              <div className="font-display text-sm font-semibold text-ink capitalize">{profile?.role === 'provider' ? t('providerPlan') : t('parentPlan')}</div>
+              <div className="text-xs text-ink-muted mt-0.5">{t('planSub')}</div>
             </div>
             <span className="px-2.5 py-1 rounded-full font-display text-[10px] font-semibold bg-surface text-ink-muted border border-border">Free</span>
           </div>

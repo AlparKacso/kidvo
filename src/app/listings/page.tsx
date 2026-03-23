@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
 import { ListingCardMenu } from './ListingCardMenu'
 import { sendTrialConfirmedToParent, sendTrialDeclinedToParent } from '@/lib/email'
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,8 +19,6 @@ const STATUS_STYLES: Record<string, string> = {
   cancelled: 'bg-surface text-ink-muted',
 }
 
-const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-
 export default async function ProviderListingsPage({
   searchParams,
 }: {
@@ -28,6 +27,8 @@ export default async function ProviderListingsPage({
   const params   = searchParams ? await searchParams : {}
   const tab      = params.tab === 'bookings' ? 'bookings' : 'activities'
   const supabase = await createClient()
+  const t = await getTranslations('listings')
+  const DAYS = [0,1,2,3,4,5,6].map(i => t(`days.${i}` as any))
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
@@ -125,22 +126,22 @@ export default async function ProviderListingsPage({
       <div>
         {/* Page header */}
         <div className="flex items-center justify-between mb-5">
-          <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">My Activities</h1>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">{t('title')}</h1>
           <Link
             href="/listings/new"
             className="bg-primary text-white font-display text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-primary-deep transition-colors"
           >
-            + New activity
+            {t('newActivity')}
           </Link>
         </div>
 
         {/* Stat pills — only show Paused/Draft when non-zero */}
         {(() => {
           const stats = [
-            { label: 'Active',  value: activeCount,  color: 'text-success'   },
-            { label: 'Pending', value: pendingCount, color: 'text-gold-text' },
-            ...(pausedCount > 0 ? [{ label: 'Paused', value: pausedCount, color: 'text-ink-muted' }] : []),
-            { label: 'Total',   value: total,        color: 'text-ink'       },
+            { label: t('active'),  value: activeCount,  color: 'text-success'   },
+            { label: t('pending'), value: pendingCount, color: 'text-gold-text' },
+            ...(pausedCount > 0 ? [{ label: t('paused'), value: pausedCount, color: 'text-ink-muted' }] : []),
+            { label: t('total'),   value: total,        color: 'text-ink'       },
           ]
           return (
             <div className="flex flex-wrap gap-2 mb-5">
@@ -166,7 +167,7 @@ export default async function ProviderListingsPage({
               tab === 'activities' ? 'bg-primary text-white shadow-sm' : 'text-ink-muted hover:text-ink'
             }`}
           >
-            Activity Listings
+            {t('tabActivities')}
           </Link>
           <Link
             href="/listings?tab=bookings"
@@ -174,7 +175,7 @@ export default async function ProviderListingsPage({
               tab === 'bookings' ? 'bg-primary text-white shadow-sm' : 'text-ink-muted hover:text-ink'
             }`}
           >
-            Trial Requests
+            {t('tabTrialRequests')}
             {pendingReqs > 0 && (
               <span className="leading-none flex-shrink-0" title={`${pendingReqs} pending`}>⚠️</span>
             )}
@@ -188,8 +189,8 @@ export default async function ProviderListingsPage({
               <div className="bg-gold-lt border border-gold-border rounded-[16px] px-4 py-3 mb-5 flex items-center gap-3">
                 <span className="text-lg">🎉</span>
                 <div>
-                  <div className="font-display text-sm font-semibold text-gold-text">Your listing is under review 🎉</div>
-                  <p className="text-xs text-gold-text/70">We&apos;ll review and activate it within 24 hours. You&apos;ll be notified by email once it&apos;s live.</p>
+                  <div className="font-display text-sm font-semibold text-gold-text">{t('underReview')}</div>
+                  <p className="text-xs text-gold-text/70">{t('underReviewSub')}</p>
                 </div>
               </div>
             )}
@@ -197,10 +198,10 @@ export default async function ProviderListingsPage({
             {total === 0 ? (
               <div className="bg-white rounded-[22px] p-[22px] text-center" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
                 <div className="text-3xl mb-3">🏫</div>
-                <div className="font-display text-sm font-semibold text-ink-mid mb-1">No activities yet</div>
-                <p className="text-sm text-ink-muted mb-5">List your first activity to start receiving trial requests from parents.</p>
+                <div className="font-display text-sm font-semibold text-ink-mid mb-1">{t('noActivities')}</div>
+                <p className="text-sm text-ink-muted mb-5">{t('noActivitiesSub')}</p>
                 <Link href="/listings/new" className="inline-block bg-primary text-white font-display text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-primary-deep transition-colors">
-                  + List an activity
+                  {t('listActivity')}
                 </Link>
               </div>
             ) : (
@@ -237,8 +238,8 @@ export default async function ProviderListingsPage({
             {totalReqs === 0 ? (
               <div className="bg-white rounded-[22px] p-[22px] text-center" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
                 <div className="text-3xl mb-3">📬</div>
-                <div className="font-display text-sm font-semibold text-ink-mid mb-1">No trial requests yet</div>
-                <p className="text-sm text-ink-muted">When parents request a trial, they&apos;ll appear here.</p>
+                <div className="font-display text-sm font-semibold text-ink-mid mb-1">{t('noTrials')}</div>
+                <p className="text-sm text-ink-muted">{t('noTrialsSub')}</p>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
@@ -258,8 +259,8 @@ export default async function ProviderListingsPage({
                               {req.status}
                             </span>
                             <span className={`font-display text-[11px] ${isUrgent ? 'text-danger font-semibold' : 'text-ink-muted'}`}>
-                              {hoursAgo < 1 ? 'Just now' : hoursAgo < 24 ? `${hoursAgo}h ago` : `${Math.floor(hoursAgo / 24)}d ago`}
-                              {isUrgent && ' · overdue'}
+                              {hoursAgo < 1 ? t('justNow') : hoursAgo < 24 ? t('hoursAgo', { h: hoursAgo }) : t('daysAgo', { d: Math.floor(hoursAgo / 24) })}
+                              {isUrgent && t('overdue')}
                             </span>
                           </div>
 
@@ -272,7 +273,7 @@ export default async function ProviderListingsPage({
                               <span className="font-display text-[12.5px] font-semibold text-ink-mid">{listing?.title}</span>
                             </div>
                             {req.preferred_day !== null && (
-                              <span className="font-display text-[12px] text-ink-muted">· Preferred: {DAYS[req.preferred_day]}</span>
+                              <span className="font-display text-[12px] text-ink-muted">{t('preferred', { day: DAYS[req.preferred_day] })}</span>
                             )}
                           </div>
 
@@ -284,7 +285,7 @@ export default async function ProviderListingsPage({
 
                           {req.status === 'confirmed' && (
                             <div className="mt-3 p-3 bg-success-lt border border-success/20 rounded-[12px]">
-                              <div className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-success mb-2">Parent contact</div>
+                              <div className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-success mb-2">{t('parentContact')}</div>
                               <div className="flex items-center gap-2 font-display text-[12.5px]">
                                 <span className="text-ink-muted">✉</span>
                                 <a href={`mailto:${parent?.email}`} className="text-primary hover:underline font-semibold">{parent?.email}</a>
@@ -305,14 +306,14 @@ export default async function ProviderListingsPage({
                               <input type="hidden" name="id" value={req.id} />
                               <input type="hidden" name="status" value="confirmed" />
                               <button type="submit" className="w-full px-4 py-2 rounded-full font-display text-xs font-semibold bg-success-lt text-success border border-success/20 hover:bg-success hover:text-white transition-colors">
-                                ✓ Confirm
+                                {t('confirm')}
                               </button>
                             </form>
                             <form action={updateStatus}>
                               <input type="hidden" name="id" value={req.id} />
                               <input type="hidden" name="status" value="declined" />
                               <button type="submit" className="w-full px-4 py-2 rounded-full font-display text-xs font-semibold bg-danger-lt text-danger border border-danger/20 hover:bg-danger hover:text-white transition-colors">
-                                ✕ Decline
+                                {t('decline')}
                               </button>
                             </form>
                           </div>

@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { LegalModal } from '@/components/ui/LegalModal'
 import { PrivacyContent } from '@/components/ui/LegalContent'
+import { useTranslations } from 'next-intl'
 
 export function CookieBanner() {
+  const t = useTranslations('cookie')
   const [visible, setVisible]         = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
 
@@ -35,17 +37,17 @@ export function CookieBanner() {
         <div className="mb-16 md:mb-0 max-w-2xl mx-auto md:mx-0 md:max-w-none">
           <div className="bg-[#1a0f1e] text-white rounded-xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-xl">
             <p className="text-sm text-white/75 leading-relaxed flex-1">
-              kidvo uses only essential cookies required for authentication and session management. No tracking or advertising cookies.{' '}
+              {t('text')}{' '}
               <button onClick={() => setShowPrivacy(true)} className="text-[#F0A500] hover:underline font-semibold">
-                Privacy Policy
+                {t('privacy')}
               </button>
             </p>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button onClick={decline} className="px-4 py-2 rounded-lg font-display text-sm font-semibold text-white/60 hover:text-white transition-colors">
-                Decline
+                {t('decline')}
               </button>
               <button onClick={accept} className="px-4 py-2 rounded-lg font-display text-sm font-semibold bg-[#F0A500] text-[#1a0f1e] hover:bg-[#d4920a] transition-colors">
-                Accept
+                {t('accept')}
               </button>
             </div>
           </div>
@@ -53,7 +55,7 @@ export function CookieBanner() {
       </div>
 
       {showPrivacy && (
-        <LegalModal title="Privacy Policy" onClose={() => setShowPrivacy(false)}>
+        <LegalModal title={t('privacy')} onClose={() => setShowPrivacy(false)}>
           <PrivacyContent />
         </LegalModal>
       )}

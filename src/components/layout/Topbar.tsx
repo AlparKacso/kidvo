@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { LocaleToggle } from '@/components/ui/LocaleToggle'
 
 const IconLocation = () => (
   <svg width="12" height="12" viewBox="0 0 15 15" fill="none">
@@ -51,6 +53,7 @@ export function Topbar({
   const pathname  = usePathname()
   const isBrowse  = pathname === '/browse'
   const menuRef   = useRef<HTMLDivElement>(null)
+  const t = useTranslations('topbar')
 
   /* Close dropdown on outside click */
   useEffect(() => {
@@ -74,7 +77,7 @@ export function Topbar({
   const locationLine = (
     <div className="flex items-center gap-1.5 font-display text-xs font-semibold text-ink-muted whitespace-nowrap">
       <IconLocation />
-      Timișoara · {listingsCount} activities
+      {t('location', { count: listingsCount })}
     </div>
   )
 
@@ -101,14 +104,14 @@ export function Topbar({
             onClick={() => setMenuOpen(false)}
             className="flex items-center gap-2.5 px-3.5 py-2 font-display text-[13px] font-medium text-ink-mid hover:bg-bg hover:text-ink transition-colors mx-1.5 rounded-[8px]"
           >
-            <IconSettings /> Settings
+            <IconSettings /> {t('settings')}
           </Link>
           <button
             onClick={signOut}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 font-display text-[13px] font-medium text-ink-mid hover:bg-bg hover:text-danger transition-colors mx-1.5 rounded-[8px]"
             style={{ width: 'calc(100% - 12px)' }}
           >
-            <IconSignOut /> Sign out
+            <IconSignOut /> {t('signOut')}
           </button>
         </div>
       )}
@@ -129,7 +132,7 @@ export function Topbar({
               <input
                 autoFocus
                 type="text"
-                placeholder="Search activities…"
+                placeholder={t('searchPlaceholder')}
                 className="w-full pl-8 pr-3 py-1.5 border border-border rounded-full bg-bg font-display text-sm text-ink placeholder:text-ink-muted outline-none focus:border-primary transition-all"
                 onKeyDown={e => {
                   if (e.key === 'Enter') {
@@ -140,7 +143,7 @@ export function Topbar({
               />
             </div>
             <button onClick={() => setSearchOpen(false)} className="text-xs font-display font-semibold text-primary px-1">
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         ) : (
@@ -150,6 +153,7 @@ export function Topbar({
             </Link>
             {locationLine}
             <div className="flex-1" />
+            <LocaleToggle />
             {!isBrowse && (
               <button
                 onClick={() => setSearchOpen(true)}
@@ -166,6 +170,7 @@ export function Topbar({
       <div className="hidden md:flex items-center gap-3 flex-1">
         {locationLine}
         <div className="flex-1" />
+        <LocaleToggle />
       </div>
 
       {/* ── Avatar + dropdown — rendered ONCE, shared across breakpoints ── */}

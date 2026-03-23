@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations } from 'next-intl'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -11,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
+  const t = useTranslations('auth')
+  const tLogin = useTranslations('auth.login')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -40,19 +43,19 @@ export default function LoginPage() {
           <Link href="/" className="inline-block font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '28px', letterSpacing: '-1px' }}>
             <span className="text-ink">kid</span><span className="text-primary">vo</span>
           </Link>
-          <p className="font-display text-[13px] text-ink-muted mt-2">Activities for kids in Timișoara</p>
+          <p className="font-display text-[13px] text-ink-muted mt-2">{t('tagline')}</p>
         </div>
 
         {/* Card */}
         <div className="bg-white border border-border rounded-[18px] p-7 shadow-card">
           <h1 className="font-display text-[20px] font-extrabold text-ink mb-1 leading-snug" style={{ letterSpacing: '-0.3px' }}>
-            Welcome back
+            {tLogin('title')}
           </h1>
-          <p className="font-display text-[13px] text-ink-muted mb-6">Sign in to your kidvo account</p>
+          <p className="font-display text-[13px] text-ink-muted mb-6">{tLogin('subtitle')}</p>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
-              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">Email</label>
+              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">{tLogin('email')}</label>
               <input
                 className={inputCls}
                 type="email"
@@ -64,9 +67,9 @@ export default function LoginPage() {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid">Password</label>
+                <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid">{tLogin('password')}</label>
                 <Link href="/auth/reset-password" className="font-display text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
-                  Forgot?
+                  {tLogin('forgot')}
                 </Link>
               </div>
               <input
@@ -90,14 +93,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-2.5 rounded-[10px] font-display text-[13.5px] font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors mt-1"
             >
-              {loading ? 'Signing in…' : 'Sign in →'}
+              {loading ? tLogin('signingIn') : tLogin('signIn')}
             </button>
           </form>
         </div>
 
         <p className="text-center font-display text-[13px] text-ink-muted mt-5">
-          Don't have an account?{' '}
-          <Link href="/auth/signup" className="text-primary font-semibold hover:opacity-75 transition-opacity">Sign up</Link>
+          {tLogin('noAccount')}{' '}
+          <Link href="/auth/signup" className="text-primary font-semibold hover:opacity-75 transition-opacity">{tLogin('signUp')}</Link>
         </p>
       </div>
     </div>

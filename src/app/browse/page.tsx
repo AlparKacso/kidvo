@@ -4,6 +4,7 @@ import { ActivityCard }  from '@/components/ui/ActivityCard'
 import { CategoryPills } from '@/components/ui/CategoryPills'
 import { SearchBar }     from '@/components/ui/SearchBar'
 import { createClient }  from '@/lib/supabase/server'
+import { getTranslations } from 'next-intl/server'
 import type { ListingWithRelations } from '@/types/database'
 
 interface BrowsePageProps {
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
 export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const params   = await searchParams
   const supabase = await createClient()
+  const t = await getTranslations('browse')
 
   const [{ data: categoriesRaw }, { data: areasRaw }] = await Promise.all([
     supabase.from('categories').select('*').order('sort_order'),
@@ -137,10 +139,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             className="font-display font-extrabold text-ink"
             style={{ fontSize: '21px', letterSpacing: '-0.5px' }}
           >
-            Browse activities
+            {t('title')}
           </div>
           <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
-            Timișoara · {total} {total === 1 ? 'activity' : 'activities'} available
+            {t('subtitle', { count: total })}
           </div>
         </div>
 
@@ -157,12 +159,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           <div className="bg-white border border-border rounded-[16px] p-12 text-center shadow-card">
             <div className="text-2xl mb-3">🔍</div>
             <div className="font-display text-sm font-semibold text-ink-mid mb-1">
-              {hasActiveFilters ? 'No activities match your search' : 'No activities yet'}
+              {hasActiveFilters ? t('noResults') : t('noActivities')}
             </div>
             <div className="text-sm text-ink-muted">
-              {hasActiveFilters
-                ? 'Try adjusting your filters or search term.'
-                : 'Be the first to list an activity in Timișoara.'}
+              {hasActiveFilters ? t('noResultsSub') : t('noActivitiesSub')}
             </div>
           </div>
         )}
@@ -177,10 +177,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                   className="font-display font-extrabold text-ink"
                   style={{ fontSize: '17px', letterSpacing: '-0.3px' }}
                 >
-                  Featured activities
+                  {t('featured')}
                 </div>
                 <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
-                  Handpicked by kidvo
+                  {t('featuredSub')}
                 </div>
               </div>
             </div>
@@ -209,10 +209,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                   className="font-display font-extrabold text-ink"
                   style={{ fontSize: '17px', letterSpacing: '-0.3px' }}
                 >
-                  {featured.length > 0 ? 'All activities' : 'Activities'}
+                  {featured.length > 0 ? t('allActivities') : t('allActivities')}
                 </div>
                 <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
-                  {rest.length} {rest.length === 1 ? 'result' : 'results'}
+                  {t('results', { count: rest.length })}
                   {params.category ? ` in ${categories?.find(c => c.slug === params.category)?.name ?? params.category}` : ''}
                 </div>
               </div>
@@ -220,7 +220,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                 className="font-display text-[12.5px] font-semibold whitespace-nowrap mt-0.5"
                 style={{ color: '#2aa7ff' }}
               >
-                {total} total
+                {t('total', { count: total })}
               </span>
             </div>
 

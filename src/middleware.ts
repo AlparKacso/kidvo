@@ -1,8 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import createIntlMiddleware from 'next-intl/middleware'
+import { routing } from './i18n/routing'
+
+const intlMiddleware = createIntlMiddleware(routing)
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  const intlResponse = intlMiddleware(request)
+  let supabaseResponse = intlResponse ?? NextResponse.next({ request })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,7 +17,7 @@ export async function middleware(request: NextRequest) {
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
+          supabaseResponse = intlResponse ?? NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options as any)
           )
@@ -22,28 +27,17 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-
   const { pathname } = request.nextUrl
 
-  // Always public — no redirect regardless of auth state
   const alwaysPublic = ['/', '/privacy', '/terms']
   if (alwaysPublic.includes(pathname)) return supabaseResponse
-
-  // Browse is public for discovery (actions inside require auth)
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return supabaseResponse
-
-  // Auth pages — redirect away if already logged in
   const authRoutes = ['/auth/login', '/auth/signup']
   if (authRoutes.includes(pathname)) {
     if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
     return supabaseResponse
   }
-
-  // Protected routes — require login
-  if (!user) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
-
+  if (!user) return NextResponse.redirect(new URL('/auth/login', request.url))
   return supabaseResponse
 }
 

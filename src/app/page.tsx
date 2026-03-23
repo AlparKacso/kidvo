@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { FooterLegalLinks } from '@/components/ui/FooterLegalLinks'
+import { getTranslations } from 'next-intl/server'
 
 // ── Category emoji mapping (matches DB slugs) ──────────────────────────────
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -27,46 +28,11 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-// ── How it works steps ────────────────────────────────────────────────────
-const HOW_IT_WORKS = [
-  {
-    step: '01',
-    title: 'Browse & filter',
-    desc:  'Search by category, age range, or neighborhood. Every active listing in Timișoara, in one place.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M14 14l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-  },
-  {
-    step: '02',
-    title: 'Request a trial session',
-    desc:  'Most providers offer a free first session. Request one directly — no payment, no commitment, just show up.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M2 8h16M7 2v4M13 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-  },
-  {
-    step: '03',
-    title: 'Decide & enroll',
-    desc:  'Loved it? Enroll directly with the provider. All contracts and payments are between you and them.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-  },
-]
-
 // ── Page ──────────────────────────────────────────────────────────────────
 export default async function LandingPage() {
   const supabase = await createClient()
+  const t = await getTranslations('landing')
+
   const [{ data: categoriesRaw }, { data: showcaseRaw }] = await Promise.all([
     supabase
       .from('categories')
@@ -89,6 +55,42 @@ export default async function LandingPage() {
   }
   const showcase = (showcaseRaw ?? []) as unknown as ShowcaseListing[]
 
+  const HOW_IT_WORKS = [
+    {
+      step: '01',
+      title: t('step1Title'),
+      desc:  t('step1Desc'),
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <path d="M14 14l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      step: '02',
+      title: t('step2Title'),
+      desc:  t('step2Desc'),
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <path d="M2 8h16M7 2v4M13 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      step: '03',
+      title: t('step3Title'),
+      desc:  t('step3Desc'),
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+  ]
+
   return (
     <div className="min-h-screen bg-bg font-display flex flex-col">
 
@@ -103,9 +105,9 @@ export default async function LandingPage() {
 
           {/* Center nav links — desktop only */}
           <div className="hidden md:flex items-center gap-0.5 ml-4">
-            <Link href="/browse"       className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>Browse activities</Link>
-            <a    href="#for-providers" className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>For providers</a>
-            <a    href="#how-it-works" className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>How it works</a>
+            <Link href="/browse"       className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>{t('browseActivities')}</Link>
+            <a    href="#for-providers" className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>{t('forProviders')}</a>
+            <a    href="#how-it-works" className="px-3 py-2 rounded-[8px] font-display font-semibold text-ink-mid hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px' }}>{t('seeHowItWorks')}</a>
           </div>
 
           {/* Right CTAs */}
@@ -124,27 +126,27 @@ export default async function LandingPage() {
           {/* Badge */}
           <div className="inline-block mb-6 font-display font-bold text-primary rounded-full"
                style={{ background: '#ece6ff', fontSize: '13px', padding: '6px 14px' }}>
-            ✨ Now in Timișoara
+            {t('badge')}
           </div>
 
           {/* Headline */}
           <h1 className="font-display font-black text-ink leading-[1.05] mb-5"
               style={{ fontSize: 'clamp(36px, 4.5vw, 54px)', letterSpacing: '-2.5px' }}>
-            Find the perfect<br />
-            <span className="text-primary">activity</span> for your<br />
+            {t('headline1')}<br />
+            <span className="text-primary">{t('headline2')}</span><br />
             <span style={{
               background: 'linear-gradient(90deg, #2aa7ff, #c38cfa)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>
-              little one
+              {t('headline3')}
             </span>
           </h1>
 
           <p className="font-display text-ink-mid mx-auto mb-8"
              style={{ fontSize: '17px', lineHeight: '1.65', maxWidth: '480px' }}>
-            Browse local sports, arts, music, coding and more — then request a trial session with any provider.
+            {t('sub')}
           </p>
 
           {/* CTAs */}
@@ -154,24 +156,24 @@ export default async function LandingPage() {
               className="inline-flex items-center gap-2 bg-ink text-white font-display font-bold rounded-[16px] hover:opacity-80 transition-opacity"
               style={{ fontSize: '16px', padding: '14px 28px' }}
             >
-              🔍 Browse activities
+              {t('browseActivities')}
             </Link>
             <a
               href="#for-providers"
               className="inline-flex items-center gap-2 border-[1.5px] border-border bg-white text-ink font-display font-bold rounded-[16px] hover:border-ink/30 hover:shadow-card transition-all"
               style={{ fontSize: '16px', padding: '14px 28px' }}
             >
-              I&apos;m a provider →
+              {t('imProvider')}
             </a>
           </div>
 
           {/* Stats row — border-top separator, flex-centered */}
           <div className="border-t border-border mt-6 md:mt-8 pt-5 md:pt-7 flex flex-wrap justify-center gap-x-8 gap-y-5">
             {[
-              { value: '120+',  label: 'Activities',    color: '#c38cfa' },
-              { value: '48',    label: 'Providers',      color: '#2aa7ff' },
-              { value: 'Free',  label: 'Trial sessions', color: '#22c55e' },
-              { value: '4.9 ★', label: 'Avg. rating',   color: '#1c1c27' },
+              { value: '120+',  label: t('activities'),    color: '#c38cfa' },
+              { value: '48',    label: t('providers'),     color: '#2aa7ff' },
+              { value: 'Free',  label: t('trialSessions'), color: '#22c55e' },
+              { value: '4.9 ★', label: t('avgRating'),    color: '#1c1c27' },
             ].map(stat => (
               <div key={stat.label} className="text-center">
                 <div className="font-display font-black" style={{ fontSize: '32px', letterSpacing: '-1px', color: stat.color }}>{stat.value}</div>
@@ -187,10 +189,10 @@ export default async function LandingPage() {
           {/* Section header */}
           <div className="flex items-center justify-between mb-4 gap-4">
             <div className="font-display font-extrabold text-ink flex-shrink-0" style={{ fontSize: '21px', letterSpacing: '-0.4px' }}>
-              Trending near you
+              {t('trendingNearYou')}
             </div>
             <Link href="/browse" className="font-display text-sm font-semibold text-primary hover:underline whitespace-nowrap flex-shrink-0">
-              See all 120 →
+              {t('seeAll', { count: 120 })}
             </Link>
           </div>
 
@@ -278,7 +280,7 @@ export default async function LandingPage() {
                       className="ml-auto whitespace-nowrap rounded-full font-display text-[12px] font-bold"
                       style={{ background: '#e8fde9', color: '#15803d', padding: '5px 12px' }}
                     >
-                      Trial available
+                      {t('trialSessions')}
                     </span>
                   </div>
                 </Link>
@@ -293,7 +295,7 @@ export default async function LandingPage() {
               >
                 <span style={{ fontSize: '40px', lineHeight: 1 }}>🔍</span>
                 <div className="font-display font-bold text-ink-mid" style={{ fontSize: '14px' }}>
-                  See all activities →
+                  {t('seeAllActivities')}
                 </div>
               </Link>
             )}
@@ -315,14 +317,14 @@ export default async function LandingPage() {
               {/* Left: copy */}
               <div>
                 <div className="font-display text-[11px] font-bold tracking-widest uppercase mb-3"
-                     style={{ color: 'rgba(255,255,255,0.35)' }}>For providers</div>
+                     style={{ color: 'rgba(255,255,255,0.35)' }}>{t('forProviders')}</div>
                 <h2 className="font-display font-bold text-white leading-snug mb-4"
                     style={{ fontSize: 'clamp(24px, 3.5vw, 38px)' }}>
-                  Grow your class.<br />Reach more families.
+                  {t('providerHeadline1')}<br />{t('providerHeadline2')}
                 </h2>
                 <p className="text-[15px] leading-relaxed mb-8"
                    style={{ color: 'rgba(255,255,255,0.52)' }}>
-                  List your activity, set your schedule and pricing, and receive trial session requests directly from interested parents in Timișoara.
+                  {t('providerSub')}
                 </p>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <Link
@@ -330,14 +332,14 @@ export default async function LandingPage() {
                     className="inline-flex items-center justify-center gap-2 font-display text-sm font-bold px-6 py-3 rounded-full transition-opacity hover:opacity-90 w-full sm:w-auto"
                     style={{ background: '#f5c542', color: '#1c1c27' }}
                   >
-                    List your activity →
+                    {t('listActivity')}
                   </Link>
                   <a
                     href="#how-it-works"
                     className="inline-flex items-center justify-center gap-2 font-display text-sm font-semibold px-6 py-3 rounded-full border transition-colors w-full sm:w-auto"
                     style={{ color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.15)' }}
                   >
-                    See how it works
+                    {t('seeHowItWorks')}
                   </a>
                 </div>
               </div>
@@ -348,9 +350,9 @@ export default async function LandingPage() {
                 {/* Stats row — 3 cols */}
                 <div className="grid grid-cols-3 gap-2 md:gap-3">
                   {[
-                    { value: '500+',  label: 'Families\nreached' },
-                    { value: '0 RON', label: 'To get\nstarted' },
-                    { value: '2 min', label: 'To list\nactivity' },
+                    { value: '500+',  label: t('familiesReached') },
+                    { value: '0 RON', label: t('toGetStarted') },
+                    { value: '2 min', label: t('toListActivity') },
                   ].map(s => (
                     <div key={s.label} className="rounded-xl p-2.5 md:p-4 text-center"
                          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -365,10 +367,10 @@ export default async function LandingPage() {
                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <div className="flex flex-col gap-2.5">
                     {[
-                      'Intentionally free to use',
-                      'Trial requests straight to your inbox',
-                      'Your own provider profile page',
-                      'No commissions, no intermediaries',
+                      t('benefitFree'),
+                      t('benefitInbox'),
+                      t('benefitProfile'),
+                      t('benefitNoCommission'),
                     ].map(item => (
                       <div key={item} className="flex items-center gap-2.5 font-display text-sm"
                            style={{ color: 'rgba(255,255,255,0.68)' }}>
@@ -392,8 +394,8 @@ export default async function LandingPage() {
         {/* ── How it works ─────────────────────────────────────────────────── */}
         <section id="how-it-works" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 md:px-8 pb-16 md:pb-24">
           <div className="text-center mb-8 md:mb-10">
-            <div className="font-display text-[10px] font-bold tracking-widest uppercase text-ink-muted mb-2.5">Simple by design</div>
-            <h2 className="font-display text-2xl md:text-3xl font-bold text-ink">How kidvo works</h2>
+            <div className="font-display text-[10px] font-bold tracking-widest uppercase text-ink-muted mb-2.5">{t('simpleByDesign')}</div>
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-ink">{t('howKidvoWorks')}</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
@@ -427,11 +429,11 @@ export default async function LandingPage() {
             <span className="text-ink">kid</span><span className="text-primary">vo</span>
           </span>
 
-          <p className="text-xs text-ink-muted order-last md:order-none font-display">© 2026 kidvo · Timișoara, Romania</p>
+          <p className="text-xs text-ink-muted order-last md:order-none font-display">{t('copyright')}</p>
 
           <div className="flex items-center gap-5">
-            <Link href="/browse"      className="text-xs text-ink-mid hover:text-ink transition-colors font-display font-semibold">Browse</Link>
-            <Link href="/auth/signup" className="text-xs text-ink-mid hover:text-ink transition-colors font-display font-semibold">Sign up</Link>
+            <Link href="/browse"      className="text-xs text-ink-mid hover:text-ink transition-colors font-display font-semibold">{t('footerBrowse')}</Link>
+            <Link href="/auth/signup" className="text-xs text-ink-mid hover:text-ink transition-colors font-display font-semibold">{t('footerSignUp')}</Link>
             <FooterLegalLinks />
           </div>
 

@@ -9,6 +9,7 @@ import { RecommendedCard } from '@/components/ui/RecommendedCard'
 import { pickRecommendation } from '@/lib/recommendations'
 import { PerformanceModal } from '@/components/ui/PerformanceModal'
 import type { PerformanceRow } from '@/components/ui/PerformanceModal'
+import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -119,12 +120,14 @@ function BarRow({ emoji, name, pct }: { emoji: string; name: string; pct: number
 }
 
 /* Per-kid activity interest card (saves only) */
-function ActivityInterestCard({ kidName, bars }: {
+function ActivityInterestCard({ kidName, bars, titleText, subText }: {
   kidName: string
   bars: Array<{ slug: string; name: string; pct: number }>
+  titleText: string
+  subText: string
 }) {
   return (
-    <SectionCard title={`Activity interest · ${kidName}`} sub="Based on saves">
+    <SectionCard title={titleText} sub={subText}>
       <div className="flex flex-col gap-[7px]">
         {bars.map(b => (
           <BarRow key={b.slug} emoji={CAT_EMOJI[b.slug] ?? '✨'} name={b.name} pct={b.pct} />
@@ -207,6 +210,7 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
+  const tDash = await getTranslations('dashboard')
 
   const { data: profileRaw } = await supabase
     .from('users').select('full_name, role, onboarding_dismissed').eq('id', user.id).single()
@@ -779,7 +783,7 @@ export default async function DashboardPage() {
             kidWidgets.map(k => (
               <div key={k.kidId} className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
                 {k.interest && (
-                  <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} />
+                  <ActivityInterestCard kidName={k.interest.kidName} bars={k.interest.bars} titleText={tDash('activityInterest', { kidName: k.interest.kidName })} subText={tDash('basedOnSaves')} />
                 )}
                 {k.mix && (
                   <ActivityMixCard kidName={k.mix.kidName} items={k.mix.items} othersCount={k.mix.othersCount} />

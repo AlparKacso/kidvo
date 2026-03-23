@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { useTranslations } from 'next-intl'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -20,6 +21,7 @@ interface Props {
 export function SavedClient({ initialSaves }: Props) {
   const [saves,         setSaves]         = useState(initialSaves)
   const [pendingRemove, setPendingRemove] = useState<string | null>(null) // saveId awaiting confirm
+  const t = useTranslations('saved')
 
   async function handleRemove(saveId: string, listingId: string) {
     setPendingRemove(null)
@@ -36,17 +38,17 @@ export function SavedClient({ initialSaves }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">Saved Activities</h1>
+        <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">{t('title')}</h1>
         <p className="text-sm text-ink-muted">{total} {total === 1 ? 'activity' : 'activities'} saved</p>
       </div>
 
       {total === 0 && (
         <div className="bg-white border border-border rounded-lg p-12 text-center">
           <div className="text-3xl mb-3">🤍</div>
-          <div className="font-display text-sm font-semibold text-ink-mid mb-1">Nothing saved yet</div>
-          <p className="text-sm text-ink-muted mb-5">Tap the heart on any activity to save it here.</p>
+          <div className="font-display text-sm font-semibold text-ink-mid mb-1">{t('noSaved')}</div>
+          <p className="text-sm text-ink-muted mb-5">{t('noSavedSub')}</p>
           <Link href="/browse" className="inline-block bg-primary text-white font-display text-sm font-semibold px-4 py-2 rounded hover:bg-primary-deep transition-colors">
-            Browse activities
+            {t('browseActivities')}
           </Link>
         </div>
       )}

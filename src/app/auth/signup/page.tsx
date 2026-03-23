@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { useTranslations } from 'next-intl'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -14,6 +15,8 @@ export default function SignupPage() {
   const [role, setRole]           = useState<'parent' | 'provider'>('parent')
   const [error, setError]         = useState('')
   const [loading, setLoading]     = useState(false)
+  const t = useTranslations('auth')
+  const tSignup = useTranslations('auth.signup')
 
   function isValidEmail(v: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())
@@ -25,13 +28,13 @@ export default function SignupPage() {
     setError('')
 
     if (!isValidEmail(email)) {
-      setError('Please enter a valid email address (e.g. you@example.com).')
+      setError(tSignup('invalidEmail'))
       setLoading(false)
       return
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.')
+      setError(tSignup('passwordTooShort'))
       setLoading(false)
       return
     }
@@ -43,11 +46,11 @@ export default function SignupPage() {
     if (authError) {
       const msg = authError.message.toLowerCase()
       if (msg.includes('password') && msg.includes('short'))
-        setError('Password must be at least 6 characters long.')
+        setError(tSignup('passwordTooShort'))
       else if (msg.includes('already registered') || msg.includes('already exists'))
-        setError('An account with this email already exists. Try signing in.')
+        setError(tSignup('emailExists'))
       else if (msg.includes('invalid email'))
-        setError('Please enter a valid email address.')
+        setError(tSignup('invalidEmailSimple'))
       else
         setError(authError.message)
       setLoading(false)
@@ -55,7 +58,7 @@ export default function SignupPage() {
     }
 
     if (!data.user) {
-      setError('Signup failed — please try again.')
+      setError(tSignup('failed'))
       setLoading(false)
       return
     }
@@ -102,21 +105,21 @@ export default function SignupPage() {
           <Link href="/" className="inline-block font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '28px', letterSpacing: '-1px' }}>
             <span className="text-ink">kid</span><span className="text-primary">vo</span>
           </Link>
-          <p className="font-display text-[13px] text-ink-muted mt-2">Activities for kids in Timișoara</p>
+          <p className="font-display text-[13px] text-ink-muted mt-2">{t('tagline')}</p>
         </div>
 
         {/* Card */}
         <div className="bg-white border border-border rounded-[18px] p-7 shadow-card">
           <h1 className="font-display text-[20px] font-extrabold text-ink mb-1 leading-snug" style={{ letterSpacing: '-0.3px' }}>
-            Create account
+            {tSignup('title')}
           </h1>
-          <p className="font-display text-[13px] text-ink-muted mb-6">Join kidvo — it's free</p>
+          <p className="font-display text-[13px] text-ink-muted mb-6">{tSignup('subtitle')}</p>
 
           <form onSubmit={handleSignup} className="flex flex-col gap-4">
 
             {/* Role selector */}
             <div>
-              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">I am a</label>
+              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">{tSignup('iam')}</label>
               <div className="grid grid-cols-2 gap-2">
                 {(['parent', 'provider'] as const).map(r => (
                   <button
@@ -130,23 +133,21 @@ export default function SignupPage() {
                         : 'bg-bg border-border text-ink-mid hover:border-primary/50 hover:text-ink'
                     )}
                   >
-                    {r === 'parent' ? '👨‍👧 Parent' : '🏫 Provider'}
+                    {r === 'parent' ? tSignup('parent') : tSignup('provider')}
                   </button>
                 ))}
               </div>
               <p className="font-display text-[11px] text-ink-muted mt-1.5">
-                {role === 'parent'
-                  ? 'Browse and book activities for your kids'
-                  : 'List and manage your activities'}
+                {role === 'parent' ? tSignup('parentSub') : tSignup('providerSub')}
               </p>
             </div>
 
             <div>
-              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">Full name</label>
+              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">{tSignup('fullName')}</label>
               <input
                 className={inputCls}
                 type="text"
-                placeholder="Your name"
+                placeholder={tSignup('namePlaceholder')}
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
                 required
@@ -154,7 +155,7 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">Email</label>
+              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">{tSignup('email')}</label>
               <input
                 className={inputCls}
                 type="email"
@@ -166,11 +167,11 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">Password</label>
+              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">{tSignup('password')}</label>
               <input
                 className={inputCls}
                 type="password"
-                placeholder="Min. 6 characters"
+                placeholder={tSignup('passwordHint')}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 minLength={6}
@@ -189,14 +190,14 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full py-2.5 rounded-[10px] font-display text-[13.5px] font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors mt-1"
             >
-              {loading ? 'Creating account…' : 'Create account →'}
+              {loading ? tSignup('creating') : tSignup('create')}
             </button>
           </form>
         </div>
 
         <p className="text-center font-display text-[13px] text-ink-muted mt-5">
-          Already have an account?{' '}
-          <Link href="/auth/login" className="text-primary font-semibold hover:opacity-75 transition-opacity">Sign in</Link>
+          {tSignup('hasAccount')}{' '}
+          <Link href="/auth/login" className="text-primary font-semibold hover:opacity-75 transition-opacity">{tSignup('signIn')}</Link>
         </p>
       </div>
     </div>

@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { RecommendedCard, pickRecommendation } from '@/components/ui/RecommendedCard'
+import { useTranslations } from 'next-intl'
 
 const CURRENT_YEAR  = new Date().getFullYear()
-const DAYS          = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+// Day names are resolved via t('days.N') inside components
 const CAP           = 3
 const UNASSIGNED_ID = '__unassigned__'
 
@@ -17,16 +18,15 @@ const GRADES = [
   'High School Year 1', 'High School Year 2', 'High School Year 3', 'High School Year 4',
 ]
 
-const STATUS_STYLES: Record<string, { pill: string; label: string; icon: string }> = {
-  pending:   { pill: 'bg-gold-lt text-gold-text',    label: 'Awaiting response', icon: '⏳' },
-  confirmed: { pill: 'bg-success-lt text-success',   label: 'Confirmed',         icon: '✅' },
-  declined:  { pill: 'bg-danger-lt text-danger',     label: 'Declined',          icon: '❌' },
-  cancelled: { pill: 'bg-surface text-ink-muted',    label: 'Cancelled',         icon: '—'  },
+const STATUS_PILL: Record<string, string> = {
+  pending:   'bg-gold-lt text-gold-text',
+  confirmed: 'bg-success-lt text-success',
+  declined:  'bg-danger-lt text-danger',
+  cancelled: 'bg-surface text-ink-muted',
 }
 
-function getAgeLabel(birthYear: number) {
-  const age = CURRENT_YEAR - birthYear
-  return `${age} year${age !== 1 ? 's' : ''} old`
+function getAge(birthYear: number) {
+  return CURRENT_YEAR - birthYear
 }
 
 interface Child    { id: string; name: string; birth_year: number; school_grade: string | null; area_id: string | null; interests: string[] }
@@ -45,6 +45,7 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
   onCancel:   () => void
   saving:     boolean
 }) {
+  const t = useTranslations('kids')
   const [name,      setName]      = useState(initial?.name         ?? '')
   const [year,      setYear]      = useState(initial?.birth_year   ?? CURRENT_YEAR - 7)
   const [grade,     setGrade]     = useState(initial?.school_grade ?? '')
@@ -59,8 +60,8 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
   }
 
   async function submit() {
-    if (!name.trim()) { setError('Name is required.'); return }
-    if (year < CURRENT_YEAR - 18 || year > CURRENT_YEAR - 2) { setError('Please enter a valid birth year (age 2–18).'); return }
+    if (!name.trim()) { setError(t('nameRequired')); return }
+    if (year < CURRENT_YEAR - 18 || year > CURRENT_YEAR - 2) { setError(t('birthYearError')); return }
     setError('')
     await onSave({ name: name.trim(), birth_year: year, school_grade: grade || null, area_id: areaId || null, interests })
   }
@@ -69,25 +70,25 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
     <div className="bg-white border border-primary-border rounded-lg p-4">
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="col-span-2">
-          <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1">Child&apos;s name</label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Alex" className={inputCls} />
+          <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1">{t('childName')}</label>
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('childNamePlaceholder')} className={inputCls} />
         </div>
         <div>
-          <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1">Birth year</label>
+          <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1">{t('birthYear')}</label>
           <input type="number" value={year} onChange={e => setYear(Number(e.target.value))} min={CURRENT_YEAR - 18} max={CURRENT_YEAR - 2} className={inputCls} />
         </div>
         <div>
-          <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1">Grade <span className="text-ink-muted font-normal normal-case">(opt.)</span></label>
+          <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1">{t('grade')} <span className="text-ink-muted font-normal normal-case">{t('gradeOptional')}</span></label>
           <select value={grade} onChange={e => setGrade(e.target.value)} className={inputCls}>
-            <option value="">— select —</option>
+            <option value="">{t('selectPlaceholder')}</option>
             {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
           </select>
         </div>
         {areas.length > 0 && (
           <div className="col-span-2">
-            <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1">Neighbourhood <span className="text-ink-muted font-normal normal-case">(opt.)</span></label>
+            <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1">{t('neighbourhood')} <span className="text-ink-muted font-normal normal-case">{t('gradeOptional')}</span></label>
             <select value={areaId} onChange={e => setAreaId(e.target.value)} className={inputCls}>
-              <option value="">— select —</option>
+              <option value="">{t('selectPlaceholder')}</option>
               {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </div>
@@ -95,7 +96,7 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
         {categories.length > 0 && (
           <div className="col-span-2">
             <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-2">
-              Interests <span className="text-ink-muted font-normal normal-case">(opt.)</span>
+              {t('interests')} <span className="text-ink-muted font-normal normal-case">{t('gradeOptional')}</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {categories.map(cat => {
@@ -118,9 +119,9 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
       </div>
       {error && <div className="mb-3 px-3 py-2 bg-danger-lt border border-danger/20 rounded text-sm text-danger">{error}</div>}
       <div className="flex gap-2">
-        <button onClick={onCancel} className="flex-1 py-2 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">Cancel</button>
+        <button onClick={onCancel} className="flex-1 py-2 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">{t('cancel')}</button>
         <button onClick={submit} disabled={saving} className="flex-1 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors">
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? t('saving') : t('save')}
         </button>
       </div>
     </div>
@@ -130,16 +131,17 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
 // ── AssignButtons ────────────────────────────────────────────────────────────
 
 function AssignButtons({ kids, onAssign, onCancel }: { kids: Child[]; onAssign: (kidId: string) => void; onCancel: () => void }) {
+  const t = useTranslations('kids')
   return (
     <div className="flex flex-wrap items-center gap-1.5 mt-2">
-      <span className="text-xs text-ink-muted font-display">Assign to:</span>
+      <span className="text-xs text-ink-muted font-display">{t('assignTo')}</span>
       {kids.map(kid => (
         <button key={kid.id} onClick={() => onAssign(kid.id)}
           className="px-2.5 py-1 rounded-full font-display text-xs font-semibold bg-primary-lt text-primary border border-primary-border hover:bg-primary hover:text-white transition-colors">
           {kid.name}
         </button>
       ))}
-      <button onClick={onCancel} className="px-2 py-1 font-display text-xs text-ink-muted hover:text-ink transition-colors">Cancel</button>
+      <button onClick={onCancel} className="px-2 py-1 font-display text-xs text-ink-muted hover:text-ink transition-colors">{t('cancel')}</button>
     </div>
   )
 }
@@ -152,6 +154,7 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
   isUnassigned?: boolean
   onReassign?:  (bookingId: string, kidId: string) => Promise<void>
 }) {
+  const t = useTranslations('kids')
   const [showAll,     setShowAll]     = useState(false)
   const [assigningId, setAssigningId] = useState<string | null>(null)
   const shown = showAll ? bookings : bookings.slice(0, CAP)
@@ -159,13 +162,13 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
   return (
     <div className="bg-white border border-border rounded-lg overflow-hidden">
       <div className="px-5 py-3.5 border-b border-border">
-        <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">Bookings</div>
+        <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">{t('bookings')}</div>
       </div>
       {bookings.length === 0 ? (
         <div className="px-5 py-8 text-center">
           <div className="text-2xl mb-2">📅</div>
-          <div className="font-display text-sm font-semibold text-ink-mid mb-1">No trial requests yet</div>
-          <p className="text-xs text-ink-muted">Request a trial for activities that offer one.</p>
+          <div className="font-display text-sm font-semibold text-ink-mid mb-1">{t('noBookings')}</div>
+          <p className="text-xs text-ink-muted">{t('noBookingsSub')}</p>
         </div>
       ) : (
         <>
@@ -175,15 +178,18 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
               const category = listing?.category
               const area     = listing?.area
               const provider = listing?.provider
-              const status   = STATUS_STYLES[req.status] ?? STATUS_STYLES.pending
+              const statusKey = req.status as keyof typeof STATUS_PILL
+              const pillCls   = STATUS_PILL[statusKey] ?? STATUS_PILL.pending
+              const icon      = t(`statusIcon.${statusKey}` as any)
+              const label     = t(`status.${statusKey}` as any)
 
               return (
                 <div key={req.id} className="px-5 py-4 flex gap-3 items-start">
                   <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: category?.accent_color ?? '#ccc' }} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-display text-[10px] font-semibold ${status.pill}`}>
-                        {status.icon} {status.label}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-display text-[10px] font-semibold ${pillCls}`}>
+                        {icon} {label}
                       </span>
                       <span className="text-[11px] text-ink-muted">
                         {new Date(req.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
@@ -193,7 +199,7 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
                       {listing?.title}
                     </Link>
                     <div className="text-xs text-ink-muted mt-0.5">
-                      {[category?.name, area?.name, req.preferred_day !== null ? `Preferred: ${DAYS[req.preferred_day]}` : null].filter(Boolean).join(' · ')}
+                      {[category?.name, area?.name, req.preferred_day !== null ? t('preferred', { day: t(`days.${req.preferred_day}` as any) }) : null].filter(Boolean).join(' · ')}
                     </div>
                     {req.status === 'confirmed' && provider && (
                       <div className="mt-2 p-2.5 bg-success-lt border border-success/20 rounded-lg">
@@ -212,13 +218,13 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
                     )}
                     {req.status === 'declined' && (
                       <div className="mt-2 px-2.5 py-1.5 bg-danger-lt rounded text-xs text-danger">
-                        The provider couldn&apos;t accommodate this request. Try another activity.
+                        {t('couldNotAccommodate')}
                       </div>
                     )}
                     {isUnassigned && kids && kids.length > 0 && onReassign && (
                       assigningId === req.id
                         ? <AssignButtons kids={kids} onAssign={kidId => { onReassign(req.id, kidId); setAssigningId(null) }} onCancel={() => setAssigningId(null)} />
-                        : <button onClick={() => setAssigningId(req.id)} className="mt-2.5 inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary-border bg-primary-lt font-display text-xs font-semibold text-primary active:bg-primary active:text-white transition-colors">Assign to child →</button>
+                        : <button onClick={() => setAssigningId(req.id)} className="mt-2.5 inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary-border bg-primary-lt font-display text-xs font-semibold text-primary active:bg-primary active:text-white transition-colors">{t('assignToChild')}</button>
                     )}
                   </div>
                 </div>
@@ -228,7 +234,7 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
           {bookings.length > CAP && (
             <button onClick={() => setShowAll(v => !v)}
               className="w-full py-2.5 text-xs font-display font-semibold text-primary border-t border-border hover:bg-surface transition-colors">
-              {showAll ? 'Show less ↑' : `+ ${bookings.length - CAP} more booking${bookings.length - CAP !== 1 ? 's' : ''} · Show all`}
+              {showAll ? t('bookingsShowLess') : t('bookingsShowMore', { count: bookings.length - CAP })}
             </button>
           )}
         </>
@@ -246,6 +252,7 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
   onReassign?:  (saveId: string, kidId: string) => Promise<void>
   onUnsave?:    (saveId: string, listingId: string, kidId: string | null) => void
 }) {
+  const t = useTranslations('kids')
   const [showAll,     setShowAll]     = useState(false)
   const [assigningId, setAssigningId] = useState<string | null>(null)
   const shown = showAll ? saves : saves.slice(0, CAP)
@@ -253,14 +260,14 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
   return (
     <div className="bg-white border border-border rounded-lg overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-        <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">Saved Activities</div>
-        <Link href="/browse" className="font-display text-xs font-semibold text-primary hover:underline">Browse more →</Link>
+        <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">{t('savedActivities')}</div>
+        <Link href="/browse" className="font-display text-xs font-semibold text-primary hover:underline">{t('browseMore')}</Link>
       </div>
       {saves.length === 0 ? (
         <div className="px-5 py-8 text-center">
           <div className="text-2xl mb-2">🤍</div>
-          <div className="font-display text-sm font-semibold text-ink-mid mb-1">No saved activities yet</div>
-          <p className="text-xs text-ink-muted">Tap the heart on any activity to save it here.</p>
+          <div className="font-display text-sm font-semibold text-ink-mid mb-1">{t('noSaved')}</div>
+          <p className="text-xs text-ink-muted">{t('noSavedSub')}</p>
         </div>
       ) : (
         <>
@@ -292,18 +299,18 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
                       <span className="font-display text-sm font-bold text-ink">{listing?.price_monthly} RON</span>
                       <span className="text-xs text-ink-muted font-body">/mo</span>
                       <span className={cn('inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold ml-1', isFull ? 'bg-danger-lt text-danger' : 'bg-success-lt text-success')}>
-                        {isFull ? 'Full' : 'Open'}
+                        {isFull ? t('full') : t('open')}
                       </span>
                       {!isFull && listing?.trial_available && (
                         <Link href={`/browse/${listing?.id}?book=1`} className="ml-auto px-3 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
-                          Book trial
+                          {t('bookTrial')}
                         </Link>
                       )}
                     </div>
                     {isUnassigned && kids && kids.length > 0 && onReassign && (
                       assigningId === save.id
                         ? <AssignButtons kids={kids} onAssign={kidId => { onReassign(save.id, kidId); setAssigningId(null) }} onCancel={() => setAssigningId(null)} />
-                        : <button onClick={() => setAssigningId(save.id)} className="mt-2.5 inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary-border bg-primary-lt font-display text-xs font-semibold text-primary active:bg-primary active:text-white transition-colors">Assign to child →</button>
+                        : <button onClick={() => setAssigningId(save.id)} className="mt-2.5 inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-primary-border bg-primary-lt font-display text-xs font-semibold text-primary active:bg-primary active:text-white transition-colors">{t('assignToChild')}</button>
                     )}
                   </div>
                 </div>
@@ -313,7 +320,7 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
           {saves.length > CAP && (
             <button onClick={() => setShowAll(v => !v)}
               className="w-full py-2.5 text-xs font-display font-semibold text-primary border-t border-border hover:bg-surface transition-colors">
-              {showAll ? 'Show less ↑' : `+ ${saves.length - CAP} more saved · Show all`}
+              {showAll ? t('savedShowLess') : t('savedShowMore', { count: saves.length - CAP })}
             </button>
           )}
         </>
@@ -335,6 +342,7 @@ interface Props {
 }
 
 export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, categories, bookings: initialBookings, listings }: Props) {
+  const t = useTranslations('kids')
   const [kids,           setKids]           = useState<Child[]>(initialKids)
   const [localBookings,  setLocalBookings]  = useState<Booking[]>(initialBookings)
   const [localSaves,     setLocalSaves]     = useState<Save[]>(initialSaves)
@@ -423,7 +431,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
     setAssignError(null)
     const supabase = createClient()
     const { error } = await supabase.from('trial_requests').update({ child_id: kidId }).eq('id', bookingId)
-    if (error) { setAssignError('Could not assign booking — please try again.'); return }
+    if (error) { setAssignError(t('assignError')); return }
     setLocalBookings(prev => prev.map(b => b.id === bookingId ? { ...b, child_id: kidId } : b))
   }
 
@@ -431,7 +439,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
     setAssignError(null)
     const supabase = createClient()
     const { error } = await supabase.from('saves').update({ kid_id: kidId }).eq('id', saveId)
-    if (error) { setAssignError('Could not assign saved activity — please try again.'); return }
+    if (error) { setAssignError(t('assignError')); return }
     setLocalSaves(prev => prev.map(s => s.id === saveId ? { ...s, kid_id: kidId } : s))
   }
 
@@ -442,13 +450,13 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
       <div className="bg-white border border-primary-border rounded-lg p-4 flex items-center gap-4">
         <div className="w-10 h-10 rounded-full bg-primary-lt flex items-center justify-center flex-shrink-0 text-lg">👶</div>
         <div className="flex-1 min-w-0">
-          <div className="font-display text-sm font-bold text-ink mb-0.5">Add your first child</div>
-          <p className="text-xs text-ink-muted">Organise bookings and saved activities per child.</p>
+          <div className="font-display text-sm font-bold text-ink mb-0.5">{t('noKids')}</div>
+          <p className="text-xs text-ink-muted">{t('noKidsSub')}</p>
         </div>
         {!showAdd && (
           <button onClick={() => setShowAdd(true)}
             className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors flex-shrink-0">
-            Add child →
+            {t('addChildArrow')}
           </button>
         )}
       </div>
@@ -479,7 +487,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-display text-sm font-bold text-ink">{kid.name}</div>
-              <div className="text-xs text-ink-muted">{getAgeLabel(kid.birth_year)}</div>
+              <div className="text-xs text-ink-muted">{t('ageLabel', { age: getAge(kid.birth_year) })}</div>
             </div>
             {pending > 0 && (
               <span className="font-display text-[10px] font-bold px-[6px] py-px rounded-full bg-gold-lt text-gold-text flex-shrink-0">
@@ -501,10 +509,10 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
         >
           <div className="w-9 h-9 rounded-full bg-surface border border-border flex items-center justify-center text-base flex-shrink-0">📋</div>
           <div className="flex-1 min-w-0">
-            <div className="font-display text-sm font-semibold text-ink-mid">Unassigned</div>
+            <div className="font-display text-sm font-semibold text-ink-mid">{t('unassigned')}</div>
             <div className="text-xs text-ink-muted">
-              {[unassignedBookings.length > 0 ? `${unassignedBookings.length} booking${unassignedBookings.length !== 1 ? 's' : ''}` : null,
-                unassignedSaves.length > 0    ? `${unassignedSaves.length} saved` : null].filter(Boolean).join(' · ')}
+              {[unassignedBookings.length > 0 ? t('unassignedBookings', { count: unassignedBookings.length }) : null,
+                unassignedSaves.length > 0    ? t('unassignedSaved', { count: unassignedSaves.length }) : null].filter(Boolean).join(' · ')}
             </div>
           </div>
           <svg width="14" height="14" viewBox="0 0 15 15" fill="none" className="text-ink-muted flex-shrink-0"><path d="M5 3l5 4.5L5 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -519,7 +527,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
           <div className="w-9 h-9 rounded-full bg-surface flex items-center justify-center flex-shrink-0">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
           </div>
-          <span className="font-display text-sm font-semibold">Add a child</span>
+          <span className="font-display text-sm font-semibold">{t('addChild')}</span>
         </button>
       )}
 
@@ -536,8 +544,8 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
       return (
         <div className="bg-white border border-border rounded-lg p-12 text-center">
           <div className="text-3xl mb-3">👧</div>
-          <div className="font-display text-sm font-semibold text-ink-mid mb-1">Select a child</div>
-          <p className="text-sm text-ink-muted">Choose a child from the list to see their activities.</p>
+          <div className="font-display text-sm font-semibold text-ink-mid mb-1">{t('selectChild')}</div>
+          <p className="text-sm text-ink-muted">{t('selectChildSub')}</p>
         </div>
       )
     }
@@ -548,8 +556,8 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
         return (
           <div className="bg-white border border-border rounded-lg p-12 text-center">
             <div className="text-3xl mb-3">✅</div>
-            <div className="font-display text-sm font-semibold text-ink-mid mb-1">All assigned!</div>
-            <p className="text-sm text-ink-muted">Every activity is now linked to a child.</p>
+            <div className="font-display text-sm font-semibold text-ink-mid mb-1">{t('allAssigned')}</div>
+            <p className="text-sm text-ink-muted">{t('allAssignedSub')}</p>
           </div>
         )
       }
@@ -559,8 +567,8 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
           <div className="bg-white border border-border rounded-lg p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-surface border border-border flex items-center justify-center text-xl flex-shrink-0">📋</div>
             <div>
-              <div className="font-display text-base font-bold text-ink">Unassigned</div>
-              <div className="text-xs text-ink-muted">These aren&apos;t linked to a child yet. Assign them below.</div>
+              <div className="font-display text-base font-bold text-ink">{t('unassigned')}</div>
+              <div className="text-xs text-ink-muted">{t('unassignedSub')}</div>
             </div>
           </div>
           {assignError && (
@@ -590,7 +598,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
               <div className="flex-1 min-w-0">
                 <div className="font-display text-lg font-bold text-ink mb-2">{selectedKid.name}</div>
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-2.5 py-1 bg-surface rounded-full text-xs text-ink-mid">{getAgeLabel(selectedKid.birth_year)}</span>
+                  <span className="px-2.5 py-1 bg-surface rounded-full text-xs text-ink-mid">{t('ageLabel', { age: getAge(selectedKid.birth_year) })}</span>
                   {areaName(selectedKid.area_id) && (
                     <span className="px-2.5 py-1 bg-surface rounded-full text-xs text-ink-mid">{areaName(selectedKid.area_id)}</span>
                   )}
@@ -613,13 +621,13 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button onClick={() => setEditId(selectedKid.id)} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">
-                  Edit
+                  {t('editChild')}
                 </button>
                 {deleteId === selectedKid.id ? (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-danger font-display font-semibold">Remove?</span>
-                    <button onClick={() => handleDelete(selectedKid.id)} className="px-2.5 py-1.5 rounded font-display text-xs font-semibold bg-danger text-white">Yes</button>
-                    <button onClick={() => setDeleteId(null)} className="px-2.5 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid">No</button>
+                    <span className="text-xs text-danger font-display font-semibold">{t('removeConfirm')}</span>
+                    <button onClick={() => handleDelete(selectedKid.id)} className="px-2.5 py-1.5 rounded font-display text-xs font-semibold bg-danger text-white">{t('yes')}</button>
+                    <button onClick={() => setDeleteId(null)} className="px-2.5 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid">{t('no')}</button>
                   </div>
                 ) : (
                   <button onClick={() => setDeleteId(selectedKid.id)} className="w-7 h-7 rounded flex items-center justify-center border border-border text-ink-muted hover:border-danger/50 hover:text-danger hover:bg-danger-lt transition-all">
@@ -642,8 +650,8 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">Kids &amp; Activities</h1>
-        <p className="text-sm text-ink-muted">Bookings and saved activities for each child</p>
+        <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">{t('title')}</h1>
+        <p className="text-sm text-ink-muted">{t('subtitle')}</p>
       </div>
 
       {kids.length === 0 ? FlatView : (
@@ -654,7 +662,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
               <div>
                 <button onClick={() => setShowDetail(false)} className="flex items-center gap-1.5 text-sm font-display font-semibold text-primary mb-4">
                   <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M10 3L5 7.5 10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  All children
+                  {t('allChildren')}
                 </button>
                 {DetailPanel}
               </div>

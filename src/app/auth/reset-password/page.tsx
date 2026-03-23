@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations } from 'next-intl'
 
 export default function ResetPasswordPage() {
   const router  = useRouter()
@@ -12,6 +13,7 @@ export default function ResetPasswordPage() {
   const [status,    setStatus]    = useState<'idle' | 'saving' | 'done' | 'invalid'>('idle')
   const [error,     setError]     = useState('')
   const [ready,     setReady]     = useState(false)
+  const t = useTranslations('auth.reset')
 
   // Supabase reset links can arrive in two formats depending on how they were generated:
   //
@@ -60,8 +62,8 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
-    if (password !== confirm) { setError('Passwords do not match.'); return }
+    if (password.length < 6) { setError(t('tooShort')); return }
+    if (password !== confirm) { setError(t('noMatch')); return }
     setError('')
     setStatus('saving')
 
@@ -95,40 +97,40 @@ export default function ResetPasswordPage() {
           {/* Invalid / expired token */}
           {status === 'invalid' && (
             <>
-              <h1 className="font-display text-lg font-bold text-ink mb-2">Link expired</h1>
-              <p className="text-sm text-ink-muted mb-5">This password reset link is invalid or has expired. Request a new one from Settings.</p>
+              <h1 className="font-display text-lg font-bold text-ink mb-2">{t('expired')}</h1>
+              <p className="text-sm text-ink-muted mb-5">{t('expiredSub')}</p>
               <Link href="/settings" className="block w-full text-center py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
-                Back to Settings
+                {t('backToSettings')}
               </Link>
             </>
           )}
 
           {/* Waiting for session to be set */}
           {status !== 'invalid' && !ready && (
-            <p className="text-sm text-ink-muted text-center py-4">Verifying link…</p>
+            <p className="text-sm text-ink-muted text-center py-4">{t('verifying')}</p>
           )}
 
           {/* Success */}
           {status === 'done' && (
             <>
               <div className="text-2xl text-center mb-3">✓</div>
-              <h1 className="font-display text-lg font-bold text-ink text-center mb-1">Password updated!</h1>
-              <p className="text-sm text-ink-muted text-center">Redirecting you to Settings…</p>
+              <h1 className="font-display text-lg font-bold text-ink text-center mb-1">{t('updated')}</h1>
+              <p className="text-sm text-ink-muted text-center">{t('redirecting')}</p>
             </>
           )}
 
           {/* Form */}
           {ready && status !== 'done' && (
             <>
-              <h1 className="font-display text-lg font-bold text-ink mb-1">Set new password</h1>
-              <p className="text-sm text-ink-muted mb-5">Choose a strong password for your account.</p>
+              <h1 className="font-display text-lg font-bold text-ink mb-1">{t('title')}</h1>
+              <p className="text-sm text-ink-muted mb-5">{t('subtitle')}</p>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
-                  <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">New password</label>
+                  <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">{t('newPassword')}</label>
                   <input
                     type="password"
-                    placeholder="Min. 6 characters"
+                    placeholder={t('passwordHint')}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     minLength={6}
@@ -137,10 +139,10 @@ export default function ResetPasswordPage() {
                   />
                 </div>
                 <div>
-                  <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">Confirm password</label>
+                  <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">{t('confirmPassword')}</label>
                   <input
                     type="password"
-                    placeholder="Repeat new password"
+                    placeholder={t('confirmHint')}
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}
                     minLength={6}
@@ -158,7 +160,7 @@ export default function ResetPasswordPage() {
                   disabled={status === 'saving'}
                   className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors mt-1"
                 >
-                  {status === 'saving' ? 'Updating…' : 'Update password'}
+                  {status === 'saving' ? t('updating') : t('update')}
                 </button>
               </form>
             </>

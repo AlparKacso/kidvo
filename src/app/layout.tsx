@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { CookieBanner } from '@/components/ui/CookieBanner'
+import { getLocale, getMessages } from 'next-intl/server'
+import { NextIntlClientProvider } from 'next-intl'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -35,32 +37,32 @@ export const metadata: Metadata = {
     siteName: 'kidvo',
     title: 'kidvo — Activități pentru copii în Timișoara',
     description: 'Descoperă activități pentru copii în Timișoara. Sport, dans, muzică, arte, programare. Rezervă o ședință de probă gratuită.',
-    // images injected automatically by /app/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
     title: 'kidvo — Activități pentru copii în Timișoara',
     description: 'Descoperă activități pentru copii în Timișoara. Rezervă o ședință de probă gratuită.',
-    // images injected automatically by /app/opengraph-image.tsx
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-image-preview': 'large',
-    },
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
   },
-  alternates: {
-    canonical: 'https://kidvo.eu',
-  },
+  alternates: { canonical: 'https://kidvo.eu' },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale   = await getLocale()
+  const messages = await getMessages()
+
   return (
-    <html lang="ro" suppressHydrationWarning>
-      <body>{children}<CookieBanner /></body>
+    <html lang={locale} suppressHydrationWarning>
+      <body>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+          <CookieBanner />
+        </NextIntlClientProvider>
+      </body>
     </html>
   )
 }

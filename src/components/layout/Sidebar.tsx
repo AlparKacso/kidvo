@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { FeedbackForm } from '@/app/main/FeedbackForm'
 import { LegalModal } from '@/components/ui/LegalModal'
@@ -94,11 +95,10 @@ const IconAdmin     = () => <svg width="16" height="16" viewBox="0 0 18 18" fill
 function FeedbackNudge({ isProvider }: { isProvider: boolean }) {
   const [open,     setOpen]     = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const t = useTranslations('nav')
 
-  const title    = isProvider ? 'Help us improve for providers' : "How's kidvo working for you?"
-  const subtitle = isProvider
-    ? 'What would make managing your listings easier?'
-    : 'Tell us what would help you find the right activities for your kids.'
+  const title    = isProvider ? t('feedbackProvider') : t('feedbackParent')
+  const subtitle = isProvider ? t('feedbackProviderSub') : t('feedbackParentSub')
 
   const BubbleIcon = () => (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -152,7 +152,7 @@ function FeedbackNudge({ isProvider }: { isProvider: boolean }) {
             className="inline-flex items-center gap-1 font-display text-[12px] font-semibold text-white rounded-[8px] hover:opacity-85 transition-opacity"
             style={{ background: '#7c3aed', padding: '7px 13px' }}
           >
-            Share feedback →
+            {t('shareFeedback')}
           </button>
         </div>
       )}
@@ -194,6 +194,7 @@ export function Sidebar({
 }: SidebarProps) {
   const isAdmin = userEmail === ADMIN_EMAIL
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
+  const t = useTranslations('nav')
 
   /* Prototype aside: padding 20px 14px 16px, flex column */
   return (
@@ -203,27 +204,27 @@ export function Sidebar({
 
       <nav className="flex-1 flex flex-col">
 
-        <NavSection label="Discover">
-          <NavItem href="/dashboard" icon={<IconHome />}   label="Dashboard" exact />
-          <NavItem href="/browse"    icon={<IconBrowse />} label="Browse"    exact />
+        <NavSection label={t('discover')}>
+          <NavItem href="/dashboard" icon={<IconHome />}   label={t('dashboard')} exact />
+          <NavItem href="/browse"    icon={<IconBrowse />} label={t('browse')}    exact />
         </NavSection>
 
         {!isProvider && (
-          <NavSection label="My Family">
-            <NavItem href="/kids" icon={<IconKids />} label="Kids & Activities" badge={pendingBookings} badgeVariant="blue" exact />
+          <NavSection label={t('myFamily')}>
+            <NavItem href="/kids" icon={<IconKids />} label={t('kidsActivities')} badge={pendingBookings} badgeVariant="blue" exact />
           </NavSection>
         )}
 
         {isProvider && (
-          <NavSection label="My Listings">
-            <NavItem href="/listings" icon={<IconListings />} label="Activities" />
+          <NavSection label={t('myListings')}>
+            <NavItem href="/listings" icon={<IconListings />} label={t('activities')} />
           </NavSection>
         )}
 
-        <NavSection label="Account">
-          <NavItem href="/settings" icon={<IconSettings />} label="Settings" exact />
+        <NavSection label={t('account')}>
+          <NavItem href="/settings" icon={<IconSettings />} label={t('settings')} exact />
           {isAdmin && (
-            <NavItem href="/admin" icon={<IconAdmin />} label="Admin" exact />
+            <NavItem href="/admin" icon={<IconAdmin />} label={t('admin')} exact />
           )}
         </NavSection>
 
@@ -231,9 +232,9 @@ export function Sidebar({
         <div className="mt-auto pt-3">
           <FeedbackNudge isProvider={isProvider} />
           <div className="flex items-center gap-3 px-[10px] pt-4">
-            <button onClick={() => setLegalOpen('terms')}   className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">Terms</button>
+            <button onClick={() => setLegalOpen('terms')}   className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">{t('terms')}</button>
             <span className="text-border select-none">·</span>
-            <button onClick={() => setLegalOpen('privacy')} className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">Privacy</button>
+            <button onClick={() => setLegalOpen('privacy')} className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">{t('privacy')}</button>
           </div>
 
       {legalOpen === 'terms'   && <LegalModal title="Terms of Use"    onClose={() => setLegalOpen(null)}><TermsContent /></LegalModal>}

@@ -10,8 +10,7 @@ import { StarRating }            from '@/components/ui/StarRating'
 import { ReviewForm }            from '@/components/ui/ReviewForm'
 import { EditReviewForm }        from '@/components/ui/EditReviewForm'
 import { EditableReview }        from '@/components/ui/EditableReview'
-
-const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+import { getTranslations }       from 'next-intl/server'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -20,6 +19,7 @@ interface Props {
 export default async function ActivityDetailPage({ params }: Props) {
   const { id }   = await params
   const supabase = await createClient()
+  const t = await getTranslations('detail')
 
   const [{ data: listingRaw }, { data: { user } }] = await Promise.all([
     supabase
@@ -80,13 +80,18 @@ export default async function ActivityDetailPage({ params }: Props) {
 
   const avgRating    = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
+  const DAY_LABELS = [
+    t('days.0'), t('days.1'), t('days.2'), t('days.3'),
+    t('days.4'), t('days.5'), t('days.6'),
+  ]
+
   return (
     <AppShell>
       <div>
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-ink-muted mb-6 flex-wrap">
-          <Link href="/browse" className="hover:text-primary transition-colors">Browse</Link>
+          <Link href="/browse" className="hover:text-primary transition-colors">{t('breadcrumb')}</Link>
           <span>›</span>
           <Link href={`/browse?category=${category.slug}`} className="hover:text-primary transition-colors">{category.name}</Link>
           <span>›</span>
@@ -113,13 +118,13 @@ export default async function ActivityDetailPage({ params }: Props) {
                   <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: accent }} />
                   <span className="text-xs text-ink-muted">{category.name} · {area.name} · Timișoara</span>
                   {!isFull && (
-                    <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-success-lt text-success">Available</span>
+                    <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-success-lt text-success">{t('available')}</span>
                   )}
                   {isFull && (
-                    <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-danger-lt text-danger">Full</span>
+                    <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-danger-lt text-danger">{t('full')}</span>
                   )}
                   {listing.featured && (
-                    <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-gold-lt text-gold-text">Featured</span>
+                    <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-gold-lt text-gold-text">{t('featured')}</span>
                   )}
                   {avgRating > 0 && (
                     <StarRating rating={avgRating} count={reviews.length} size="sm" />
@@ -138,7 +143,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                   {schedules?.length > 0 && (
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-surface rounded text-xs text-ink-mid">
                       <svg width="11" height="11" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3"/><path d="M7.5 4.5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                      {[...new Set(schedules.map((s: any) => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][s.day_of_week]))].join(' & ')}
+                      {[...new Set(schedules.map((s: any) => DAY_LABELS[s.day_of_week]))].join(' & ')}
                     </span>
                   )}
                   <span className="flex items-center gap-1.5 px-2.5 py-1 bg-surface rounded text-xs text-ink-mid">
@@ -151,7 +156,7 @@ export default async function ActivityDetailPage({ params }: Props) {
             {/* About */}
             {listing.description && (
               <div className="bg-white border border-border rounded-lg p-5">
-                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">About</div>
+                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">{t('about')}</div>
                 <p className="text-base text-ink-mid leading-relaxed whitespace-pre-line">{listing.description}</p>
               </div>
             )}
@@ -159,7 +164,7 @@ export default async function ActivityDetailPage({ params }: Props) {
             {/* Schedule */}
             {schedules?.length > 0 && (
               <div className="bg-white border border-border rounded-lg p-5">
-                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">Schedule</div>
+                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">{t('schedule')}</div>
                 <table className="w-full text-sm">
                   <tbody>
                     {schedules.map((s: any, i: number) => (
@@ -176,7 +181,7 @@ export default async function ActivityDetailPage({ params }: Props) {
 
             {/* Details */}
             <div className="bg-white border border-border rounded-lg p-5">
-              <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">Details</div>
+              <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">{t('details')}</div>
               <div className="flex flex-col gap-3">
                 {listing.address && (
                   <div className="flex gap-3 items-start">
@@ -184,7 +189,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                       <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a5 5 0 0 1 5 5c0 3.5-5 8-5 8s-5-4.5-5-8a5 5 0 0 1 5-5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="6.5" r="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
                     </div>
                     <div>
-                      <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">Location</div>
+                      <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">{t('location')}</div>
                       <div className="text-sm text-ink">{listing.address}</div>
                       {listing.maps_url && (
                         <a
@@ -194,7 +199,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                           className="inline-flex items-center gap-1 text-xs text-primary font-display font-semibold mt-1 hover:underline"
                         >
                           <svg width="11" height="11" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a5 5 0 0 1 5 5c0 3.5-5 8-5 8s-5-4.5-5-8a5 5 0 0 1 5-5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="6.5" r="1.5" fill="currentColor"/></svg>
-                          View on Google Maps →
+                          {t('viewOnMaps')}
                         </a>
                       )}
                     </div>
@@ -205,7 +210,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                     <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 13.5c0-2.5 2.4-4.5 5.5-4.5s5.5 2 5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none"/></svg>
                   </div>
                   <div>
-                    <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">Age range</div>
+                    <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">{t('ageRange')}</div>
                     <div className="text-sm text-ink">{listing.age_min} – {listing.age_max} years</div>
                   </div>
                 </div>
@@ -214,7 +219,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                     <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5h5M7.5 5.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
                   </div>
                   <div>
-                    <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">Pricing</div>
+                    <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">{t('pricing')}</div>
                     <div className="text-sm text-ink">{listing.price_monthly} RON / month{listing.trial_available ? ' · Trial session free' : ''}</div>
                   </div>
                 </div>
@@ -223,7 +228,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                     <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M2 5h11M2 8h7M2 11h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
                   </div>
                   <div>
-                    <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">Language</div>
+                    <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">{t('language')}</div>
                     <div className="text-sm text-ink">{listing.language}</div>
                   </div>
                 </div>
@@ -233,7 +238,7 @@ export default async function ActivityDetailPage({ params }: Props) {
             {/* What's included */}
             {listing.includes?.length > 0 && (
               <div className="bg-white border border-border rounded-lg p-5">
-                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">What's included</div>
+                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">{t('whatsIncluded')}</div>
                 <ul className="flex flex-col gap-2">
                   {listing.includes.map((item: string, i: number) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-ink-mid">
@@ -251,7 +256,7 @@ export default async function ActivityDetailPage({ params }: Props) {
             <div className="bg-white border border-border rounded-lg p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">
-                  Reviews
+                  {t('reviews')}
                 </div>
                 {avgRating > 0 && (
                   <StarRating rating={avgRating} count={reviews.length} size="md" />
@@ -263,7 +268,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                 <div className="mb-4">
                   <div className="flex items-start gap-2.5 bg-gold-lt border border-gold/20 rounded-lg px-3 py-2.5 mb-3">
                     <svg className="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" fill="#F0A500" opacity=".2"/><path d="M7.5 4.5v4M7.5 10.5v.5" stroke="#8a6800" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                    <p className="text-xs text-gold-text leading-relaxed">Your review is awaiting moderation. You can still edit it below.</p>
+                    <p className="text-xs text-gold-text leading-relaxed">{t('reviewPending')}</p>
                   </div>
                   <EditReviewForm
                     reviewId={ownReview.id}
@@ -279,7 +284,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                 <div className="mb-4">
                   <div className="flex items-start gap-2.5 bg-danger-lt border border-danger/20 rounded-lg px-3 py-2.5 mb-3">
                     <svg className="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" fill="#dc2626" opacity=".15"/><path d="M5 5l5 5M10 5l-5 5" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                    <p className="text-xs text-danger leading-relaxed">Your review wasn't approved. Edit it below and resubmit for moderation.</p>
+                    <p className="text-xs text-danger leading-relaxed">{t('reviewRejected')}</p>
                   </div>
                   <EditReviewForm
                     reviewId={ownReview.id}
@@ -293,7 +298,7 @@ export default async function ActivityDetailPage({ params }: Props) {
               {/* State: eligible, no review yet — show form */}
               {canReview && (
                 <>
-                  <p className="text-sm text-ink-mid mb-3">You've completed a trial — share your experience with other parents!</p>
+                  <p className="text-sm text-ink-mid mb-3">{t('reviewInvite')}</p>
                   <ReviewForm listingId={listing.id} providerId={provider.id} />
                   {reviews.length > 0 && <div className="h-px bg-border my-4" />}
                 </>
@@ -302,13 +307,13 @@ export default async function ActivityDetailPage({ params }: Props) {
               {/* State: not logged in */}
               {!user && reviews.length === 0 && (
                 <p className="text-sm text-ink-muted">
-                  <a href="/auth/login" className="text-primary hover:underline">Sign in</a> and complete a trial to leave a review.
+                  <a href="/auth/login" className="text-primary hover:underline">{t('reviewSignIn')}</a> {t('reviewSignInSub')}
                 </p>
               )}
 
               {/* State: logged in but no confirmed trial */}
               {user && !hasConfirmed && !ownReview && reviews.length === 0 && (
-                <p className="text-sm text-ink-muted">No reviews yet. Book a trial — after attending you'll be able to leave a review.</p>
+                <p className="text-sm text-ink-muted">{t('noReviews')}</p>
               )}
 
               {/* State: has reviews to show */}
@@ -349,25 +354,25 @@ export default async function ActivityDetailPage({ params }: Props) {
             <div className="bg-white border border-border rounded-lg p-5">
               <div className="flex items-baseline gap-1.5 mb-0.5">
                 <span className="font-display text-2xl font-bold text-ink">{listing.price_monthly} RON</span>
-                <span className="text-sm text-ink-muted">/ month</span>
+                <span className="text-sm text-ink-muted">{t('perMonth')}</span>
               </div>
               {listing.trial_available && (
-                <div className="text-xs text-ink-muted mb-4">First trial session is free · No commitment</div>
+                <div className="text-xs text-ink-muted mb-4">{t('trialFooter')}</div>
               )}
 
               {/* Availability */}
               <div className="flex items-center gap-2 mb-4 p-2.5 bg-bg rounded">
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isFull ? 'bg-danger' : 'bg-success'}`} />
-                <span className="text-xs text-ink-mid flex-1">{isFull ? 'No spots available' : 'Spots available'}</span>
+                <span className="text-xs text-ink-mid flex-1">{isFull ? t('noSpots') : t('spotsAvailable')}</span>
                 {!isFull && spotsLeft !== null && (
-                  <span className="font-display text-xs font-bold text-ink">{spotsLeft} left</span>
+                  <span className="font-display text-xs font-bold text-ink">{t('spotsLeft', { count: spotsLeft })}</span>
                 )}
               </div>
 
               {listing.trial_available ? (
                 <Suspense fallback={
                   <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
-                    Book a trial session
+                    {t('bookTrial')}
                   </button>
                 }>
                   <TrialRequestButton
@@ -381,12 +386,12 @@ export default async function ActivityDetailPage({ params }: Props) {
               ) : (
                 <div className="w-full text-center text-xs py-2 mb-1 px-3 rounded bg-surface border border-border text-ink-muted">
                   {listing.trial_disabled_reason === 'cohort'
-                    ? '📅 Cohort-based programme — contact us about the next intake'
+                    ? t('trialCohort')
                     : listing.trial_disabled_reason === 'full'
-                    ? '🔒 Currently at full capacity — check back soon'
+                    ? t('trialFull')
                     : listing.trial_disabled_reason === 'contact_us'
-                    ? '💬 Contact the provider directly to arrange a visit'
-                    : 'No trial session available — contact the provider'}
+                    ? t('trialContact')
+                    : t('noTrialAvailable')}
                 </div>
               )}
               <div className="mt-2">
@@ -401,7 +406,7 @@ export default async function ActivityDetailPage({ params }: Props) {
 
               <div className="h-px bg-border my-4" />
               <div className="text-[11px] text-ink-muted text-center leading-relaxed">
-                Provider responds within 24 hours.<br />No payment required to book a trial.
+                {t('providerResponds')}<br />{t('noPaymentRequired')}
               </div>
             </div>
 
@@ -411,7 +416,7 @@ export default async function ActivityDetailPage({ params }: Props) {
             {/* Provider mini-card */}
             {provider && (
               <div className="bg-white border border-border rounded-lg p-4">
-                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">Provider</div>
+                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">{t('provider')}</div>
                 <div className="flex items-center gap-2.5 mb-3">
                   <div className="w-9 h-9 rounded-lg bg-primary-lt border border-primary-border flex items-center justify-center font-display text-xs font-bold text-primary flex-shrink-0">
                     {provider.display_name.slice(0, 2).toUpperCase()}
@@ -419,7 +424,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                   <div>
                     <div className="font-display text-sm font-semibold text-ink">{provider.display_name}</div>
                     <div className="text-[11px] text-ink-muted">
-                      Listed since {new Date(provider.listed_since).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                      {t('listedSince')} {new Date(provider.listed_since).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                     </div>
                   </div>
                 </div>
@@ -429,7 +434,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                 {provider.verified && (
                   <div className="flex items-center gap-1.5 text-[11px] text-success">
                     <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="5" fill="#D6F5E5"/><path d="M3 5.5l1.5 1.5 3-3" stroke="#1A7A4A" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    Verified provider
+                    {t('verifiedProvider')}
                   </div>
                 )}
               </div>
@@ -442,14 +447,14 @@ export default async function ActivityDetailPage({ params }: Props) {
         {isOwner && (
           <div className="mt-8 flex items-center justify-between gap-4 bg-primary-lt border border-primary/20 rounded-[16px] px-5 py-4">
             <div>
-              <div className="font-display text-[13px] font-bold text-primary">You own this listing</div>
-              <div className="font-display text-[11.5px] text-ink-muted mt-0.5">Changes go live after a quick review.</div>
+              <div className="font-display text-[13px] font-bold text-primary">{t('ownerBanner')}</div>
+              <div className="font-display text-[11.5px] text-ink-muted mt-0.5">{t('ownerSub')}</div>
             </div>
             <Link
               href={`/listings/${id}/edit`}
               className="flex-shrink-0 bg-primary text-white font-display text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-primary-deep transition-colors"
             >
-              Edit listing →
+              {t('editListing')}
             </Link>
           </div>
         )}
