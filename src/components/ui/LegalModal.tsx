@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   title: string
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export function LegalModal({ title, onClose, children }: Props) {
+  const t = useTranslations('legal')
+
   // Close on Escape
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -17,16 +20,20 @@ export function LegalModal({ title, onClose, children }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Prevent body scroll
+  // Prevent body scroll + lower header z-index so overlay covers it
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    document.documentElement.classList.add('modal-open')
+    return () => {
+      document.body.style.overflow = ''
+      document.documentElement.classList.remove('modal-open')
+    }
   }, [])
 
   return createPortal(
     <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative bg-white rounded-2xl border border-[#e8e0ec] w-full max-w-[680px] max-h-[80vh] flex flex-col shadow-xl">
@@ -54,7 +61,7 @@ export function LegalModal({ title, onClose, children }: Props) {
             onClick={onClose}
             className="w-full py-2.5 rounded-lg font-display text-sm font-semibold bg-[#523650] text-white hover:bg-[#3d2840] transition-colors"
           >
-            Close
+            {t('close')}
           </button>
         </div>
       </div>

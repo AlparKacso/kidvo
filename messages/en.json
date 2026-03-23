@@ -39,6 +39,8 @@
     "getStarted": "Get started"
   },
   "landing": {
+    "signIn": "Sign in",
+    "getStarted": "Get started →",
     "badge": "✨ Now in Timișoara",
     "headline1": "Find the perfect",
     "headline2": "activity for your",
@@ -624,7 +626,59 @@
     "perMonth": "/mo",
     "fullyBooked": "Fully booked",
     "bookTrial": "Book trial →",
-    "viewListing": "View listing →"
+    "viewListing": "View listing →",
+    "featured": "Featured"
+  },
+  "feedback": {
+    "placeholder": "What feature or section is missing? What would help you most?",
+    "send": "Send feedback",
+    "sending": "Sending…",
+    "sent": "✓ Thanks! We'll review your feedback."
+  },
+  "legal": {
+    "termsLink": "Terms",
+    "privacyLink": "Privacy",
+    "termsTitle": "Terms of Use",
+    "privacyTitle": "Privacy Policy",
+    "close": "Close",
+    "lastUpdated": "Last updated: February 2026",
+    "privacySections": {
+      "whoWeAre": "1. Who we are",
+      "whoWeAreBody": "kidvo (kidvo.eu) is a discovery platform connecting parents with local activity providers in Timișoara, Romania. Contact: hello@kidvo.eu",
+      "whatWeCollect": "2. What data we collect",
+      "parents": "Parents:",
+      "parentsBody": "Email, full name, children's names and birth years, neighborhood, saved activities, trial requests.",
+      "providers": "Providers:",
+      "providersBody": "Email, display name, business description, contact phone, contact email, listings and schedules.",
+      "whyWeCollect": "3. Why we collect it",
+      "whyWeCollectBody": "To operate the kidvo platform, facilitate trial requests, send transactional emails, and improve the product. Legal basis: contract performance and legitimate interests (GDPR Art. 6).",
+      "cookies": "4. Cookies",
+      "cookiesBody": "kidvo uses only essential cookies required for authentication and session management. No tracking or advertising cookies.",
+      "dataSharing": "5. Data sharing",
+      "dataSharingBody": "We share data only with Supabase (database/auth), Resend (email), and Vercel (hosting). When a trial is confirmed, your contact details are shared with the relevant provider. We do not sell your data.",
+      "yourRights": "6. Your rights",
+      "yourRightsBody": "You have the right to access, correct, delete, or export your data. Email hello@kidvo.eu and we'll respond within 30 days.",
+      "retention": "7. Retention",
+      "retentionBody": "Data is retained while your account is active. On account deletion, personal data is removed within 30 days."
+    },
+    "termsSections": {
+      "whatKidvoIs": "1. What kidvo is",
+      "whatKidvoIsBody1": "kidvo is a discovery and connection platform.",
+      "whatKidvoIsNotIntermediary": "kidvo is not an intermediary.",
+      "whatKidvoIsBody2": "All agreements, contracts, and payments are made directly between parents and providers. kidvo takes no responsibility for the quality, safety, or conduct of any activity or provider.",
+      "providerResponsibilities": "2. Provider responsibilities",
+      "providerResponsibilitiesBody": "Providers must provide accurate information, hold all required licenses and insurance, offer trial sessions by default (and provide a clear reason if unavailable), and respond to trial requests in a timely manner. kidvo may remove listings that violate these terms.",
+      "trialSessions": "3. Trial sessions",
+      "trialSessionsBody": "Trial requests are expressions of interest only — not bookings or contracts. Any arrangement following a trial request is solely between the parent and provider.",
+      "payments": "4. Payments",
+      "paymentsBody": "kidvo does not process or handle any payments. All financial transactions occur directly between parents and providers.",
+      "liability": "5. Limitation of liability",
+      "liabilityBody": "kidvo provides the platform \"as is\" and is not liable for damages arising from use of the platform or the conduct of providers. Our total liability is limited to the amount you paid to kidvo in the preceding 12 months.",
+      "acceptableUse": "6. Acceptable use",
+      "acceptableUseBody": "You agree not to use kidvo for unlawful purposes, post false information, attempt unauthorized access, or scrape content without permission.",
+      "governingLaw": "7. Governing law",
+      "governingLawBody": "These terms are governed by Romanian law. Disputes shall be resolved in the courts of Timișoara, Romania."
+    }
   },
   "search": {
     "placeholder": "Search activities or providers…",

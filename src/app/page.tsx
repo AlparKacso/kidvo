@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { FooterLegalLinks } from '@/components/ui/FooterLegalLinks'
+import { LocaleToggle } from '@/components/ui/LocaleToggle'
 import { getTranslations } from 'next-intl/server'
 
 // ── Category emoji mapping (matches DB slugs) ──────────────────────────────
@@ -112,8 +113,9 @@ export default async function LandingPage() {
 
           {/* Right CTAs */}
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/auth/login"  className="hidden sm:block font-display font-semibold text-ink-mid hover:text-ink transition-colors border-[1.5px] border-border bg-white rounded-[8px] hover:border-border-mid" style={{ fontSize: '13.5px', padding: '7px 17px' }}>Sign in</Link>
-            <Link href="/auth/signup" className="font-display font-bold bg-ink text-white rounded-[8px] hover:opacity-80 transition-opacity whitespace-nowrap" style={{ fontSize: '13.5px', padding: '7px 17px' }}>Get started →</Link>
+            <LocaleToggle />
+            <Link href="/auth/login"  className="hidden sm:block font-display font-semibold text-ink-mid hover:text-ink transition-colors border-[1.5px] border-border bg-white rounded-[8px] hover:border-border-mid" style={{ fontSize: '13.5px', padding: '7px 17px' }}>{t('signIn')}</Link>
+            <Link href="/auth/signup" className="font-display font-bold bg-ink text-white rounded-[8px] hover:opacity-80 transition-opacity whitespace-nowrap" style={{ fontSize: '13.5px', padding: '7px 17px' }}>{t('getStarted')}</Link>
           </div>
         </div>
       </nav>

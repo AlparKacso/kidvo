@@ -81,7 +81,7 @@ export async function ActivityCard({ listing, featured, savedIds, avgRating, rev
             className="absolute top-3 left-3 rounded-full font-display text-[11px] font-semibold"
             style={{ background: '#fef9e6', color: '#b45309', padding: '3px 9px' }}
           >
-            Featured
+            {t('featured')}
           </div>
         )}
       </div>

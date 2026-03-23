@@ -39,6 +39,8 @@
     "getStarted": "Începe →"
   },
   "landing": {
+    "signIn": "Autentifică-te",
+    "getStarted": "Începe →",
     "badge": "✨ Acum în Timișoara",
     "headline1": "Găsește activitatea",
     "headline2": "perfectă pentru",
@@ -624,7 +626,59 @@
     "perMonth": "/lună",
     "fullyBooked": "Complet ocupat",
     "bookTrial": "Rezervă probă →",
-    "viewListing": "Vezi anunțul →"
+    "viewListing": "Vezi anunțul →",
+    "featured": "Recomandat"
+  },
+  "feedback": {
+    "placeholder": "Ce funcționalitate sau secțiune lipsește? Ce te-ar ajuta cel mai mult?",
+    "send": "Trimite feedback",
+    "sending": "Se trimite…",
+    "sent": "✓ Mulțumim! Vom analiza feedback-ul tău."
+  },
+  "legal": {
+    "termsLink": "Termeni",
+    "privacyLink": "Confidențialitate",
+    "termsTitle": "Termeni de utilizare",
+    "privacyTitle": "Politica de confidențialitate",
+    "close": "Închide",
+    "lastUpdated": "Ultima actualizare: Februarie 2026",
+    "privacySections": {
+      "whoWeAre": "1. Cine suntem",
+      "whoWeAreBody": "kidvo (kidvo.eu) este o platformă de descoperire care conectează părinții cu furnizorii locali de activități din Timișoara, România. Contact: hello@kidvo.eu",
+      "whatWeCollect": "2. Ce date colectăm",
+      "parents": "Părinți:",
+      "parentsBody": "Email, nume complet, numele și anul nașterii copiilor, cartier, activități salvate, cereri de probă.",
+      "providers": "Furnizori:",
+      "providersBody": "Email, nume afișat, descriere afacere, telefon și email de contact, anunțuri și programe.",
+      "whyWeCollect": "3. De ce colectăm",
+      "whyWeCollectBody": "Pentru a opera platforma kidvo, a facilita cererile de probă, a trimite emailuri tranzacționale și a îmbunătăți produsul. Temei legal: executarea contractului și interese legitime (GDPR Art. 6).",
+      "cookies": "4. Cookie-uri",
+      "cookiesBody": "kidvo folosește doar cookie-uri esențiale necesare pentru autentificare și gestionarea sesiunilor. Fără cookie-uri de urmărire sau publicitate.",
+      "dataSharing": "5. Partajarea datelor",
+      "dataSharingBody": "Partajăm datele doar cu Supabase (bază de date/autentificare), Resend (email) și Vercel (hosting). Când o probă este confirmată, datele tale de contact sunt partajate cu furnizorul relevant. Nu vindem datele tale.",
+      "yourRights": "6. Drepturile tale",
+      "yourRightsBody": "Ai dreptul de a accesa, corecta, șterge sau exporta datele tale. Trimite un email la hello@kidvo.eu și vom răspunde în 30 de zile.",
+      "retention": "7. Retenție",
+      "retentionBody": "Datele sunt reținute cât timp contul tău este activ. La ștergerea contului, datele personale sunt eliminate în 30 de zile."
+    },
+    "termsSections": {
+      "whatKidvoIs": "1. Ce este kidvo",
+      "whatKidvoIsBody1": "kidvo este o platformă de descoperire și conectare.",
+      "whatKidvoIsNotIntermediary": "kidvo nu este un intermediar.",
+      "whatKidvoIsBody2": "Toate acordurile, contractele și plățile se fac direct între părinți și furnizori. kidvo nu își asumă nicio responsabilitate pentru calitatea, siguranța sau comportamentul niciunei activități sau furnizor.",
+      "providerResponsibilities": "2. Responsabilitățile furnizorilor",
+      "providerResponsibilitiesBody": "Furnizorii trebuie să furnizeze informații corecte, să dețină toate licențele și asigurările necesare, să ofere sesiuni de probă în mod implicit (și să ofere un motiv clar dacă nu sunt disponibile) și să răspundă prompt la cererile de probă. kidvo poate elimina anunțurile care încalcă acești termeni.",
+      "trialSessions": "3. Sesiuni de probă",
+      "trialSessionsBody": "Cererile de probă sunt expresii de interes, nu rezervări sau contracte. Orice aranjament ulterior unei cereri de probă este exclusiv între părinte și furnizor.",
+      "payments": "4. Plăți",
+      "paymentsBody": "kidvo nu procesează și nu gestionează plăți. Toate tranzacțiile financiare au loc direct între părinți și furnizori.",
+      "liability": "5. Limitarea răspunderii",
+      "liabilityBody": "kidvo pune la dispoziție platforma \"ca atare\" și nu este răspunzătoare pentru prejudicii rezultate din utilizarea platformei sau comportamentul furnizorilor. Răspunderea noastră totală este limitată la suma plătită către kidvo în ultimele 12 luni.",
+      "acceptableUse": "6. Utilizare acceptabilă",
+      "acceptableUseBody": "Ești de acord să nu folosești kidvo în scopuri ilegale, să nu postezi informații false, să nu încerci accesul neautorizat sau să extragi conținut fără permisiune.",
+      "governingLaw": "7. Legea aplicabilă",
+      "governingLawBody": "Acești termeni sunt guvernați de legea română. Litigiile vor fi soluționate la instanțele din Timișoara, România."
+    }
   },
   "search": {
     "placeholder": "Caută activități sau furnizori…",
