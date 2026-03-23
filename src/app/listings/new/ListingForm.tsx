@@ -175,8 +175,8 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
 
   function canProceed(): boolean {
     if (step === 0) return agreed
-    if (step === 1) return !!(data.title && data.category_id && data.area_id)
-    if (step === 2) return !!(data.age_min && data.age_max && data.schedules.length > 0)
+    if (step === 1) return !!(data.title && data.category_id && data.area_id && data.age_min && data.age_max)
+    if (step === 2) return data.schedules.length > 0
     if (step === 3) return !!(data.price_monthly && data.description)
     return true
   }
@@ -338,6 +338,17 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                   ))}
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Minimum age</Label>
+                  <input className={inputCls} type="number" min={1} max={18} placeholder="e.g. 5" value={data.age_min} onChange={e => set('age_min', e.target.value)} />
+                </div>
+                <div>
+                  <Label>Maximum age</Label>
+                  <input className={inputCls} type="number" min={1} max={18} placeholder="e.g. 14" value={data.age_max} onChange={e => set('age_max', e.target.value)} />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                 <div className="flex flex-col gap-4">
                   <div>
@@ -388,16 +399,6 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           {/* Step 2 */}
           {step === 2 && (
             <div className="flex flex-col gap-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Minimum age</Label>
-                  <input className={inputCls} type="number" min={1} max={18} placeholder="e.g. 5" value={data.age_min} onChange={e => set('age_min', e.target.value)} />
-                </div>
-                <div>
-                  <Label>Maximum age</Label>
-                  <input className={inputCls} type="number" min={1} max={18} placeholder="e.g. 14" value={data.age_max} onChange={e => set('age_max', e.target.value)} />
-                </div>
-              </div>
               <div>
                 <Label hint="Add one row per session slot">Weekly schedule</Label>
                 <div className="flex flex-col gap-2">
