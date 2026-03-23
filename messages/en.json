@@ -633,7 +633,9 @@
     "placeholder": "What feature or section is missing? What would help you most?",
     "send": "Send feedback",
     "sending": "Sending…",
-    "sent": "✓ Thanks! We'll review your feedback."
+    "sent": "✓ Thanks! We'll review your feedback.",
+    "googleNudge": "If you're enjoying kidvo, a Google review would mean a lot:",
+    "googleCta": "Leave a Google review"
   },
   "legal": {
     "termsLink": "Terms",

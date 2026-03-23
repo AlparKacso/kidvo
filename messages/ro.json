@@ -633,7 +633,9 @@
     "placeholder": "Ce funcționalitate sau secțiune lipsește? Ce te-ar ajuta cel mai mult?",
     "send": "Trimite feedback",
     "sending": "Se trimite…",
-    "sent": "✓ Mulțumim! Vom analiza feedback-ul tău."
+    "sent": "✓ Mulțumim! Vom analiza feedback-ul tău.",
+    "googleNudge": "Dacă ești mulțumit de kidvo, ne-ar ajuta enorm o recenzie pe Google:",
+    "googleCta": "Lasă o recenzie pe Google"
   },
   "legal": {
     "termsLink": "Termeni",

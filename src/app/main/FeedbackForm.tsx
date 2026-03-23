@@ -22,9 +22,20 @@ export function FeedbackForm() {
   }
 
   if (sent) return (
-    <p className="text-sm font-display font-semibold" style={{ color: '#1A7A4A' }}>
-      {t('sent')}
-    </p>
+    <div className="space-y-2">
+      <p className="text-sm font-display font-semibold" style={{ color: '#1A7A4A' }}>
+        {t('sent')}
+      </p>
+      <p className="text-sm text-ink-muted">{t('googleNudge')}</p>
+      <a
+        href="https://maps.app.goo.gl/ZtFNm5W13aBqvxuU9"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block px-4 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep transition-colors"
+      >
+        {t('googleCta')} →
+      </a>
+    </div>
   )
 
   return (
