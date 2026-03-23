@@ -86,7 +86,7 @@ export function SearchBar({ areas, languages }: Props) {
           <select
             value={age}
             onChange={e => { setAge(e.target.value); apply({ age: e.target.value }) }}
-            className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
+            className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none min-w-[80px]"
           >
             <option value="">{t('allAges')}</option>
             {[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(a => (
@@ -99,7 +99,7 @@ export function SearchBar({ areas, languages }: Props) {
               <select
                 value={lang}
                 onChange={e => { setLang(e.target.value); apply({ lang: e.target.value }) }}
-                className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
+                className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none min-w-[90px]"
               >
                 <option value="">{t('allLanguages')}</option>
                 {languages.map(l => <option key={l} value={l}>{l}</option>)}

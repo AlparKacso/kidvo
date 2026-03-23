@@ -72,6 +72,7 @@ export default function SignupPage() {
     })
 
     if (userError) {
+      await supabase.auth.signOut()
       setError(userError.message)
       setLoading(false)
       return
@@ -91,6 +92,9 @@ export default function SignupPage() {
       body:    JSON.stringify({ email, name: fullName, role }),
     }).catch(() => {})
 
+    setLoading(false)
+    // Show a 1-second welcome flash then navigate
+    await new Promise(r => setTimeout(r, 900))
     router.push('/dashboard')
   }
 

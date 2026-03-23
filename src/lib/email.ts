@@ -407,6 +407,29 @@ export async function sendNewListingsDigest(opts: {
   })
 }
 
+// ── 16. Provider — trial cancelled by parent ──────────────────────────────────
+export async function sendTrialCancelledByParent({
+  providerEmail,
+  providerName,
+  listingTitle,
+}: {
+  providerEmail: string
+  providerName:  string
+  listingTitle:  string
+}) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      providerEmail,
+    subject: `Cerere de probă anulată — ${listingTitle}`,
+    html: layout(`
+      ${h1('Cerere de probă anulată')}
+      ${p(`Bună ${providerName},`)}
+      ${p(`Un părinte a anulat cererea de probă pentru activitatea <strong>${listingTitle}</strong>.`)}
+      ${btn('Vezi activitățile →', `${APP_URL}/listings`)}
+    `),
+  })
+}
+
 // ── Provider feedback ─────────────────────────────────────────────────────────
 export async function sendProviderFeedback(
   providerName:  string,

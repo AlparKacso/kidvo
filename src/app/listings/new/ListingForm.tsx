@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -34,6 +34,7 @@ interface FormData {
   trial_available:       boolean
   trial_disabled_reason: string
   cover_image_url:       string
+  pricing_type:          'month' | 'session'
 }
 
 const TIMES = [
@@ -48,6 +49,7 @@ const INITIAL: FormData = {
   age_min: '', age_max: '', schedules: [{ ...EMPTY_SCHEDULE }],
   price_monthly: '', spots_total: '', spots_available: '', description: '',
   includes: [''], trial_available: true, trial_disabled_reason: 'cohort', cover_image_url: '',
+  pricing_type: 'month',
 }
 
 function StepIndicator({ current, steps }: { current: number; steps: string[] }) {
@@ -156,6 +158,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   const [error,  setError]          = useState('')
   const [showTerms, setShowTerms]   = useState(false)
   const [agreed, setAgreed]         = useState(false)
+  const [showErrors, setShowErrors] = useState(false)
   const [coverFile, setCoverFile]       = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string>(initialData?.cover_image_url ?? '')
   const [rawImageSrc, setRawImageSrc]   = useState<string>('')
@@ -178,6 +181,8 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   function updateInclude(i: number, value: string) { set('includes', data.includes.map((v, idx) => idx === i ? value : v)) }
   function addInclude()    { set('includes', [...data.includes, '']) }
   function removeInclude(i: number) { set('includes', data.includes.filter((_, idx) => idx !== i)) }
+
+  useEffect(() => setShowErrors(false), [step])
 
   function canProceed(): boolean {
     if (step === 0) return agreed
@@ -216,6 +221,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
         age_min:         parseInt(data.age_min),
         age_max:         parseInt(data.age_max),
         price_monthly:   parseInt(data.price_monthly),
+        pricing_type:    data.pricing_type,
         spots_total:     data.spots_total ? parseInt(data.spots_total) : null,
         spots_available: data.spots_available ? parseInt(data.spots_available) : null,
         address:         data.address,
@@ -322,7 +328,10 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
             <div className="flex flex-col gap-5">
               <div>
                 <Label>{t('activityTitle')}</Label>
-                <input className={inputCls} placeholder={t('activityTitlePlaceholder')} value={data.title} onChange={e => set('title', e.target.value)} />
+                <input className={cn(inputCls, showErrors && !data.title?.trim() && 'border-danger')} placeholder={t('activityTitlePlaceholder')} value={data.title} onChange={e => set('title', e.target.value)} />
+                {showErrors && !data.title?.trim() && (
+                  <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                )}
               </div>
               <div>
                 <Label>{t('category')}</Label>
@@ -343,11 +352,17 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>{t('minAge')}</Label>
-                  <input className={inputCls} type="number" min={1} max={18} placeholder={t('minAgePlaceholder')} value={data.age_min} onChange={e => set('age_min', e.target.value)} />
+                  <input className={cn(inputCls, showErrors && !data.age_min && 'border-danger')} type="number" min={1} max={18} placeholder={t('minAgePlaceholder')} value={data.age_min} onChange={e => set('age_min', e.target.value)} />
+                  {showErrors && !data.age_min && (
+                    <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                  )}
                 </div>
                 <div>
                   <Label>{t('maxAge')}</Label>
-                  <input className={inputCls} type="number" min={1} max={18} placeholder={t('maxAgePlaceholder')} value={data.age_max} onChange={e => set('age_max', e.target.value)} />
+                  <input className={cn(inputCls, showErrors && !data.age_max && 'border-danger')} type="number" min={1} max={18} placeholder={t('maxAgePlaceholder')} value={data.age_max} onChange={e => set('age_max', e.target.value)} />
+                  {showErrors && !data.age_max && (
+                    <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                  )}
                 </div>
               </div>
 
@@ -355,10 +370,13 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 <div className="flex flex-col gap-4">
                   <div>
                     <Label>{t('neighborhood')}</Label>
-                    <select className={selectCls} value={data.area_id} onChange={e => set('area_id', e.target.value)}>
+                    <select className={cn(selectCls, showErrors && !data.area_id && 'border-danger')} value={data.area_id} onChange={e => set('area_id', e.target.value)}>
                       <option value="">{t('selectArea')}</option>
                       {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                     </select>
+                    {showErrors && !data.area_id && (
+                      <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                    )}
                   </div>
                   <div>
                     <Label hint={t('addressHint')}>{t('address')}</Label>
@@ -482,10 +500,34 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 </div>
               </div>
 
+              <div>
+                <Label>{t('pricingType')}</Label>
+                <div className="flex gap-2">
+                  {(['month', 'session'] as const).map(pt => (
+                    <button
+                      key={pt}
+                      type="button"
+                      onClick={() => set('pricing_type', pt)}
+                      className={cn(
+                        'flex-1 py-2 rounded border font-display text-xs font-semibold transition-all',
+                        data.pricing_type === pt
+                          ? 'bg-primary-lt border-primary text-primary'
+                          : 'bg-bg border-border text-ink-mid hover:border-primary'
+                      )}
+                    >
+                      {t(`pricingType_${pt}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 <div>
                   <Label hint={t('priceHint')}>{t('priceLabel')}</Label>
-                  <input className={inputCls} type="number" min={0} placeholder={t('pricePlaceholder')} value={data.price_monthly} onChange={e => set('price_monthly', e.target.value)} />
+                  <input className={cn(inputCls, showErrors && !data.price_monthly && 'border-danger')} type="number" min={0} placeholder={t('pricePlaceholder')} value={data.price_monthly} onChange={e => set('price_monthly', e.target.value)} />
+                  {showErrors && !data.price_monthly && (
+                    <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                  )}
                 </div>
                 <div>
                   <Label hint={t('spotsTotalHint')}>{t('spotsTotal')}</Label>
@@ -498,7 +540,10 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
               </div>
               <div>
                 <Label hint={t('aboutHint')}>{t('aboutLabel')}</Label>
-                <textarea className={inputCls} rows={5} placeholder={t('aboutPlaceholder')} value={data.description} onChange={e => set('description', e.target.value)} />
+                <textarea className={cn(inputCls, showErrors && !data.description?.trim() && 'border-danger')} rows={5} placeholder={t('aboutPlaceholder')} value={data.description} onChange={e => set('description', e.target.value)} />
+                {showErrors && !data.description?.trim() && (
+                  <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                )}
               </div>
               <div>
                 <Label hint={t('includesHint')}>{t('includesLabel')}</Label>
@@ -570,7 +615,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 <div className="flex justify-between"><span className="text-ink-muted">Category</span><span className="font-semibold text-ink">{categories.find(c => c.id === data.category_id)?.name}</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">Area</span><span className="font-semibold text-ink">{areas.find(a => a.id === data.area_id)?.name}</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">Ages</span><span className="font-semibold text-ink">{data.age_min}-{data.age_max}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Price</span><span className="font-semibold text-ink">{data.price_monthly} RON/mo</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">Price</span><span className="font-semibold text-ink">{data.price_monthly} RON/{data.pricing_type === 'session' ? t('perSession') : t('perMonth')}</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">Sessions</span><span className="font-semibold text-ink">{data.schedules.length} slot{data.schedules.length !== 1 ? 's' : ''}</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">Trial</span><span className="font-semibold text-ink">{data.trial_available ? t('previewTrialAvailable') : { cohort: t('reasonCohort'), full: t('reasonFull'), contact_us: t('reasonDirect') }[data.trial_disabled_reason] ?? 'Unavailable'}</span></div>
               </div>
@@ -595,7 +640,11 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           <span className="font-display text-[10px] text-ink-muted pl-1">Step {step + 1} of {STEPS.length}</span>
         </div>
         {step < STEPS.length - 1 ? (
-          <button type="button" onClick={() => setStep(s => s + 1)} disabled={!canProceed()}
+          <button type="button" onClick={() => {
+            if (!canProceed()) { setShowErrors(true); return }
+            setShowErrors(false)
+            setStep(s => s + 1)
+          }}
             className="px-5 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             {t('next')}
           </button>

@@ -68,7 +68,7 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid">{tLogin('password')}</label>
-                <Link href="/auth/reset-password" className="font-display text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
+                <Link href="/auth/forgot-password" className="font-display text-[11px] font-semibold text-primary hover:opacity-75 transition-opacity">
                   {tLogin('forgot')}
                 </Link>
               </div>

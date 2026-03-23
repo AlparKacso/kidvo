@@ -83,12 +83,17 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const allListings = allListingsRaw as unknown as any[] | null
 
   // Text search — client-side on the already-filtered set
+  function normalize(s: string) {
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  }
+
   const q = params.q?.toLowerCase().trim() ?? ''
+  const qNorm = normalize(q)
   const listings = q
     ? allListings?.filter(l =>
-        l.title?.toLowerCase().includes(q) ||
-        l.description?.toLowerCase().includes(q) ||
-        (l.provider as any)?.display_name?.toLowerCase().includes(q)
+        normalize(l.title ?? '').includes(qNorm) ||
+        normalize(l.description ?? '').includes(qNorm) ||
+        normalize((l.provider as any)?.display_name ?? '').includes(qNorm)
       )
     : allListings
 

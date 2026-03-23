@@ -183,6 +183,17 @@
       "hasAccount": "Ai deja cont?",
       "signIn": "Autentifică-te"
     },
+    "forgot": {
+      "title": "Ai uitat parola?",
+      "subtitle": "Introdu adresa de e-mail și îți trimitem un link de resetare.",
+      "emailLabel": "E-mail",
+      "sendLink": "Trimite link",
+      "sending": "Se trimite…",
+      "sentTitle": "Verifică-ți e-mailul",
+      "sentSub": "Dacă există un cont cu această adresă, vei primi un link de resetare în câteva minute.",
+      "backToLogin": "← Înapoi la autentificare",
+      "genericError": "Ceva nu a funcționat. Încearcă din nou."
+    },
     "reset": {
       "expired": "Link expirat",
       "expiredSub": "Acest link de resetare a parolei este invalid sau a expirat. Solicită unul nou din Setări.",
@@ -273,7 +284,9 @@
     "justNow": "Acum",
     "hoursAgo": "Acum {h}h",
     "daysAgo": "Acum {d}z",
-    "manageListings": "Gestionează →"
+    "manageListings": "Gestionează →",
+    "cancelTrial": "Anulează",
+    "cancelTrialConfirm": "Ești sigur că vrei să anulezi această cerere de probă?"
   },
   "kids": {
     "title": "Copii & Activități",
@@ -411,7 +424,8 @@
     "nameRequired": "Numele este obligatoriu.",
     "displayNameRequired": "Numele afișat este obligatoriu.",
     "contactEmailRequired": "Emailul de contact este obligatoriu.",
-    "notAuthenticated": "Nu ești autentificat."
+    "notAuthenticated": "Nu ești autentificat.",
+    "phoneInvalid": "Numărul de telefon nu este valid."
   },
   "listings": {
     "title": "Activitățile mele",
@@ -605,7 +619,13 @@
     "previewBookTrial": "Probă",
     "previewDetails": "Detalii",
     "previewTrialAvailable": "Probă disponibilă",
-    "previewAges": "Vârste {min}–{max}"
+    "previewAges": "Vârste {min}–{max}",
+    "pricingType": "Tip preț",
+    "pricingType_month": "Pe lună",
+    "pricingType_session": "Pe ședință",
+    "perSession": "ședință",
+    "perMonth": "lună",
+    "fieldRequired": "Câmp obligatoriu"
   },
   "grades": {
     "preschool": "Preșcolar",

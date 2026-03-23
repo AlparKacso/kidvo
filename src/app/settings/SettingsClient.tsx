@@ -72,6 +72,12 @@ export function SettingsClient({ profile, provider, email }: Props) {
   const [profileError,  setProfileError]  = useState('')
   const [providerError, setProviderError] = useState('')
 
+  const profileDirty = fullName !== (profile?.full_name ?? '') || phone !== (profile?.phone ?? '')
+  const providerDirty = displayName !== (provider?.display_name ?? '') ||
+    bio !== (provider?.bio ?? '') ||
+    contactEmail !== (provider?.contact_email ?? email) ||
+    contactPhone !== (provider?.contact_phone ?? '')
+
   // Password reset
   const [resetState,   setResetState]   = useState<'idle' | 'sending' | 'sent'>('idle')
 
@@ -83,6 +89,10 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
   async function saveProfile() {
     if (!fullName.trim()) { setProfileError(t('nameRequired')); return }
+    if (phone.trim() && !/^[+\d\s\-()]{7,20}$/.test(phone.trim())) {
+      setProfileError(t('phoneInvalid'))
+      return
+    }
     setProfileError('')
     setProfileState('saving')
     const supabase = createClient()
@@ -141,12 +151,12 @@ export function SettingsClient({ profile, provider, email }: Props) {
     window.location.href = '/'
   }
 
-  function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void }) {
+  function SaveButton({ state, onClick, disabled }: { state: SaveState; onClick: () => void; disabled?: boolean }) {
     return (
       <button
         onClick={onClick}
-        disabled={state === 'saving'}
-        className="px-4 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors"
+        disabled={state === 'saving' || disabled}
+        className="px-4 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-40 transition-colors"
       >
         {state === 'saving' ? t('saving') : state === 'saved' ? t('savedCheck') : t('saveChanges')}
       </button>
@@ -191,7 +201,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
                 <span className="text-sm text-success font-display font-semibold">{t('saved')}</span>
               )}
               <div className="ml-auto">
-                <SaveButton state={profileState} onClick={saveProfile} />
+                <SaveButton state={profileState} onClick={saveProfile} disabled={!profileDirty} />
               </div>
             </div>
           </div>
@@ -237,7 +247,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
                   <span className="text-sm text-success font-display font-semibold">{t('saved')}</span>
                 )}
                 <div className="ml-auto">
-                  <SaveButton state={providerState} onClick={saveProvider} />
+                  <SaveButton state={providerState} onClick={saveProvider} disabled={!providerDirty} />
                 </div>
               </div>
             </div>

@@ -10,6 +10,7 @@ import { pickRecommendation } from '@/lib/recommendations'
 import { PerformanceModal } from '@/components/ui/PerformanceModal'
 import type { PerformanceRow } from '@/components/ui/PerformanceModal'
 import { getTranslations } from 'next-intl/server'
+import { CancelTrialButton } from './CancelTrialButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -776,6 +777,9 @@ export default async function DashboardPage() {
                         s.status === 'declined'  ? tDash('sessionDeclined')  :
                         tDash('sessionPending')
                       } />
+                      {(s.status === 'pending' || s.status === 'confirmed') && (
+                        <CancelTrialButton trialId={s.id} />
+                      )}
                     </div>
                   )
                 })}

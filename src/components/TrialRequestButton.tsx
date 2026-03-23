@@ -20,7 +20,7 @@ type State = 'idle' | 'open' | 'submitting' | 'success' | 'error'
 export function TrialRequestButton({ listingId, listingTitle, schedules, isFull, isLoggedIn }: Props) {
   const searchParams            = useSearchParams()
   const [state, setState]       = useState<State>('idle')
-  const [preferredDay, setDay]  = useState<number | null>(schedules[0]?.day_of_week ?? null)
+  const [preferredDay, setDay]  = useState<number | null>(null)
   const [message, setMessage]   = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [kids,     setKids]     = useState<Kid[] | null>(null)
@@ -147,7 +147,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
                   <button
                     key={s.day_of_week}
                     type="button"
-                    onClick={() => setDay(s.day_of_week)}
+                    onClick={() => setDay(prev => prev === s.day_of_week ? null : s.day_of_week)}
                     className={cn(
                       'px-3 py-1.5 rounded border font-display text-xs font-semibold transition-all',
                       preferredDay === s.day_of_week

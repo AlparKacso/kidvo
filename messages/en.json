@@ -183,6 +183,17 @@
       "hasAccount": "Already have an account?",
       "signIn": "Sign in"
     },
+    "forgot": {
+      "title": "Forgot your password?",
+      "subtitle": "Enter your email and we'll send you a reset link.",
+      "emailLabel": "Email",
+      "sendLink": "Send reset link",
+      "sending": "Sending…",
+      "sentTitle": "Check your email",
+      "sentSub": "If an account exists with this address, you'll receive a reset link in a few minutes.",
+      "backToLogin": "← Back to sign in",
+      "genericError": "Something went wrong. Please try again."
+    },
     "reset": {
       "expired": "Link expired",
       "expiredSub": "This password reset link is invalid or has expired. Request a new one from Settings.",
@@ -273,7 +284,9 @@
     "justNow": "Just now",
     "hoursAgo": "{h}h ago",
     "daysAgo": "{d}d ago",
-    "manageListings": "Manage →"
+    "manageListings": "Manage →",
+    "cancelTrial": "Cancel",
+    "cancelTrialConfirm": "Are you sure you want to cancel this trial request?"
   },
   "kids": {
     "title": "Kids & Activities",
@@ -411,7 +424,8 @@
     "nameRequired": "Name is required.",
     "displayNameRequired": "Display name is required.",
     "contactEmailRequired": "Contact email is required.",
-    "notAuthenticated": "Not authenticated."
+    "notAuthenticated": "Not authenticated.",
+    "phoneInvalid": "Phone number is not valid."
   },
   "listings": {
     "title": "My Activities",
@@ -605,7 +619,13 @@
     "previewBookTrial": "Book trial",
     "previewDetails": "Details",
     "previewTrialAvailable": "Trial available",
-    "previewAges": "Ages {min}–{max}"
+    "previewAges": "Ages {min}–{max}",
+    "pricingType": "Pricing type",
+    "pricingType_month": "Per month",
+    "pricingType_session": "Per session",
+    "perSession": "session",
+    "perMonth": "month",
+    "fieldRequired": "Required field"
   },
   "grades": {
     "preschool": "Preschool",
