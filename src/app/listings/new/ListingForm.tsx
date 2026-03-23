@@ -175,9 +175,9 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
 
   function canProceed(): boolean {
     if (step === 0) return agreed
-    if (step === 1) return !!(data.title && data.category_id && data.age_min && data.age_max)
+    if (step === 1) return !!(data.title && data.category_id && data.area_id && data.age_min && data.age_max)
     if (step === 2) return data.schedules.length > 0
-    if (step === 3) return !!(data.area_id && data.price_monthly && data.description)
+    if (step === 3) return !!(data.price_monthly && data.description)
     return true
   }
 
@@ -349,29 +349,48 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 </div>
               </div>
 
-              <div>
-                <Label>Languages spoken</Label>
-                <div className="flex flex-wrap gap-x-6 gap-y-2 mt-1">
-                  {['Romanian', 'English', 'Hungarian', 'German', 'Serbian'].map(lang => {
-                    const checked = data.language.includes(lang)
-                    return (
-                      <label key={lang} className="flex items-center gap-2.5 cursor-pointer group">
-                        <div
-                          onClick={() => {
-                            if (checked && data.language.length === 1) return
-                            set('language', checked ? data.language.filter(l => l !== lang) : [...data.language, lang])
-                          }}
-                          className={cn(
-                            'w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer',
-                            checked ? 'bg-primary border-primary' : 'border-border group-hover:border-primary'
-                          )}
-                        >
-                          {checked && <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                        </div>
-                        <span className="text-sm text-ink-mid">{lang}</span>
-                      </label>
-                    )
-                  })}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <Label>Neighborhood</Label>
+                    <select className={selectCls} value={data.area_id} onChange={e => set('area_id', e.target.value)}>
+                      <option value="">Select area...</option>
+                      {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <Label hint="Street address where the activity takes place">Address</Label>
+                    <input className={inputCls} placeholder="e.g. Str. Muresului 12, Fabric" value={data.address} onChange={e => set('address', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label hint="Paste the Google Maps share link so parents can find you easily">Google Maps link (optional)</Label>
+                    <input className={inputCls} placeholder="https://maps.app.goo.gl/..." value={data.maps_url} onChange={e => set('maps_url', e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Languages spoken</Label>
+                  <div className="flex flex-col gap-2 mt-1">
+                    {['Romanian', 'English', 'Hungarian', 'German', 'Serbian'].map(lang => {
+                      const checked = data.language.includes(lang)
+                      return (
+                        <label key={lang} className="flex items-center gap-2.5 cursor-pointer group">
+                          <div
+                            onClick={() => {
+                              if (checked && data.language.length === 1) return
+                              set('language', checked ? data.language.filter(l => l !== lang) : [...data.language, lang])
+                            }}
+                            className={cn(
+                              'w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer',
+                              checked ? 'bg-primary border-primary' : 'border-border group-hover:border-primary'
+                            )}
+                          >
+                            {checked && <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                          </div>
+                          <span className="text-sm text-ink-mid">{lang}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -413,25 +432,6 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           {/* Step 3 */}
           {step === 3 && (
             <div className="flex flex-col gap-5">
-
-              {/* Location */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Neighborhood</Label>
-                  <select className={selectCls} value={data.area_id} onChange={e => set('area_id', e.target.value)}>
-                    <option value="">Select area...</option>
-                    {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label hint="Street address where the activity takes place">Address</Label>
-                  <input className={inputCls} placeholder="e.g. Str. Muresului 12, Fabric" value={data.address} onChange={e => set('address', e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <Label hint="Paste the Google Maps share link so parents can find you easily">Google Maps link (optional)</Label>
-                <input className={inputCls} placeholder="https://maps.app.goo.gl/..." value={data.maps_url} onChange={e => set('maps_url', e.target.value)} />
-              </div>
 
               {/* Cover photo */}
               <div>
