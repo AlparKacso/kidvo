@@ -56,6 +56,7 @@
 - [x] Email templates — design language audit `M` ⚠️ *implemented, blocked on valid Resend API key to test*
 - [x] Admin page redesign `M`
 - [ ] **i18n — Romanian (RO default) + English (EN)** — cookie-based locale via `next-intl`, no URL prefix, language toggle in Topbar `L`
+- [ ] **Staging / Demo environment** — separate Supabase project (dummy data) + Vercel `staging` branch → `staging.kidvo.eu`; prod Supabase stays clean with real users only `M`
 
 ---
 
