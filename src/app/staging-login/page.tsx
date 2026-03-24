@@ -1,33 +1,24 @@
-'use client'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-import { useState } from 'react'
-
-export default function StagingLogin() {
-  const [password, setPassword] = useState('')
-  const [error, setError]       = useState(false)
-  const [loading, setLoading]   = useState(false)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError(false)
-    try {
-      const res = await fetch('/api/staging-auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      })
-      if (res.ok) {
-        window.location.href = '/'
-      } else {
-        setError(true)
-        setLoading(false)
-      }
-    } catch {
-      setError(true)
-      setLoading(false)
-    }
+async function checkPassword(formData: FormData) {
+  'use server'
+  const password = formData.get('password') as string
+  const stagingPassword = process.env.STAGING_PASSWORD
+  if (stagingPassword && password === stagingPassword) {
+    const cookieStore = await cookies()
+    cookieStore.set('staging_auth', stagingPassword, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      httpOnly: true,
+      sameSite: 'lax',
+    })
+    redirect('/')
   }
+}
+
+export default function StagingLogin({ searchParams }: { searchParams: { error?: string } }) {
+  const hasError = !!searchParams?.error
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4">
@@ -40,24 +31,23 @@ export default function StagingLogin() {
         </div>
         <div className="bg-white border border-border rounded-[18px] p-7 shadow-card">
           <h1 className="font-display text-[18px] font-extrabold text-ink mb-4">Enter password</h1>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <form action={checkPassword} className="flex flex-col gap-3">
             <input
               type="password"
+              name="password"
               autoFocus
-              value={password}
-              onChange={e => { setPassword(e.target.value); setError(false) }}
+              required
               placeholder="••••••••"
               className="w-full px-3.5 py-2.5 border border-border rounded-[10px] font-display text-[13.5px] text-ink outline-none focus:border-primary transition-all"
             />
-            {error && (
+            {hasError && (
               <p className="font-display text-[12px] text-red-500">Incorrect password</p>
             )}
             <button
               type="submit"
-              disabled={loading || !password}
-              className="w-full py-2.5 rounded-[10px] font-display text-[13.5px] font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors"
+              className="w-full py-2.5 rounded-[10px] font-display text-[13.5px] font-semibold bg-primary text-white hover:bg-primary-deep transition-colors"
             >
-              {loading ? 'Checking…' : 'Enter'}
+              Enter
             </button>
           </form>
         </div>
