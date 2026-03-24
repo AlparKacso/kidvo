@@ -16,8 +16,7 @@ export default function StagingLogin() {
       body: JSON.stringify({ password }),
     })
     if (res.ok) {
-      router.push('/')
-      router.refresh()
+      window.location.href = '/'
     } else {
       setError(true)
     }
