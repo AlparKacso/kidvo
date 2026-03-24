@@ -1,24 +1,31 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function StagingLogin() {
-  const router = useRouter()
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(false)
+  const [error, setError]       = useState(false)
+  const [loading, setLoading]   = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const res = await fetch('/api/staging-auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    })
-    if (res.ok) {
-      window.location.href = '/'
-    } else {
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await fetch('/api/staging-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      if (res.ok) {
+        window.location.href = '/'
+      } else {
+        setError(true)
+        setLoading(false)
+      }
+    } catch {
       setError(true)
+      setLoading(false)
     }
   }
 
@@ -47,9 +54,10 @@ export default function StagingLogin() {
             )}
             <button
               type="submit"
-              className="w-full py-2.5 rounded-[10px] font-display text-[13.5px] font-semibold bg-primary text-white hover:bg-primary-deep transition-colors"
+              disabled={loading || !password}
+              className="w-full py-2.5 rounded-[10px] font-display text-[13.5px] font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors"
             >
-              Enter
+              {loading ? 'Checking…' : 'Enter'}
             </button>
           </form>
         </div>
