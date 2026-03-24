@@ -52,22 +52,19 @@ export function OnboardingWidget({ steps }: { steps: OnboardingStep[] }) {
               <span className="w-[18px] h-[18px] rounded-full border-[1.5px] flex-shrink-0" style={{ borderColor: '#d1cce8' }} />
             )}
 
-            {/* Label — clickable when pending and href available */}
-            {!step.done && step.href ? (
+            {/* Label */}
+            {step.done ? (
+              <span className="font-display text-[13px] flex-1 leading-snug font-semibold px-2 py-0.5 rounded-md" style={{ background: '#dcfce7', color: '#16a34a' }}>
+                {step.label}
+              </span>
+            ) : step.href ? (
               <Link href={step.href} className="font-display text-[13px] flex-1 leading-snug text-ink font-semibold hover:text-primary transition-colors">
                 {step.label}
               </Link>
             ) : (
-              <span className={`font-display text-[13px] flex-1 leading-snug ${step.done ? 'text-ink-muted line-through' : 'text-ink-muted'}`}>
+              <span className="font-display text-[13px] flex-1 leading-snug text-ink-muted">
                 {step.label}
               </span>
-            )}
-
-            {/* Arrow for pending+linked steps */}
-            {!step.done && step.href && (
-              <Link href={step.href} className="font-display text-[12px] font-bold text-blue hover:opacity-75 flex-shrink-0">
-                →
-              </Link>
             )}
           </div>
         ))}
