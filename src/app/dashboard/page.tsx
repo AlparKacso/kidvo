@@ -621,15 +621,16 @@ export default async function DashboardPage() {
   const sessions         = allTrialsRaw.slice(0, 3)
   const allSaves         = (savesRes.data ?? []).filter((s: any) => s.listing && (s.listing as any).status === 'active')
   const savedCount       = allSaves.length
-  const bookingsCount    = allTrialsRaw.length
-  const childCount       = children.length
-  const parentReviews    = parentReviewsRes.count ?? 0
+  const bookingsCount        = allTrialsRaw.length
+  const confirmedTrialsCount = allTrialsRaw.filter((t: any) => t.status === 'confirmed').length
+  const childCount           = children.length
+  const parentReviews        = parentReviewsRes.count ?? 0
 
   /* ── Onboarding widget ────────────────────────────────────── */
   const parentSteps: OnboardingStep[] = [
-    { label: 'Add your first child', done: childCount > 0,    href: '/kids'     },
-    { label: 'Book a trial',         done: bookingsCount > 0, href: '/browse'   },
-    { label: 'Leave a review',       done: parentReviews > 0, href: '/browse'   },
+    { label: 'Add your first child', done: childCount > 0,    href: '/kids'                              },
+    { label: 'Book a trial',         done: bookingsCount > 0, href: '/browse'                            },
+    { label: 'Leave a review',       done: parentReviews > 0, href: confirmedTrialsCount > 0 ? '/browse' : undefined },
   ]
   const parentOnboardingDone = parentSteps.every(s => s.done)
   const showParentOnboarding = !profile?.onboarding_dismissed && !parentOnboardingDone
