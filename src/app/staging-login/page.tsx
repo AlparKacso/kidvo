@@ -17,8 +17,9 @@ async function checkPassword(formData: FormData) {
   }
 }
 
-export default function StagingLogin({ searchParams }: { searchParams: { error?: string } }) {
-  const hasError = !!searchParams?.error
+export default async function StagingLogin({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const params = await searchParams
+  const hasError = !!params?.error
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4">
