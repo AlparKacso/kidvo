@@ -2,6 +2,17 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // ── Staging password gate ─────────────────────────────────────────────────
+  if (process.env.STAGING_PASSWORD) {
+    const cookie = request.cookies.get('staging_auth')?.value
+    if (cookie !== process.env.STAGING_PASSWORD) {
+      const { pathname } = request.nextUrl
+      if (pathname === '/staging-login') return NextResponse.next()
+      return NextResponse.redirect(new URL('/staging-login', request.url))
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
