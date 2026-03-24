@@ -682,7 +682,20 @@
       "yourRights": "6. Drepturile tale",
       "yourRightsBody": "Ai dreptul de a accesa, corecta, șterge sau exporta datele tale. Trimite un email la hello@kidvo.eu și vom răspunde în 30 de zile.",
       "retention": "7. Retenție",
-      "retentionBody": "Datele sunt reținute cât timp contul tău este activ. La ștergerea contului, datele personale sunt eliminate în 30 de zile."
+      "retentionBody": "Datele sunt reținute cât timp contul tău este activ. La ștergerea contului, datele personale sunt eliminate în 30 de zile.",
+      "childrenData": "8. Date despre copii",
+      "childrenDataIntro": "kidvo nu colectează date de la copii — colectează date despre copii, introduse de părinți sau tutori legali. Aceasta este o distincție importantă.",
+      "childrenDataCollected": "Ce date colectăm:",
+      "childrenDataCollectedBody": "Numele copilului, anul nașterii și interesele (categorii de activități).",
+      "childrenDataWho": "Cine furnizează datele:",
+      "childrenDataWhoBody": "Datele despre copii sunt introduse exclusiv de părintele sau tutorele legal. Ne bazăm pe confirmarea acestuia că are dreptul să furnizeze aceste date.",
+      "childrenDataUse": "Cum sunt utilizate:",
+      "childrenDataUseBody": "Exclusiv pentru a potrivi copilul cu activități relevante. Sunt transmise furnizorului doar la trimiterea unei cereri de probă (nume + vârstă — nimic mai mult decât necesar). Nu sunt folosite pentru publicitate sau profilare.",
+      "childrenDataAccess": "Cine le poate vedea:",
+      "childrenDataAccessBody": "Părintele care le-a introdus, furnizorul care primește cererea de probă și echipa kidvo.",
+      "childrenDataRetention": "Retenție:",
+      "childrenDataRetentionBody": "Datele sunt păstrate cât timp contul este activ. Părintele poate solicita ștergerea oricând la",
+      "childrenDataNoAccounts": "kidvo nu permite crearea de conturi de către copii. Toate conturile sunt pentru părinți/tutori cu vârsta de minimum 18 ani."
     },
     "termsSections": {
       "whatKidvoIs": "1. Ce este kidvo",

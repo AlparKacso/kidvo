@@ -47,6 +47,17 @@ export function PrivacyContent() {
         <h3 className="font-display text-sm font-bold text-[#1a0f1e] mb-2">{s('retention')}</h3>
         <p>{s('retentionBody')}</p>
       </section>
+
+      <section>
+        <h3 className="font-display text-sm font-bold text-[#1a0f1e] mb-2">{s('childrenData')}</h3>
+        <p className="mb-2">{s('childrenDataIntro')}</p>
+        <p className="mb-1"><strong className="text-[#1a0f1e]">{s('childrenDataCollected')}</strong> {s('childrenDataCollectedBody')}</p>
+        <p className="mb-1"><strong className="text-[#1a0f1e]">{s('childrenDataWho')}</strong> {s('childrenDataWhoBody')}</p>
+        <p className="mb-1"><strong className="text-[#1a0f1e]">{s('childrenDataUse')}</strong> {s('childrenDataUseBody')}</p>
+        <p className="mb-1"><strong className="text-[#1a0f1e]">{s('childrenDataAccess')}</strong> {s('childrenDataAccessBody')}</p>
+        <p className="mb-1"><strong className="text-[#1a0f1e]">{s('childrenDataRetention')}</strong> {s('childrenDataRetentionBody')} <a href="mailto:hello@kidvo.eu" className="text-[#523650] font-semibold hover:underline">hello@kidvo.eu</a></p>
+        <p className="mt-2">{s('childrenDataNoAccounts')}</p>
+      </section>
     </>
   )
 }

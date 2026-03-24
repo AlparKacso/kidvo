@@ -682,7 +682,20 @@
       "yourRights": "6. Your rights",
       "yourRightsBody": "You have the right to access, correct, delete, or export your data. Email hello@kidvo.eu and we'll respond within 30 days.",
       "retention": "7. Retention",
-      "retentionBody": "Data is retained while your account is active. On account deletion, personal data is removed within 30 days."
+      "retentionBody": "Data is retained while your account is active. On account deletion, personal data is removed within 30 days.",
+      "childrenData": "8. Children's data",
+      "childrenDataIntro": "kidvo does not collect data from children — it collects data about children, entered by parents or legal guardians. This is an important distinction.",
+      "childrenDataCollected": "What we collect:",
+      "childrenDataCollectedBody": "The child's name, birth year, and interests (activity categories).",
+      "childrenDataWho": "Who provides it:",
+      "childrenDataWhoBody": "Data about children is entered solely by the parent or legal guardian. We rely on their confirmation that they have the right to provide this data.",
+      "childrenDataUse": "How it's used:",
+      "childrenDataUseBody": "Solely to match the child with relevant activities. Shared with the provider only when a trial request is made (name + age only — no more than necessary). Never used for advertising or profiling.",
+      "childrenDataAccess": "Who can see it:",
+      "childrenDataAccessBody": "The parent who entered it, the provider receiving the trial request, and the kidvo team.",
+      "childrenDataRetention": "Retention:",
+      "childrenDataRetentionBody": "Data is kept while the account is active. Parents can request deletion at any time at",
+      "childrenDataNoAccounts": "kidvo does not allow children to create accounts. All accounts are for parents/guardians aged 18 and over."
     },
     "termsSections": {
       "whatKidvoIs": "1. What kidvo is",
