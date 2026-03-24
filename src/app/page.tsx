@@ -34,11 +34,14 @@ export default async function LandingPage() {
   const supabase = await createClient()
   const t = await getTranslations('landing')
 
-  const [{ data: categoriesRaw }, { data: showcaseRaw }] = await Promise.all([
-    supabase
-      .from('categories')
-      .select('slug, name, accent_color')
-      .order('sort_order'),
+  const [
+    { data: categoriesRaw },
+    { data: showcaseRaw },
+    { count: activeListingsCount },
+    { count: providersCount },
+    { data: reviewStats },
+  ] = await Promise.all([
+    supabase.from('categories').select('slug, name, accent_color').order('sort_order'),
     supabase
       .from('listings')
       .select('id, title, cover_image_url, price_monthly, age_min, age_max, category:categories(slug, name, accent_color), area:areas(name)')
@@ -46,7 +49,17 @@ export default async function LandingPage() {
       .not('cover_image_url', 'is', null)
       .order('featured', { ascending: false })
       .limit(4),
+    supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    supabase.from('providers').select('*', { count: 'exact', head: true }),
+    supabase.from('reviews').select('rating').eq('status', 'approved'),
   ])
+
+  const activityCount = activeListingsCount ?? 0
+  const providerCount = providersCount ?? 0
+  const approvedReviews = reviewStats ?? []
+  const avgRating = approvedReviews.length > 0
+    ? (approvedReviews.reduce((sum: number, r: any) => sum + (r.rating ?? 0), 0) / approvedReviews.length).toFixed(1)
+    : null
   const categories = (categoriesRaw ?? []) as { slug: string; name: string; accent_color: string }[]
   type ShowcaseListing = {
     id: string; title: string; cover_image_url: string | null; price_monthly: number
@@ -172,10 +185,10 @@ export default async function LandingPage() {
           {/* Stats row — border-top separator, flex-centered */}
           <div className="border-t border-border mt-6 md:mt-8 pt-5 md:pt-7 flex flex-wrap justify-center gap-x-8 gap-y-5">
             {[
-              { value: '120+',  label: t('activities'),    color: '#c38cfa' },
-              { value: '48',    label: t('providers'),     color: '#2aa7ff' },
-              { value: 'Free',  label: t('trialSessions'), color: '#22c55e' },
-              { value: '4.9 ★', label: t('avgRating'),    color: '#1c1c27' },
+              { value: `${activityCount}+`, label: t('activities'),    color: '#c38cfa' },
+              { value: `${providerCount}`,  label: t('providers'),     color: '#2aa7ff' },
+              { value: t('free'),           label: t('trialSessions'), color: '#22c55e' },
+              ...(avgRating ? [{ value: `${avgRating} ★`, label: t('avgRating'), color: '#1c1c27' }] : []),
             ].map(stat => (
               <div key={stat.label} className="text-center">
                 <div className="font-display font-black" style={{ fontSize: '32px', letterSpacing: '-1px', color: stat.color }}>{stat.value}</div>
