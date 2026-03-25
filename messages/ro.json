@@ -182,7 +182,10 @@
       "creating": "Se creează contul…",
       "create": "Creează cont →",
       "hasAccount": "Ai deja cont?",
-      "signIn": "Autentifică-te"
+      "signIn": "Autentifică-te",
+      "checkEmailTitle": "Verifică-ți emailul",
+      "checkEmailSub": "Am trimis un link de confirmare la {email}. Apasă pe el pentru a-ți activa contul.",
+      "checkEmailNote": "Nu l-ai primit? Verifică folderul spam."
     },
     "forgot": {
       "title": "Ai uitat parola?",

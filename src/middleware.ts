@@ -38,6 +38,7 @@ export async function middleware(request: NextRequest) {
   const alwaysPublic = ['/', '/privacy', '/terms']
   if (alwaysPublic.includes(pathname)) return supabaseResponse
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return supabaseResponse
+  if (pathname === '/auth/callback') return supabaseResponse
   const authRoutes = ['/auth/login', '/auth/signup']
   if (authRoutes.includes(pathname)) {
     if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
