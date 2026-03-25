@@ -83,27 +83,37 @@ export function SearchBar({ areas, languages }: Props) {
             </select>
           </span>
           <div className="w-px h-4 bg-border" />
-          <select
-            value={age}
-            onChange={e => { setAge(e.target.value); apply({ age: e.target.value }) }}
-            className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none min-w-[80px]"
-          >
-            <option value="">{t('allAges')}</option>
-            {[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(a => (
-              <option key={a} value={a}>{t('ageX', { age: a })}</option>
-            ))}
-          </select>
+          <span className="relative inline-block">
+            <span aria-hidden className="font-display text-xs font-semibold invisible whitespace-nowrap">
+              {age ? t('ageX', { age }) : t('allAges')}
+            </span>
+            <select
+              value={age}
+              onChange={e => { setAge(e.target.value); apply({ age: e.target.value }) }}
+              className="absolute inset-0 w-full bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
+            >
+              <option value="">{t('allAges')}</option>
+              {[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(a => (
+                <option key={a} value={a}>{t('ageX', { age: a })}</option>
+              ))}
+            </select>
+          </span>
           {languages.length > 0 && (
             <>
               <div className="w-px h-4 bg-border" />
-              <select
-                value={lang}
-                onChange={e => { setLang(e.target.value); apply({ lang: e.target.value }) }}
-                className="bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none min-w-[90px]"
-              >
-                <option value="">{t('allLanguages')}</option>
-                {languages.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
+              <span className="relative inline-block">
+                <span aria-hidden className="font-display text-xs font-semibold invisible whitespace-nowrap">
+                  {lang || t('allLanguages')}
+                </span>
+                <select
+                  value={lang}
+                  onChange={e => { setLang(e.target.value); apply({ lang: e.target.value }) }}
+                  className="absolute inset-0 w-full bg-transparent font-display text-xs font-semibold text-ink-mid outline-none cursor-pointer appearance-none"
+                >
+                  <option value="">{t('allLanguages')}</option>
+                  {languages.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </span>
             </>
           )}
         </div>
