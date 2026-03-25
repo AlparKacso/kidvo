@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  const alwaysPublic = ['/', '/privacy', '/terms']
+  const alwaysPublic = ['/', '/privacy', '/terms', '/teaser']
   if (alwaysPublic.includes(pathname)) return supabaseResponse
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return supabaseResponse
   if (pathname === '/auth/callback') return supabaseResponse
