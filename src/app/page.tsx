@@ -212,7 +212,7 @@ export default async function LandingPage() {
         <PhoneShowcase variant="parents" />
 
         {/* ── Activity showcase ────────────────────────────────────────────── */}
-        <section className="max-w-[1200px] mx-auto px-5 md:px-8 pb-14 md:pb-18">
+        <section className="max-w-[1200px] mx-auto px-5 md:px-8 pt-10 md:pt-16 pb-14 md:pb-18">
 
           {/* Section header */}
           <div className="flex items-center justify-between mb-4 gap-4">
@@ -425,7 +425,7 @@ export default async function LandingPage() {
         <PhoneShowcase variant="providers" />
 
         {/* ── How it works ─────────────────────────────────────────────────── */}
-        <section id="how-it-works" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 md:px-8 pb-16 md:pb-24">
+        <section id="how-it-works" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 md:px-8 pt-10 md:pt-16 pb-16 md:pb-24">
           <div className="text-center mb-8 md:mb-10">
             <div className="font-display text-[10px] font-bold tracking-widest uppercase text-ink-muted mb-2.5">{t('simpleByDesign')}</div>
             <h2 className="font-display text-2xl md:text-3xl font-bold text-ink">{t('howKidvoWorks')}</h2>

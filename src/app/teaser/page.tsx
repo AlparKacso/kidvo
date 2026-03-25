@@ -45,7 +45,7 @@ const C = {
       { file: 'IMG_6838', label: 'Pentru furnizori', caption: 'Zero comisioane, zero intermediari' },
       { file: 'IMG_6841', label: 'Listează activitatea', caption: 'Completează detaliile în 2 minute' },
       { file: 'IMG_6842', label: 'Dashboard furnizor', caption: 'Statistici: vizualizări și cereri de probă' },
-      { file: 'IMG_6845', label: 'Cereri de probă', caption: 'Confirmă sau refuză direct din aplicație', blurEmail: true },
+      { file: 'IMG_6845', label: 'Cereri de probă', caption: 'Confirmă sau refuză direct din aplicație' },
     ],
   },
   en: {
@@ -88,7 +88,7 @@ const C = {
       { file: 'IMG_6839', label: 'For providers', caption: 'No commissions, no intermediaries' },
       { file: 'IMG_6840', label: 'List your activity', caption: 'Fill in details in 2 minutes' },
       { file: 'IMG_6843', label: 'Provider dashboard', caption: 'Real-time views and trial stats' },
-      { file: 'IMG_6844', label: 'Trial requests', caption: 'Confirm or decline directly in the app', blurEmail: true },
+      { file: 'IMG_6844', label: 'Trial requests', caption: 'Confirm or decline directly in the app' },
     ],
   },
 }
@@ -97,7 +97,6 @@ interface ScreenItem {
   file: string
   label: string
   caption: string
-  blurEmail?: boolean
 }
 
 function PhoneFrame({
@@ -128,20 +127,6 @@ function PhoneFrame({
           width="100%"
           style={{ display: 'block' }}
         />
-        {screen.blurEmail && (
-          /* Solid block covering name + email lines */
-          <div
-            style={{
-              position: 'absolute',
-              top: '40%',
-              left: '5%',
-              width: '82%',
-              height: '14%',
-              background: 'rgba(255,255,255,0.98)',
-              borderRadius: 6,
-            }}
-          />
-        )}
       </div>
       <p
         style={{

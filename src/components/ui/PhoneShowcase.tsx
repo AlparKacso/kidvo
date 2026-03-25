@@ -72,8 +72,8 @@ export function PhoneShowcase({ variant }: Props) {
           </p>
         </div>
 
-        {/* Phone frames grid — 2 cols on mobile, 4 on desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-7">
+        {/* Phone frames grid — 1 col on mobile, 2 on sm, 4 on desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-4 md:gap-7">
           {screens.map((screen, i) => (
             <div key={i} className="flex flex-col items-center min-w-0">
               {/* Phone frame */}
