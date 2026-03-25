@@ -75,20 +75,20 @@ export function PhoneShowcase({ variant }: Props) {
           </p>
         </div>
 
-        {/* Phone frames grid — 1 col on mobile, 2 on sm, 4 on desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-5 md:gap-7">
+        {/* Phone frames grid — 2 cols on mobile, 4 on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-7">
           {screens.map((screen, i) => (
-            <div key={i} className="flex flex-col min-w-0">
+            <div key={i} className="flex flex-col items-center min-w-0">
 
-              {/* Label + caption ABOVE the phone frame */}
+              {/* Label + caption ABOVE the phone frame, centered */}
               <p
-                className="font-display font-bold text-[13px] md:text-[13px] leading-snug mb-1"
+                className="font-display font-bold text-[12px] md:text-[13px] leading-snug mb-1 text-center"
                 style={{ color: isDark ? 'white' : '#1c1c27' }}
               >
                 {screen.label}
               </p>
               <p
-                className="font-display text-[12px] leading-snug mb-3"
+                className="font-display text-[11px] md:text-[12px] leading-snug mb-3 text-center"
                 style={{ color: '#9590b3' }}
               >
                 {screen.caption}
