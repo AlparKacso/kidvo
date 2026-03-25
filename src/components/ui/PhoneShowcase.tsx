@@ -10,7 +10,7 @@ const IMAGES = {
   },
   providers: {
     ro: ['IMG_6838', 'IMG_6841', 'IMG_6842', 'IMG_6845'],
-    en: ['IMG_6839', 'IMG_6840', 'IMG_6843', 'IMG_6844'],
+    en: ['IMG_6839', 'IMG_6840', 'IMG_6843', 'IMG_6866'],  // IMG_6866 = anonymised EN trial requests
   },
 }
 
@@ -42,8 +42,7 @@ export function PhoneShowcase({ variant }: Props) {
 
   const subtitle = variant === 'parents' ? t('screenParentsSub') : t('screenProvidersSub')
 
-  // Parents:    white bg, badge pill + subtitle (no redundant H2)
-  // Providers:  dark bg, subtitle only (For Providers context already set by the card above)
+  // Parents: white bg + purple pill; Providers: dark bg, context set by card above
   const bg = isDark ? '#1c1c27' : 'white'
 
   return (
@@ -53,9 +52,8 @@ export function PhoneShowcase({ variant }: Props) {
     >
       <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-12 md:py-[72px]">
 
-        {/* Section header */}
+        {/* Section header — sized to match "Trending near you" */}
         <div className="mb-8 md:mb-10">
-          {/* Badge pill — parents only; providers section is already contextualised above */}
           {!isDark && (
             <span
               className="font-display text-[11px] font-bold tracking-widest uppercase rounded-full mb-3 inline-block"
@@ -65,17 +63,37 @@ export function PhoneShowcase({ variant }: Props) {
             </span>
           )}
           <p
-            className="font-display font-semibold text-[15px] md:text-[16px]"
-            style={{ color: isDark ? '#9590b3' : '#55527a', maxWidth: 480 }}
+            className="font-display font-extrabold"
+            style={{
+              fontSize: '21px',
+              letterSpacing: '-0.4px',
+              color: isDark ? 'white' : '#1c1c27',
+              maxWidth: 520,
+            }}
           >
             {subtitle}
           </p>
         </div>
 
         {/* Phone frames grid — 1 col on mobile, 2 on sm, 4 on desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-4 md:gap-7">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-5 md:gap-7">
           {screens.map((screen, i) => (
-            <div key={i} className="flex flex-col items-center min-w-0">
+            <div key={i} className="flex flex-col min-w-0">
+
+              {/* Label + caption ABOVE the phone frame */}
+              <p
+                className="font-display font-bold text-[13px] md:text-[13px] leading-snug mb-1"
+                style={{ color: isDark ? 'white' : '#1c1c27' }}
+              >
+                {screen.label}
+              </p>
+              <p
+                className="font-display text-[12px] leading-snug mb-3"
+                style={{ color: '#9590b3' }}
+              >
+                {screen.caption}
+              </p>
+
               {/* Phone frame */}
               <div
                 className="w-full overflow-hidden"
@@ -94,19 +112,7 @@ export function PhoneShowcase({ variant }: Props) {
                   style={{ display: 'block', width: '100%', height: 'auto' }}
                 />
               </div>
-              {/* Label + caption */}
-              <p
-                className="font-display font-bold mt-3 text-center text-[12px] md:text-[13px] leading-snug"
-                style={{ color: isDark ? 'white' : '#1c1c27' }}
-              >
-                {screen.label}
-              </p>
-              <p
-                className="font-display text-center mt-0.5 text-[11px] md:text-[12px] leading-snug"
-                style={{ color: '#9590b3' }}
-              >
-                {screen.caption}
-              </p>
+
             </div>
           ))}
         </div>

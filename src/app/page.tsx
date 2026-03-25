@@ -216,7 +216,7 @@ export default async function LandingPage() {
 
           {/* Section header */}
           <div className="flex items-center justify-between mb-4 gap-4">
-            <div className="font-display font-extrabold text-ink flex-shrink-0" style={{ fontSize: '21px', letterSpacing: '-0.4px' }}>
+            <div className="font-display font-extrabold text-ink flex-shrink-0" style={{ fontSize: '21px', letterSpacing: '-0.4px', color: '#1c1c27' }}>
               {t('trendingNearYou')}
             </div>
             <Link href="/browse" className="font-display text-sm font-semibold text-primary hover:underline whitespace-nowrap flex-shrink-0">
