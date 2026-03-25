@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { FooterLegalLinks } from '@/components/ui/FooterLegalLinks'
 import { LocaleToggle } from '@/components/ui/LocaleToggle'
+import { PhoneShowcase } from '@/components/ui/PhoneShowcase'
 import { getTranslations } from 'next-intl/server'
 
 // ── Category emoji mapping (matches DB slugs) ──────────────────────────────
@@ -60,6 +61,13 @@ export default async function LandingPage() {
   const avgRating = approvedReviews.length > 0
     ? (approvedReviews.reduce((sum: number, r: any) => sum + (r.rating ?? 0), 0) / approvedReviews.length).toFixed(1)
     : null
+
+  // Stats section only appears when the platform has enough real data
+  const showStats =
+    activityCount >= 100 &&
+    providerCount >= 30 &&
+    avgRating !== null &&
+    parseFloat(avgRating) >= 4.0
   const categories = (categoriesRaw ?? []) as { slug: string; name: string; accent_color: string }[]
   type ShowcaseListing = {
     id: string; title: string; cover_image_url: string | null; price_monthly: number
@@ -182,21 +190,26 @@ export default async function LandingPage() {
             </a>
           </div>
 
-          {/* Stats row — border-top separator, flex-centered */}
-          <div className="border-t border-border mt-6 md:mt-8 pt-5 md:pt-7 flex flex-wrap justify-center gap-x-8 gap-y-5">
-            {[
-              { value: `${activityCount}+`, label: t('activities'),    color: '#c38cfa' },
-              { value: `${providerCount}`,  label: t('providers'),     color: '#2aa7ff' },
-              { value: t('free'),           label: t('trialSessions'), color: '#22c55e' },
-              ...(avgRating ? [{ value: `${avgRating} ★`, label: t('avgRating'), color: '#1c1c27' }] : []),
-            ].map(stat => (
-              <div key={stat.label} className="text-center">
-                <div className="font-display font-black" style={{ fontSize: '32px', letterSpacing: '-1px', color: stat.color }}>{stat.value}</div>
-                <div className="font-display font-medium mt-0.5" style={{ fontSize: '13px', color: '#9590b3' }}>{stat.label}</div>
-              </div>
-            ))}
-          </div>
+          {/* Stats row — only shown once platform has enough real data */}
+          {showStats && (
+            <div className="border-t border-border mt-6 md:mt-8 pt-5 md:pt-7 flex flex-wrap justify-center gap-x-8 gap-y-5">
+              {[
+                { value: `${activityCount}+`, label: t('activities'),    color: '#c38cfa' },
+                { value: `${providerCount}`,  label: t('providers'),     color: '#2aa7ff' },
+                { value: t('free'),           label: t('trialSessions'), color: '#22c55e' },
+                { value: `${avgRating} ★`,    label: t('avgRating'),     color: '#1c1c27' },
+              ].map(stat => (
+                <div key={stat.label} className="text-center">
+                  <div className="font-display font-black" style={{ fontSize: '32px', letterSpacing: '-1px', color: stat.color }}>{stat.value}</div>
+                  <div className="font-display font-medium mt-0.5" style={{ fontSize: '13px', color: '#9590b3' }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
+
+        {/* ── Screenshot showcase — For Parents ────────────────────────────── */}
+        <PhoneShowcase variant="parents" />
 
         {/* ── Activity showcase ────────────────────────────────────────────── */}
         <section className="max-w-[1200px] mx-auto px-5 md:px-8 pb-14 md:pb-18">
@@ -405,6 +418,9 @@ export default async function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* ── Screenshot showcase — For Providers ──────────────────────────── */}
+        <PhoneShowcase variant="providers" />
 
         {/* ── How it works ─────────────────────────────────────────────────── */}
         <section id="how-it-works" className="scroll-mt-20 max-w-[1200px] mx-auto px-5 md:px-8 pb-16 md:pb-24">
