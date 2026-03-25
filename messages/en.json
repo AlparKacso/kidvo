@@ -101,7 +101,8 @@
     "screenV3Label": "Provider dashboard",
     "screenV3Caption": "Real-time views and trial stats",
     "screenV4Label": "Trial requests",
-    "screenV4Caption": "Confirm or decline directly in the app"
+    "screenV4Caption": "Confirm or decline directly in the app",
+    "manyFamilies": "Many"
   },
   "browse": {
     "title": "Browse activities",

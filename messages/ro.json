@@ -101,7 +101,8 @@
     "screenV3Label": "Dashboard furnizor",
     "screenV3Caption": "Statistici: vizualizări și cereri de probă",
     "screenV4Label": "Cereri de probă",
-    "screenV4Caption": "Confirmă sau refuză direct din aplicație"
+    "screenV4Caption": "Confirmă sau refuză direct din aplicație",
+    "manyFamilies": "Multe"
   },
   "browse": {
     "title": "Explorează activități",

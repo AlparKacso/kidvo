@@ -80,19 +80,21 @@ export function PhoneShowcase({ variant }: Props) {
           {screens.map((screen, i) => (
             <div key={i} className="flex flex-col items-center min-w-0">
 
-              {/* Label + caption ABOVE the phone frame, centered */}
-              <p
-                className="font-display font-bold text-[12px] md:text-[13px] leading-snug mb-1 text-center"
-                style={{ color: isDark ? 'white' : '#1c1c27' }}
-              >
-                {screen.label}
-              </p>
-              <p
-                className="font-display text-[11px] md:text-[12px] leading-snug mb-3 text-center"
-                style={{ color: '#9590b3' }}
-              >
-                {screen.caption}
-              </p>
+              {/* Fixed-height label area — keeps phone frames horizontally aligned */}
+              <div className="w-full flex flex-col items-center justify-end mb-3" style={{ minHeight: 52 }}>
+                <p
+                  className="font-display font-bold text-[12px] md:text-[13px] leading-snug mb-1 text-center"
+                  style={{ color: isDark ? 'white' : '#1c1c27' }}
+                >
+                  {screen.label}
+                </p>
+                <p
+                  className="font-display text-[11px] md:text-[12px] leading-snug text-center"
+                  style={{ color: '#9590b3' }}
+                >
+                  {screen.caption}
+                </p>
+              </div>
 
               {/* Phone frame */}
               <div

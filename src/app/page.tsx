@@ -41,6 +41,7 @@ export default async function LandingPage() {
     { count: activeListingsCount },
     { count: providersCount },
     { data: reviewStats },
+    { count: parentCount },
   ] = await Promise.all([
     supabase.from('categories').select('slug, name, accent_color').order('sort_order'),
     supabase
@@ -53,21 +54,26 @@ export default async function LandingPage() {
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('providers').select('*', { count: 'exact', head: true }),
     supabase.from('reviews').select('rating').eq('status', 'approved'),
+    supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'parent'),
   ])
 
   const activityCount = activeListingsCount ?? 0
   const providerCount = providersCount ?? 0
+  const familiesCount = parentCount ?? 0
   const approvedReviews = reviewStats ?? []
   const avgRating = approvedReviews.length > 0
     ? (approvedReviews.reduce((sum: number, r: any) => sum + (r.rating ?? 0), 0) / approvedReviews.length).toFixed(1)
     : null
 
-  // Stats section only appears when the platform has enough real data
+  // Hero stats only appear once platform has enough real data
   const showStats =
-    activityCount >= 100 &&
-    providerCount >= 30 &&
+    activityCount >= 30 &&
+    providerCount >= 20 &&
     avgRating !== null &&
     parseFloat(avgRating) >= 4.0
+
+  // Families reached: show real number if ≥100, otherwise "Many"
+  const familiesValue = familiesCount >= 100 ? `${familiesCount}+` : t('manyFamilies')
   const categories = (categoriesRaw ?? []) as { slug: string; name: string; accent_color: string }[]
   type ShowcaseListing = {
     id: string; title: string; cover_image_url: string | null; price_monthly: number
@@ -380,7 +386,7 @@ export default async function LandingPage() {
                 {/* Stats row — 3 cols */}
                 <div className="grid grid-cols-3 gap-2 md:gap-3">
                   {[
-                    { value: '500+',  label: t('familiesReached') },
+                    { value: familiesValue, label: t('familiesReached') },
                     { value: '0 RON', label: t('toGetStarted') },
                     { value: '2 min', label: t('toListActivity') },
                   ].map(s => (
