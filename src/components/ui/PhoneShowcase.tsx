@@ -40,41 +40,32 @@ export function PhoneShowcase({ variant }: Props) {
           { label: t('screenV4Label'), caption: t('screenV4Caption') },
         ]
 
-  const badge    = variant === 'parents' ? t('screenParentsBadge')    : t('screenProvidersBadge')
-  const title    = variant === 'parents' ? t('screenParentsTitle')    : t('screenProvidersTitle')
-  const subtitle = variant === 'parents' ? t('screenParentsSub')      : t('screenProvidersSub')
+  const subtitle = variant === 'parents' ? t('screenParentsSub') : t('screenProvidersSub')
+
+  // Parents:    white bg, badge pill + subtitle (no redundant H2)
+  // Providers:  dark bg, subtitle only (For Providers context already set by the card above)
+  const bg = isDark ? '#1c1c27' : 'white'
 
   return (
     <section
       className="scroll-mt-20 overflow-hidden"
-      style={{ background: isDark ? '#1c1c27' : '#f5f2fb' }}
+      style={{ background: bg }}
     >
       <div className="max-w-[1200px] mx-auto px-5 md:px-8 py-12 md:py-[72px]">
 
         {/* Section header */}
         <div className="mb-8 md:mb-10">
-          <span
-            className="font-display text-[11px] font-bold tracking-widest uppercase rounded-full"
-            style={{
-              background: isDark ? 'rgba(124,58,237,0.2)' : '#ece6ff',
-              color: isDark ? '#c4a8ff' : '#7c3aed',
-              padding: '4px 12px',
-            }}
-          >
-            {badge}
-          </span>
-          <h2
-            className="font-display font-black mt-3 mb-2"
-            style={{
-              fontSize: 'clamp(22px, 3vw, 32px)',
-              color: isDark ? 'white' : '#1c1c27',
-              letterSpacing: '-0.5px',
-            }}
-          >
-            {title}
-          </h2>
+          {/* Badge pill — parents only; providers section is already contextualised above */}
+          {!isDark && (
+            <span
+              className="font-display text-[11px] font-bold tracking-widest uppercase rounded-full mb-3 inline-block"
+              style={{ background: '#ece6ff', color: '#7c3aed', padding: '4px 12px' }}
+            >
+              {t('screenParentsBadge')}
+            </span>
+          )}
           <p
-            className="font-display text-[14px] md:text-[15px]"
+            className="font-display font-semibold text-[15px] md:text-[16px]"
             style={{ color: isDark ? '#9590b3' : '#55527a', maxWidth: 480 }}
           >
             {subtitle}
@@ -89,11 +80,11 @@ export function PhoneShowcase({ variant }: Props) {
               <div
                 className="w-full overflow-hidden"
                 style={{
-                  background: isDark ? '#2a2a3a' : 'white',
+                  background: isDark ? '#2a2a3a' : '#f5f2fb',
                   borderRadius: 20,
                   boxShadow: isDark
                     ? '0 20px 40px -10px rgba(0,0,0,0.55)'
-                    : '0 10px 28px -5px rgba(124,58,237,0.13), 0 2px 8px rgba(0,0,0,0.07)',
+                    : '0 10px 28px -5px rgba(124,58,237,0.12), 0 2px 8px rgba(0,0,0,0.06)',
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}

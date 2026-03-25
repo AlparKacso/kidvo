@@ -135,7 +135,7 @@ export default async function LandingPage() {
           {/* Right CTAs */}
           <div className="ml-auto flex items-center gap-2">
             <LocaleToggle />
-            <Link href="/auth/login"  className="hidden sm:block font-display font-semibold text-ink-mid hover:text-ink transition-colors border-[1.5px] border-border bg-white rounded-[8px] hover:border-border-mid" style={{ fontSize: '13.5px', padding: '7px 17px' }}>{t('signIn')}</Link>
+            <Link href="/auth/login"  className="font-display font-semibold text-ink-mid hover:text-ink transition-colors whitespace-nowrap text-[12.5px] sm:text-[13.5px] sm:border-[1.5px] sm:border-border sm:bg-white sm:rounded-[8px] sm:hover:border-border-mid px-1 sm:px-[17px] py-1.5 sm:py-[7px]">{t('signIn')}</Link>
             <Link href="/auth/signup" className="font-display font-bold bg-ink text-white rounded-[8px] hover:opacity-80 transition-opacity whitespace-nowrap" style={{ fontSize: '13.5px', padding: '7px 17px' }}>{t('getStarted')}</Link>
           </div>
         </div>
@@ -344,8 +344,10 @@ export default async function LandingPage() {
 
               {/* Left: copy */}
               <div>
-                <div className="font-display text-[11px] font-bold tracking-widest uppercase mb-3"
-                     style={{ color: 'rgba(255,255,255,0.35)' }}>{t('forProviders')}</div>
+                <span className="font-display text-[11px] font-bold tracking-widest uppercase rounded-full mb-3 inline-block"
+                      style={{ background: 'rgba(124,58,237,0.25)', color: '#c4a8ff', padding: '4px 12px' }}>
+                  {t('forProviders')}
+                </span>
                 <h2 className="font-display font-bold text-white leading-snug mb-4"
                     style={{ fontSize: 'clamp(24px, 3.5vw, 38px)' }}>
                   {t('providerHeadline1')}<br />{t('providerHeadline2')}
