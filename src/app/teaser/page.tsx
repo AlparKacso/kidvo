@@ -123,22 +123,22 @@ function PhoneFrame({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/mobile%20screenshots/${screen.file}.PNG`}
+          src={`/screenshots/${screen.file}.png`}
           alt={screen.label}
           width="100%"
           style={{ display: 'block' }}
         />
         {screen.blurEmail && (
+          /* Solid block covering name + email lines */
           <div
             style={{
               position: 'absolute',
-              top: '56%',
-              left: '8%',
-              width: '72%',
-              height: '4%',
-              background: 'rgba(245,242,251,0.95)',
-              borderRadius: 4,
-              filter: 'blur(2px)',
+              top: '40%',
+              left: '5%',
+              width: '82%',
+              height: '14%',
+              background: 'rgba(255,255,255,0.98)',
+              borderRadius: 6,
             }}
           />
         )}
