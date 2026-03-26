@@ -5,12 +5,12 @@ import { useTranslations, useLocale } from 'next-intl'
 // RO vs EN image file mappings
 const IMAGES = {
   parents: {
-    ro: ['new_parent1_ro', 'IMG_6833', 'IMG_6834', 'IMG_6837'],
-    en: ['new_parent1_en', 'IMG_6832', 'IMG_6835', 'IMG_6836'],
+    ro: ['IMG_6879', 'IMG_6833', 'IMG_6834', 'IMG_6837'],
+    en: ['IMG_6880', 'IMG_6832', 'IMG_6835', 'IMG_6836'],
   },
   providers: {
-    ro: ['new_provider1_ro', 'IMG_6841', 'IMG_6842', 'IMG_6864'],
-    en: ['new_provider1_en', 'IMG_6840', 'IMG_6843', 'IMG_6866'],
+    ro: ['IMG_6885', 'IMG_6841', 'IMG_6842', 'IMG_6864'],
+    en: ['IMG_6884', 'IMG_6840', 'IMG_6843', 'IMG_6866'],
   },
 }
 
