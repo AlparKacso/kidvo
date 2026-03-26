@@ -89,6 +89,9 @@ export default async function LandingPage() {
       step: '01',
       title: t('step1Title'),
       desc:  t('step1Desc'),
+      iconBg: '#ede9fe',
+      iconColor: '#7c3aed',
+      stepColor: 'rgba(124,58,237,0.07)',
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -100,6 +103,9 @@ export default async function LandingPage() {
       step: '02',
       title: t('step2Title'),
       desc:  t('step2Desc'),
+      iconBg: '#dbeafe',
+      iconColor: '#2aa7ff',
+      stepColor: 'rgba(42,167,255,0.09)',
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -111,6 +117,9 @@ export default async function LandingPage() {
       step: '03',
       title: t('step3Title'),
       desc:  t('step3Desc'),
+      iconBg: '#e8e4f0',
+      iconColor: '#1c1c27',
+      stepColor: 'rgba(28,28,39,0.07)',
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -439,14 +448,15 @@ export default async function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-            {HOW_IT_WORKS.map(({ step, title, desc, icon }) => (
-              <div key={step} className="bg-white rounded-xl p-5 md:p-6 border border-border shadow-card flex md:flex-col gap-4 md:gap-0">
-                <div className="flex md:items-start md:justify-between md:mb-5">
-                  <div className="w-10 h-10 rounded-xl bg-primary-lt flex items-center justify-center flex-shrink-0 text-primary">
+            {HOW_IT_WORKS.map(({ step, title, desc, icon, iconBg, iconColor, stepColor }) => (
+              <div key={step} className="bg-white rounded-xl p-5 md:p-6 border border-border shadow-card flex items-center md:items-start md:flex-col gap-4 md:gap-0">
+                <div className="flex items-center md:items-start md:justify-between md:w-full md:mb-5">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                       style={{ background: iconBg, color: iconColor }}>
                     {icon}
                   </div>
                   <span className="hidden md:block font-display font-bold leading-none select-none"
-                        style={{ fontSize: '34px', color: 'rgba(124,58,237,0.07)' }}>
+                        style={{ fontSize: '34px', color: stepColor }}>
                     {step}
                   </span>
                 </div>
