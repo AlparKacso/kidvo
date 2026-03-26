@@ -86,9 +86,9 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-[400px]">
 
         <div className="text-center mb-8">
-          <span className="font-display font-bold text-[26px] leading-none tracking-tight">
-            <span className="text-primary">kid</span>
-            <span className="text-gold">vo</span>
+          <span className="font-display font-black text-[28px] leading-none" style={{ letterSpacing: '-1px' }}>
+            <span className="text-ink">kid</span>
+            <span className="text-primary">vo</span>
           </span>
         </div>
 
