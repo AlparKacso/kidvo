@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return supabaseResponse
   if (pathname === '/auth/callback') return supabaseResponse
   if (pathname === '/opengraph-image' || pathname.endsWith('/opengraph-image')) return supabaseResponse
-  const authRoutes = ['/auth/login', '/auth/signup']
+  const authRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password']
   if (authRoutes.includes(pathname)) {
     if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
     return supabaseResponse
