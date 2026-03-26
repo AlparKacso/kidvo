@@ -9,7 +9,7 @@ const IMAGES = {
     en: ['IMG_6827', 'IMG_6832', 'IMG_6835', 'IMG_6836'],
   },
   providers: {
-    ro: ['IMG_6838', 'IMG_6841', 'IMG_6842', 'IMG_6845'],
+    ro: ['IMG_6838', 'IMG_6841', 'IMG_6842', 'IMG_6864'],
     en: ['IMG_6839', 'IMG_6840', 'IMG_6843', 'IMG_6866'],  // IMG_6866 = anonymised EN trial requests
   },
 }
