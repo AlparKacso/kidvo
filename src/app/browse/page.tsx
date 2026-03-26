@@ -13,17 +13,32 @@ interface BrowsePageProps {
 
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Activități pentru copii în Timișoara',
-  description: 'Explorează toate activitățile disponibile pentru copii în Timișoara — sport, dans, muzică, arte, programare, limbi străine și mai mult.',
-  alternates: {
-    canonical: 'https://kidvo.eu/browse',
-  },
-  openGraph: {
-    title: 'Activități pentru copii în Timișoara · kidvo',
-    description: 'Explorează toate activitățile disponibile pentru copii în Timișoara.',
-    url: 'https://kidvo.eu/browse',
-  },
+// Category-specific copy so each filtered URL gets its own title + description
+const CATEGORY_META: Record<string, { title: string; description: string }> = {
+  sport:      { title: 'Sport pentru copii în Timișoara',       description: 'Descoperă activități sportive pentru copii în Timișoara — fotbal, înot, gimnastică, arte marțiale și mai mult. Rezervă o ședință de probă gratuită.' },
+  dans:       { title: 'Dans pentru copii în Timișoara',        description: 'Cursuri de dans pentru copii în Timișoara — balet, dans modern, hip-hop și mai mult. Rezervă o ședință de probă gratuită pe kidvo.' },
+  muzica:     { title: 'Muzică pentru copii în Timișoara',      description: 'Lecții de muzică și instrumente pentru copii în Timișoara — pian, chitară, vioară, canto și mai mult. Rezervă o probă gratuită.' },
+  arte:       { title: 'Arte pentru copii în Timișoara',        description: 'Cursuri de artă, pictură și creativitate pentru copii în Timișoara. Descoperă și rezervă o ședință de probă gratuită pe kidvo.' },
+  programare: { title: 'Programare pentru copii în Timișoara',  description: 'Cursuri de programare și coding pentru copii în Timișoara. Robotică, Scratch, Python și mai mult. Probă gratuită disponibilă.' },
+  limbi:      { title: 'Limbi străine pentru copii în Timișoara', description: 'Cursuri de limbi străine pentru copii în Timișoara — engleză, franceză, germană și mai mult. Rezervă o probă gratuită pe kidvo.' },
+}
+
+export async function generateMetadata(
+  { searchParams }: { searchParams: Promise<{ category?: string; area?: string }> }
+): Promise<Metadata> {
+  const { category } = await searchParams
+  const catMeta = category ? CATEGORY_META[category] : null
+
+  const title       = catMeta?.title       ?? 'Activități pentru copii în Timișoara'
+  const description = catMeta?.description ?? 'Explorează toate activitățile disponibile pentru copii în Timișoara — sport, dans, muzică, arte, programare, limbi străine și mai mult.'
+  const url         = category ? `https://kidvo.eu/browse?category=${category}` : 'https://kidvo.eu/browse'
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title: `${title} · kidvo`, description, url },
+  }
 }
 
 export default async function BrowsePage({ searchParams }: BrowsePageProps) {

@@ -109,7 +109,7 @@ export function PhoneShowcase({ variant }: Props) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`/screenshots/${files[i]}.png`}
+                  src={`/screenshots/${files[i]}.webp`}
                   alt={screen.label}
                   style={{ display: 'block', width: '100%', height: 'auto' }}
                 />

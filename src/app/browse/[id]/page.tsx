@@ -160,6 +160,15 @@ export default async function ActivityDetailPage({ params }: Props) {
       suggestedMinAge: listing.age_min,
       suggestedMaxAge: listing.age_max,
     },
+    ...(reviews.length > 0 ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: avgRating.toFixed(1),
+        reviewCount: reviews.length,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    } : {}),
   } : null
 
   const DAY_LABELS = [
