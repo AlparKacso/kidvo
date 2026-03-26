@@ -29,23 +29,23 @@ export default async function Image() {
 
         {/* Headline — line 1 */}
         <div style={{ display: 'flex', fontSize: 86, fontWeight: 900, color: '#1c1c27', letterSpacing: '-4px', lineHeight: 1.05, marginBottom: 4 }}>
-          Find the perfect
+          Găsește activitatea
         </div>
 
-        {/* Headline — line 2: "activity" purple + "for your" dark */}
+        {/* Headline — line 2: "perfectă" purple + "pentru" dark */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 22, fontSize: 86, fontWeight: 900, letterSpacing: '-4px', lineHeight: 1.05, marginBottom: 4 }}>
-          <span style={{ color: '#7c3aed' }}>activity</span>
-          <span style={{ color: '#1c1c27' }}>for your</span>
+          <span style={{ color: '#7c3aed' }}>perfectă</span>
+          <span style={{ color: '#1c1c27' }}>pentru</span>
         </div>
 
-        {/* Headline — line 3: "little one" blue */}
+        {/* Headline — line 3: "copilul tău" blue */}
         <div style={{ display: 'flex', fontSize: 86, fontWeight: 900, color: '#2aa7ff', letterSpacing: '-4px', lineHeight: 1.05, marginBottom: 44 }}>
-          little one
+          copilul tău
         </div>
 
         {/* Subtitle */}
         <div style={{ display: 'flex', fontSize: 26, color: '#55527a', fontWeight: 400, textAlign: 'center', maxWidth: 680 }}>
-          Browse local sports, arts, music, coding and more — then request a trial session with any provider.
+          Descoperă sporturi, dans, muzică, arte și programare în Timișoara — rezervă o ședință de probă gratuită.
         </div>
 
         {/* URL pill */}

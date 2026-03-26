@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { FooterLegalLinks } from '@/components/ui/FooterLegalLinks'
 import { LocaleToggle } from '@/components/ui/LocaleToggle'
 import { PhoneShowcase } from '@/components/ui/PhoneShowcase'
+import { JsonLd } from '@/components/ui/JsonLd'
 import { getTranslations } from 'next-intl/server'
 
 // ── Category emoji mapping (matches DB slugs) ──────────────────────────────
@@ -479,6 +480,42 @@ export default async function LandingPage() {
         </div>
       </footer>
 
+      {/* ── Structured data ──────────────────────────────────────────────── */}
+      <JsonLd schema={{
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'kidvo',
+        url: 'https://kidvo.eu',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: { '@type': 'EntryPoint', urlTemplate: 'https://kidvo.eu/browse?q={search_term_string}' },
+          'query-input': 'required name=search_term_string',
+        },
+      }} />
+      <JsonLd schema={{
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'kidvo',
+        url: 'https://kidvo.eu',
+        logo: 'https://kidvo.eu/icon.png',
+        sameAs: [],
+        areaServed: { '@type': 'City', name: 'Timișoara', addressCountry: 'RO' },
+      }} />
+      <JsonLd schema={{
+        '@context': 'https://schema.org',
+        '@type': 'LocalBusiness',
+        name: 'kidvo',
+        description: 'Platformă pentru activități extra-școlare pentru copii în Timișoara',
+        url: 'https://kidvo.eu',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Timișoara',
+          addressRegion: 'Timiș',
+          addressCountry: 'RO',
+        },
+        areaServed: { '@type': 'City', name: 'Timișoara' },
+        priceRange: 'Gratuit – 500 RON/lună',
+      }} />
     </div>
   )
 }

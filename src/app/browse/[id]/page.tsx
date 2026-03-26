@@ -1,3 +1,4 @@
+import type { Metadata }         from 'next'
 import { notFound }             from 'next/navigation'
 import Link                      from 'next/link'
 import { Suspense }              from 'react'
@@ -10,10 +11,61 @@ import { StarRating }            from '@/components/ui/StarRating'
 import { ReviewForm }            from '@/components/ui/ReviewForm'
 import { EditReviewForm }        from '@/components/ui/EditReviewForm'
 import { EditableReview }        from '@/components/ui/EditableReview'
+import { JsonLd }                from '@/components/ui/JsonLd'
 import { getTranslations }       from 'next-intl/server'
 
 interface Props {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: l } = await supabase
+    .from('listings')
+    .select('title, description, cover_image_url, price_monthly, age_min, age_max, category:categories(name), provider:providers(display_name), area:areas(name)')
+    .eq('id', id)
+    .single()
+
+  if (!l) return { title: 'Activitate · kidvo' }
+
+  const providerName = (l.provider as any)?.display_name ?? ''
+  const categoryName = (l.category as any)?.name ?? ''
+  const areaName     = (l.area as any)?.name ?? 'Timișoara'
+  const title        = `${l.title} — ${providerName}`
+  const description  = l.description
+    ? l.description.slice(0, 155) + (l.description.length > 155 ? '…' : '')
+    : `${l.title} în ${areaName}, Timișoara. Vârstă ${l.age_min}–${l.age_max} ani, ${l.price_monthly} RON/lună. Rezervă o ședință de probă gratuită pe kidvo.`
+
+  return {
+    title,
+    description,
+    keywords: [
+      l.title.toLowerCase(),
+      `${categoryName.toLowerCase()} copii timisoara`,
+      `${categoryName.toLowerCase()} copii ${areaName.toLowerCase()}`,
+      providerName.toLowerCase(),
+      'activitati copii timisoara',
+    ],
+    alternates: { canonical: `https://kidvo.eu/browse/${id}` },
+    openGraph: {
+      type: 'website',
+      title: `${title} · kidvo`,
+      description,
+      url: `https://kidvo.eu/browse/${id}`,
+      siteName: 'kidvo',
+      locale: 'ro_RO',
+      ...(l.cover_image_url ? { images: [{ url: l.cover_image_url, width: 1200, height: 630, alt: l.title }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} · kidvo`,
+      description,
+      ...(l.cover_image_url ? { images: [l.cover_image_url] } : {}),
+    },
+  }
 }
 
 export default async function ActivityDetailPage({ params }: Props) {
@@ -79,6 +131,36 @@ export default async function ActivityDetailPage({ params }: Props) {
   const isOwner      = !!user && (provider as any)?.user_id === user.id
 
   const avgRating    = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
+
+  // Build Course JSON-LD for structured data
+  const listingJsonLd = listing ? {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: listing.title,
+    description: listing.description ?? `${listing.title} în Timișoara`,
+    provider: {
+      '@type': 'Organization',
+      name: (listing.provider as any)?.display_name,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Timișoara',
+        addressRegion: 'Timiș',
+        addressCountry: 'RO',
+      },
+    },
+    offers: {
+      '@type': 'Offer',
+      price: listing.price_monthly,
+      priceCurrency: 'RON',
+      availability: 'https://schema.org/InStock',
+    },
+    audience: {
+      '@type': 'EducationalAudience',
+      educationalRole: 'student',
+      suggestedMinAge: listing.age_min,
+      suggestedMaxAge: listing.age_max,
+    },
+  } : null
 
   const DAY_LABELS = [
     t('days.0'), t('days.1'), t('days.2'), t('days.3'),
@@ -460,6 +542,8 @@ export default async function ActivityDetailPage({ params }: Props) {
         )}
 
       </div>
+
+      {listingJsonLd && <JsonLd schema={listingJsonLd} />}
     </AppShell>
   )
 }

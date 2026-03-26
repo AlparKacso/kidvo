@@ -48,7 +48,14 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
   },
-  alternates: { canonical: 'https://kidvo.eu' },
+  alternates: {
+    canonical: 'https://kidvo.eu',
+    languages: {
+      'ro': 'https://kidvo.eu',
+      'en': 'https://kidvo.eu',
+      'x-default': 'https://kidvo.eu',
+    },
+  },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
