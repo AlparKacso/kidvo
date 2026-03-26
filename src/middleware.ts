@@ -40,7 +40,13 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return supabaseResponse
   if (pathname === '/auth/callback') return supabaseResponse
   if (pathname === '/opengraph-image' || pathname.endsWith('/opengraph-image')) return supabaseResponse
-  const authRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/reset-password']
+  // Reset/forgot password pages must stay accessible regardless of auth state
+  // (recovery token arrives as a hash fragment — the server never sees it, so we
+  //  must not redirect logged-in users away before the client can consume it)
+  if (pathname === '/auth/forgot-password' || pathname === '/auth/reset-password') {
+    return supabaseResponse
+  }
+  const authRoutes = ['/auth/login', '/auth/signup']
   if (authRoutes.includes(pathname)) {
     if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
     return supabaseResponse
