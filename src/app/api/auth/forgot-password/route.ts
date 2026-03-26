@@ -6,14 +6,15 @@ export async function POST(req: Request) {
   const { email } = await req.json().catch(() => ({}))
   if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
+  // Derive origin from the actual request — works on prod, staging and localhost
+  const origin = new URL(req.url).origin
   const adminDb = createAdminClient()
 
   try {
     const { data, error } = await adminDb.auth.admin.generateLink({
       type: 'recovery',
       email,
-      options: { redirectTo: `${appUrl}/auth/reset-password` },
+      options: { redirectTo: `${origin}/auth/reset-password` },
     })
     if (!error && data?.properties?.action_link) {
       // Fetch name for personalisation (best effort)

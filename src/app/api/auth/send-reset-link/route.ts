@@ -6,7 +6,7 @@ import { sendPasswordResetEmail } from '@/lib/email'
 // POST /api/auth/send-reset-link
 // Generates a password-recovery link via the admin SDK (so we control the email)
 // and sends it as a kidvo-branded email via Resend.
-export async function POST() {
+export async function POST(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -15,12 +15,14 @@ export async function POST() {
   }
 
   const adminDb = createAdminClient()
-  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
+  // Derive origin from the actual request so the link works on any domain
+  // (production, staging, localhost) without env var configuration
+  const origin = new URL(req.url).origin
 
   const { data, error } = await adminDb.auth.admin.generateLink({
     type:    'recovery',
     email:   user.email,
-    options: { redirectTo: `${appUrl}/auth/reset-password` },
+    options: { redirectTo: `${origin}/auth/reset-password` },
   })
 
   if (error) {
