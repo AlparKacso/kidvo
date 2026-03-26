@@ -89,9 +89,9 @@ export default async function LandingPage() {
       step: '01',
       title: t('step1Title'),
       desc:  t('step1Desc'),
-      iconBg: '#ede9fe',
-      iconColor: '#7c3aed',
-      stepColor: 'rgba(124,58,237,0.07)',
+      iconBg: '#ddd6fe',
+      iconColor: '#6d28d9',
+      stepColor: 'rgba(109,40,217,0.09)',
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -103,9 +103,9 @@ export default async function LandingPage() {
       step: '02',
       title: t('step2Title'),
       desc:  t('step2Desc'),
-      iconBg: '#dbeafe',
-      iconColor: '#2aa7ff',
-      stepColor: 'rgba(42,167,255,0.09)',
+      iconBg: '#bfdbfe',
+      iconColor: '#1d8de0',
+      stepColor: 'rgba(29,141,224,0.09)',
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
@@ -117,9 +117,9 @@ export default async function LandingPage() {
       step: '03',
       title: t('step3Title'),
       desc:  t('step3Desc'),
-      iconBg: '#e8e4f0',
-      iconColor: '#1c1c27',
-      stepColor: 'rgba(28,28,39,0.07)',
+      iconBg: '#bbf7d0',
+      iconColor: '#16a34a',
+      stepColor: 'rgba(22,163,74,0.09)',
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
