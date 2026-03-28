@@ -652,7 +652,19 @@
     "pricingType_session": "Per session",
     "perSession": "session",
     "perMonth": "month",
-    "fieldRequired": "Required field"
+    "fieldRequired": "Required field",
+    "reviewHeader": "Review your listing before publishing.",
+    "reviewHeaderEdit": "Review your changes before saving.",
+    "reviewTitle": "Title",
+    "reviewCategory": "Category",
+    "reviewArea": "Area",
+    "reviewAges": "Ages",
+    "reviewAgesRange": "{min}–{max} years",
+    "reviewAgesFrom": "{min}+ years",
+    "reviewPrice": "Price",
+    "reviewSessions": "Sessions",
+    "reviewSlots": "{n} slot{n, plural, one {} other {s}}",
+    "reviewTrial": "Trial"
   },
   "grades": {
     "preschool": "Preschool",

@@ -423,21 +423,26 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 <Label hint={t('scheduleHint')}>{t('scheduleLabel')}</Label>
                 <div className="flex flex-col gap-2">
                   {data.schedules.map((s, i) => (
-                    <div key={i} className="flex flex-wrap gap-2 items-center p-2 bg-bg rounded-lg border border-border md:p-0 md:bg-transparent md:border-0 md:flex-nowrap">
-                      <select className={cn(selectCls, 'flex-1 min-w-[110px]')} value={s.day_of_week} onChange={e => updateSchedule(i, 'day_of_week', parseInt(e.target.value))}>
-                        {DAYS.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
-                      </select>
-                      <select className={cn(selectCls, 'flex-1 min-w-[90px]')} value={s.time_start} onChange={e => updateSchedule(i, 'time_start', e.target.value)}>
-                        {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
-                      </select>
-                      <select className={cn(selectCls, 'flex-1 min-w-[90px]')} value={s.time_end} onChange={e => updateSchedule(i, 'time_end', e.target.value)}>
-                        {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
-                      </select>
-                      <input className={cn(inputCls, 'flex-1 min-w-[130px]')} placeholder={t('groupLabelPlaceholder')} value={s.group_label} onChange={e => updateSchedule(i, 'group_label', e.target.value)} />
-                      <button type="button" onClick={() => removeSchedule(i)} disabled={data.schedules.length === 1}
-                        className="w-8 h-8 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                      </button>
+                    <div key={i} className="p-2 bg-bg rounded-lg border border-border md:p-0 md:bg-transparent md:border-0">
+                      {/* Mobile: 2-col grid. Desktop: single flex row */}
+                      <div className="grid grid-cols-2 gap-2 md:flex md:items-center">
+                        <select className={cn(selectCls, 'md:flex-1')} value={s.day_of_week} onChange={e => updateSchedule(i, 'day_of_week', parseInt(e.target.value))}>
+                          {DAYS.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
+                        </select>
+                        <select className={cn(selectCls, 'md:flex-1')} value={s.time_start} onChange={e => updateSchedule(i, 'time_start', e.target.value)}>
+                          {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+                        </select>
+                        <select className={cn(selectCls, 'md:flex-1')} value={s.time_end} onChange={e => updateSchedule(i, 'time_end', e.target.value)}>
+                          {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+                        </select>
+                        <div className="flex gap-2 items-center md:flex-1 md:min-w-[130px]">
+                          <input className={cn(inputCls, 'flex-1')} placeholder={t('groupLabelPlaceholder')} value={s.group_label} onChange={e => updateSchedule(i, 'group_label', e.target.value)} />
+                          <button type="button" onClick={() => removeSchedule(i)} disabled={data.schedules.length === 1}
+                            className="w-8 h-8 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                   <button type="button" onClick={addSchedule} className="flex items-center gap-2 text-sm font-display font-semibold text-primary hover:text-primary-deep transition-colors mt-1">
@@ -609,15 +614,15 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           {/* Step 4 */}
           {step === 4 && (
             <div className="flex flex-col gap-4">
-              <p className="text-sm text-ink-mid">Review your listing before {isEdit ? 'saving' : 'publishing'}.</p>
+              <p className="text-sm text-ink-mid">{isEdit ? t('reviewHeaderEdit') : t('reviewHeader')}</p>
               <div className="bg-bg rounded-lg p-4 flex flex-col gap-2 text-sm">
-                <div className="flex justify-between"><span className="text-ink-muted">Title</span><span className="font-semibold text-ink">{data.title}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Category</span><span className="font-semibold text-ink">{categories.find(c => c.id === data.category_id)?.name}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Area</span><span className="font-semibold text-ink">{areas.find(a => a.id === data.area_id)?.name}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Ages</span><span className="font-semibold text-ink">{data.age_min}-{data.age_max}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Price</span><span className="font-semibold text-ink">{data.price_monthly} RON/{data.pricing_type === 'session' ? t('perSession') : t('perMonth')}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Sessions</span><span className="font-semibold text-ink">{data.schedules.length} slot{data.schedules.length !== 1 ? 's' : ''}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">Trial</span><span className="font-semibold text-ink">{data.trial_available ? t('previewTrialAvailable') : { cohort: t('reasonCohort'), full: t('reasonFull'), contact_us: t('reasonDirect') }[data.trial_disabled_reason] ?? 'Unavailable'}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewTitle')}</span><span className="font-semibold text-ink">{data.title}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewCategory')}</span><span className="font-semibold text-ink">{categories.find(c => c.id === data.category_id)?.name}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewArea')}</span><span className="font-semibold text-ink">{areas.find(a => a.id === data.area_id)?.name}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewAges')}</span><span className="font-semibold text-ink">{data.age_min === data.age_max ? t('reviewAgesFrom', { min: data.age_min }) : t('reviewAgesRange', { min: data.age_min, max: data.age_max })}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewPrice')}</span><span className="font-semibold text-ink">{data.price_monthly} RON/{data.pricing_type === 'session' ? t('perSession') : t('perMonth')}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewSessions')}</span><span className="font-semibold text-ink">{t('reviewSlots', { n: data.schedules.length })}</span></div>
+                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewTrial')}</span><span className="font-semibold text-ink">{data.trial_available ? t('previewTrialAvailable') : { cohort: t('reasonCohort'), full: t('reasonFull'), contact_us: t('reasonDirect') }[data.trial_disabled_reason] ?? t('reasonDirect')}</span></div>
               </div>
               {error && <div className="bg-danger-lt border border-danger/20 text-danger text-sm rounded p-3">{error}</div>}
             </div>

@@ -652,7 +652,19 @@
     "pricingType_session": "Pe ședință",
     "perSession": "ședință",
     "perMonth": "lună",
-    "fieldRequired": "Câmp obligatoriu"
+    "fieldRequired": "Câmp obligatoriu",
+    "reviewHeader": "Verifică activitatea înainte de publicare.",
+    "reviewHeaderEdit": "Verifică modificările înainte de salvare.",
+    "reviewTitle": "Titlu",
+    "reviewCategory": "Categorie",
+    "reviewArea": "Zonă",
+    "reviewAges": "Vârste",
+    "reviewAgesRange": "{min}–{max} ani",
+    "reviewAgesFrom": "{min}+ ani",
+    "reviewPrice": "Preț",
+    "reviewSessions": "Sesiuni",
+    "reviewSlots": "{n} slot",
+    "reviewTrial": "Probă"
   },
   "grades": {
     "preschool": "Preșcolar",
