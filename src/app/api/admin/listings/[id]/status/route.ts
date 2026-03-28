@@ -30,18 +30,35 @@ export async function POST(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Fetch listing + provider info before updating using admin client so RLS
-  // never blocks pending/draft listings from being read here.
   const adminDb = createAdminClient()
-  const { data: listingRaw } = await adminDb
+
+  // Fetch listing before updating so we know prevStatus and can notify provider.
+  // Use two separate queries to avoid relying on join nullability.
+  const { data: listingRaw, error: fetchErr } = await adminDb
     .from('listings')
-    .select('id, title, status, provider:providers(display_name, contact_email)')
+    .select('id, title, status, provider_id')
     .eq('id', id)
     .single()
 
+  if (fetchErr) console.error('[status] listing fetch error:', fetchErr.message)
+
   const listing    = listingRaw as any
   const prevStatus = listing?.status
-  const provider   = listing?.provider
+
+  // Fetch provider + fallback email from users table
+  let providerEmail = ''
+  let providerName  = ''
+  if (listing?.provider_id) {
+    const { data: prov, error: provErr } = await adminDb
+      .from('providers')
+      .select('display_name, contact_email, user:users(email, full_name)')
+      .eq('id', listing.provider_id)
+      .single()
+    if (provErr) console.error('[status] provider fetch error:', provErr.message)
+    const pRaw = prov as any
+    providerEmail = pRaw?.contact_email || pRaw?.user?.email || ''
+    providerName  = pRaw?.display_name  || pRaw?.user?.full_name || providerEmail
+  }
 
   // Build update — stamp published_at when going active for the first time
   const updateData: Record<string, unknown> = { status }
@@ -57,25 +74,25 @@ export async function POST(
   }
 
   // Fire notification emails (non-blocking)
-  if (provider?.contact_email && listing?.title) {
-    // V2a: listing approved → notify provider
+  if (providerEmail && listing?.title) {
     if (status === 'active' && prevStatus !== 'active') {
       sendListingApprovedToProvider({
-        email:        provider.contact_email,
-        providerName: provider.display_name ?? provider.contact_email,
+        email:        providerEmail,
+        providerName: providerName,
         listingTitle: listing.title,
         listingId:    id,
-      }).catch(err => console.error('V2a email error:', err))
+      }).catch(err => console.error('[status] approved email error:', err))
     }
 
-    // V2b: listing rejected (pending → draft) → notify provider
     if (status === 'draft' && prevStatus === 'pending') {
       sendListingRejectedToProvider({
-        email:        provider.contact_email,
-        providerName: provider.display_name ?? provider.contact_email,
+        email:        providerEmail,
+        providerName: providerName,
         listingTitle: listing.title,
-      }).catch(err => console.error('V2b email error:', err))
+      }).catch(err => console.error('[status] rejected email error:', err))
     }
+  } else {
+    console.error('[status] skipping email — providerEmail:', providerEmail, 'title:', listing?.title)
   }
 
   return NextResponse.json({ ok: true, status })
