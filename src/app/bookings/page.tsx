@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { AppShell } from '@/components/layout/AppShell'
+
+export const metadata: Metadata = { robots: { index: false, follow: false } }
 import { createClient } from '@/lib/supabase/server'
 
 const STATUS_STYLES: Record<string, { pill: string; label: string; icon: string }> = {

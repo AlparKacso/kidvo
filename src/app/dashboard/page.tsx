@@ -1,5 +1,8 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = { robots: { index: false, follow: false } }
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
 import { FeedbackForm } from '../main/FeedbackForm'
