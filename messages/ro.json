@@ -547,7 +547,9 @@
   "listingMenu": {
     "actions": "Acțiuni",
     "preview": "Previzualizare",
-    "edit": "Editează"
+    "edit": "Editează",
+    "delete": "Șterge",
+    "deleteConfirm": "Ești sigur că vrei să ștergi această activitate? Acțiunea este ireversibilă."
   },
   "wizard": {
     "steps": [

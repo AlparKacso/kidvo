@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
 interface Props {
@@ -10,8 +11,18 @@ interface Props {
 
 export function ListingCardMenu({ listingId }: Props) {
   const [open, setOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const t = useTranslations('listingMenu')
+  const router = useRouter()
+
+  async function handleDelete() {
+    if (!window.confirm(t('deleteConfirm'))) return
+    setDeleting(true)
+    setOpen(false)
+    await fetch(`/api/listings/${listingId}`, { method: 'DELETE' })
+    router.refresh()
+  }
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -53,6 +64,15 @@ export function ListingCardMenu({ listingId }: Props) {
             <svg width="12" height="12" viewBox="0 0 15 15" fill="none"><path d="M10.5 2.5l2 2-9 9H1.5v-2l9-9Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" fill="none"/></svg>
             {t('edit')}
           </Link>
+          <div className="border-t border-border mx-1 my-1" />
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-surface transition-colors disabled:opacity-50"
+          >
+            <svg width="12" height="12" viewBox="0 0 15 15" fill="none"><path d="M3 3l9 9M12 3l-9 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+            {deleting ? '…' : t('delete')}
+          </button>
         </div>
       )}
     </div>
