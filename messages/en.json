@@ -313,7 +313,14 @@
     "daysAgo": "{d}d ago",
     "manageListings": "Manage →",
     "cancelTrial": "Cancel",
-    "cancelTrialConfirm": "Are you sure you want to cancel this trial request?"
+    "cancelTrialConfirm": "Are you sure you want to cancel this trial request?",
+    "onboardingGetStarted": "Get started",
+    "onboardProvCreateListing": "Create your first listing",
+    "onboardProvFirstBooking": "Receive your first booking",
+    "onboardProvFirstReview": "Get your first review",
+    "onboardParentAddChild": "Add your first child",
+    "onboardParentBookTrial": "Book a trial",
+    "onboardParentLeaveReview": "Leave a review"
   },
   "kids": {
     "title": "Kids & Activities",

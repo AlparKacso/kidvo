@@ -309,9 +309,9 @@ export default async function DashboardPage() {
       }))
 
     const provSteps: OnboardingStep[] = [
-      { label: 'Create your first listing',  done: provHasAnyListing, href: '/listings/new' },
-      { label: 'Receive your first booking', done: provHasAnyBooking },
-      { label: 'Get your first review',      done: provHasAnyReview  },
+      { label: tDash('onboardProvCreateListing'),  done: provHasAnyListing, href: '/listings/new' },
+      { label: tDash('onboardProvFirstBooking'),   done: provHasAnyBooking },
+      { label: tDash('onboardProvFirstReview'),    done: provHasAnyReview  },
     ]
     const provOnboardingDone = provSteps.every(s => s.done)
     const showProvOnboarding = !profile?.onboarding_dismissed && !provOnboardingDone
@@ -638,9 +638,9 @@ export default async function DashboardPage() {
 
   /* ── Onboarding widget ────────────────────────────────────── */
   const parentSteps: OnboardingStep[] = [
-    { label: 'Add your first child', done: childCount > 0,    href: '/kids'                              },
-    { label: 'Book a trial',         done: bookingsCount > 0, href: '/browse'                            },
-    { label: 'Leave a review',       done: parentReviews > 0, href: confirmedTrialsCount > 0 ? '/browse' : undefined },
+    { label: tDash('onboardParentAddChild'),    done: childCount > 0,    href: '/kids'                              },
+    { label: tDash('onboardParentBookTrial'),   done: bookingsCount > 0, href: '/browse'                            },
+    { label: tDash('onboardParentLeaveReview'), done: parentReviews > 0, href: confirmedTrialsCount > 0 ? '/browse' : undefined },
   ]
   const parentOnboardingDone = parentSteps.every(s => s.done)
   const showParentOnboarding = !profile?.onboarding_dismissed && !parentOnboardingDone

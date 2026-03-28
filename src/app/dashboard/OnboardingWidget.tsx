@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { dismissOnboarding } from './actions'
 
 export interface OnboardingStep {
@@ -12,6 +13,7 @@ export interface OnboardingStep {
 
 export function OnboardingWidget({ steps }: { steps: OnboardingStep[] }) {
   const router = useRouter()
+  const t = useTranslations('dashboard')
 
   async function handleDismiss() {
     await dismissOnboarding()
@@ -35,7 +37,7 @@ export function OnboardingWidget({ steps }: { steps: OnboardingStep[] }) {
       </button>
 
       <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase text-ink-muted mb-[14px]">
-        Get started
+        {t('onboardingGetStarted')}
       </div>
 
       <div className="flex flex-col gap-[11px]">

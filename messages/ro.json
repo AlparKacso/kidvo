@@ -313,7 +313,14 @@
     "daysAgo": "Acum {d}z",
     "manageListings": "Gestionează →",
     "cancelTrial": "Anulează",
-    "cancelTrialConfirm": "Ești sigur că vrei să anulezi această cerere de probă?"
+    "cancelTrialConfirm": "Ești sigur că vrei să anulezi această cerere de probă?",
+    "onboardingGetStarted": "Începe",
+    "onboardProvCreateListing": "Creează prima ta activitate",
+    "onboardProvFirstBooking": "Primește prima rezervare",
+    "onboardProvFirstReview": "Primește prima recenzie",
+    "onboardParentAddChild": "Adaugă primul copil",
+    "onboardParentBookTrial": "Rezervă o probă",
+    "onboardParentLeaveReview": "Lasă o recenzie"
   },
   "kids": {
     "title": "Copii & Activități",
