@@ -424,8 +424,9 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 <div className="flex flex-col gap-2">
                   {data.schedules.map((s, i) => (
                     <div key={i} className="p-2 bg-bg rounded-lg border border-border md:p-0 md:bg-transparent md:border-0">
-                      {/* Mobile: 2-col grid. Desktop: single flex row */}
-                      <div className="grid grid-cols-2 gap-2 md:flex md:items-center">
+                      {/* Mobile: row 1 = day+from+to (3 cols), row 2 = label+X (full width)
+                          Desktop: single flex row with all fields */}
+                      <div className="grid grid-cols-3 gap-2 md:flex md:items-center">
                         <select className={cn(selectCls, 'md:flex-1')} value={s.day_of_week} onChange={e => updateSchedule(i, 'day_of_week', parseInt(e.target.value))}>
                           {DAYS.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
                         </select>
@@ -435,7 +436,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                         <select className={cn(selectCls, 'md:flex-1')} value={s.time_end} onChange={e => updateSchedule(i, 'time_end', e.target.value)}>
                           {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
                         </select>
-                        <div className="flex gap-2 items-center md:flex-1 md:min-w-[130px]">
+                        <div className="col-span-3 flex gap-2 items-center md:col-span-1 md:flex-1 md:min-w-[130px]">
                           <input className={cn(inputCls, 'flex-1')} placeholder={t('groupLabelPlaceholder')} value={s.group_label} onChange={e => updateSchedule(i, 'group_label', e.target.value)} />
                           <button type="button" onClick={() => removeSchedule(i)} disabled={data.schedules.length === 1}
                             className="w-8 h-8 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0">
