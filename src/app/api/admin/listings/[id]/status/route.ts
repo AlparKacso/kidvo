@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   sendListingApprovedToProvider,
   sendListingRejectedToProvider,
@@ -29,8 +30,10 @@ export async function POST(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Fetch listing + provider info before updating (to know previous status + get contact details)
-  const { data: listingRaw } = await supabase
+  // Fetch listing + provider info before updating using admin client so RLS
+  // never blocks pending/draft listings from being read here.
+  const adminDb = createAdminClient()
+  const { data: listingRaw } = await adminDb
     .from('listings')
     .select('id, title, status, provider:providers(display_name, contact_email)')
     .eq('id', id)
