@@ -496,7 +496,7 @@
     ]
   },
   "cookie": {
-    "text": "kidvo folosește doar cookie-uri esențiale necesare pentru autentificare și gestionarea sesiunii. Fără cookie-uri de urmărire sau publicitate.",
+    "text": "kidvo folosește cookie-uri esențiale pentru autentificare și cookie-uri Google Analytics pentru a înțelege cum este utilizată platforma. Fără cookie-uri publicitare.",
     "privacy": "Politica de confidențialitate",
     "decline": "Refuz",
     "accept": "Accept"
@@ -711,7 +711,7 @@
     "termsTitle": "Termeni de utilizare",
     "privacyTitle": "Politica de confidențialitate",
     "close": "Închide",
-    "lastUpdated": "Ultima actualizare: Februarie 2026",
+    "lastUpdated": "Ultima actualizare: Martie 2026",
     "privacySections": {
       "whoWeAre": "1. Cine suntem",
       "whoWeAreBody": "kidvo (kidvo.eu) este o platformă de descoperire care conectează părinții cu furnizorii locali de activități din Timișoara, România. Contact: hello@kidvo.eu",
@@ -723,9 +723,9 @@
       "whyWeCollect": "3. De ce colectăm",
       "whyWeCollectBody": "Pentru a opera platforma kidvo, a facilita cererile de probă, a trimite emailuri tranzacționale și a îmbunătăți produsul. Temei legal: executarea contractului și interese legitime (GDPR Art. 6).",
       "cookies": "4. Cookie-uri",
-      "cookiesBody": "kidvo folosește doar cookie-uri esențiale necesare pentru autentificare și gestionarea sesiunilor. Fără cookie-uri de urmărire sau publicitate.",
+      "cookiesBody": "kidvo folosește cookie-uri esențiale pentru autentificare (Supabase Auth) și cookie-uri de analiză (Google Analytics 4: _ga, _ga_*) pentru a înțelege cum utilizează vizitatorii platforma. Datele sunt anonimizate și agregate. Fără cookie-uri publicitare sau de remarketing.",
       "dataSharing": "5. Partajarea datelor",
-      "dataSharingBody": "Partajăm datele doar cu Supabase (bază de date/autentificare), Resend (email) și Vercel (hosting). Când o probă este confirmată, datele tale de contact sunt partajate cu furnizorul relevant. Nu vindem datele tale.",
+      "dataSharingBody": "Partajăm datele doar cu Supabase (bază de date/autentificare), Resend (email), Vercel (hosting) și Google Analytics (analiză anonimizată a utilizării). Când o probă este confirmată, datele tale de contact sunt partajate cu furnizorul relevant. Nu vindem datele tale.",
       "yourRights": "6. Drepturile tale",
       "yourRightsBody": "Ai dreptul de a accesa, corecta, șterge sau exporta datele tale. Trimite un email la hello@kidvo.eu și vom răspunde în 30 de zile.",
       "retention": "7. Retenție",

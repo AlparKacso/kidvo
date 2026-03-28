@@ -496,7 +496,7 @@
     ]
   },
   "cookie": {
-    "text": "kidvo uses only essential cookies required for authentication and session management. No tracking or advertising cookies.",
+    "text": "kidvo uses essential cookies for authentication and Google Analytics cookies to understand how the platform is used. No advertising cookies.",
     "privacy": "Privacy Policy",
     "decline": "Decline",
     "accept": "Accept"
@@ -711,7 +711,7 @@
     "termsTitle": "Terms of Use",
     "privacyTitle": "Privacy Policy",
     "close": "Close",
-    "lastUpdated": "Last updated: February 2026",
+    "lastUpdated": "Last updated: March 2026",
     "privacySections": {
       "whoWeAre": "1. Who we are",
       "whoWeAreBody": "kidvo (kidvo.eu) is a discovery platform connecting parents with local activity providers in Timișoara, Romania. Contact: hello@kidvo.eu",
@@ -723,9 +723,9 @@
       "whyWeCollect": "3. Why we collect it",
       "whyWeCollectBody": "To operate the kidvo platform, facilitate trial requests, send transactional emails, and improve the product. Legal basis: contract performance and legitimate interests (GDPR Art. 6).",
       "cookies": "4. Cookies",
-      "cookiesBody": "kidvo uses only essential cookies required for authentication and session management. No tracking or advertising cookies.",
+      "cookiesBody": "kidvo uses essential cookies for authentication (Supabase Auth) and analytics cookies (Google Analytics 4: _ga, _ga_*) to understand how visitors use the platform. Data is anonymised and aggregated. No advertising or remarketing cookies.",
       "dataSharing": "5. Data sharing",
-      "dataSharingBody": "We share data only with Supabase (database/auth), Resend (email), and Vercel (hosting). When a trial is confirmed, your contact details are shared with the relevant provider. We do not sell your data.",
+      "dataSharingBody": "We share data only with Supabase (database/auth), Resend (email), Vercel (hosting), and Google Analytics (anonymised usage analytics). When a trial is confirmed, your contact details are shared with the relevant provider. We do not sell your data.",
       "yourRights": "6. Your rights",
       "yourRightsBody": "You have the right to access, correct, delete, or export your data. Email hello@kidvo.eu and we'll respond within 30 days.",
       "retention": "7. Retention",
