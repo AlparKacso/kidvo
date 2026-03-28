@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { KidvoLogo } from '@/components/ui/KidvoLogo'
 
 export const metadata: Metadata = {
   title: 'Terms of Use',
@@ -10,9 +11,7 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-[#F5F4F6] font-body">
       <nav className="flex items-center justify-between px-5 md:px-8 py-4 max-w-[800px] mx-auto">
-        <Link href="/" className="font-display leading-none" style={{ fontSize: '22px', fontWeight: 700, letterSpacing: '-0.03em' }}>
-          <span style={{ color: '#523650' }}>kid</span><span style={{ color: '#F0A500' }}>vo</span>
-        </Link>
+        <Link href="/"><KidvoLogo variant="light" /></Link>
       </nav>
 
       <main className="max-w-[800px] mx-auto px-5 md:px-8 py-10 pb-20">
