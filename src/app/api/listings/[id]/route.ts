@@ -21,7 +21,8 @@ export async function DELETE(
     .eq('id', id)
     .single()
 
-  const provider = listing?.provider as { user_id: string } | null
+  const providerRaw = listing?.provider
+  const provider = (Array.isArray(providerRaw) ? providerRaw[0] : providerRaw) as { user_id: string } | null
   if (!provider || provider.user_id !== user.id) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
