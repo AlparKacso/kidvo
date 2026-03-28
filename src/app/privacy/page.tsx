@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
       <main className="max-w-[800px] mx-auto px-5 md:px-8 py-10 pb-20">
         <h1 className="font-display text-3xl font-bold text-[#1a0f1e] mb-2">Privacy Policy</h1>
-        <p className="text-sm text-[#9b89a5] mb-10">Last updated: February 2026</p>
+        <p className="text-sm text-[#9b89a5] mb-10">Last updated: March 2026</p>
 
         <div className="bg-white rounded-2xl border border-[#e8e0ec] p-8 flex flex-col gap-8 text-sm text-[#4a3a52] leading-relaxed">
 
@@ -47,7 +47,11 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="font-display text-base font-bold text-[#1a0f1e] mb-3">4. Cookies</h2>
-            <p>kidvo uses only essential cookies required for authentication and session management (Supabase Auth). We do not use tracking, advertising, or analytics cookies.</p>
+            <p className="mb-2">kidvo uses the following cookies:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li><strong className="text-[#1a0f1e]">Essential cookies</strong> — required for authentication and session management (Supabase Auth). Cannot be disabled.</li>
+              <li><strong className="text-[#1a0f1e]">Analytics cookies</strong> — Google Analytics 4 (<code className="text-xs bg-[#f5f4f6] px-1 rounded">_ga</code>, <code className="text-xs bg-[#f5f4f6] px-1 rounded">_ga_*</code>) to understand how visitors use the platform. Data is anonymised and aggregated. We do not use advertising or remarketing cookies.</li>
+            </ul>
           </section>
 
           <section>
@@ -57,6 +61,7 @@ export default function PrivacyPage() {
               <li><strong className="text-[#1a0f1e]">Supabase</strong> — database and authentication (EU servers)</li>
               <li><strong className="text-[#1a0f1e]">Resend</strong> — transactional email delivery</li>
               <li><strong className="text-[#1a0f1e]">Vercel</strong> — hosting and infrastructure</li>
+              <li><strong className="text-[#1a0f1e]">Google Analytics</strong> — anonymised usage analytics</li>
             </ul>
             <p className="mt-2">When a trial is confirmed, your contact details are shared with the relevant provider. We do not sell your data to third parties.</p>
           </section>
