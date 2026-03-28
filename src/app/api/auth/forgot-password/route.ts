@@ -16,7 +16,11 @@ export async function POST(req: Request) {
       email,
       options: { redirectTo: `${origin}/auth/reset-password` },
     })
-    if (!error && data?.properties?.action_link) {
+
+    if (error) {
+      // Log server-side so we can diagnose issues (e.g. unconfirmed account)
+      console.error('[forgot-password] generateLink failed:', error.message)
+    } else if (data?.properties?.action_link) {
       // Fetch name for personalisation (best effort)
       const { data: profile } = await adminDb
         .from('users').select('full_name').eq('email', email).single()
@@ -24,9 +28,11 @@ export async function POST(req: Request) {
         email,
         name: (profile as any)?.full_name ?? 'there',
         resetLink: data.properties.action_link,
-      }).catch(() => {})
+      }).catch((err) => console.error('[forgot-password] sendPasswordResetEmail failed:', err))
     }
-  } catch {}
+  } catch (err) {
+    console.error('[forgot-password] unexpected error:', err)
+  }
 
   // Always return ok — don't reveal whether email exists
   return NextResponse.json({ ok: true })

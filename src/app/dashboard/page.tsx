@@ -215,12 +215,22 @@ export default async function DashboardPage() {
   if (!user) redirect('/auth/login')
   const tDash = await getTranslations('dashboard')
 
+  // Critical: role determines which dashboard to render — query separately so an
+  // unrelated column issue (e.g. missing onboarding_dismissed) can never silently
+  // default the wrong role and show the wrong dashboard.
   const { data: profileRaw } = await supabase
-    .from('users').select('full_name, role, onboarding_dismissed').eq('id', user.id).single()
-  const profile = profileRaw as { full_name: string; role: string; onboarding_dismissed: boolean } | null
-  const role       = profile?.role ?? 'parent'
-  const firstName  = profile?.full_name?.split(' ')[0] ?? ''
+    .from('users').select('full_name, role').eq('id', user.id).single()
+  const profileBase = profileRaw as { full_name: string; role: string } | null
+  const role       = profileBase?.role ?? 'parent'
+  const firstName  = profileBase?.full_name?.split(' ')[0] ?? ''
   const isProvider = role === 'provider' || role === 'both'
+
+  // Non-critical: onboarding state — failures just hide the widget, never break routing
+  const { data: onboardingRaw } = await supabase
+    .from('users').select('onboarding_dismissed').eq('id', user.id).single()
+  const profile = profileBase
+    ? { ...profileBase, onboarding_dismissed: (onboardingRaw as { onboarding_dismissed: boolean } | null)?.onboarding_dismissed ?? false }
+    : null
 
   /* ── Provider dashboard ───────────────────────────────────── */
   if (isProvider) {

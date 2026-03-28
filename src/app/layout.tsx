@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { CookieBanner } from '@/components/ui/CookieBanner'
+import { AuthHashRedirect } from '@/components/ui/AuthHashRedirect'
 import { getLocale, getMessages } from 'next-intl/server'
 import { NextIntlClientProvider } from 'next-intl'
 
@@ -68,6 +69,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale} suppressHydrationWarning>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <AuthHashRedirect />
           {children}
           <CookieBanner />
         </NextIntlClientProvider>
