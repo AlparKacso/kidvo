@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import { CookieBanner } from '@/components/ui/CookieBanner'
 import { AuthHashRedirect } from '@/components/ui/AuthHashRedirect'
 import { getLocale, getMessages } from 'next-intl/server'
 import { NextIntlClientProvider } from 'next-intl'
+
+const GA_ID = 'G-L8N9DXFM2K'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -67,6 +70,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+        <Script id="ga-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GA_ID}');
+        `}</Script>
+      </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthHashRedirect />
