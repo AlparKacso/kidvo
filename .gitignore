@@ -22,4 +22,5 @@ tsconfig.tsbuildinfo
 
 # local prototypes
 *.html
+!supabase/templates/*.html
 kidvo. /

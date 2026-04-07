@@ -14,6 +14,16 @@ export async function POST(req: Request) {
   const { listing_id, preferred_day, message, child_id } = await req.json()
   if (!listing_id) return NextResponse.json({ error: 'Missing listing_id' }, { status: 400 })
 
+  // Ensure the user has a profile row — auto-create if missing (e.g. if create-profile failed at signup)
+  const adminDb = createAdminClient()
+  const { data: existingProfile } = await adminDb.from('users').select('id').eq('id', user.id).single()
+  if (!existingProfile) {
+    const email    = user.email ?? ''
+    const fullName = (user.user_metadata?.full_name as string | undefined) ?? email.split('@')[0]
+    await adminDb.from('users').insert({ id: user.id, email, full_name: fullName, role: 'parent', city: 'Timișoara' })
+    console.warn('[trial] auto-created missing user profile for', email)
+  }
+
   const { data: request, error } = await supabase
     .from('trial_requests')
     .insert({ listing_id, user_id: user.id, preferred_day, message: message || null, status: 'pending', child_id: child_id ?? null })
@@ -22,7 +32,6 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const adminDb = createAdminClient()
   const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
     adminDb.from('listings').select('title, provider_id').eq('id', listing_id).single(),
     supabase.from('users').select('full_name, email').eq('id', user.id).single(),
