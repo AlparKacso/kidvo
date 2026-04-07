@@ -22,16 +22,15 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  const adminDb = createAdminClient()
   const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
-    supabase.from('listings').select('title, provider_id').eq('id', listing_id).single(),
+    adminDb.from('listings').select('title, provider_id').eq('id', listing_id).single(),
     supabase.from('users').select('full_name, email').eq('id', user.id).single(),
   ])
 
   const listing = listingRaw as any
   const parent  = parentRaw  as { full_name: string; email: string } | null
 
-  // Use admin client to bypass RLS on users join (parent can't read provider's user row)
-  const adminDb = createAdminClient()
   let providerEmail = ''
   let providerName  = ''
   if (listing?.provider_id) {
