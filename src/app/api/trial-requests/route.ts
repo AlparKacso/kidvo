@@ -46,16 +46,19 @@ export async function POST(req: Request) {
   }
 
   if (providerEmail && parent && listing) {
-    sendNewTrialRequestToProvider({
-      providerEmail,
-      parentName:   parent.full_name,
-      parentEmail:  parent.email,
-      listingTitle: listing.title,
-      preferredDay: preferred_day !== null ? DAYS[preferred_day] : null,
-      message:      message || null,
-    })
-      .then(r  => console.log('[trial email] sent:', JSON.stringify(r)))
-      .catch(e => console.error('[trial email] error:', e))
+    try {
+      const r = await sendNewTrialRequestToProvider({
+        providerEmail,
+        parentName:   parent.full_name,
+        parentEmail:  parent.email,
+        listingTitle: listing.title,
+        preferredDay: preferred_day !== null ? DAYS[preferred_day] : null,
+        message:      message || null,
+      })
+      console.log('[trial email] sent:', JSON.stringify(r))
+    } catch (e) {
+      console.error('[trial email] error:', e)
+    }
   } else {
     console.error('[trial email] skipped — providerEmail:', providerEmail, 'parent:', parent?.email, 'listing:', listing?.title)
   }
