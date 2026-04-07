@@ -89,7 +89,7 @@ export async function sendNewTrialRequestToProvider(opts: {
       ${h1('New trial request')}
       ${p(`A parent wants to try <strong>${opts.listingTitle}</strong>. Confirm or decline from your dashboard.`)}
       ${detailTable(rows)}
-      ${btn('View request →', `${APP_URL}/listings/bookings`)}
+      ${btn('View request →', `${APP_URL}/dashboard`)}
     `),
   })
 }
