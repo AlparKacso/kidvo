@@ -29,18 +29,34 @@ export async function GET(request: NextRequest) {
     if (!error && sessionData?.user) {
       const userId = sessionData.user.id
 
-      // Send welcome email for new accounts (created within the last 60 minutes)
       try {
         const adminDb = createAdminClient()
-        const { data: profile } = await adminDb
+
+        // Ensure the profile row exists — auto-create if create-profile failed at signup
+        let { data: profile } = await adminDb
           .from('users')
           .select('full_name, role, created_at')
           .eq('id', userId)
           .single()
 
+        if (!profile) {
+          const email    = sessionData.user.email ?? ''
+          const meta     = sessionData.user.user_metadata ?? {}
+          const fullName = (meta.full_name as string | undefined) ?? email.split('@')[0]
+          const role     = (meta.role as string | undefined) ?? 'parent'
+          const { data: created } = await adminDb
+            .from('users')
+            .insert({ id: userId, email, full_name: fullName, role, city: 'Timișoara' })
+            .select('full_name, role, created_at')
+            .single()
+          profile = created
+          console.warn('[callback] auto-created missing profile for', email)
+        }
+
+        // Send welcome email for new accounts (created within the last 60 minutes)
         if (profile) {
           const ageMs = Date.now() - new Date((profile as any).created_at).getTime()
-          const isNewAccount = ageMs < 60 * 60 * 1000 // under 60 minutes old
+          const isNewAccount = ageMs < 60 * 60 * 1000
 
           if (isNewAccount) {
             const { email } = sessionData.user
