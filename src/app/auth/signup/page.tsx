@@ -82,11 +82,7 @@ export default function SignupPage() {
       return
     }
 
-    fetch('/api/auth/welcome', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, name: fullName, role }),
-    }).catch(() => {})
+    // Welcome email is sent from /auth/callback after email confirmation
 
     setLoading(false)
     setDone(true)
