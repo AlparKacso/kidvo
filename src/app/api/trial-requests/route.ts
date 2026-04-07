@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendNewTrialRequestToProvider } from '@/lib/email'
 
 const DAYS    = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -29,11 +30,12 @@ export async function POST(req: Request) {
   const listing = listingRaw as any
   const parent  = parentRaw  as { full_name: string; email: string } | null
 
-  // Fetch provider separately for reliable contact_email (avoid join array/null issues)
+  // Use admin client to bypass RLS on users join (parent can't read provider's user row)
+  const adminDb = createAdminClient()
   let providerEmail = ''
   let providerName  = ''
   if (listing?.provider_id) {
-    const { data: prov, error: provErr } = await supabase
+    const { data: prov, error: provErr } = await adminDb
       .from('providers')
       .select('display_name, contact_email, user:users(email, full_name)')
       .eq('id', listing.provider_id)
