@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { ListingCardMenu } from './ListingCardMenu'
 import { sendTrialConfirmedToParent, sendTrialDeclinedToParent } from '@/lib/email'
 import { getTranslations } from 'next-intl/server'
@@ -90,34 +91,50 @@ export default async function ProviderListingsPage({
     const id     = formData.get('id') as string
     const status = formData.get('status') as string
     const supabase = await createClient()
+    const adminDb  = createAdminClient()
 
-    const { data: reqRaw } = await supabase
+    // Fetch trial request with separate queries to avoid join array issues + RLS
+    const { data: trialRaw } = await adminDb
       .from('trial_requests')
-      .select('listing_id, listing:listings(id, title, provider:providers(display_name, contact_email, contact_phone)), parent:users(full_name, email)')
+      .select('user_id, listing_id')
       .eq('id', id).single()
 
     await supabase.from('trial_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', id)
     revalidatePath('/listings')
 
-    const req = reqRaw as any
-    if (req?.parent?.email && req?.listing?.title) {
-      if (status === 'confirmed' && req.listing.provider) {
-        await sendTrialConfirmedToParent({
-          parentEmail:   req.parent.email,
-          parentName:    req.parent.full_name ?? 'there',
-          listingTitle:  req.listing.title,
-          listingId:     req.listing.id,
-          providerName:  req.listing.provider.display_name,
-          providerEmail: req.listing.provider.contact_email,
-          providerPhone: req.listing.provider.contact_phone ?? null,
-        }).catch(console.error)
-      } else if (status === 'declined') {
-        await sendTrialDeclinedToParent({
-          parentEmail:  req.parent.email,
-          parentName:   req.parent.full_name ?? 'there',
-          listingTitle: req.listing.title,
-        }).catch(console.error)
-      }
+    const trial = trialRaw as any
+    if (!trial) return
+
+    const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
+      adminDb.from('listings').select('id, title, provider_id').eq('id', trial.listing_id).single(),
+      adminDb.from('users').select('full_name, email').eq('id', trial.user_id).single(),
+    ])
+
+    const listing = listingRaw as any
+    const parent  = parentRaw  as any
+    if (!listing || !parent?.email) return
+
+    if (status === 'confirmed') {
+      const { data: provRaw } = await adminDb
+        .from('providers')
+        .select('display_name, contact_email, contact_phone, user:users(email, full_name)')
+        .eq('id', listing.provider_id).single()
+      const p = provRaw as any
+      await sendTrialConfirmedToParent({
+        parentEmail:   parent.email,
+        parentName:    parent.full_name ?? 'there',
+        listingTitle:  listing.title,
+        listingId:     listing.id,
+        providerName:  p?.display_name  || p?.user?.full_name || '',
+        providerEmail: p?.contact_email || p?.user?.email     || '',
+        providerPhone: p?.contact_phone ?? null,
+      }).catch(console.error)
+    } else if (status === 'declined') {
+      await sendTrialDeclinedToParent({
+        parentEmail:  parent.email,
+        parentName:   parent.full_name ?? 'there',
+        listingTitle: listing.title,
+      }).catch(console.error)
     }
   }
 
