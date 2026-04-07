@@ -27,20 +27,25 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
   const [childId,  setChildId]  = useState<string | null>(null)
   const t = useTranslations('trial')
 
+  // Pre-fetch kids on mount so data is ready when modal opens (no lag)
+  useEffect(() => {
+    if (!isLoggedIn) return
+    fetch('/api/kids')
+      .then(r => r.json())
+      .then(data => {
+        const list = (data.kids ?? []) as Kid[]
+        setKids(list)
+        if (list.length === 1) setChildId(list[0].id)
+      })
+      .catch(() => setKids([]))
+  }, [isLoggedIn])
+
   useEffect(() => {
     if (searchParams.get('book') === '1' && !isFull) openModal()
   }, [searchParams, isFull])
 
-  async function openModal() {
+  function openModal() {
     setState('open')
-    if (kids === null) {
-      const res  = await fetch('/api/kids')
-      const data = await res.json()
-      const list = (data.kids ?? []) as Kid[]
-      setKids(list)
-      // Auto-select if only one child
-      if (list.length === 1) setChildId(list[0].id)
-    }
   }
 
   async function submit() {
