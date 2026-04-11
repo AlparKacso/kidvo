@@ -45,7 +45,7 @@ export function RecommendedCard({ listing, forKid }: { listing: any; forKid?: st
         {listing.price_monthly != null && (
           <div>
             <div className="font-display text-[20px] font-extrabold leading-none">{listing.price_monthly}</div>
-            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>{t('ronPerMonth')}</div>
+            <div className="font-display text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>{listing.pricing_type === 'session' ? t('ronPerSession') : t('ronPerMonth')}</div>
           </div>
         )}
         {listing.trial_available && (

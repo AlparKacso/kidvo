@@ -275,6 +275,128 @@ function SlowProvidersModal({ trials, onClose }: { trials: any[]; onClose: () =>
   )
 }
 
+function AllProvidersModal({ providers, onClose }: { providers: ProviderSummary[]; onClose: () => void }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  function toggle(id: string) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+  const totalListings = providers.reduce((sum, p) => sum + p.listings.length, 0)
+
+  return (
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-ink/40" />
+      <div
+        className="relative bg-white rounded-xl shadow-card-hover w-full max-w-xl flex flex-col"
+        style={{ maxHeight: '85vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <div>
+            <div className="font-display text-sm font-bold text-ink">All providers</div>
+            <div className="text-xs text-ink-muted">
+              {providers.length} provider{providers.length !== 1 ? 's' : ''} · {totalListings} listing{totalListings !== 1 ? 's' : ''}
+            </div>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center text-ink-muted hover:bg-surface hover:text-ink transition-colors font-display text-sm">✕</button>
+        </div>
+
+        {/* Scrollable list */}
+        <div className="overflow-y-auto flex-1 px-5 py-3 flex flex-col gap-3">
+          {providers.length === 0 ? (
+            <p className="text-sm text-ink-muted text-center py-6">No providers yet.</p>
+          ) : providers.map(p => {
+            const isOpen   = expanded.has(p.id)
+            const listings = p.listings
+            const email    = p.account_email ?? p.contact_email
+            return (
+              <div key={p.id} className="border border-border rounded-lg p-3.5 flex flex-col gap-2">
+                {/* Name + verified */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-display text-[13px] font-semibold text-ink truncate">
+                    {p.display_name || '—'}
+                  </div>
+                  {p.verified && (
+                    <span className="flex-shrink-0 font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-success-lt text-success">
+                      verified
+                    </span>
+                  )}
+                </div>
+
+                {/* Email */}
+                {email && (
+                  <div className="flex items-start gap-1.5 text-xs text-ink-muted">
+                    <span className="font-semibold text-ink-mid w-14 flex-shrink-0">Email</span>
+                    <a href={`mailto:${email}`} className="text-primary hover:underline truncate">{email}</a>
+                  </div>
+                )}
+
+                {/* Phone */}
+                {p.contact_phone && (
+                  <div className="flex items-start gap-1.5 text-xs text-ink-muted">
+                    <span className="font-semibold text-ink-mid w-14 flex-shrink-0">Phone</span>
+                    <a href={`tel:${p.contact_phone}`} className="text-primary hover:underline">{p.contact_phone}</a>
+                  </div>
+                )}
+
+                {/* Listings toggle */}
+                <button
+                  type="button"
+                  onClick={() => toggle(p.id)}
+                  className="flex items-center gap-1.5 text-xs text-ink-mid hover:text-primary transition-colors border-t border-border/60 pt-2 mt-0.5 text-left"
+                >
+                  <span className="font-semibold">{listings.length}</span>
+                  <span>listing{listings.length !== 1 ? 's' : ''}</span>
+                  {listings.length > 0 && (
+                    <span className="ml-auto text-[10px]">{isOpen ? '▲ hide' : '▼ show'}</span>
+                  )}
+                </button>
+
+                {isOpen && listings.length > 0 && (
+                  <div className="flex flex-col gap-1 pl-1">
+                    {listings.map(l => (
+                      <div key={l.id} className="flex items-center gap-2 text-xs">
+                        <span className={cn('inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold capitalize flex-shrink-0', STATUS_STYLES[l.status] ?? 'bg-surface text-ink-muted')}>
+                          {l.status}
+                        </span>
+                        <Link
+                          href={`/browse/${l.id}`}
+                          target="_blank"
+                          className="text-ink hover:text-primary transition-colors truncate"
+                        >
+                          {l.title}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface ProviderSummary {
+  id:             string
+  display_name:   string
+  contact_email:  string | null
+  contact_phone:  string | null
+  verified:       boolean | null
+  created_at:     string
+  account_email:  string | null
+  last_sign_in_at: string | null
+  role:           string | null
+  listings: { id: string; title: string; status: string; created_at: string }[]
+}
+
 interface Props {
   pending:           Listing[]
   active:            Listing[]
@@ -283,6 +405,7 @@ interface Props {
   parentEmails:      string[]
   slowTrials:        any[]
   slowProviderCount: number
+  allProviders:      ProviderSummary[]
   stats:             Stats
 }
 
@@ -366,7 +489,7 @@ function EmailListModal({ emails, onClose }: { emails: string[]; onClose: () => 
   )
 }
 
-export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, slowTrials, slowProviderCount, stats }: Props) {
+export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, slowTrials, slowProviderCount, allProviders, stats }: Props) {
   const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([
     ...initialPending,
@@ -376,6 +499,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
   const [reviews, setReviews]               = useState<any[]>(initialReviews)
   const [showParentEmails, setShowParentEmails] = useState(false)
   const [showSlowProviders, setShowSlowProviders] = useState(false)
+  const [showAllProviders,  setShowAllProviders]  = useState(false)
 
   function handleStatusChange(id: string, status: string) {
     setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l))
@@ -414,7 +538,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
         {/* Platform stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
           <StatCard label="Active parents (30d)"   value={stats.activeParents}   onClick={() => setShowParentEmails(true)} />
-          <StatCard label="Active providers (30d)" value={stats.activeProviders} />
+          <StatCard label="Active providers (30d)" value={stats.activeProviders} onClick={allProviders.length > 0 ? () => setShowAllProviders(true) : undefined} />
           <StatCard label="Active listings"        value={stats.activeListings}  />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
@@ -433,6 +557,9 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
         )}
         {showSlowProviders && (
           <SlowProvidersModal trials={slowTrials} onClose={() => setShowSlowProviders(false)} />
+        )}
+        {showAllProviders && (
+          <AllProvidersModal providers={allProviders} onClose={() => setShowAllProviders(false)} />
         )}
 
         {/* Pending reviews — top priority */}

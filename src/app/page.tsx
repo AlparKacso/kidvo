@@ -235,9 +235,11 @@ export default async function LandingPage() {
             <div className="font-display font-extrabold text-ink flex-shrink-0" style={{ fontSize: '21px', letterSpacing: '-0.4px', color: '#1c1c27' }}>
               {t('trendingNearYou')}
             </div>
-            <Link href="/browse" className="font-display text-sm font-semibold text-primary hover:underline whitespace-nowrap flex-shrink-0">
-              {t('seeAll', { count: 120 })}
-            </Link>
+            {activityCount >= 4 && (
+              <Link href="/browse" className="font-display text-sm font-semibold text-primary hover:underline whitespace-nowrap flex-shrink-0">
+                {t('seeAll', { count: activityCount })}
+              </Link>
+            )}
           </div>
 
           {/* Category pills — horizontal scroll row */}

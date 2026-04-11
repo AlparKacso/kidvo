@@ -51,6 +51,20 @@ export async function GET(request: NextRequest) {
             .single()
           profile = created
           console.warn('[callback] auto-created missing profile for', email)
+
+          // If provider, create matching providers row so dashboard/listings work
+          if (role === 'provider') {
+            const { error: providerErr } = await adminDb.from('providers').upsert({
+              user_id:       userId,
+              display_name:  fullName,
+              contact_email: email,
+            }, { onConflict: 'user_id' })
+            if (providerErr) {
+              console.error('[callback] auto-create providers row failed:', providerErr)
+            } else {
+              console.warn('[callback] auto-created missing providers row for', email)
+            }
+          }
         }
 
         // Send welcome email for new accounts (created within the last 60 minutes)

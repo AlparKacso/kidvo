@@ -43,10 +43,9 @@ const TIMES = [
   '15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30',
   '19:00','19:30','20:00','20:30','21:00',
 ]
-const EMPTY_SCHEDULE: ScheduleRow = { day_of_week: 0, time_start: '16:00', time_end: '17:00', group_label: '' }
 const INITIAL: FormData = {
   title: '', category_id: '', area_id: '', address: '', maps_url: '', language: ['Romanian'],
-  age_min: '', age_max: '', schedules: [{ ...EMPTY_SCHEDULE }],
+  age_min: '', age_max: '', schedules: [],
   price_monthly: '', spots_total: '', spots_available: '', description: '',
   includes: [''], trial_available: true, trial_disabled_reason: 'cohort', cover_image_url: '',
   pricing_type: 'month',
@@ -129,7 +128,7 @@ function PreviewCard({ data, categories, areas }: { data: FormData; categories: 
               {[...new Set(data.schedules.map(s => DAYS[s.day_of_week]))].join(' & ')} - {data.schedules[0].time_start}-{data.schedules[0].time_end}
             </div>
             {data.price_monthly && (
-              <div className="font-display text-sm font-semibold">{data.price_monthly} RON<span className="font-body font-normal text-[11px] text-ink-muted">/mo</span></div>
+              <div className="font-display text-sm font-semibold">{data.price_monthly} RON<span className="font-body font-normal text-[11px] text-ink-muted">/{data.pricing_type === 'session' ? 'session' : 'mo'}</span></div>
             )}
           </div>
         )}
@@ -164,6 +163,11 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   const [rawImageSrc, setRawImageSrc]   = useState<string>('')
   const [showCropModal, setShowCropModal] = useState(false)
 
+  // Schedule step local state (multi-day picker)
+  const [selectedDays, setSelectedDays] = useState<number[]>([])
+  const [tempStart, setTempStart]       = useState('16:00')
+  const [tempEnd,   setTempEnd]         = useState('17:00')
+
   const t = useTranslations('wizard')
   const STEPS = t.raw('steps') as string[]
   const DAYS  = [0,1,2,3,4,5,6].map(i => t(`days.${i}` as any))
@@ -173,10 +177,19 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
     setData(prev => ({ ...prev, [key]: value }))
   }
 
-  function addSchedule()    { set('schedules', [...data.schedules, { ...EMPTY_SCHEDULE }]) }
   function removeSchedule(i: number) { set('schedules', data.schedules.filter((_, idx) => idx !== i)) }
-  function updateSchedule(i: number, field: keyof ScheduleRow, value: string | number) {
-    set('schedules', data.schedules.map((s, idx) => idx === i ? { ...s, [field]: value } : s))
+  function toggleDay(d: number) {
+    setSelectedDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort((a, b) => a - b))
+  }
+  function addSchedulesForDays() {
+    if (selectedDays.length === 0) return
+    // Ignore duplicates (same day + same start + same end already in list)
+    const existing = new Set(data.schedules.map(s => `${s.day_of_week}-${s.time_start}-${s.time_end}`))
+    const toAdd: ScheduleRow[] = selectedDays
+      .filter(d => !existing.has(`${d}-${tempStart}-${tempEnd}`))
+      .map(d => ({ day_of_week: d, time_start: tempStart, time_end: tempEnd, group_label: '' }))
+    set('schedules', [...data.schedules, ...toAdd])
+    setSelectedDays([])
   }
   function updateInclude(i: number, value: string) { set('includes', data.includes.map((v, idx) => idx === i ? value : v)) }
   function addInclude()    { set('includes', [...data.includes, '']) }
@@ -184,11 +197,20 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
 
   useEffect(() => setShowErrors(false), [step])
 
+  function spotsInvalid(): boolean {
+    // If both are filled, available must not exceed total.
+    if (!data.spots_total || !data.spots_available) return false
+    const total = parseInt(data.spots_total)
+    const avail = parseInt(data.spots_available)
+    if (Number.isNaN(total) || Number.isNaN(avail)) return false
+    return avail > total
+  }
+
   function canProceed(): boolean {
     if (step === 0) return agreed
     if (step === 1) return !!(data.title && data.category_id && data.area_id && data.age_min && data.age_max)
     if (step === 2) return data.schedules.length > 0
-    if (step === 3) return !!(data.price_monthly && data.description)
+    if (step === 3) return !!(data.price_monthly && data.description) && !spotsInvalid()
     return true
   }
 
@@ -421,36 +443,76 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
             <div className="flex flex-col gap-5">
               <div>
                 <Label hint={t('scheduleHint')}>{t('scheduleLabel')}</Label>
-                <div className="flex flex-col gap-2">
-                  {data.schedules.map((s, i) => (
-                    <div key={i} className="p-2 bg-bg rounded-lg border border-border md:p-0 md:bg-transparent md:border-0">
-                      {/* Mobile: row 1 = day+from+to (3 cols), row 2 = label+X (full width)
-                          Desktop: single flex row with all fields */}
-                      <div className="grid grid-cols-3 gap-2 md:flex md:items-center">
-                        <select className={cn(selectCls, 'md:flex-1')} value={s.day_of_week} onChange={e => updateSchedule(i, 'day_of_week', parseInt(e.target.value))}>
-                          {DAYS.map((d, idx) => <option key={idx} value={idx}>{d}</option>)}
-                        </select>
-                        <select className={cn(selectCls, 'md:flex-1')} value={s.time_start} onChange={e => updateSchedule(i, 'time_start', e.target.value)}>
-                          {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
-                        </select>
-                        <select className={cn(selectCls, 'md:flex-1')} value={s.time_end} onChange={e => updateSchedule(i, 'time_end', e.target.value)}>
-                          {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
-                        </select>
-                        <div className="col-span-3 flex gap-2 items-center md:col-span-1 md:flex-1 md:min-w-[130px]">
-                          <input className={cn(inputCls, 'flex-1')} placeholder={t('groupLabelPlaceholder')} value={s.group_label} onChange={e => updateSchedule(i, 'group_label', e.target.value)} />
-                          <button type="button" onClick={() => removeSchedule(i)} disabled={data.schedules.length === 1}
-                            className="w-8 h-8 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+
+                {/* Multi-day picker */}
+                <div className="p-4 bg-bg border border-border rounded-lg flex flex-col gap-3">
+                  <div>
+                    <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid mb-1.5">{t('daysLabel')}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {DAYS.map((label, idx) => {
+                        const active = selectedDays.includes(idx)
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => toggleDay(idx)}
+                            className={cn(
+                              'px-3 py-1.5 rounded-full font-display text-xs font-semibold border transition-all',
+                              active
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-white text-ink-mid border-border hover:border-primary hover:text-primary'
+                            )}
+                          >
+                            {label}
                           </button>
-                        </div>
-                      </div>
+                        )
+                      })}
                     </div>
-                  ))}
-                  <button type="button" onClick={addSchedule} className="flex items-center gap-2 text-sm font-display font-semibold text-primary hover:text-primary-deep transition-colors mt-1">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3"/><path d="M7 4v6M4 7h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                    {t('addSlot')}
+                    <p className="text-[11px] text-ink-muted mt-1.5">{t('pickDaysHint')}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <select className={selectCls} value={tempStart} onChange={e => setTempStart(e.target.value)}>
+                      {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+                    </select>
+                    <select className={selectCls} value={tempEnd} onChange={e => setTempEnd(e.target.value)}>
+                      {TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+                    </select>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addSchedulesForDays}
+                    disabled={selectedDays.length === 0}
+                    className="self-start px-4 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {t('addForSelectedDays')}
                   </button>
                 </div>
+
+                {/* Added time slots */}
+                {data.schedules.length === 0 ? (
+                  <p className="text-[12px] text-ink-muted mt-3">{t('noSchedulesYet')}</p>
+                ) : (
+                  <div className="flex flex-col gap-2 mt-3">
+                    {data.schedules.map((s, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2 px-3 py-2 bg-white border border-border rounded-lg">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="font-display text-[12px] font-semibold text-primary bg-primary-lt rounded px-2 py-0.5">{DAYS[s.day_of_week]}</span>
+                          <span className="font-display text-sm text-ink">{s.time_start} – {s.time_end}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSchedule(i)}
+                          className="w-7 h-7 rounded border border-border flex items-center justify-center text-ink-muted hover:border-danger hover:text-danger transition-colors flex-shrink-0"
+                          aria-label="Remove"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -529,7 +591,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 <div>
-                  <Label hint={t('priceHint')}>{t('priceLabel')}</Label>
+                  <Label hint={t('priceHint')}>{data.pricing_type === 'session' ? t('priceLabelSession') : t('priceLabelMonth')}</Label>
                   <input className={cn(inputCls, showErrors && !data.price_monthly && 'border-danger')} type="number" min={0} placeholder={t('pricePlaceholder')} value={data.price_monthly} onChange={e => set('price_monthly', e.target.value)} />
                   {showErrors && !data.price_monthly && (
                     <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
@@ -541,9 +603,12 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
                 </div>
                 <div>
                   <Label hint={t('spotsAvailableHint')}>{t('spotsAvailable')}</Label>
-                  <input className={inputCls} type="number" min={0} placeholder={t('spotsAvailablePlaceholder')} value={data.spots_available} onChange={e => set('spots_available', e.target.value)} />
+                  <input className={cn(inputCls, spotsInvalid() && 'border-danger')} type="number" min={0} placeholder={t('spotsAvailablePlaceholder')} value={data.spots_available} onChange={e => set('spots_available', e.target.value)} />
                 </div>
               </div>
+              {spotsInvalid() && (
+                <p className="text-[11px] text-danger -mt-3">{t('spotsInvalid')}</p>
+              )}
               <div>
                 <Label hint={t('aboutHint')}>{t('aboutLabel')}</Label>
                 <textarea className={cn(inputCls, showErrors && !data.description?.trim() && 'border-danger')} rows={5} placeholder={t('aboutPlaceholder')} value={data.description} onChange={e => set('description', e.target.value)} />

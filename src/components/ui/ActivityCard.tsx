@@ -167,7 +167,7 @@ export async function ActivityCard({ listing, featured, savedIds, avgRating, rev
           <span className="font-display font-extrabold text-ink" style={{ fontSize: '16px' }}>
             {listing.price_monthly} RON
           </span>
-          <span className="text-[11px] text-ink-muted">{t('perMonth')}</span>
+          <span className="text-[11px] text-ink-muted">{(listing as any).pricing_type === 'session' ? t('perSession') : t('perMonth')}</span>
         </div>
 
         {isFull ? (

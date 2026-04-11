@@ -241,6 +241,10 @@ export default async function DashboardPage() {
       .from('providers').select('id').eq('user_id', user.id).single()
     const provider = providerRaw as { id: string } | null
 
+    // Safety net: a provider without a providers row is broken. Push them to
+    // create their first listing so /listings/new can re-seed the row.
+    if (!provider) redirect('/listings/new')
+
     let weekReach = 0, pendingTrials = 0, confirmedTrials = 0, tipBody = ''
     let provHasAnyListing = false, provHasAnyBooking = false, provHasAnyReview = false
     let allListings: { id: string; title: string; status: string }[] = []

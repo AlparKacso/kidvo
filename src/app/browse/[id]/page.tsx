@@ -311,7 +311,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                   </div>
                   <div>
                     <div className="text-[11px] text-ink-muted font-display font-semibold uppercase tracking-label mb-0.5">{t('pricing')}</div>
-                    <div className="text-sm text-ink">{listing.price_monthly}{t('ronPerMonth')}{listing.trial_available ? t('trialSessionFree') : ''}</div>
+                    <div className="text-sm text-ink">{listing.price_monthly}{listing.pricing_type === 'session' ? t('ronPerSession') : t('ronPerMonth')}{listing.trial_available ? t('trialSessionFree') : ''}</div>
                   </div>
                 </div>
                 <div className="flex gap-3 items-start">
@@ -445,7 +445,7 @@ export default async function ActivityDetailPage({ params }: Props) {
             <div className="bg-white border border-border rounded-lg p-5">
               <div className="flex items-baseline gap-1.5 mb-0.5">
                 <span className="font-display text-2xl font-bold text-ink">{listing.price_monthly} RON</span>
-                <span className="text-sm text-ink-muted">{t('perMonth')}</span>
+                <span className="text-sm text-ink-muted">{listing.pricing_type === 'session' ? t('perSession') : t('perMonth')}</span>
               </div>
               {listing.trial_available && (
                 <div className="text-xs text-ink-muted mb-4">{t('trialFooter')}</div>

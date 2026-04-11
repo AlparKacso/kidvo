@@ -24,3 +24,8 @@ tsconfig.tsbuildinfo
 *.html
 !supabase/templates/*.html
 kidvo. /
+
+# playwright
+/playwright-report
+/test-results
+.env.test.local

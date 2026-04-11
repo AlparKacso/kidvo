@@ -35,6 +35,7 @@ export default async function AdminPage() {
     viewsResult,
     trialsResult,
     slowTrialsResult,
+    allProvidersResult,
   ] = await Promise.all([
     // All listings with relations (for listing moderation panel)
     supabase
@@ -70,6 +71,15 @@ export default async function AdminPage() {
       .eq('status', 'pending')
       .lt('created_at', twoDaysAgo)
       .order('created_at', { ascending: true }),
+
+    // All providers with their listings (for the "See all" providers modal)
+    supabase
+      .from('providers')
+      .select(`
+        id, user_id, display_name, contact_email, contact_phone, verified, created_at,
+        listings(id, title, status, created_at)
+      `)
+      .order('display_name'),
   ])
 
   const listingsRaw    = (listingsResult.data    as unknown as { status: string }[] | null) ?? []
@@ -78,6 +88,26 @@ export default async function AdminPage() {
   const authUsers      = authUsersResult.data?.users ?? []
   const slowTrials     = (slowTrialsResult.data  as unknown as any[] | null) ?? []
   const slowProviderCount = new Set(slowTrials.map((t: any) => t.listing?.provider?.contact_email).filter(Boolean)).size
+
+  // Enrich providers with auth email for the modal (some providers may not have a users.email alias)
+  const allProvidersRaw = (allProvidersResult.data as unknown as any[] | null) ?? []
+  const userPublicMap   = new Map(usersPublic.map(u => [u.id, u]))
+  const authUserMap     = new Map(authUsers.map(u => [u.id, u]))
+  const allProviders = allProvidersRaw.map((p: any) => {
+    const authU = authUserMap.get(p.user_id)
+    return {
+      id:             p.id,
+      display_name:   p.display_name,
+      contact_email:  p.contact_email,
+      contact_phone:  p.contact_phone,
+      verified:       p.verified,
+      created_at:     p.created_at,
+      account_email:  authU?.email ?? null,
+      last_sign_in_at: authU?.last_sign_in_at ?? null,
+      role:           (userPublicMap.get(p.user_id)?.role) ?? null,
+      listings:       (p.listings ?? []) as { id: string; title: string; status: string; created_at: string }[],
+    }
+  })
 
   const pending = listingsRaw.filter(l => l.status === 'pending')
   const active  = listingsRaw.filter(l => l.status === 'active')
@@ -107,6 +137,7 @@ export default async function AdminPage() {
       parentEmails={parentEmails}
       slowTrials={slowTrials}
       slowProviderCount={slowProviderCount}
+      allProviders={allProviders}
       stats={{
         activeParents,
         activeProviders,

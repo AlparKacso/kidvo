@@ -57,6 +57,8 @@ export default function SignupPage() {
         setError(tSignup('emailExists'))
       else if (msg.includes('invalid email'))
         setError(tSignup('invalidEmailSimple'))
+      else if (msg.includes('sending confirmation email') || msg.includes('error sending'))
+        setError(tSignup('emailServiceDown'))
       else
         setError(authError.message)
       setLoading(false)
