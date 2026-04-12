@@ -540,6 +540,13 @@
     "disclaimer1": "You're contacting this provider directly.",
     "disclaimer2": "kidvo is not involved in this communication."
   },
+  "share": {
+    "share": "Share",
+    "trialCta": "Book a free trial session on kidvo!",
+    "copyLink": "Copy link",
+    "copied": "Copied!",
+    "more": "More options…"
+  },
   "saveBtn": {
     "saveFor": "Save for",
     "removeTitle": "Remove from saved",

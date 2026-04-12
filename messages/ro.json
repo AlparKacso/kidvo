@@ -540,6 +540,13 @@
     "disclaimer1": "Contactezi acest furnizor direct.",
     "disclaimer2": "kidvo nu este implicat în această comunicare."
   },
+  "share": {
+    "share": "Distribuie",
+    "trialCta": "Rezervă o ședință de probă gratuită pe kidvo!",
+    "copyLink": "Copiază link",
+    "copied": "Copiat!",
+    "more": "Mai multe opțiuni…"
+  },
   "saveBtn": {
     "saveFor": "Salvează pentru",
     "removeTitle": "Elimină din salvate",

@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ListingCardMenu } from './ListingCardMenu'
+import { ShareButton }     from '@/components/ui/ShareButton'
 import { sendTrialConfirmedToParent, sendTrialDeclinedToParent } from '@/lib/email'
 import { getTranslations } from 'next-intl/server'
 
@@ -241,7 +242,10 @@ export default async function ProviderListingsPage({
                         )}
                       </div>
                     </div>
-                    <ListingCardMenu listingId={listing.id} />
+                    <div className="flex items-start gap-1">
+                      <ShareButton listingId={listing.id} listingTitle={listing.title} variant="icon" />
+                      <ListingCardMenu listingId={listing.id} />
+                    </div>
                   </div>
                 ))}
               </div>

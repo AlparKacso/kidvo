@@ -13,7 +13,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   )
   const { data: l } = await supabase
     .from('listings')
-    .select('title, price_monthly, age_min, age_max, cover_image_url, category:categories(name), provider:providers(display_name), area:areas(name)')
+    .select('title, price_monthly, pricing_type, age_min, age_max, cover_image_url, category:categories(name), provider:providers(display_name), area:areas(name)')
     .eq('id', id)
     .single()
 
@@ -21,7 +21,8 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const providerName = (l?.provider as any)?.display_name ?? ''
   const categoryName = (l?.category as any)?.name ?? ''
   const areaName     = (l?.area as any)?.name ?? 'Timișoara'
-  const price        = l?.price_monthly ? `${l.price_monthly} RON/lună` : ''
+  const priceUnit    = (l as any)?.pricing_type === 'session' ? 'ședință' : 'lună'
+  const price        = l?.price_monthly ? `${l.price_monthly} RON/${priceUnit}` : ''
   const ages         = l ? `Vârstă ${l.age_min}–${l.age_max} ani` : ''
 
   return new ImageResponse(

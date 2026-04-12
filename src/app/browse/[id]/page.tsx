@@ -6,6 +6,7 @@ import { AppShell }              from '@/components/layout/AppShell'
 import { createClient }          from '@/lib/supabase/server'
 import { TrialRequestButton }    from '@/components/TrialRequestButton'
 import { SaveButton }            from '@/components/ui/SaveButton'
+import { ShareButton }           from '@/components/ui/ShareButton'
 import { ContactProviderButton } from '@/components/ui/ContactProviderButton'
 import { StarRating }            from '@/components/ui/StarRating'
 import { ReviewForm }            from '@/components/ui/ReviewForm'
@@ -501,8 +502,11 @@ export default async function ActivityDetailPage({ params }: Props) {
               </div>
             </div>
 
-            {/* Save */}
-            <SaveButton listingId={listing.id} initialSaved={isSaved} variant="full" />
+            {/* Save & Share */}
+            <div className="flex gap-2">
+              <div className="flex-1"><SaveButton listingId={listing.id} initialSaved={isSaved} variant="full" /></div>
+              <div className="flex-1"><ShareButton listingId={listing.id} listingTitle={listing.title} variant="full" /></div>
+            </div>
 
             {/* Provider mini-card */}
             {provider && (
