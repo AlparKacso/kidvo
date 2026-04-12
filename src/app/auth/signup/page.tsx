@@ -127,6 +127,9 @@ export default function SignupPage() {
             <p className="font-display text-[12px] text-ink-muted">
               {tSignup('checkEmailNote')}
             </p>
+            <p className="font-display text-[11px] text-ink-muted/70 mt-2">
+              {tSignup('checkEmailRetry')}
+            </p>
           </div>
 
           <p className="text-center font-display text-[13px] text-ink-muted mt-5">
