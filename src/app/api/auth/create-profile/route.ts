@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: Request) {
-  const { userId, email, fullName, role } = await req.json()
+  const { userId, email, fullName, role, locale } = await req.json()
 
   if (!userId || !email || !fullName || !role) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
+
+  // Validate optional locale (default handled by DB column default 'ro')
+  const validLocale = locale === 'en' ? 'en' : 'ro'
 
   const admin = createAdminClient()
 
@@ -23,6 +26,7 @@ export async function POST(req: Request) {
     full_name: fullName,
     role,
     city:      'Timișoara',
+    locale:    validLocale,
   }, { onConflict: 'id' })
 
   if (userError) {

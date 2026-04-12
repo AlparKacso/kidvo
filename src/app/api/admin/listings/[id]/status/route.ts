@@ -46,18 +46,20 @@ export async function POST(
   const prevStatus = listing?.status
 
   // Fetch provider + fallback email from users table
-  let providerEmail = ''
-  let providerName  = ''
+  let providerEmail  = ''
+  let providerName   = ''
+  let providerLocale = 'ro'
   if (listing?.provider_id) {
     const { data: prov, error: provErr } = await adminDb
       .from('providers')
-      .select('display_name, contact_email, user:users(email, full_name)')
+      .select('display_name, contact_email, user:users(email, full_name, locale)')
       .eq('id', listing.provider_id)
       .single()
     if (provErr) console.error('[status] provider fetch error:', provErr.message)
     const pRaw = prov as any
     providerEmail = pRaw?.contact_email || pRaw?.user?.email || ''
     providerName  = pRaw?.display_name  || pRaw?.user?.full_name || providerEmail
+    providerLocale = pRaw?.user?.locale === 'en' ? 'en' : 'ro'
   }
 
   // Build update — stamp published_at when going active for the first time
@@ -81,6 +83,7 @@ export async function POST(
         providerName: providerName,
         listingTitle: listing.title,
         listingId:    id,
+        locale:       providerLocale === 'en' ? 'en' : 'ro',
       }).catch(err => console.error('[status] approved email error:', err))
     }
 
@@ -89,6 +92,7 @@ export async function POST(
         email:        providerEmail,
         providerName: providerName,
         listingTitle: listing.title,
+        locale:       providerLocale === 'en' ? 'en' : 'ro',
       }).catch(err => console.error('[status] rejected email error:', err))
     }
   } else {

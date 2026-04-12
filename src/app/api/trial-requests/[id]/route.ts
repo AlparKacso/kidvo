@@ -36,7 +36,7 @@ export async function DELETE(
     if (listingRaw) {
       const { data: provRaw } = await supabase
         .from('providers')
-        .select('display_name, contact_email, user:users(email, full_name)')
+        .select('display_name, contact_email, user:users(email, full_name, locale)')
         .eq('id', (listingRaw as any).provider_id)
         .single()
       const p = provRaw as any
@@ -46,6 +46,7 @@ export async function DELETE(
           providerEmail,
           providerName:  p?.display_name || p?.user?.full_name || 'there',
           listingTitle:  (listingRaw as any).title,
+          locale:        p?.user?.locale === 'en' ? 'en' : 'ro',
         }).catch(() => {})
       }
     }

@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
 
   const { data: parentsRaw } = await supabase
     .from('users')
-    .select('id, email, full_name, role')
+    .select('id, email, full_name, role, locale')
     .in('id', uniqueUserIds)
     .eq('role', 'parent')
 
@@ -125,6 +125,7 @@ export async function GET(req: NextRequest) {
         email:      parent.email,
         parentName: parent.full_name ?? parent.email,
         listings,
+        locale:     parent.locale === 'en' ? 'en' : 'ro',
       }).catch(err => console.error(`Digest email failed for ${parent.email}:`, err))
     )
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPasswordResetEmail } from '@/lib/email'
+import type { Locale } from '@/lib/email-translations'
 
 export async function POST(req: Request) {
   const { email } = await req.json().catch(() => ({}))
@@ -26,14 +28,20 @@ export async function POST(req: Request) {
     }
 
     if (data?.properties?.action_link) {
-      // Fetch name for personalisation (best effort)
+      // Fetch name + stored locale for personalisation (best effort)
       const { data: profile } = await adminDb
-        .from('users').select('full_name').eq('email', email).single()
+        .from('users').select('full_name, locale').eq('email', email).single()
+
+      // Prefer the user's stored locale, fall back to cookie, then 'ro'
+      const cookieStore = await cookies()
+      const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value
+      const locale: Locale = ((profile as any)?.locale || cookieLocale || 'ro') === 'en' ? 'en' : 'ro'
 
       const result = await sendPasswordResetEmail({
         email,
         name: (profile as any)?.full_name ?? 'there',
         resetLink: data.properties.action_link,
+        locale,
       })
 
       if (result.error) {

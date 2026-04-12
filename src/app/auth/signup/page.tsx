@@ -74,7 +74,7 @@ export default function SignupPage() {
     const profileRes = await fetch('/api/auth/create-profile', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ userId: data.user.id, email, fullName, role }),
+      body:    JSON.stringify({ userId: data.user.id, email, fullName, role, locale: document.cookie.match(/NEXT_LOCALE=(\w+)/)?.[1] || 'ro' }),
     })
 
     if (!profileRes.ok) {

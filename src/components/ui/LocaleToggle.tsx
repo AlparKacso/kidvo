@@ -13,6 +13,12 @@ export function LocaleToggle() {
 
   function switchLocale(next: 'ro' | 'en') {
     document.cookie = `NEXT_LOCALE=${next};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
+    // Persist to DB so recipient-facing emails use the correct language
+    fetch('/api/auth/update-locale', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: next }),
+    }).catch(() => {}) // best-effort — cookie is the primary source
     startTransition(() => {
       router.refresh()
     })

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPasswordResetEmail } from '@/lib/email'
+import type { Locale } from '@/lib/email-translations'
 
 // POST /api/auth/send-reset-link
 // Generates a password-recovery link via the admin SDK (so we control the email)
@@ -33,14 +35,20 @@ export async function POST(req: Request) {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('full_name')
+    .select('full_name, locale')
     .eq('id', user.id)
     .single()
+
+  // Prefer stored locale, fall back to cookie
+  const cookieStore = await cookies()
+  const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value
+  const locale: Locale = ((profile as any)?.locale || cookieLocale || 'ro') === 'en' ? 'en' : 'ro'
 
   const result = await sendPasswordResetEmail({
     email:     user.email,
     name:      (profile as any)?.full_name ?? 'there',
     resetLink: data.properties.action_link,
+    locale,
   })
 
   if (result.error) {

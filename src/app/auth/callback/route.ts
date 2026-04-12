@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendWelcomeToParent, sendWelcomeToProvider } from '@/lib/email'
+import type { Locale } from '@/lib/email-translations'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -29,6 +30,10 @@ export async function GET(request: NextRequest) {
     if (!error && sessionData?.user) {
       const userId = sessionData.user.id
 
+      // Read locale from cookie (set by LocaleToggle / next-intl)
+      const localeCookie = cookieStore.get('NEXT_LOCALE')?.value
+      const locale: Locale = localeCookie === 'en' ? 'en' : 'ro'
+
       try {
         const adminDb = createAdminClient()
 
@@ -46,7 +51,7 @@ export async function GET(request: NextRequest) {
           const role     = (meta.role as string | undefined) ?? 'parent'
           const { data: created } = await adminDb
             .from('users')
-            .insert({ id: userId, email, full_name: fullName, role, city: 'Timișoara' })
+            .insert({ id: userId, email, full_name: fullName, role, city: 'Timișoara', locale })
             .select('full_name, role, created_at')
             .single()
           profile = created
@@ -78,11 +83,11 @@ export async function GET(request: NextRequest) {
             const role = (profile as any).role
             if (email && name) {
               if (role === 'provider') {
-                sendWelcomeToProvider({ email, name }).catch(err =>
+                sendWelcomeToProvider({ email, name, locale }).catch(err =>
                   console.error('[callback] welcome provider email error:', err)
                 )
               } else {
-                sendWelcomeToParent({ email, name }).catch(err =>
+                sendWelcomeToParent({ email, name, locale }).catch(err =>
                   console.error('[callback] welcome parent email error:', err)
                 )
               }
