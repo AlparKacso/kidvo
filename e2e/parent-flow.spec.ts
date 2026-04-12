@@ -48,6 +48,10 @@ test.describe('parent: login → browse → request trial', () => {
   })
 
   test('request a trial from a listing', async ({ page }) => {
+    // Dismiss the cookie banner so it can't overlay buttons.
+    await page.goto('/auth/login')
+    await page.evaluate(() => localStorage.setItem('kidvo_cookie_consent', 'accepted'))
+
     // 1. Log in via the real login form.
     await page.goto('/auth/login')
     await page.getByPlaceholder('you@example.com').fill(parentEmail)

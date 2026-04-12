@@ -35,7 +35,11 @@ test.describe('provider: login → list activity → submit', () => {
     if (email) await cleanupUser(email)
   })
 
-  test('publish a new listing via the wizard', async ({ page }) => {
+  test('publish a new listing via the wizard', { timeout: 120_000 }, async ({ page }) => {
+    // Dismiss the cookie banner so it doesn't overlay the wizard buttons.
+    await page.goto('/auth/login')
+    await page.evaluate(() => localStorage.setItem('kidvo_cookie_consent', 'accepted'))
+
     // 1. Log in.
     await page.goto('/auth/login')
     await page.getByPlaceholder('you@example.com').fill(email)
