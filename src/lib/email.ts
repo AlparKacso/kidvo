@@ -38,7 +38,7 @@ function layout(body: string) {
 }
 
 function btn(text: string, href: string) {
-  return `<a href="${href}" style="display:inline-block;background:${PRIMARY};color:white;font-weight:700;font-size:13px;padding:10px 20px;border-radius:8px;text-decoration:none;">${text}</a>`
+  return `<a href="${href}" style="display:inline-block;margin:8px 0 16px;background:${PRIMARY};color:white;font-weight:700;font-size:13px;padding:10px 20px;border-radius:8px;text-decoration:none;">${text}</a>`
 }
 
 function h1(text: string) {
