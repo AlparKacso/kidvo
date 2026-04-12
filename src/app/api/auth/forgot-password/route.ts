@@ -6,8 +6,10 @@ export async function POST(req: Request) {
   const { email } = await req.json().catch(() => ({}))
   if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
-  // Derive origin from the actual request — works on prod, staging and localhost
-  const origin = new URL(req.url).origin
+  // Use NEXT_PUBLIC_APP_URL as canonical origin so the reset link always points
+  // to the primary domain — avoids issues when the request arrives via www or
+  // a Vercel preview deployment.
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
   const adminDb = createAdminClient()
 
   try {
@@ -18,22 +20,31 @@ export async function POST(req: Request) {
     })
 
     if (error) {
-      // Log server-side so we can diagnose issues (e.g. unconfirmed account)
       console.error('[forgot-password] generateLink failed:', error.message)
-    } else if (data?.properties?.action_link) {
+      // Return 500 so the client can display an error
+      return NextResponse.json({ error: 'Could not generate reset link' }, { status: 500 })
+    }
+
+    if (data?.properties?.action_link) {
       // Fetch name for personalisation (best effort)
       const { data: profile } = await adminDb
         .from('users').select('full_name').eq('email', email).single()
-      await sendPasswordResetEmail({
+
+      const result = await sendPasswordResetEmail({
         email,
         name: (profile as any)?.full_name ?? 'there',
         resetLink: data.properties.action_link,
-      }).catch((err) => console.error('[forgot-password] sendPasswordResetEmail failed:', err))
+      })
+
+      if (result.error) {
+        console.error('[forgot-password] Resend error:', result.error)
+        return NextResponse.json({ error: 'Failed to send email' }, { status: 502 })
+      }
     }
   } catch (err) {
     console.error('[forgot-password] unexpected error:', err)
+    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
   }
 
-  // Always return ok — don't reveal whether email exists
   return NextResponse.json({ ok: true })
 }

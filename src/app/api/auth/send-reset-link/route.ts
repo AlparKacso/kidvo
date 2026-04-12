@@ -15,9 +15,10 @@ export async function POST(req: Request) {
   }
 
   const adminDb = createAdminClient()
-  // Derive origin from the actual request so the link works on any domain
-  // (production, staging, localhost) without env var configuration
-  const origin = new URL(req.url).origin
+  // Use NEXT_PUBLIC_APP_URL as canonical origin so the reset link always points
+  // to the primary domain — avoids issues when the request arrives via www or
+  // a Vercel preview deployment.
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin
 
   const { data, error } = await adminDb.auth.admin.generateLink({
     type:    'recovery',
@@ -36,11 +37,16 @@ export async function POST(req: Request) {
     .eq('id', user.id)
     .single()
 
-  await sendPasswordResetEmail({
+  const result = await sendPasswordResetEmail({
     email:     user.email,
     name:      (profile as any)?.full_name ?? 'there',
     resetLink: data.properties.action_link,
-  }).catch(console.error)
+  })
+
+  if (result.error) {
+    console.error('[send-reset-link] Resend error:', result.error)
+    return NextResponse.json({ error: 'Failed to send email' }, { status: 502 })
+  }
 
   return NextResponse.json({ ok: true })
 }
