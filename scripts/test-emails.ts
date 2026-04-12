@@ -105,6 +105,7 @@ await send('sendNewTrialRequestToProvider', () =>
     parentEmail:   TEST,
     preferredDay:  'Saturday morning',
     message:       'My son is 7 and loves football. Is this suitable for beginners?',
+    locale:        'ro',
   }),
 )
 
@@ -118,6 +119,7 @@ await send('sendTrialConfirmedToParent', () =>
     providerName:  'FC Timișoara Kids',
     providerEmail: TEST,
     providerPhone: '+40 712 345 678',
+    locale:        'ro',
   }),
 )
 
@@ -148,22 +150,25 @@ await send('sendTrialDeclinedToParent', () =>
     parentEmail:  TEST,
     parentName:   'Maria Popescu',
     listingTitle: 'Junior Football Academy',
+    locale:       'ro',
   }),
 )
 
 // 6. Parent — welcome
 await send('sendWelcomeToParent', () =>
   sendWelcomeToParent({
-    email: TEST,
-    name:  'Maria',
+    email:  TEST,
+    name:   'Maria',
+    locale: 'ro',
   }),
 )
 
 // 7. Provider — welcome
 await send('sendWelcomeToProvider', () =>
   sendWelcomeToProvider({
-    email: TEST,
-    name:  'Andrei',
+    email:  TEST,
+    name:   'Andrei',
+    locale: 'ro',
   }),
 )
 
@@ -174,6 +179,7 @@ await send('sendListingApprovedToProvider', () =>
     providerName: 'FC Timișoara Kids',
     listingTitle: 'Junior Football Academy',
     listingId:    LISTING_ID,
+    locale:       'ro',
   }),
 )
 
@@ -183,6 +189,7 @@ await send('sendListingRejectedToProvider', () =>
     email:        TEST,
     providerName: 'FC Timișoara Kids',
     listingTitle: 'Junior Football Academy',
+    locale:       'ro',
   }),
 )
 
@@ -193,6 +200,7 @@ await send('sendReviewApprovedToParent', () =>
     parentName:   'Maria',
     listingTitle: 'Junior Football Academy',
     listingId:    LISTING_ID,
+    locale:       'ro',
   }),
 )
 
@@ -202,6 +210,7 @@ await send('sendReviewRejectedToParent', () =>
     email:        TEST,
     parentName:   'Maria',
     listingTitle: 'Junior Football Academy',
+    locale:       'ro',
   }),
 )
 
@@ -214,14 +223,16 @@ await send('sendReviewPublishedToProvider', () =>
     listingId:    LISTING_ID,
     rating:       4,
     comment:      'Great coaches, very patient with the kids. Highly recommend!',
+    locale:       'ro',
   }),
 )
 
 // 13. User — account deleted
 await send('sendAccountDeletedConfirmation', () =>
   sendAccountDeletedConfirmation({
-    email: TEST,
-    name:  'Maria',
+    email:  TEST,
+    name:   'Maria',
+    locale: 'ro',
   }),
 )
 
@@ -231,6 +242,7 @@ await send('sendPasswordResetEmail', () =>
     email:     TEST,
     name:      'Maria',
     resetLink: `${APP}/auth/reset-password?token=test_tok_abc123`,
+    locale:    'ro',
   }),
 )
 
@@ -262,6 +274,7 @@ await send('sendNewListingsDigest', () =>
         isNewProvider: false,
       },
     ],
+    locale: 'ro',
   }),
 )
 

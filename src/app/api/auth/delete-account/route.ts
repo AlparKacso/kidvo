@@ -16,10 +16,10 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Fetch name before deletion so we can personalise the goodbye email
+  // Fetch name + locale before deletion so we can personalise the goodbye email
   const { data: profile } = await supabase
     .from('users')
-    .select('full_name')
+    .select('full_name, locale')
     .eq('id', user.id)
     .single()
 
@@ -46,7 +46,7 @@ export async function POST() {
       // Fetch pending trial requests with parent details before deletion
       const { data: pendingTrials } = await adminDb
         .from('trial_requests')
-        .select('id, listing_id, users(email, full_name)')
+        .select('id, listing_id, users(email, full_name, locale)')
         .in('listing_id', ids)
         .eq('status', 'pending')
 
@@ -69,6 +69,7 @@ export async function POST() {
               parentEmail:  parent.email,
               parentName:   parent.full_name ?? 'there',
               listingTitle: title,
+              locale:       parent.locale === 'en' ? 'en' : 'ro',
             })
           })
         )
@@ -84,9 +85,11 @@ export async function POST() {
   }
 
   // Send goodbye email after successful deletion (fire-and-forget)
+  const userLocale = (profile as any)?.locale === 'en' ? 'en' as const : 'ro' as const
   await sendAccountDeletedConfirmation({
-    email: user.email!,
-    name:  (profile as any)?.full_name ?? 'there',
+    email:  user.email!,
+    name:   (profile as any)?.full_name ?? 'there',
+    locale: userLocale,
   }).catch(console.error)
 
   // Notify admin if a provider left

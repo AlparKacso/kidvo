@@ -108,12 +108,14 @@ export default async function ProviderListingsPage({
 
     const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
       adminDb.from('listings').select('id, title, provider_id').eq('id', trial.listing_id).single(),
-      adminDb.from('users').select('full_name, email').eq('id', trial.user_id).single(),
+      adminDb.from('users').select('full_name, email, locale').eq('id', trial.user_id).single(),
     ])
 
     const listing = listingRaw as any
     const parent  = parentRaw  as any
     if (!listing || !parent?.email) return
+
+    const parentLocale = parent.locale === 'en' ? 'en' as const : 'ro' as const
 
     if (status === 'confirmed') {
       const { data: provRaw } = await adminDb
@@ -129,12 +131,14 @@ export default async function ProviderListingsPage({
         providerName:  p?.display_name  || p?.user?.full_name || '',
         providerEmail: p?.contact_email || p?.user?.email     || '',
         providerPhone: p?.contact_phone ?? null,
+        locale:        parentLocale,
       }).catch(console.error)
     } else if (status === 'declined') {
       await sendTrialDeclinedToParent({
         parentEmail:  parent.email,
         parentName:   parent.full_name ?? 'there',
         listingTitle: listing.title,
+        locale:       parentLocale,
       }).catch(console.error)
     }
   }

@@ -34,8 +34,8 @@ export async function POST(
     .from('reviews')
     .select(`
       id, rating, comment,
-      listing:listings(id, title, provider:providers(display_name, contact_email)),
-      reviewer:users(id, full_name, email)
+      listing:listings(id, title, provider:providers(display_name, contact_email, user:users(locale))),
+      reviewer:users(id, full_name, email, locale)
     `)
     .eq('id', id)
     .single()
@@ -54,6 +54,9 @@ export async function POST(
   const listing  = review?.listing
   const provider = listing?.provider
 
+  const reviewerLocale = reviewer?.locale === 'en' ? 'en' as const : 'ro' as const
+  const providerLocale = (provider as any)?.user?.locale === 'en' ? 'en' as const : 'ro' as const
+
   if (action === 'approve') {
     const emailJobs: Promise<any>[] = []
 
@@ -65,6 +68,7 @@ export async function POST(
           parentName:   reviewer.full_name ?? reviewer.email,
           listingTitle: listing.title,
           listingId:    listing.id,
+          locale:       reviewerLocale,
         }).catch(err => console.error('P5 email error:', err))
       )
     }
@@ -79,6 +83,7 @@ export async function POST(
           listingId:    listing.id,
           rating:       review.rating,
           comment:      review.comment ?? null,
+          locale:       providerLocale,
         }).catch(err => console.error('V4 email error:', err))
       )
     }
@@ -91,6 +96,7 @@ export async function POST(
         email:        reviewer.email,
         parentName:   reviewer.full_name ?? reviewer.email,
         listingTitle: listing.title,
+        locale:       reviewerLocale,
       }).catch(err => console.error('P6 email error:', err))
     }
   }

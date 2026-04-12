@@ -40,18 +40,20 @@ export async function POST(req: Request) {
   const listing = listingRaw as any
   const parent  = parentRaw  as { full_name: string; email: string } | null
 
-  let providerEmail = ''
-  let providerName  = ''
+  let providerEmail  = ''
+  let providerName   = ''
+  let providerLocale = 'ro'
   if (listing?.provider_id) {
     const { data: prov, error: provErr } = await adminDb
       .from('providers')
-      .select('display_name, contact_email, user:users(email, full_name)')
+      .select('display_name, contact_email, user:users(email, full_name, locale)')
       .eq('id', listing.provider_id)
       .single()
     if (provErr) console.error('[trial] provider fetch error:', provErr.message)
     const p = prov as any
-    providerEmail = p?.contact_email || p?.user?.email || ''
-    providerName  = p?.display_name  || p?.user?.full_name || providerEmail
+    providerEmail  = p?.contact_email || p?.user?.email || ''
+    providerName   = p?.display_name  || p?.user?.full_name || providerEmail
+    providerLocale = p?.user?.locale || 'ro'
   }
 
   if (providerEmail && parent && listing) {
@@ -63,6 +65,7 @@ export async function POST(req: Request) {
         listingTitle: listing.title,
         preferredDay: preferred_day !== null ? DAYS[preferred_day] : null,
         message:      message || null,
+        locale:       providerLocale === 'en' ? 'en' : 'ro',
       })
       console.log('[trial email] sent:', JSON.stringify(r))
     } catch (e) {

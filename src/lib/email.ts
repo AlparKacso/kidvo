@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { emailT, interp, label, type Locale } from './email-translations'
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY)
 const FROM        = 'kidvo <noreply@kidvo.eu>'
@@ -53,9 +54,9 @@ function disclaimer(text: string) {
   return `<p style="margin:16px 0 0;font-size:12px;color:#9590b3;">${text}</p>`
 }
 
-function detailRow(label: string, value: string) {
+function detailRow(lbl: string, value: string) {
   return `<tr>
-    <td style="padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9590b3;white-space:nowrap;">${label}</td>
+    <td style="padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9590b3;white-space:nowrap;">${lbl}</td>
     <td style="padding:8px 12px;font-size:13px;color:${INK};">${value}</td>
   </tr>`
 }
@@ -72,24 +73,28 @@ export async function sendNewTrialRequestToProvider(opts: {
   parentEmail:   string
   preferredDay:  string | null
   message:       string | null
+  locale:        Locale
 }) {
+  const t = emailT('newTrialRequest', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+
   const rows = [
-    detailRow('Activity',      opts.listingTitle),
-    detailRow('From',          opts.parentName),
-    detailRow('Email',         `<a href="mailto:${opts.parentEmail}" style="color:${PRIMARY};">${opts.parentEmail}</a>`),
-    opts.preferredDay ? detailRow('Preferred day', opts.preferredDay) : '',
-    opts.message      ? detailRow('Message',       `<em>${opts.message}</em>`)  : '',
+    detailRow(l('activity'),      opts.listingTitle),
+    detailRow(l('from'),          opts.parentName),
+    detailRow(l('email'),         `<a href="mailto:${opts.parentEmail}" style="color:${PRIMARY};">${opts.parentEmail}</a>`),
+    opts.preferredDay ? detailRow(l('preferredDay'), opts.preferredDay) : '',
+    opts.message      ? detailRow(l('message'),       `<em>${opts.message}</em>`)  : '',
   ].join('')
 
   return getResend().emails.send({
     from:    FROM,
     to:      opts.providerEmail,
-    subject: `New trial request — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('New trial request')}
-      ${p(`A parent wants to try <strong>${opts.listingTitle}</strong>. Confirm or decline from your dashboard.`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { listing: opts.listingTitle }))}
       ${detailTable(rows)}
-      ${btn('View request →', `${APP_URL}/dashboard`)}
+      ${btn(t.cta, `${APP_URL}/dashboard`)}
     `),
   })
 }
@@ -103,29 +108,33 @@ export async function sendTrialConfirmedToParent(opts: {
   providerName:  string
   providerEmail: string
   providerPhone: string | null
+  locale:        Locale
 }) {
+  const t = emailT('trialConfirmed', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+
   const rows = [
-    detailRow('Provider', opts.providerName),
-    detailRow('Email',    `<a href="mailto:${opts.providerEmail}" style="color:${PRIMARY};">${opts.providerEmail}</a>`),
-    opts.providerPhone ? detailRow('Phone', `<a href="tel:${opts.providerPhone}" style="color:${PRIMARY};">${opts.providerPhone}</a>`) : '',
+    detailRow(l('provider'), opts.providerName),
+    detailRow(l('email'),    `<a href="mailto:${opts.providerEmail}" style="color:${PRIMARY};">${opts.providerEmail}</a>`),
+    opts.providerPhone ? detailRow(l('phone'), `<a href="tel:${opts.providerPhone}" style="color:${PRIMARY};">${opts.providerPhone}</a>`) : '',
   ].join('')
 
   return getResend().emails.send({
     from:    FROM,
     to:      opts.parentEmail,
-    subject: `Trial confirmed — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('Your trial is confirmed! 🎉')}
-      ${p(`Great news, ${opts.parentName}! <strong>${opts.providerName}</strong> confirmed your trial for <strong>${opts.listingTitle}</strong>.`)}
-      ${p('Reach out to arrange the details:')}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName, provider: opts.providerName, listing: opts.listingTitle }))}
+      ${p(t.body2)}
       ${detailTable(rows)}
-      ${btn('View your bookings →', `${APP_URL}/bookings`)}
-      ${disclaimer('All arrangements are directly between you and the provider. kidvo is not involved.')}
+      ${btn(t.cta, `${APP_URL}/bookings`)}
+      ${disclaimer(t.disclaimer)}
     `),
   })
 }
 
-// ── 3. Admin — new listing submitted ─────────────────────────────────────────
+// ── 3. Admin — new listing submitted (always English) ────────────────────────
 export async function sendNewListingToAdmin(opts: {
   listingId:     string
   listingTitle:  string
@@ -152,7 +161,7 @@ export async function sendNewListingToAdmin(opts: {
   })
 }
 
-// ── 4. Admin — new review pending moderation ─────────────────────────────────
+// ── 4. Admin — new review pending moderation (always English) ────────────────
 export async function sendNewReviewToAdmin(opts: {
   reviewId:     string
   listingTitle: string
@@ -187,48 +196,55 @@ export async function sendTrialDeclinedToParent(opts: {
   parentEmail:  string
   parentName:   string
   listingTitle: string
+  locale:       Locale
 }) {
+  const t = emailT('trialDeclined', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.parentEmail,
-    subject: `Trial request update — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('Trial not available')}
-      ${p(`Hi ${opts.parentName}, unfortunately <strong>${opts.listingTitle}</strong> couldn't accommodate your trial at this time.`)}
-      ${p('There are plenty of other great activities in Timișoara — find the right fit for your child.')}
-      ${btn('Browse activities →', `${APP_URL}/browse`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName, listing: opts.listingTitle }))}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/browse`)}
     `),
   })
 }
 
 // ── 6. Parent — welcome ──────────────────────────────────────────────────────
-export async function sendWelcomeToParent(opts: { email: string; name: string }) {
+export async function sendWelcomeToParent(opts: { email: string; name: string; locale: Locale }) {
+  const t = emailT('welcomeParent', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: 'Welcome to kidvo! 🎉',
+    subject: t.subject,
     html: layout(`
-      ${h1('Welcome to kidvo!')}
-      ${p(`Hi ${opts.name}, great to have you here!`)}
-      ${p('kidvo helps Timișoara families discover and try the best activities for their kids — sports, arts, music, coding, and more.')}
-      ${p('Browse activities now and request a trial session with providers — most offer a free first session, no payment required.')}
-      ${btn('Browse activities →', `${APP_URL}/browse`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.name }))}
+      ${p(t.body2)}
+      ${p(t.body3)}
+      ${btn(t.cta, `${APP_URL}/browse`)}
     `),
   })
 }
 
 // ── 7. Provider — welcome ─────────────────────────────────────────────────────
-export async function sendWelcomeToProvider(opts: { email: string; name: string }) {
+export async function sendWelcomeToProvider(opts: { email: string; name: string; locale: Locale }) {
+  const t = emailT('welcomeProvider', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: 'Welcome to kidvo — start listing!',
+    subject: t.subject,
     html: layout(`
-      ${h1('Welcome to kidvo!')}
-      ${p(`Hi ${opts.name}, you're all set to start listing your activities on kidvo.`)}
-      ${p('List your first activity and start receiving trial requests from interested parents. It only takes a few minutes.')}
-      ${btn('List your first activity →', `${APP_URL}/listings/new`)}
-      ${disclaimer('Your listing will be reviewed by our team within 24 hours before going live.')}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.name }))}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/listings/new`)}
+      ${disclaimer(t.disclaimer)}
     `),
   })
 }
@@ -239,16 +255,19 @@ export async function sendListingApprovedToProvider(opts: {
   providerName: string
   listingTitle: string
   listingId:    string
+  locale:       Locale
 }) {
+  const t = emailT('listingApproved', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: `Your listing is live — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('Your listing is live! 🎉')}
-      ${p(`Great news, ${opts.providerName}! <strong>${opts.listingTitle}</strong> has been approved and is now visible to parents browsing kidvo.`)}
-      ${p('Parents can now find your activity, save it, and request a trial session.')}
-      ${btn('View your listing →', `${APP_URL}/browse/${opts.listingId}`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.providerName, listing: opts.listingTitle }))}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/browse/${opts.listingId}`)}
     `),
   })
 }
@@ -258,17 +277,20 @@ export async function sendListingRejectedToProvider(opts: {
   email:        string
   providerName: string
   listingTitle: string
+  locale:       Locale
 }) {
+  const t = emailT('listingRejected', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: `Listing update — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('Listing needs changes')}
-      ${p(`Hi ${opts.providerName}, your listing <strong>${opts.listingTitle}</strong> couldn't be approved at this time.`)}
-      ${p('Please review your listing details and make sure all information is complete and accurate. You can edit and resubmit from your dashboard.')}
-      ${btn('Edit your listing →', `${APP_URL}/listings`)}
-      ${disclaimer('Questions? Reach us at hello@kidvo.eu')}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.providerName, listing: opts.listingTitle }))}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/listings`)}
+      ${disclaimer(t.disclaimer)}
     `),
   })
 }
@@ -279,16 +301,19 @@ export async function sendReviewApprovedToParent(opts: {
   parentName:   string
   listingTitle: string
   listingId:    string
+  locale:       Locale
 }) {
+  const t = emailT('reviewApproved', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: `Your review is published — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('Your review is live! 🎉')}
-      ${p(`Hi ${opts.parentName}, your review for <strong>${opts.listingTitle}</strong> has been approved and is now visible to other parents.`)}
-      ${p('Thank you for helping families in Timișoara find great activities for their kids!')}
-      ${btn('View the listing →', `${APP_URL}/browse/${opts.listingId}`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName, listing: opts.listingTitle }))}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/browse/${opts.listingId}`)}
     `),
   })
 }
@@ -298,17 +323,20 @@ export async function sendReviewRejectedToParent(opts: {
   email:        string
   parentName:   string
   listingTitle: string
+  locale:       Locale
 }) {
+  const t = emailT('reviewRejected', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: `Review update — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('Review not approved')}
-      ${p(`Hi ${opts.parentName}, unfortunately your review for <strong>${opts.listingTitle}</strong> couldn't be approved for publication.`)}
-      ${p('If you have any questions, feel free to reach out to us.')}
-      ${btn('Browse activities →', `${APP_URL}/browse`)}
-      ${disclaimer('Questions? Reach us at hello@kidvo.eu')}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName, listing: opts.listingTitle }))}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/browse`)}
+      ${disclaimer(t.disclaimer)}
     `),
   })
 }
@@ -321,111 +349,124 @@ export async function sendReviewPublishedToProvider(opts: {
   listingId:    string
   rating:       number
   comment:      string | null
+  locale:       Locale
 }) {
+  const t = emailT('reviewPublished', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
   const stars = '★'.repeat(opts.rating) + '☆'.repeat(5 - opts.rating)
   const rows  = [
-    detailRow('Activity', opts.listingTitle),
-    detailRow('Rating',   `${stars} (${opts.rating}/5)`),
-    opts.comment ? detailRow('Comment', `<em>${opts.comment}</em>`) : '',
+    detailRow(l('activity'), opts.listingTitle),
+    detailRow(l('rating'),   `${stars} (${opts.rating}/5)`),
+    opts.comment ? detailRow(l('comment'), `<em>${opts.comment}</em>`) : '',
   ].join('')
 
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: `New review on your listing — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('A new review is live on your listing! 🎉')}
-      ${p(`Hi ${opts.providerName}, a parent left a review for <strong>${opts.listingTitle}</strong> that has been approved and is now public.`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.providerName, listing: opts.listingTitle }))}
       ${detailTable(rows)}
-      ${btn('View your listing →', `${APP_URL}/browse/${opts.listingId}`)}
+      ${btn(t.cta, `${APP_URL}/browse/${opts.listingId}`)}
     `),
   })
 }
 
 // ── 13. User — account deleted confirmation ───────────────────────────────────
-export async function sendAccountDeletedConfirmation(opts: { email: string; name: string }) {
+export async function sendAccountDeletedConfirmation(opts: { email: string; name: string; locale: Locale }) {
+  const t = emailT('accountDeleted', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: 'Your kidvo account has been deleted',
+    subject: t.subject,
     html: layout(`
-      ${h1('Account deleted')}
-      ${p(`Hi ${opts.name}, your kidvo account and all associated data have been permanently deleted.`)}
-      ${p('We\'re sorry to see you go. If you ever want to return, you\'re always welcome to create a new account.')}
-      ${disclaimer('If this was a mistake or you have questions, reach us at hello@kidvo.eu')}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.name }))}
+      ${p(t.body2)}
+      ${disclaimer(t.disclaimer)}
     `),
   })
 }
 
 // ── 14. User — password reset link ────────────────────────────────────────────
-export async function sendPasswordResetEmail(opts: { email: string; name: string; resetLink: string }) {
+export async function sendPasswordResetEmail(opts: { email: string; name: string; resetLink: string; locale: Locale }) {
+  const t = emailT('passwordReset', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: 'Reset your kidvo password',
+    subject: t.subject,
     html: layout(`
-      ${h1('Reset your password')}
-      ${p(`Hi ${opts.name}, click the button below to set a new password for your kidvo account.`)}
-      ${btn('Reset password →', opts.resetLink)}
-      ${p('This link expires in 1 hour. If you didn\'t request a password reset, you can safely ignore this email.')}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.name }))}
+      ${btn(t.cta, opts.resetLink)}
+      ${p(t.body2)}
     `),
   })
 }
 
-// ── 15. Parent — new listings digest (P2 + P3) ───────────────────────────────
+// ── 15. Parent — new listings digest ─────────────────────────────────────────
 export async function sendNewListingsDigest(opts: {
   email:      string
   parentName: string
   listings:   { title: string; id: string; providerName: string; categoryName: string; isNewProvider: boolean }[]
+  locale:     Locale
 }) {
-  const items = opts.listings.map(l => `
+  const t = emailT('digest', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+
+  const items = opts.listings.map(li => `
     <tr>
       <td style="padding:12px 0;border-bottom:1px solid #e8e4f0;">
-        <div style="font-size:13px;font-weight:700;color:${INK};">${l.title}</div>
+        <div style="font-size:13px;font-weight:700;color:${INK};">${li.title}</div>
         <div style="font-size:12px;color:#9590b3;margin-top:2px;">
-          ${l.categoryName} · by ${l.providerName}
-          ${l.isNewProvider ? `<span style="background:${GOLD};color:${INK};font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;">NEW PROVIDER</span>` : ''}
+          ${li.categoryName} · ${l('by')} ${li.providerName}
+          ${li.isNewProvider ? `<span style="background:${GOLD};color:${INK};font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;">${l('newProvider')}</span>` : ''}
         </div>
-        <a href="${APP_URL}/browse/${l.id}" style="font-size:12px;color:${PRIMARY};font-weight:600;text-decoration:none;margin-top:4px;display:inline-block;">View activity →</a>
+        <a href="${APP_URL}/browse/${li.id}" style="font-size:12px;color:${PRIMARY};font-weight:600;text-decoration:none;margin-top:4px;display:inline-block;">${l('viewActivity')}</a>
       </td>
     </tr>
   `).join('')
 
   const count = opts.listings.length
+  const subject = count === 1
+    ? t.subjectOne
+    : interp(t.subjectMany, { count: String(count) })
 
   return getResend().emails.send({
     from:    FROM,
     to:      opts.email,
-    subject: `${count} new ${count === 1 ? 'activity' : 'activities'} from providers you've saved`,
+    subject,
     html: layout(`
-      ${h1('New activities from providers you follow')}
-      ${p(`Hi ${opts.parentName}, here's what's new from providers you've saved:`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName }))}
       <table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:24px;">${items}</table>
-      ${btn('Browse all activities →', `${APP_URL}/browse`)}
-      ${disclaimer("You're receiving this because you saved activities from these providers on kidvo.")}
+      ${btn(t.cta, `${APP_URL}/browse`)}
+      ${disclaimer(t.disclaimer)}
     `),
   })
 }
 
 // ── 16. Provider — trial cancelled by parent ──────────────────────────────────
-export async function sendTrialCancelledByParent({
-  providerEmail,
-  providerName,
-  listingTitle,
-}: {
+export async function sendTrialCancelledByParent(opts: {
   providerEmail: string
   providerName:  string
   listingTitle:  string
+  locale:        Locale
 }) {
+  const t = emailT('trialCancelledByParent', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
-    to:      providerEmail,
-    subject: `Cerere de probă anulată — ${listingTitle}`,
+    to:      opts.providerEmail,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('Cerere de probă anulată')}
-      ${p(`Bună ${providerName},`)}
-      ${p(`Un părinte a anulat cererea de probă pentru activitatea <strong>${listingTitle}</strong>.`)}
-      ${btn('Vezi activitățile →', `${APP_URL}/listings`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.providerName }))}
+      ${p(interp(t.body2, { listing: opts.listingTitle }))}
+      ${btn(t.cta, `${APP_URL}/listings`)}
     `),
   })
 }
@@ -435,22 +476,25 @@ export async function sendTrialCancelledProviderDeleted(opts: {
   parentEmail:  string
   parentName:   string
   listingTitle: string
+  locale:       Locale
 }) {
+  const t = emailT('trialCancelledProviderDeleted', opts.locale)
+
   return getResend().emails.send({
     from:    FROM,
     to:      opts.parentEmail,
-    subject: `Actualizare cerere de probă — ${opts.listingTitle}`,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
     html: layout(`
-      ${h1('Cererea ta de probă a fost anulată')}
-      ${p(`Bună ${opts.parentName},`)}
-      ${p(`Ne pare rău să-ți comunicăm că furnizorul activității <strong>${opts.listingTitle}</strong> și-a închis contul, astfel cererea ta de probă a fost anulată automat.`)}
-      ${p('Există o mulțime de alte activități minunate în Timișoara — găsește ce se potrivește copilului tău.')}
-      ${btn('Explorează activitățile →', `${APP_URL}/browse`)}
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName }))}
+      ${p(interp(t.body2, { listing: opts.listingTitle }))}
+      ${p(t.body3)}
+      ${btn(t.cta, `${APP_URL}/browse`)}
     `),
   })
 }
 
-// ── 18. Admin — provider left ────────────────────────────────────────────────
+// ── 18. Admin — provider left (always English) ──────────────────────────────
 export async function sendAdminProviderLeft(opts: {
   providerEmail: string
   providerName:  string
@@ -467,7 +511,7 @@ export async function sendAdminProviderLeft(opts: {
   })
 }
 
-// ── Provider feedback ─────────────────────────────────────────────────────────
+// ── Provider feedback (always English, goes to hello@kidvo.eu) ───────────────
 export async function sendProviderFeedback(
   providerName:  string,
   providerEmail: string,
