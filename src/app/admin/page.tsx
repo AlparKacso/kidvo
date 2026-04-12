@@ -113,17 +113,23 @@ export default async function AdminPage() {
   const active  = listingsRaw.filter(l => l.status === 'active')
   const paused  = listingsRaw.filter(l => l.status === 'paused')
 
-  // Active user counts: cross-reference role from public.users with last_sign_in_at from auth.users
+  // Total user counts (all-time): cross-reference role from public.users
   const parentIds   = new Set(usersPublic.filter(u => u.role === 'parent').map(u => u.id))
   const providerIds = new Set(usersPublic.filter(u => u.role === 'provider').map(u => u.id))
 
-  const activeParents   = authUsers.filter(u => parentIds.has(u.id)   && (u.last_sign_in_at ?? '') > thirtyDaysAgo).length
-  const activeProviders = authUsers.filter(u => providerIds.has(u.id) && (u.last_sign_in_at ?? '') > thirtyDaysAgo).length
+  const totalParents   = parentIds.size
+  const totalProviders = providerIds.size
   const platformViews   = (viewsResult.data  ?? []).length
   const platformTrials  = (trialsResult.data ?? []).length
 
   const parentEmails = authUsers
     .filter(u => parentIds.has(u.id))
+    .map(u => u.email)
+    .filter((e): e is string => Boolean(e))
+    .sort()
+
+  const providerEmails = authUsers
+    .filter(u => providerIds.has(u.id))
     .map(u => u.email)
     .filter((e): e is string => Boolean(e))
     .sort()
@@ -135,12 +141,13 @@ export default async function AdminPage() {
       paused={paused}
       pendingReviews={pendingReviews}
       parentEmails={parentEmails}
+      providerEmails={providerEmails}
       slowTrials={slowTrials}
       slowProviderCount={slowProviderCount}
       allProviders={allProviders}
       stats={{
-        activeParents,
-        activeProviders,
+        totalParents: totalParents,
+        totalProviders: totalProviders,
         activeListings: active.length,
         platformViews,
         platformTrials,

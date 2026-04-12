@@ -187,8 +187,8 @@ function ReviewRow({ review, onModerate }: {
 }
 
 interface Stats {
-  activeParents:   number
-  activeProviders: number
+  totalParents:    number
+  totalProviders:  number
   activeListings:  number
   platformViews:   number
   platformTrials:  number
@@ -403,6 +403,7 @@ interface Props {
   paused:            Listing[]
   pendingReviews:    any[]
   parentEmails:      string[]
+  providerEmails:    string[]
   slowTrials:        any[]
   slowProviderCount: number
   allProviders:      ProviderSummary[]
@@ -430,7 +431,7 @@ function StatCard({ label, value, onClick }: { label: string; value: number; onC
   )
 }
 
-function EmailListModal({ emails, onClose }: { emails: string[]; onClose: () => void }) {
+function EmailListModal({ emails, title, onClose }: { emails: string[]; title?: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false)
 
   function copyAll() {
@@ -450,7 +451,7 @@ function EmailListModal({ emails, onClose }: { emails: string[]; onClose: () => 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
           <div>
-            <div className="font-display text-sm font-bold text-ink">Parent email addresses</div>
+            <div className="font-display text-sm font-bold text-ink">{title ?? 'Email addresses'}</div>
             <div className="text-xs text-ink-muted">{emails.length} registered</div>
           </div>
           <div className="flex items-center gap-2">
@@ -489,7 +490,7 @@ function EmailListModal({ emails, onClose }: { emails: string[]; onClose: () => 
   )
 }
 
-export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, slowTrials, slowProviderCount, allProviders, stats }: Props) {
+export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, providerEmails, slowTrials, slowProviderCount, allProviders, stats }: Props) {
   const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([
     ...initialPending,
@@ -497,9 +498,10 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
     ...initialPaused,
   ])
   const [reviews, setReviews]               = useState<any[]>(initialReviews)
-  const [showParentEmails, setShowParentEmails] = useState(false)
-  const [showSlowProviders, setShowSlowProviders] = useState(false)
-  const [showAllProviders,  setShowAllProviders]  = useState(false)
+  const [showParentEmails,   setShowParentEmails]   = useState(false)
+  const [showProviderEmails, setShowProviderEmails] = useState(false)
+  const [showSlowProviders,  setShowSlowProviders]  = useState(false)
+  const [showAllProviders,   setShowAllProviders]   = useState(false)
 
   function handleStatusChange(id: string, status: string) {
     setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l))
@@ -537,8 +539,8 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
 
         {/* Platform stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-          <StatCard label="Active parents (30d)"   value={stats.activeParents}   onClick={() => setShowParentEmails(true)} />
-          <StatCard label="Active providers (30d)" value={stats.activeProviders} onClick={allProviders.length > 0 ? () => setShowAllProviders(true) : undefined} />
+          <StatCard label="Total parents"   value={stats.totalParents}   onClick={() => setShowParentEmails(true)} />
+          <StatCard label="Total providers" value={stats.totalProviders} onClick={() => setShowProviderEmails(true)} />
           <StatCard label="Active listings"        value={stats.activeListings}  />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
@@ -553,7 +555,14 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
 
         {/* Modals */}
         {showParentEmails && (
-          <EmailListModal emails={parentEmails} onClose={() => setShowParentEmails(false)} />
+          <EmailListModal emails={parentEmails} title="Parent email addresses" onClose={() => setShowParentEmails(false)} />
+        )}
+        {showProviderEmails && (
+          <EmailListModal
+            emails={providerEmails}
+            title="Provider email addresses"
+            onClose={() => setShowProviderEmails(false)}
+          />
         )}
         {showSlowProviders && (
           <SlowProvidersModal trials={slowTrials} onClose={() => setShowSlowProviders(false)} />
