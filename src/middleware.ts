@@ -46,6 +46,10 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/auth/forgot-password' || pathname === '/auth/reset-password') {
     return supabaseResponse
   }
+  // Public auth API routes — must be accessible without a session
+  if (pathname === '/api/auth/forgot-password' || pathname === '/api/auth/create-profile') {
+    return supabaseResponse
+  }
   const authRoutes = ['/auth/login', '/auth/signup']
   if (authRoutes.includes(pathname)) {
     if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
