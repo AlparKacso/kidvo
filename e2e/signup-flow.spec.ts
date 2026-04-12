@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { adminClient, cleanupUser, E2E_PASSWORD } from './fixtures'
+import { adminClient, cleanupUser, E2E_PASSWORD, dismissGates } from './fixtures'
 
 /**
  * Signup form flow.
@@ -22,13 +22,12 @@ test.describe('signup: parent happy path', () => {
   })
 
   test('fill signup form and see check-email screen', async ({ page }) => {
-    // Dismiss the cookie banner so it can't overlay buttons.
-    await page.goto('/auth/signup')
-    await page.evaluate(() => localStorage.setItem('kidvo_cookie_consent', 'accepted'))
-    await page.goto('/auth/signup')
+    await dismissGates(page, '/auth/signup')
 
-    // Generate a unique test email.
-    email = `e2e-${Date.now()}-${Math.floor(Math.random() * 1e6)}-signup@kidvo-test.local`
+    // Use a gmail +alias so Supabase accepts the domain (it validates MX records).
+    // The confirmation email lands in alpar.kacso's inbox but is never opened by the test.
+    const tag = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`
+    email = `alpar.kacso+e2e-${tag}@gmail.com`
 
     // 1. Select "Parent" role (should be default, but click to be explicit).
     const parentBtn = page.getByRole('button', { name: /parent|părinte/i }).first()

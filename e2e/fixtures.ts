@@ -10,6 +10,7 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 }
 
 export const E2E_PASSWORD = 'kidvo-e2e-test-pw-1234!'
+const STAGING_PASSWORD = process.env.STAGING_PASSWORD
 
 /**
  * Admin Supabase client used by test fixtures to pre-seed users and
@@ -190,4 +191,29 @@ export async function createListing(providerId: string): Promise<{ id: string; t
   if (schedErr) throw schedErr
 
   return listing as { id: string; title: string }
+}
+
+/**
+ * Dismiss the staging password gate (if active) and the cookie consent
+ * banner, then navigate to the target path. Call this at the start of
+ * every test instead of a bare `page.goto()`.
+ */
+export async function dismissGates(page: import('@playwright/test').Page, targetPath: string): Promise<void> {
+  // 1. Bypass staging password gate by filling the form.
+  if (STAGING_PASSWORD) {
+    await page.goto('/')
+    // If redirected to staging-login, fill the password form.
+    if (page.url().includes('staging-login')) {
+      await page.locator('input[name="password"]').fill(STAGING_PASSWORD)
+      await page.locator('button[type="submit"]').click()
+      await page.waitForURL('**/', { timeout: 10_000 })
+    }
+  }
+
+  // 2. Dismiss cookie banner.
+  await page.goto(targetPath)
+  await page.evaluate(() => localStorage.setItem('kidvo_cookie_consent', 'accepted'))
+
+  // 3. Navigate to the actual target (cookie banner now dismissed).
+  await page.goto(targetPath)
 }
