@@ -79,7 +79,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
     contactPhone !== (provider?.contact_phone ?? '')
 
   // Password reset
-  const [resetState,   setResetState]   = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [resetState,   setResetState]   = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
   // Delete account
   const [deleteOpen,   setDeleteOpen]   = useState(false)
@@ -130,9 +130,14 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
   async function sendResetLink() {
     setResetState('sending')
-    await fetch('/api/auth/send-reset-link', { method: 'POST' })
-    setResetState('sent')
-    setTimeout(() => setResetState('idle'), 5000)
+    try {
+      const res = await fetch('/api/auth/send-reset-link', { method: 'POST' })
+      if (!res.ok) { setResetState('error'); return }
+      setResetState('sent')
+      setTimeout(() => setResetState('idle'), 5000)
+    } catch {
+      setResetState('error')
+    }
   }
 
   async function deleteAccount() {
@@ -290,10 +295,12 @@ export function SettingsClient({ profile, provider, email }: Props) {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1">
               <div className="font-display text-sm font-semibold text-ink">Password</div>
-              <div className="text-xs text-ink-muted mt-0.5">
+              <div className={`text-xs mt-0.5 ${resetState === 'error' ? 'text-[#dc2626]' : 'text-ink-muted'}`}>
                 {resetState === 'sent'
                   ? 'Link sent! Check your inbox.'
-                  : 'Send a reset link to your email address.'}
+                  : resetState === 'error'
+                    ? 'Something went wrong. Please try again.'
+                    : 'Send a reset link to your email address.'}
               </div>
             </div>
             <button
