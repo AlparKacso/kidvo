@@ -211,7 +211,8 @@
       "signIn": "Autentifică-te",
       "checkEmailTitle": "Verifică-ți emailul",
       "checkEmailSub": "Am trimis un link de confirmare la {email}. Apasă pe el pentru a-ți activa contul.",
-      "checkEmailNote": "Nu l-ai primit? Verifică folderul spam."
+      "checkEmailNote": "Nu l-ai primit? Verifică folderul spam.",
+      "checkEmailRetry": "Nimic nici după câteva minute? Încearcă să te înregistrezi din nou."
     },
     "forgot": {
       "title": "Ai uitat parola?",
