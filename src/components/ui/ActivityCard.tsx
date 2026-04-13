@@ -57,7 +57,7 @@ export async function ActivityCard({ listing, featured, savedIds, avgRating, rev
 
   return (
     <div className={cn(
-      'bg-white rounded-[22px] border-[1.5px] border-border shadow-card relative',
+      'bg-white rounded-[22px] border-[1.5px] border-border shadow-card relative flex flex-col',
       isFull ? 'opacity-65' : 'card-hover',
     )}>
       {/* Stretched link */}
@@ -94,7 +94,7 @@ export async function ActivityCard({ listing, featured, savedIds, avgRating, rev
       )}
 
       {/* ── Body ── */}
-      <div className="p-4">
+      <div className="p-4 flex-1 flex flex-col">
         {/* Category chip */}
         <div className="mb-2.5">
           <CategoryIconChip
@@ -150,7 +150,7 @@ export async function ActivityCard({ listing, featured, savedIds, avgRating, rev
         </div>
 
         {/* Meta: provider + rating */}
-        <div className="text-[13px] text-ink-muted">
+        <div className="text-[13px] text-ink-muted mt-auto">
           {[
             provider,
             avgRating && avgRating > 0
