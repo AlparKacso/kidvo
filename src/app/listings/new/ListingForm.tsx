@@ -281,12 +281,13 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
         )
         if (schedErr) throw schedErr
       }
+      // Notify admin (fire-and-forget — don't block the redirect)
       if (!isEdit && finalListingId) {
-        await fetch('/api/listings/notify', {
+        fetch('/api/listings/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ listingId: finalListingId, listingTitle: data.title }),
-        })
+        }).catch(() => {})
       }
       window.location.href = '/listings?submitted=1'
     } catch (e: unknown) {
