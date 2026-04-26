@@ -64,6 +64,28 @@ export async function AppShell({ children }: AppShellProps) {
   const pendingBookings = bookingsRes.count ?? 0
   const listingsCount   = listingsRes.count ?? 0
 
+  // Provider-side pending trial requests across their listings — drives the
+  // nav badge so providers don't miss new bookings between dashboard visits.
+  let providerPendingTrials = 0
+  if (isProvider) {
+    const { data: providerRow } = await supabase
+      .from('providers').select('id').eq('user_id', authUser.id).single()
+    const providerId = (providerRow as { id: string } | null)?.id
+    if (providerId) {
+      const { data: provListings } = await supabase
+        .from('listings').select('id').eq('provider_id', providerId)
+      const listingIds = (provListings ?? []).map((l: { id: string }) => l.id)
+      if (listingIds.length > 0) {
+        const { count } = await supabase
+          .from('trial_requests')
+          .select('*', { count: 'exact', head: true })
+          .in('listing_id', listingIds)
+          .eq('status', 'pending')
+        providerPendingTrials = count ?? 0
+      }
+    }
+  }
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar — desktop only */}
@@ -71,6 +93,7 @@ export async function AppShell({ children }: AppShellProps) {
         <Sidebar
           isProvider={isProvider}
           pendingBookings={pendingBookings}
+          providerPendingTrials={providerPendingTrials}
           userEmail={userEmail}
         />
       </div>
@@ -90,7 +113,7 @@ export async function AppShell({ children }: AppShellProps) {
       </div>
 
       {/* Bottom nav — mobile only */}
-      <BottomNav isProvider={isProvider} userEmail={userEmail} />
+      <BottomNav isProvider={isProvider} providerPendingTrials={providerPendingTrials} userEmail={userEmail} />
     </div>
   )
 }

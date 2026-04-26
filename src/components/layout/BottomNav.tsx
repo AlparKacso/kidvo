@@ -10,8 +10,9 @@ const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
 const IconAdmin = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5L2 4v3.5c0 3 2.5 5.5 5.5 6 3-0.5 5.5-3 5.5-6V4L7.5 1.5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5l1.5 1.5 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
 
 interface Props {
-  isProvider?: boolean
-  userEmail?:  string
+  isProvider?:            boolean
+  providerPendingTrials?: number
+  userEmail?:             string
 }
 
 const IconDashboard = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/></svg>
@@ -23,7 +24,7 @@ const IconSettings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill=
 const IconListings  = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 const IconAnalytics = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="10" width="3" height="4" rx="0.75" fill="currentColor"/><rect x="6" y="6" width="3" height="8" rx="0.75" fill="currentColor"/><rect x="11" y="2" width="3" height="12" rx="0.75" fill="currentColor"/></svg>
 
-function NavItem({ href, icon, label, exact, excludes }: { href: string; icon: React.ReactNode; label: string; exact?: boolean; excludes?: string[] }) {
+function NavItem({ href, icon, label, exact, excludes, badge }: { href: string; icon: React.ReactNode; label: string; exact?: boolean; excludes?: string[]; badge?: number }) {
   const pathname = usePathname()
   const active   = exact
     ? pathname === href
@@ -33,17 +34,24 @@ function NavItem({ href, icon, label, exact, excludes }: { href: string; icon: R
     <Link
       href={href}
       className={cn(
-        'flex flex-col items-center gap-1 flex-1 py-2 transition-colors',
+        'flex flex-col items-center gap-1 flex-1 py-2 transition-colors relative',
         active ? 'text-primary' : 'text-ink-muted'
       )}
     >
-      {icon}
+      <span className="relative">
+        {icon}
+        {badge !== undefined && badge > 0 && (
+          <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-primary text-white font-display text-[9px] font-bold flex items-center justify-center leading-none">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </span>
       <span className="font-display text-[10px] font-semibold">{label}</span>
     </Link>
   )
 }
 
-export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
+export function BottomNav({ isProvider = false, providerPendingTrials = 0, userEmail = '' }: Props) {
   const t       = useTranslations('nav')
   const isAdmin = userEmail === ADMIN_EMAIL
   return (
@@ -54,7 +62,7 @@ export function BottomNav({ isProvider = false, userEmail = '' }: Props) {
         <NavItem href="/kids" icon={<IconKids />} label={t('kidsActivities')} exact />
       )}
       {isProvider && (
-        <NavItem href="/listings" icon={<IconListings />} label={t('activities')} />
+        <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} />
       )}
       <NavItem href="/settings" icon={<IconSettings />} label={t('settings')} exact />
       {isAdmin && (

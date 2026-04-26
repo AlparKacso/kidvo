@@ -199,7 +199,14 @@ export default async function ProviderListingsPage({
           >
             {t('tabTrialRequests')}
             {pendingReqs > 0 && (
-              <span className="leading-none flex-shrink-0" title={`${pendingReqs} pending`}>⚠️</span>
+              <span
+                className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full font-display text-[10.5px] font-bold leading-none flex-shrink-0 ${
+                  tab === 'bookings' ? 'bg-white/20 text-white' : 'bg-primary text-white'
+                }`}
+                title={`${pendingReqs} pending`}
+              >
+                {pendingReqs > 99 ? '99+' : pendingReqs}
+              </span>
             )}
           </Link>
         </div>
