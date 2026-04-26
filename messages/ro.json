@@ -304,6 +304,8 @@
     "conversionTitle": "Conversie",
     "conversionSub": "Vizualizări → Dezvăluiri → Probe",
     "conversionRate": "Rată vizualizări → probă",
+    "conversionEmpty": "Imediat ce părinții îți vor vedea anunțurile, conversia va apărea aici.",
+    "conversionEmptyCta": "Distribuie anunțurile →",
     "tipOfMonth": "Sfatul lunii",
     "addYourKids": "Adaugă copiii",
     "trackActivities": "Urmărește activitățile și probele per copil.",
