@@ -304,6 +304,8 @@
     "conversionTitle": "Conversion",
     "conversionSub": "Views → Reveals → Trials",
     "conversionRate": "Views → trial rate",
+    "conversionEmpty": "Once parents view your listings, your conversion will show up here.",
+    "conversionEmptyCta": "Share your listings →",
     "tipOfMonth": "Tip of the month",
     "addYourKids": "Add your kids",
     "trackActivities": "Track activities and trials per child.",

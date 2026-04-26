@@ -49,22 +49,20 @@ function SectionCard({ title, sub, linkText, linkHref, extraHeader, children }: 
 }
 
 /* Stat cards — prototype: 4-col grid, purple/blue gradient or white */
-function StatCard({ label, value, sub, accent = 'none' }: {
+function StatCard({ label, value, sub, accent = 'none', href }: {
   label:   string
   value:   number | string
   sub?:    string
   accent?: 'purple' | 'blue' | 'none'
+  href?:   string
 }) {
   const bg =
     accent === 'purple' ? 'linear-gradient(135deg, #5b21b6, #7c3aed)' :
     accent === 'blue'   ? 'linear-gradient(135deg, #0284c7, #2aa7ff)' : ''
   const isDark = accent !== 'none'
 
-  return (
-    <div
-      className="rounded-[16px] p-[18px] bg-white"
-      style={{ background: bg || undefined, boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}
-    >
+  const content = (
+    <>
       <div className={`font-display text-[11px] font-semibold uppercase tracking-[.06em] mb-2 ${isDark ? 'text-white/65' : 'text-ink-muted'}`}>
         {label}
       </div>
@@ -76,8 +74,16 @@ function StatCard({ label, value, sub, accent = 'none' }: {
           {sub}
         </div>
       )}
-    </div>
+    </>
   )
+
+  const className = `block rounded-[16px] p-[18px] bg-white ${href ? 'transition-transform hover:-translate-y-[1px] hover:shadow-md cursor-pointer' : ''}`
+  const style = { background: bg || undefined, boxShadow: '0 2px 16px rgba(90,70,140,.06)' }
+
+  if (href) {
+    return <Link href={href} className={className} style={style}>{content}</Link>
+  }
+  return <div className={className} style={style}>{content}</div>
 }
 
 /* Session badge */
@@ -343,22 +349,26 @@ export default async function DashboardPage() {
             value={activeCount}
             sub={[pendingListings > 0 && tDash('pendingN', { n: pendingListings }), pausedCount > 0 && tDash('pausedN', { n: pausedCount })].filter(Boolean).join(' · ') || tDash('allActive')}
             accent="purple"
+            href="/listings"
           />
           <StatCard
             label={tDash('providerTotalViews')}
             value={totalAllViews}
             sub={tDash('allTime')}
             accent="blue"
+            href="/listings"
           />
           <StatCard
             label={tDash('providerTrialRequests')}
             value={totalAllTrials}
             sub={`${tDash('confirmedN', { n: confirmedTrials })} · ${tDash('pendingN', { n: pendingTrials })}`}
+            href="/listings?tab=bookings"
           />
           <StatCard
             label={tDash('providerContactReveals')}
             value={totalAllReveals}
             sub={tDash('parentsUnlocked')}
+            href="/listings"
           />
         </div>
 
@@ -468,7 +478,7 @@ export default async function DashboardPage() {
                 </SectionCard>
               </div>
             )}
-            {totalAllViews > 0 && <div className="lg:hidden rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+            <div className="lg:hidden rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
               <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>{tDash('conversionTitle')}</div>
               <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>{tDash('conversionSub')}</div>
               <div className="flex items-start gap-0 mb-5">
@@ -484,11 +494,20 @@ export default async function DashboardPage() {
                   </div>
                 ))}
               </div>
-              <div className="rounded-[12px] px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>{tDash('conversionRate')}</span>
-                <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
-              </div>
-            </div>}
+              {totalAllViews > 0 ? (
+                <div className="rounded-[12px] px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>{tDash('conversionRate')}</span>
+                  <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
+                </div>
+              ) : (
+                <div className="rounded-[12px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <div className="font-display text-[12px] mb-2" style={{ color: 'rgba(255,255,255,0.65)' }}>{tDash('conversionEmpty')}</div>
+                  <Link href="/listings" className="inline-flex items-center font-display text-[11px] font-bold px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                    {tDash('conversionEmptyCta')}
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* Per-listing performance table */}
             {allListings.length > 0 && (
@@ -552,7 +571,7 @@ export default async function DashboardPage() {
             )}
 
             {/* Conversion funnel — dark card */}
-            {totalAllViews > 0 && <div className="hidden lg:block rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+            <div className="hidden lg:block rounded-[22px] px-[22px] py-[22px] relative overflow-hidden" style={{ background: '#1c1c27', boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
               <div className="font-display text-[11px] font-bold tracking-[.08em] uppercase mb-[6px]" style={{ color: 'rgba(255,255,255,0.40)' }}>{tDash('conversionTitle')}</div>
               <div className="font-display text-[10.5px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>{tDash('conversionSub')}</div>
               <div className="flex items-start gap-0 mb-5">
@@ -568,11 +587,20 @@ export default async function DashboardPage() {
                   </div>
                 ))}
               </div>
-              <div className="rounded-[12px] px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>{tDash('conversionRate')}</span>
-                <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
-              </div>
-            </div>}
+              {totalAllViews > 0 ? (
+                <div className="rounded-[12px] px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <span className="font-display text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>{tDash('conversionRate')}</span>
+                  <span className="font-display text-[20px] font-extrabold text-white">{conversionPct}%</span>
+                </div>
+              ) : (
+                <div className="rounded-[12px] px-4 py-3" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <div className="font-display text-[12px] mb-2" style={{ color: 'rgba(255,255,255,0.65)' }}>{tDash('conversionEmpty')}</div>
+                  <Link href="/listings" className="inline-flex items-center font-display text-[11px] font-bold px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                    {tDash('conversionEmptyCta')}
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* Top listing — white card */}
             {topListing && (
