@@ -149,6 +149,15 @@ interface ListingFormProps {
   initialData?: Partial<FormData>
 }
 
+interface SavedDraft {
+  data:    FormData
+  step:    number
+  agreed:  boolean
+  savedAt: number
+}
+
+const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+
 export function ListingForm({ categories, areas, providerId, listingId, initialData }: ListingFormProps) {
   const isEdit                      = !!listingId
   const [step, setStep]             = useState(0)
@@ -162,6 +171,11 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   const [coverPreview, setCoverPreview] = useState<string>(initialData?.cover_image_url ?? '')
   const [rawImageSrc, setRawImageSrc]   = useState<string>('')
   const [showCropModal, setShowCropModal] = useState(false)
+
+  // Draft autosave — only for new listings (edit mode reads from DB)
+  const draftKey = `kidvo:listing-draft:${providerId}`
+  const [pendingDraft, setPendingDraft]     = useState<SavedDraft | null>(null)
+  const [restoreDecided, setRestoreDecided] = useState(isEdit)
 
   // Schedule step local state (multi-day picker)
   const [selectedDays, setSelectedDays] = useState<number[]>([])
@@ -196,6 +210,66 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
   function removeInclude(i: number) { set('includes', data.includes.filter((_, idx) => idx !== i)) }
 
   useEffect(() => setShowErrors(false), [step])
+
+  // Load existing draft on mount (skip in edit mode)
+  useEffect(() => {
+    if (isEdit) return
+    try {
+      const raw = localStorage.getItem(draftKey)
+      if (!raw) { setRestoreDecided(true); return }
+      const parsed = JSON.parse(raw) as SavedDraft
+      if (Date.now() - parsed.savedAt > DRAFT_MAX_AGE_MS) {
+        localStorage.removeItem(draftKey)
+        setRestoreDecided(true)
+        return
+      }
+      const meaningful = parsed.data?.title || parsed.data?.category_id || parsed.data?.description || (parsed.data?.schedules?.length ?? 0) > 0
+      if (!meaningful) {
+        localStorage.removeItem(draftKey)
+        setRestoreDecided(true)
+        return
+      }
+      setPendingDraft(parsed)
+    } catch {
+      setRestoreDecided(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Autosave — debounced, gated until restore decision so we don't overwrite the offered draft
+  useEffect(() => {
+    if (isEdit || !restoreDecided) return
+    const timer = setTimeout(() => {
+      try {
+        const draft: SavedDraft = { data, step, agreed, savedAt: Date.now() }
+        localStorage.setItem(draftKey, JSON.stringify(draft))
+      } catch { /* quota exceeded — silently skip */ }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [data, step, agreed, isEdit, restoreDecided, draftKey])
+
+  function restoreDraft() {
+    if (!pendingDraft) return
+    setData(pendingDraft.data)
+    setStep(pendingDraft.step)
+    setAgreed(pendingDraft.agreed)
+    setPendingDraft(null)
+    setRestoreDecided(true)
+  }
+  function discardDraft() {
+    try { localStorage.removeItem(draftKey) } catch {}
+    setPendingDraft(null)
+    setRestoreDecided(true)
+  }
+  function formatDraftAge(ms: number): string {
+    const minutes = Math.floor(ms / 60_000)
+    if (minutes < 1)  return t('draftAgeJustNow')
+    if (minutes < 60) return t('draftAgeMinutes', { n: minutes })
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24)   return t('draftAgeHours', { n: hours })
+    const days = Math.floor(hours / 24)
+    return t('draftAgeDays', { n: days })
+  }
 
   function spotsInvalid(): boolean {
     // If both are filled, available must not exceed total.
@@ -289,6 +363,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
           body: JSON.stringify({ listingId: finalListingId, listingTitle: data.title }),
         }).catch(() => {})
       }
+      try { localStorage.removeItem(draftKey) } catch {}
       window.location.href = '/listings?submitted=1'
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
@@ -304,6 +379,31 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
       <p className="text-sm text-ink-muted mb-8">
         {isEdit ? t('subtitleEdit') : t('subtitleNew')}
       </p>
+
+      {pendingDraft && (
+        <div className="mb-6 p-4 rounded-lg border border-primary/30 bg-primary-lt flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-sm font-semibold text-primary mb-0.5">{t('draftBannerTitle')}</div>
+            <div className="text-xs text-ink-mid">{t('draftBannerSub', { age: formatDraftAge(Date.now() - pendingDraft.savedAt) })}</div>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={discardDraft}
+              className="px-4 py-2 rounded-full font-display text-xs font-semibold border border-border text-ink-mid hover:bg-white transition-colors"
+            >
+              {t('draftDiscard')}
+            </button>
+            <button
+              type="button"
+              onClick={restoreDraft}
+              className="px-4 py-2 rounded-full font-display text-xs font-semibold bg-primary text-white hover:bg-primary-deep transition-colors"
+            >
+              {t('draftRestore')}
+            </button>
+          </div>
+        </div>
+      )}
 
       <StepIndicator current={step} steps={STEPS} />
 
