@@ -556,9 +556,10 @@ export default async function ActivityDetailPage({ params }: Props) {
 
       </div>
 
-      {/* Mobile sticky CTA — keeps Book Trial reachable while parent scrolls reviews */}
+      {/* Mobile sticky CTA — keeps Book Trial reachable while parent scrolls reviews.
+          Logged-in users have BottomNav at bottom-0; sit above it to avoid overlap. */}
       {!isOwner && listing.trial_available && schedules && schedules.length > 0 && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border px-4 py-3 flex items-center gap-3" style={{ boxShadow: '0 -4px 16px rgba(90,70,140,.08)' }}>
+        <div className={`md:hidden fixed left-0 right-0 z-40 bg-white border-t border-border px-4 py-3 flex items-center gap-3 ${user ? 'bottom-14' : 'bottom-0'}`} style={{ boxShadow: '0 -4px 16px rgba(90,70,140,.08)' }}>
           <div className="flex-shrink-0">
             <div className="font-display text-base font-bold text-ink leading-none">{listing.price_monthly} RON</div>
             <div className="text-[11px] text-ink-muted mt-0.5">{listing.pricing_type === 'session' ? t('perSession') : t('perMonth')}</div>
