@@ -182,15 +182,17 @@ function FeedbackNudge({ isProvider }: { isProvider: boolean }) {
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
 
 interface SidebarProps {
-  isProvider?:         boolean
-  pendingBookings?:    number
-  userEmail?:          string
+  isProvider?:             boolean
+  pendingBookings?:        number
+  providerPendingTrials?:  number
+  userEmail?:              string
 }
 
 export function Sidebar({
-  isProvider       = false,
-  pendingBookings  = 0,
-  userEmail        = '',
+  isProvider             = false,
+  pendingBookings        = 0,
+  providerPendingTrials  = 0,
+  userEmail              = '',
 }: SidebarProps) {
   const isAdmin = userEmail === ADMIN_EMAIL
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
@@ -217,7 +219,7 @@ export function Sidebar({
 
         {isProvider && (
           <NavSection label={t('myListings')}>
-            <NavItem href="/listings" icon={<IconListings />} label={t('activities')} />
+            <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} badgeVariant="purple" />
           </NavSection>
         )}
 
