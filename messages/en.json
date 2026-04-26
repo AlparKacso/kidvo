@@ -491,6 +491,10 @@
     "daysAgo": "{d}d ago",
     "overdue": "· overdue",
     "preferred": "Preferred: {day}",
+    "emailFailed": "Email delivery failed",
+    "emailFailedSub": "The parent wasn't notified. Try resending.",
+    "emailSent": "Parent notified by email",
+    "resend": "Resend",
     "days": [
       "Mon",
       "Tue",

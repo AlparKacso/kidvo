@@ -491,6 +491,10 @@
     "daysAgo": "acum {d}z",
     "overdue": "· întârziat",
     "preferred": "Preferat: {day}",
+    "emailFailed": "Trimiterea emailului a eșuat",
+    "emailFailedSub": "Părintele nu a fost notificat. Încearcă să retrimiți.",
+    "emailSent": "Părinte notificat prin email",
+    "resend": "Retrimite",
     "days": [
       "Lun",
       "Mar",

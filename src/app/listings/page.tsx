@@ -86,25 +86,19 @@ export default async function ProviderListingsPage({
     totalReqs = requests.length
   }
 
-  // ── Server action: update booking status ──────────────────────
-  async function updateStatus(formData: FormData) {
+  // ── Helper: send the parent-facing email for a confirmed/declined trial.
+  //          Updates trial_requests.email_status to 'sent' or 'failed'.
+  //          Used by both updateStatus (initial send) and resendEmail (retry).
+  async function sendStatusEmail(trialId: string) {
     'use server'
-    const id     = formData.get('id') as string
-    const status = formData.get('status') as string
-    const supabase = await createClient()
-    const adminDb  = createAdminClient()
+    const adminDb = createAdminClient()
 
-    // Fetch trial request with separate queries to avoid join array issues + RLS
     const { data: trialRaw } = await adminDb
       .from('trial_requests')
-      .select('user_id, listing_id')
-      .eq('id', id).single()
-
-    await supabase.from('trial_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', id)
-    revalidatePath('/listings')
-
+      .select('user_id, listing_id, status')
+      .eq('id', trialId).single()
     const trial = trialRaw as any
-    if (!trial) return
+    if (!trial || (trial.status !== 'confirmed' && trial.status !== 'declined')) return
 
     const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
       adminDb.from('listings').select('id, title, provider_id').eq('id', trial.listing_id).single(),
@@ -113,34 +107,69 @@ export default async function ProviderListingsPage({
 
     const listing = listingRaw as any
     const parent  = parentRaw  as any
-    if (!listing || !parent?.email) return
+    if (!listing || !parent?.email) {
+      await adminDb.from('trial_requests').update({
+        email_status: 'failed',
+        email_error:  'missing listing or parent email',
+      }).eq('id', trialId)
+      return
+    }
 
     const parentLocale = parent.locale === 'en' ? 'en' as const : 'ro' as const
 
-    if (status === 'confirmed') {
-      const { data: provRaw } = await adminDb
-        .from('providers')
-        .select('display_name, contact_email, contact_phone, user:users(email, full_name)')
-        .eq('id', listing.provider_id).single()
-      const p = provRaw as any
-      await sendTrialConfirmedToParent({
-        parentEmail:   parent.email,
-        parentName:    parent.full_name ?? 'there',
-        listingTitle:  listing.title,
-        listingId:     listing.id,
-        providerName:  p?.display_name  || p?.user?.full_name || '',
-        providerEmail: p?.contact_email || p?.user?.email     || '',
-        providerPhone: p?.contact_phone ?? null,
-        locale:        parentLocale,
-      }).catch(console.error)
-    } else if (status === 'declined') {
-      await sendTrialDeclinedToParent({
-        parentEmail:  parent.email,
-        parentName:   parent.full_name ?? 'there',
-        listingTitle: listing.title,
-        locale:       parentLocale,
-      }).catch(console.error)
+    try {
+      if (trial.status === 'confirmed') {
+        const { data: provRaw } = await adminDb
+          .from('providers')
+          .select('display_name, contact_email, contact_phone, user:users(email, full_name)')
+          .eq('id', listing.provider_id).single()
+        const p = provRaw as any
+        await sendTrialConfirmedToParent({
+          parentEmail:   parent.email,
+          parentName:    parent.full_name ?? 'there',
+          listingTitle:  listing.title,
+          listingId:     listing.id,
+          providerName:  p?.display_name  || p?.user?.full_name || '',
+          providerEmail: p?.contact_email || p?.user?.email     || '',
+          providerPhone: p?.contact_phone ?? null,
+          locale:        parentLocale,
+        })
+      } else {
+        await sendTrialDeclinedToParent({
+          parentEmail:  parent.email,
+          parentName:   parent.full_name ?? 'there',
+          listingTitle: listing.title,
+          locale:       parentLocale,
+        })
+      }
+      await adminDb.from('trial_requests').update({ email_status: 'sent', email_error: null }).eq('id', trialId)
+    } catch (err) {
+      console.error('[trial email] send failed:', err)
+      await adminDb.from('trial_requests').update({
+        email_status: 'failed',
+        email_error:  err instanceof Error ? err.message : String(err),
+      }).eq('id', trialId)
     }
+  }
+
+  // ── Server action: update booking status ──────────────────────
+  async function updateStatus(formData: FormData) {
+    'use server'
+    const id     = formData.get('id') as string
+    const status = formData.get('status') as string
+    const supabase = await createClient()
+
+    await supabase.from('trial_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', id)
+    await sendStatusEmail(id)
+    revalidatePath('/listings')
+  }
+
+  // ── Server action: retry a failed delivery ────────────────────
+  async function resendEmail(formData: FormData) {
+    'use server'
+    const id = formData.get('id') as string
+    await sendStatusEmail(id)
+    revalidatePath('/listings')
   }
 
   return (
@@ -328,6 +357,27 @@ export default async function ProviderListingsPage({
                                   <a href={`tel:${parent.phone}`} className="text-primary hover:underline font-semibold">{parent.phone}</a>
                                 </div>
                               )}
+                            </div>
+                          )}
+
+                          {(req.status === 'confirmed' || req.status === 'declined') && req.email_status === 'failed' && (
+                            <div className="mt-3 p-3 bg-danger-lt border border-danger/20 rounded-[12px] flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-display text-[12px] font-semibold text-danger">⚠️ {t('emailFailed')}</div>
+                                <div className="font-display text-[11px] text-danger/80 mt-0.5">{t('emailFailedSub')}</div>
+                              </div>
+                              <form action={resendEmail} className="flex-shrink-0">
+                                <input type="hidden" name="id" value={req.id} />
+                                <button type="submit" className="px-3 py-1.5 rounded-full font-display text-[11px] font-semibold bg-white text-danger border border-danger/30 hover:bg-danger hover:text-white transition-colors">
+                                  {t('resend')}
+                                </button>
+                              </form>
+                            </div>
+                          )}
+
+                          {(req.status === 'confirmed' || req.status === 'declined') && req.email_status === 'sent' && (
+                            <div className="mt-2 font-display text-[11px] text-ink-muted">
+                              ✓ {t('emailSent')}
                             </div>
                           )}
                         </div>
