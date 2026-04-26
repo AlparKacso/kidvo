@@ -78,16 +78,6 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
     setState('success')
   }
 
-  if (state === 'success') {
-    return (
-      <div className="w-full flex flex-col items-center gap-2 py-4 px-3 bg-success-lt border border-success/20 rounded text-center">
-        <div className="text-2xl">🎉</div>
-        <div className="font-display text-sm font-semibold text-success">{t('successTitle')}</div>
-        <p className="text-xs text-ink-muted">{t('successSub')}</p>
-      </div>
-    )
-  }
-
   return (
     <>
       <button
@@ -101,6 +91,33 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
         <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><rect x="2" y="2" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.8" fill="none"/><path d="M2 6h11M6 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         {t('bookTrial')}
       </button>
+
+      {state === 'success' && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setState('idle')} />
+
+          <div className="relative z-10 bg-white rounded-lg shadow-xl w-full max-w-[420px] p-6 text-center" onClick={e => e.stopPropagation()}>
+            <div className="text-3xl mb-2">🎉</div>
+            <h2 className="font-display text-base font-bold text-success mb-2">{t('successTitle')}</h2>
+            <p className="text-sm text-ink-mid leading-relaxed mb-1.5">{t('successWhatNext')}</p>
+            <p className="text-xs text-ink-muted mb-5">{t('successEmailHint')}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setState('idle')}
+                className="flex-1 py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
+              >
+                {t('successDone')}
+              </button>
+              <a
+                href="/bookings"
+                className="flex-1 py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep transition-colors flex items-center justify-center"
+              >
+                {t('successViewBookings')}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {(state === 'open' || state === 'submitting' || state === 'error') && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center px-4">

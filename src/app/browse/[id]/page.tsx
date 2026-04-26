@@ -556,6 +556,31 @@ export default async function ActivityDetailPage({ params }: Props) {
 
       </div>
 
+      {/* Mobile sticky CTA — keeps Book Trial reachable while parent scrolls reviews */}
+      {!isOwner && listing.trial_available && schedules && schedules.length > 0 && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border px-4 py-3 flex items-center gap-3" style={{ boxShadow: '0 -4px 16px rgba(90,70,140,.08)' }}>
+          <div className="flex-shrink-0">
+            <div className="font-display text-base font-bold text-ink leading-none">{listing.price_monthly} RON</div>
+            <div className="text-[11px] text-ink-muted mt-0.5">{listing.pricing_type === 'session' ? t('perSession') : t('perMonth')}</div>
+          </div>
+          <div className="flex-1">
+            <Suspense fallback={
+              <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
+                {t('bookTrial')}
+              </button>
+            }>
+              <TrialRequestButton
+                listingId={listing.id}
+                listingTitle={listing.title}
+                schedules={schedules ?? []}
+                isFull={isFull}
+                isLoggedIn={!!user}
+              />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
       {listingJsonLd && <JsonLd schema={listingJsonLd} />}
     </AppShell>
   )
