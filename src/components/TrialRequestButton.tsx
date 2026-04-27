@@ -44,6 +44,22 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
     if (searchParams.get('book') === '1' && !isFull) openModal()
   }, [searchParams, isFull])
 
+  // The page can render two TrialRequestButton instances for the same listing
+  // (desktop CTA card + mobile sticky bottom bar). When ?book=1 auto-opens both
+  // at once, one instance succeeds while the other is still showing its booking
+  // modal underneath. Broadcast on success so siblings close their modals.
+  useEffect(() => {
+    function handleSiblingSuccess(e: Event) {
+      const detail = (e as CustomEvent<{ listingId: string }>).detail
+      if (detail?.listingId !== listingId) return
+      // The dispatcher's prev is already 'success', so this is a no-op there.
+      // Other instances reset, which closes their booking modal.
+      setState(prev => prev === 'success' ? prev : 'idle')
+    }
+    window.addEventListener('kidvo:trial-success', handleSiblingSuccess as EventListener)
+    return () => window.removeEventListener('kidvo:trial-success', handleSiblingSuccess as EventListener)
+  }, [listingId])
+
   function openModal() {
     setState('open')
   }
@@ -76,6 +92,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
     }
 
     setState('success')
+    window.dispatchEvent(new CustomEvent('kidvo:trial-success', { detail: { listingId } }))
   }
 
   return (
