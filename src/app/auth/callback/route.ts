@@ -8,7 +8,9 @@ import type { Locale } from '@/lib/email-translations'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  // `next` is set by deep links (e.g. signup with ?next=/browse/<id>). When absent,
+  // we pick a role-appropriate landing below after the profile is loaded.
+  const explicitNext = searchParams.get('next')
 
   if (code) {
     const cookieStore = await cookies()
@@ -34,15 +36,19 @@ export async function GET(request: NextRequest) {
       const localeCookie = cookieStore.get('NEXT_LOCALE')?.value
       const locale: Locale = localeCookie === 'en' ? 'en' : 'ro'
 
+      // Hoisted so the role-based redirect below can read the role.
+      let profile: { full_name?: string; role?: string; created_at?: string } | null = null
+
       try {
         const adminDb = createAdminClient()
 
         // Ensure the profile row exists — auto-create if create-profile failed at signup
-        let { data: profile } = await adminDb
+        const { data: existing } = await adminDb
           .from('users')
           .select('full_name, role, created_at')
           .eq('id', userId)
           .single()
+        profile = existing as typeof profile
 
         if (!profile) {
           const email    = sessionData.user.email ?? ''
@@ -54,7 +60,7 @@ export async function GET(request: NextRequest) {
             .insert({ id: userId, email, full_name: fullName, role, city: 'Timișoara', locale })
             .select('full_name, role, created_at')
             .single()
-          profile = created
+          profile = created as typeof profile
           console.warn('[callback] auto-created missing profile for', email)
 
           // If provider, create matching providers row so dashboard/listings work
@@ -98,7 +104,11 @@ export async function GET(request: NextRequest) {
         console.error('[callback] welcome email lookup error:', err)
       }
 
-      return NextResponse.redirect(`${origin}${next}`)
+      // Default landing by role: parents → /browse, providers → /dashboard.
+      // An explicit ?next= (e.g. deep links from "Book trial" buttons) wins.
+      const role = (profile as { role?: string } | null)?.role
+      const defaultLanding = role === 'provider' || role === 'both' ? '/dashboard' : '/browse'
+      return NextResponse.redirect(`${origin}${explicitNext ?? defaultLanding}`)
     }
   }
 
