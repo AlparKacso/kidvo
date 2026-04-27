@@ -3,6 +3,7 @@ import {
   adminClient,
   createProvider,
   cleanupUser,
+  dismissGates,
   E2E_PASSWORD,
 } from './fixtures'
 
@@ -156,5 +157,101 @@ test.describe('provider: login → list activity → submit', () => {
     expect(schedules?.length).toBe(2)
     expect(schedules?.map(s => (s as { day_of_week: number }).day_of_week).sort())
       .toEqual([0, 2])
+  })
+})
+
+/**
+ * Listing-wizard localStorage autosave (Fix #4).
+ *
+ * The wizard debounces form state to localStorage under
+ *   kidvo:listing-draft:<providerId>
+ * On revisit (no edit mode), a banner offers Restore / Start fresh.
+ * On successful publish the key is cleared.
+ *
+ * This test does NOT publish — we only verify the draft round-trip.
+ * (The publish-clears-draft path is covered implicitly by the happy-path
+ * test above: it publishes successfully, so any leftover draft would
+ * surface there.)
+ */
+test.describe('provider: listing wizard autosave (Fix #4)', () => {
+  let email:      string
+  let providerId: string
+
+  test.beforeAll(async () => {
+    const p = await createProvider('E2E Autosave Provider')
+    email      = p.email
+    providerId = p.providerId
+  })
+
+  test.afterAll(async () => {
+    if (email) await cleanupUser(email)
+  })
+
+  test('draft is saved, restore banner appears on reload, and start-fresh clears it', { timeout: 90_000 }, async ({ page }) => {
+    const draftKey = `kidvo:listing-draft:${providerId}`
+
+    // Dismiss staging password gate (if active) + cookie banner, then land on login.
+    await dismissGates(page, '/auth/login')
+
+    // Log in.
+    await page.getByPlaceholder('you@example.com').fill(email)
+    await page.locator('input[type="password"]').fill(E2E_PASSWORD)
+    await page.locator('button[type="submit"]').click()
+    await page.waitForURL(/\/(dashboard|listings)/, { timeout: 15_000 })
+
+    // ---- Pass 1: fill some data, reload, expect restore banner ----
+    await page.goto('/listings/new')
+    await expect(page.getByRole('heading', { name: /List an activity|Listează o activitate/i }))
+      .toBeVisible({ timeout: 10_000 })
+
+    // Step 0: agree, advance.
+    await page.getByRole('checkbox').check()
+    await page.getByRole('button', { name: /^Next|^Înainte/i }).click()
+
+    // Step 1: type a recognisable title (so we can assert it after restore).
+    const titleSentinel = `AUTOSAVE-${Date.now()}`
+    await page.getByPlaceholder(/Academia de Fotbal/i).fill(titleSentinel)
+
+    // Wait past the 500ms debounce window so the save flushes to localStorage.
+    await page.waitForTimeout(800)
+
+    // Sanity: the draft key should exist in storage with our title in it.
+    const persistedTitle = await page.evaluate(key => {
+      const raw = localStorage.getItem(key)
+      if (!raw) return null
+      try { return JSON.parse(raw)?.data?.title ?? null } catch { return null }
+    }, draftKey)
+    expect(persistedTitle).toBe(titleSentinel)
+
+    // Reload — the banner should appear.
+    await page.reload()
+    await expect(page.getByText(/We saved a draft of your last attempt|Am salvat o ciornă din ultima încercare/i))
+      .toBeVisible({ timeout: 10_000 })
+
+    // ---- Restore: title should come back, banner should disappear ----
+    await page.getByRole('button', { name: /^Restore draft$|^Reia ciorna$/i }).click()
+
+    // Banner gone.
+    await expect(page.getByText(/We saved a draft of your last attempt|Am salvat o ciornă din ultima încercare/i))
+      .not.toBeVisible()
+
+    // Title field rehydrated.
+    await expect(page.getByPlaceholder(/Academia de Fotbal/i)).toHaveValue(titleSentinel)
+
+    // ---- Pass 2: reload again to re-trigger the banner, this time pick Start fresh ----
+    await page.reload()
+    await expect(page.getByText(/We saved a draft of your last attempt|Am salvat o ciornă din ultima încercare/i))
+      .toBeVisible({ timeout: 10_000 })
+
+    await page.getByRole('button', { name: /^Start fresh$|^Începe din nou$/i }).click()
+
+    // Banner gone + localStorage cleared. The form's on-screen value isn't checked:
+    // browsers may repopulate inputs from their own form-cache on reload, which is
+    // independent of our React state. The contract we own is the localStorage key.
+    await expect(page.getByText(/We saved a draft of your last attempt|Am salvat o ciornă din ultima încercare/i))
+      .not.toBeVisible()
+
+    const afterDiscard = await page.evaluate(key => localStorage.getItem(key), draftKey)
+    expect(afterDiscard).toBeNull()
   })
 })
