@@ -21,7 +21,7 @@ export default function LoginPage() {
     setError('')
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
@@ -29,7 +29,15 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/dashboard')
+    // Parents land on Browse (their primary surface); providers land on Dashboard.
+    let target = '/browse'
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('users').select('role').eq('id', data.user.id).single()
+      const role = (profile as { role: string } | null)?.role
+      if (role === 'provider' || role === 'both') target = '/dashboard'
+    }
+    router.push(target)
   }
 
   const inputCls = 'w-full px-3.5 py-2.5 border border-border rounded-[10px] bg-white font-display text-[13.5px] text-ink placeholder:text-ink-muted outline-none focus:border-primary transition-all'
