@@ -184,7 +184,8 @@
       "signingIn": "Signing in…",
       "signIn": "Sign in →",
       "noAccount": "Don't have an account?",
-      "signUp": "Sign up"
+      "signUp": "Sign up",
+      "confirmationFailed": "Email confirmation failed — the link may have expired or was opened in a different browser. Please try signing in or request a new confirmation email."
     },
     "signup": {
       "title": "Create account",
