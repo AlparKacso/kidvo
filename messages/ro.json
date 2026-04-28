@@ -184,7 +184,8 @@
       "signingIn": "Se autentifică…",
       "signIn": "Autentifică-te →",
       "noAccount": "Nu ai cont?",
-      "signUp": "Înregistrează-te"
+      "signUp": "Înregistrează-te",
+      "confirmationFailed": "Confirmarea email-ului a eșuat — linkul poate fi expirat sau a fost deschis într-un alt browser. Încearcă să te autentifici sau solicită un nou email de confirmare."
     },
     "signup": {
       "title": "Creează cont",
