@@ -41,8 +41,10 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
   }, [isLoggedIn])
 
   useEffect(() => {
-    if (searchParams.get('book') === '1' && !isFull) openModal()
-  }, [searchParams, isFull])
+    if (searchParams.get('book') !== '1' || isFull) return
+    if (!isLoggedIn) { window.location.href = `/auth/signup?next=/browse/${listingId}`; return }
+    openModal()
+  }, [searchParams, isFull, isLoggedIn, listingId])
 
   // The page can render two TrialRequestButton instances for the same listing
   // (desktop CTA card + mobile sticky bottom bar). When ?book=1 auto-opens both
