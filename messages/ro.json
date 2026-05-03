@@ -733,7 +733,8 @@
     "fullyBooked": "Complet ocupat",
     "bookTrial": "Rezervă probă →",
     "viewListing": "Vezi anunțul →",
-    "featured": "Recomandat"
+    "featured": "Recomandat",
+    "atCapacity": "Capacitate epuizată · listă de așteptare"
   },
   "feedback": {
     "placeholder": "Ce funcționalitate sau secțiune lipsește? Ce te-ar ajuta cel mai mult?",

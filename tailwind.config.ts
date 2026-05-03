@@ -118,9 +118,11 @@ const config: Config = {
         'content-y': '26px',
       },
       boxShadow: {
-        'card':       '0 2px 12px rgba(124,58,237,0.06)',
-        'card-hover': '0 8px 28px rgba(124,58,237,0.13)',
-        'focus':      '0 0 0 3px rgba(124,58,237,0.08)',
+        'card':          '0 2px 12px rgba(124,58,237,0.06)',
+        'card-hover':    '0 8px 28px rgba(124,58,237,0.13)',
+        'card-hover-lg': '0 14px 38px rgba(90,70,140,0.18)',
+        'card-on-white': '0 4px 18px rgba(124,58,237,0.10), 0 1px 3px rgba(28,28,39,0.06)',
+        'focus':         '0 0 0 3px rgba(124,58,237,0.08)',
       },
       letterSpacing: {
         'label': '0.12em',
