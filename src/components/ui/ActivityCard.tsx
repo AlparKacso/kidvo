@@ -104,8 +104,8 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
         aria-label={listing.title}
       />
 
-      {/* ── Hero (4:5) ── */}
-      <div className="relative aspect-[4/5] overflow-hidden rounded-t-xl flex flex-col justify-between p-[14px]">
+      {/* ── Hero (4:3) ── */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl flex flex-col justify-between p-[12px] pointer-events-none">
         {/* Image OR typographic placeholder (absolute inset-0) */}
         {showPlaceholder ? (
           <div
@@ -303,8 +303,8 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
 
       {/* ── Footer ── */}
       <div
-        className="relative z-[1] flex justify-between items-center"
-        style={{ padding: '14px 16px', gap: 10 }}
+        className="relative z-[1] flex justify-between items-center pointer-events-none"
+        style={{ padding: '12px 14px', gap: 10 }}
       >
         <div className="flex flex-col min-w-0" style={{ gap: 2 }}>
           {provider && (
