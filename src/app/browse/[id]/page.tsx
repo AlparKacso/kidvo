@@ -198,12 +198,6 @@ export default async function ActivityDetailPage({ params }: Props) {
 
             {/* Header card */}
             <div className="bg-white border border-border rounded-lg overflow-hidden relative">
-              {/* Cover photo — 4:3 to match the activity card hero */}
-              {listing.cover_image_url && (
-                <div className="aspect-[4/3] overflow-hidden bg-surface">
-                  <img src={listing.cover_image_url} alt={listing.title} className="w-full h-full object-cover" />
-                </div>
-              )}
               <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent }} />
               <div className="pl-6 pr-5 py-5">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -441,6 +435,17 @@ export default async function ActivityDetailPage({ params }: Props) {
 
           {/* ── RIGHT — sticky ── */}
           <div className="order-1 md:order-2 flex flex-col gap-3 md:sticky md:top-[70px]">
+
+            {/* Photo card — 4:3 to match the activity card hero on /browse */}
+            {listing.cover_image_url && (
+              <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border bg-surface shadow-card-on-white">
+                <img
+                  src={listing.cover_image_url}
+                  alt={listing.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
 
             {/* CTA card */}
             <div className="bg-white border border-border rounded-lg p-5">
