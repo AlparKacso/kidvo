@@ -82,7 +82,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
   )
 
   const showPlaceholder = contrast === 'placeholder'
-  const showFrostedPlate = contrast === 'bright'
+  const showFrostedPlate = contrast === 'bright' || showPlaceholder
 
   const placeholderBg = `linear-gradient(160deg, color-mix(in oklab, ${accent} 18%, white), color-mix(in oklab, ${accent} 38%, white))`
 
@@ -110,11 +110,11 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
         {showPlaceholder ? (
           <div
             className="absolute inset-0 flex flex-col items-center justify-center text-center px-[30px] pointer-events-none"
-            style={{ background: placeholderBg }}
+            style={{ background: placeholderBg, paddingTop: '14%', paddingBottom: '22%' }}
           >
             <div
               className="absolute pointer-events-none"
-              style={{ top: 50, right: 50, fontSize: 28, opacity: 0.5, lineHeight: 1 }}
+              style={{ top: 14, right: 14, fontSize: 18, opacity: 0.55, lineHeight: 1 }}
               aria-hidden
             >
               {emoji}
@@ -125,9 +125,9 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
                   className="font-display"
                   style={{
                     fontWeight: 900,
-                    fontSize: 110,
+                    fontSize: 56,
                     lineHeight: 1,
-                    letterSpacing: '-6px',
+                    letterSpacing: '-3px',
                     color: accent,
                   }}
                   aria-hidden
@@ -136,14 +136,14 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
                 </div>
                 {provider && (
                   <div
-                    className="font-display uppercase"
+                    className="font-display uppercase line-clamp-1 max-w-full"
                     style={{
                       fontWeight: 700,
-                      fontSize: 14,
-                      letterSpacing: '0.2em',
+                      fontSize: 11.5,
+                      letterSpacing: '0.22em',
                       color: accent,
                       opacity: 0.7,
-                      marginTop: 14,
+                      marginTop: 8,
                     }}
                   >
                     {provider}
@@ -151,7 +151,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
                 )}
               </>
             ) : (
-              <div style={{ fontSize: 80, lineHeight: 1 }} aria-hidden>{emoji}</div>
+              <div style={{ fontSize: 56, lineHeight: 1 }} aria-hidden>{emoji}</div>
             )}
           </div>
         ) : (
