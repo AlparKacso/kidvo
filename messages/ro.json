@@ -693,6 +693,7 @@
     "previewDetails": "Detalii",
     "previewTrialAvailable": "Probă disponibilă",
     "previewAges": "Vârste {min}–{max}",
+    "previewTitlePlaceholder": "Titlul activității",
     "pricingType": "Tip preț",
     "pricingType_month": "Pe lună",
     "pricingType_session": "Pe ședință",
