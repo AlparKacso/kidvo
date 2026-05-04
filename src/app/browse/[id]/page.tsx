@@ -8,6 +8,7 @@ import { TrialRequestButton }    from '@/components/TrialRequestButton'
 import { SaveButton }            from '@/components/ui/SaveButton'
 import { ShareButton }           from '@/components/ui/ShareButton'
 import { ContactProviderButton } from '@/components/ui/ContactProviderButton'
+import { CoverPhotoZoom }        from '@/components/ui/CoverPhotoZoom'
 import { StarRating }            from '@/components/ui/StarRating'
 import { ReviewForm }            from '@/components/ui/ReviewForm'
 import { EditReviewForm }        from '@/components/ui/EditReviewForm'
@@ -436,15 +437,10 @@ export default async function ActivityDetailPage({ params }: Props) {
           {/* ── RIGHT — sticky ── */}
           <div className="order-1 md:order-2 flex flex-col gap-3 md:sticky md:top-[70px]">
 
-            {/* Photo card — 4:3 to match the activity card hero on /browse */}
+            {/* Photo card — 4:3 to match the activity card hero on /browse;
+                clicking opens a full-screen modal when source is high-res. */}
             {listing.cover_image_url && (
-              <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border bg-surface shadow-card-on-white">
-                <img
-                  src={listing.cover_image_url}
-                  alt={listing.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <CoverPhotoZoom src={listing.cover_image_url} alt={listing.title} />
             )}
 
             {/* CTA card */}
