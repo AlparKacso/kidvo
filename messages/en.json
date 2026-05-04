@@ -693,6 +693,7 @@
     "previewDetails": "Details",
     "previewTrialAvailable": "Trial available",
     "previewAges": "Ages {min}–{max}",
+    "previewTitlePlaceholder": "Activity title",
     "pricingType": "Pricing type",
     "pricingType_month": "Per month",
     "pricingType_session": "Per session",

@@ -7,7 +7,23 @@ import { createClient } from '@/lib/supabase/client'
 import { LegalModal } from '@/components/ui/LegalModal'
 import { TermsContent } from '@/components/ui/LegalContent'
 import { CoverCropModal } from '@/components/ui/CoverCropModal'
+import { getProviderInitials } from '@/lib/imageBrightness'
 import type { Category, Area } from '@/types/database'
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  sport:       '⚽',
+  dance:       '💃',
+  music:       '🎵',
+  coding:      '💻',
+  arts:        '🎨',
+  language:    '🌍',
+  languages:   '🌍',
+  chess:       '♟️',
+  gym:         '🤸',
+  gymnastics:  '🤸',
+  babysitting: '🍼',
+  other:       '✨',
+}
 
 interface ScheduleRow {
   day_of_week: number
@@ -97,56 +113,207 @@ function Label({ children, hint }: { children: React.ReactNode; hint?: string })
 const inputCls  = 'w-full px-3 py-2 border border-border rounded bg-bg font-body text-base text-ink placeholder:text-ink-muted outline-none focus:border-primary focus:shadow-focus transition-all'
 const selectCls = inputCls + ' cursor-pointer appearance-none'
 
-function PreviewCard({ data, categories, areas }: { data: FormData; categories: Category[]; areas: Area[] }) {
+function PreviewCard({ data, categories, areas, coverPreview, providerName }: {
+  data:          FormData
+  categories:    Category[]
+  areas:         Area[]
+  coverPreview:  string
+  providerName:  string
+}) {
   const t = useTranslations('wizard')
-  const DAYS = [0,1,2,3,4,5,6].map(i => t(`days.${i}` as any))
-  const cat     = categories.find(c => c.id === data.category_id)
-  const area    = areas.find(a => a.id === data.area_id)
+  const tCard = useTranslations('card')
+
+  const cat   = categories.find(c => c.id === data.category_id)
+  const area  = areas.find(a => a.id === data.area_id)
   const hasData = data.title || cat || area
 
   if (!hasData) return (
-    <div className="bg-white border border-border rounded-lg p-6 text-center text-ink-muted text-sm">
+    <div className="bg-white border border-border rounded-xl p-6 text-center text-ink-muted text-sm shadow-card-on-white">
       {t('previewEmpty')}
     </div>
   )
 
+  // Day labels for the meta line — use English short form to match ActivityCard
+  const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const days = data.schedules.length
+    ? [...new Set(data.schedules.map(s => DAY_SHORT[s.day_of_week]))].join(' + ')
+    : ''
+  const ages = data.age_min && data.age_max
+    ? `Ages ${data.age_min}–${data.age_max}`
+    : data.age_min ? `Ages ${data.age_min}+` : ''
+  const metaParts = [ages, days].filter(Boolean)
+
+  const accent   = cat?.accent_color ?? '#7c3aed'
+  const emoji    = cat ? (CATEGORY_EMOJI[cat.slug] ?? '✨') : '✨'
+  const initials = getProviderInitials(providerName)
+  const showPlaceholder = !coverPreview
+  const placeholderBg   = `linear-gradient(160deg, color-mix(in oklab, ${accent} 18%, white), color-mix(in oklab, ${accent} 38%, white))`
+  // Placeholder content always uses frosted-plate, photo uses scrim
+  const showFrostedPlate = showPlaceholder
+
   return (
-    <div className="bg-white border border-border rounded-lg overflow-hidden relative">
-      {cat && <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: cat.accent_color }} />}
-      <div className="pl-5 pr-4 pt-4 pb-4">
-        <div className="flex items-center gap-1.5 mb-1">
-          {cat && <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: cat.accent_color }} />}
-          <span className="text-xs text-ink-muted">
-            {[cat?.name, data.age_min && data.age_max ? t('previewAges', { min: data.age_min, max: data.age_max }) : null, area?.name].filter(Boolean).join(' - ')}
-          </span>
-        </div>
-        <div className="font-display text-sm font-semibold text-ink mb-2">{data.title || 'Activity title'}</div>
-        <div className="h-px bg-border mb-2" />
-        {data.schedules.length > 0 && data.schedules[0].time_start && (
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-xs text-ink-mid">
-              {[...new Set(data.schedules.map(s => DAYS[s.day_of_week]))].join(' & ')} - {data.schedules[0].time_start}-{data.schedules[0].time_end}
+    <article className="relative bg-white rounded-xl border border-border shadow-card-on-white flex flex-col">
+      {/* ── Hero (4:3) ── */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl flex flex-col justify-between p-[12px] pointer-events-none">
+        {/* Image OR typographic placeholder */}
+        {showPlaceholder ? (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center text-center px-[30px] pointer-events-none"
+            style={{ background: placeholderBg, paddingTop: '14%', paddingBottom: '22%' }}
+          >
+            <div
+              className="absolute pointer-events-none"
+              style={{ top: 14, right: 14, fontSize: 18, opacity: 0.55, lineHeight: 1 }}
+              aria-hidden
+            >
+              {emoji}
             </div>
-            {data.price_monthly && (
-              <div className="font-display text-sm font-semibold">{data.price_monthly} RON<span className="font-body font-normal text-[11px] text-ink-muted">/{data.pricing_type === 'session' ? 'session' : 'mo'}</span></div>
+            {initials ? (
+              <>
+                <div
+                  className="font-display"
+                  style={{ fontWeight: 900, fontSize: 56, lineHeight: 1, letterSpacing: '-3px', color: accent }}
+                  aria-hidden
+                >
+                  {initials}
+                </div>
+                {providerName && (
+                  <div
+                    className="font-display uppercase line-clamp-1 max-w-full"
+                    style={{ fontWeight: 700, fontSize: 11.5, letterSpacing: '0.22em', color: accent, opacity: 0.7, marginTop: 8 }}
+                  >
+                    {providerName}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ fontSize: 56, lineHeight: 1 }} aria-hidden>{emoji}</div>
             )}
           </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coverPreview}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         )}
-        <div className="flex gap-1.5">
-          <div className="px-3 py-1.5 rounded font-display text-sm font-semibold bg-primary text-white">{t('previewBookTrial')}</div>
-          <div className="px-3 py-1.5 rounded font-display text-sm font-semibold border border-border text-ink-mid">{t('previewDetails')}</div>
+
+        {/* Scrim — hidden on placeholder/frosted-plate */}
+        {!showFrostedPlate && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0) 70%)' }}
+          />
+        )}
+
+        {/* Top row: category chip */}
+        <div className="relative z-[2] flex justify-start items-start gap-1.5 pointer-events-none">
+          {cat && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full backdrop-blur-md font-display uppercase max-w-full"
+              style={{
+                background: 'rgba(255,255,255,0.95)',
+                color: accent,
+                padding: '5px 11px',
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+              }}
+            >
+              <span aria-hidden style={{ fontSize: 12 }}>{emoji}</span>
+              <span className="truncate">{cat.name}</span>
+            </span>
+          )}
+        </div>
+
+        {/* Bottom overlay: meta + title */}
+        <div
+          className={cn(
+            'relative z-[2] text-white pointer-events-none',
+            showFrostedPlate &&
+              'rounded-[14px] border border-white/10 backdrop-blur-[14px] backdrop-saturate-[1.2] -mx-0.5 -mb-0.5 px-[14px] py-[12px]',
+          )}
+          style={showFrostedPlate ? { background: 'rgba(20,20,28,0.55)' } : undefined}
+        >
+          {metaParts.length > 0 && (
+            <div
+              className="inline-flex items-center font-display uppercase"
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                color: 'rgba(255,255,255,0.85)',
+                gap: 8,
+                marginBottom: 6,
+              }}
+            >
+              {metaParts.map((part, i) => (
+                <span key={i} className="inline-flex items-center" style={{ gap: 8 }}>
+                  {i > 0 && (
+                    <span
+                      aria-hidden
+                      style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.45)', display: 'inline-block' }}
+                    />
+                  )}
+                  <span>{part}</span>
+                </span>
+              ))}
+            </div>
+          )}
+          <h3
+            className="font-display m-0 line-clamp-2"
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              lineHeight: 1.15,
+              letterSpacing: '-0.6px',
+              textWrap: 'balance',
+              textShadow: showFrostedPlate ? 'none' : '0 2px 14px rgba(0,0,0,0.4)',
+            }}
+          >
+            {data.title || t('previewTitlePlaceholder')}
+          </h3>
         </div>
       </div>
-    </div>
+
+      {/* ── Footer ── */}
+      <div
+        className="relative z-[1] flex justify-between items-center pointer-events-none"
+        style={{ padding: '12px 14px', gap: 10 }}
+      >
+        <div className="flex flex-col min-w-0" style={{ gap: 2 }}>
+          {providerName && (
+            <div className="font-display text-ink truncate" style={{ fontSize: 13, fontWeight: 700 }}>
+              {providerName}
+            </div>
+          )}
+          {area?.name && (
+            <div className="text-ink-mid" style={{ fontSize: 11.5 }}>
+              {area.name}
+            </div>
+          )}
+        </div>
+        <div className="text-right font-display whitespace-nowrap">
+          <span className="text-ink" style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.3px' }}>
+            {data.price_monthly || '—'}
+          </span>
+          <span className="block text-ink-muted" style={{ fontSize: 10.5, fontWeight: 500, marginTop: -1 }}>
+            RON {data.pricing_type === 'session' ? tCard('perSession') : tCard('perMonth')}
+          </span>
+        </div>
+      </div>
+    </article>
   )
 }
 
 interface ListingFormProps {
-  categories:   Category[]
-  areas:        Area[]
-  providerId:   string
-  listingId?:   string
-  initialData?: Partial<FormData>
+  categories:    Category[]
+  areas:         Area[]
+  providerId:    string
+  providerName:  string
+  listingId?:    string
+  initialData?:  Partial<FormData>
 }
 
 interface SavedDraft {
@@ -158,7 +325,7 @@ interface SavedDraft {
 
 const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
-export function ListingForm({ categories, areas, providerId, listingId, initialData }: ListingFormProps) {
+export function ListingForm({ categories, areas, providerId, providerName, listingId, initialData }: ListingFormProps) {
   const isEdit                      = !!listingId
   const [step, setStep]             = useState(0)
   const [data, setData]             = useState<FormData>({ ...INITIAL, ...initialData })
@@ -798,7 +965,7 @@ export function ListingForm({ categories, areas, providerId, listingId, initialD
 
         <div className="hidden md:flex flex-col gap-4 sticky top-[80px]">
           <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted">Live preview</div>
-          <PreviewCard data={data} categories={categories} areas={areas} />
+          <PreviewCard data={data} categories={categories} areas={areas} coverPreview={coverPreview} providerName={providerName} />
           <div className="text-[11px] text-ink-muted text-center">This is how your listing will appear in browse results</div>
         </div>
       </div>

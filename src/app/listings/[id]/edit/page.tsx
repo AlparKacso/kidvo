@@ -17,11 +17,11 @@ export default async function EditListingPage({ params }: Props) {
 
   const { data: providerRaw } = await supabase
     .from('providers')
-    .select('id')
+    .select('id, display_name')
     .eq('user_id', user.id)
     .single()
 
-  const provider = providerRaw as unknown as { id: string } | null
+  const provider = providerRaw as unknown as { id: string; display_name: string } | null
 
   if (!provider) redirect('/browse')
 
@@ -75,6 +75,7 @@ export default async function EditListingPage({ params }: Props) {
         categories={categories ?? []}
         areas={areas ?? []}
         providerId={provider.id}
+        providerName={provider.display_name ?? ''}
         listingId={id}
         initialData={initialData}
       />
