@@ -2,10 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 
-// Locked to ActivityCard header ratio: 800 × 350 ≈ 16:7
+// Locked to ActivityCard hero ratio: 800 × 600 = 4:3
 const OUT_W = 800
-const OUT_H = 350
-const ASPECT = OUT_W / OUT_H  // ≈ 2.286
+const OUT_H = 600
+const ASPECT = OUT_W / OUT_H  // ≈ 1.333
+
+// Preview canvas — same width as the panel (280), height matches 4:3
+const PREVIEW_W = 280
+const PREVIEW_H = 210
 
 interface Crop { x: number; y: number; w: number; h: number }
 
@@ -40,9 +44,9 @@ export function CoverCropModal({ src, onConfirm, onCancel }: Props) {
   useEffect(() => {
     if (!crop || !natSize || !imgRef.current || !previewRef.current) return
     const canvas = previewRef.current
-    canvas.width = 280; canvas.height = 120
+    canvas.width = PREVIEW_W; canvas.height = PREVIEW_H
     canvas.getContext('2d')!.drawImage(
-      imgRef.current, crop.x, crop.y, crop.w, crop.h, 0, 0, 280, 120
+      imgRef.current, crop.x, crop.y, crop.w, crop.h, 0, 0, PREVIEW_W, PREVIEW_H
     )
   }, [crop, natSize])
 
@@ -184,28 +188,24 @@ export function CoverCropModal({ src, onConfirm, onCancel }: Props) {
             <div className="text-[10px] font-display font-semibold tracking-label uppercase text-ink-muted mb-2">
               Card preview
             </div>
-            <div className="rounded-[18px] border-[1.5px] border-border overflow-hidden shadow-card">
-              {/* Live preview canvas */}
+            <div className="rounded-xl border border-border overflow-hidden shadow-card-on-white bg-white">
+              {/* Live preview canvas — matches ActivityCard hero (4:3) */}
               <canvas
                 ref={previewRef}
-                width={280}
-                height={120}
+                width={PREVIEW_W}
+                height={PREVIEW_H}
                 className="w-full block"
                 style={{ background: '#ede9f8' }}
               />
-              {/* Mock card body skeleton */}
-              <div className="p-3.5 bg-white">
-                <div className="h-3 w-16 bg-surface rounded-full mb-2.5" />
-                <div className="flex gap-1.5 mb-2.5">
-                  <div className="h-2 w-12 bg-surface rounded-full" />
-                  <div className="h-2 w-10 bg-surface rounded-full" />
-                  <div className="h-2 w-14 bg-surface rounded-full" />
+              {/* Mock card footer — matches ActivityCard footer: provider + rating left, price right */}
+              <div className="flex justify-between items-center px-3.5 py-3 gap-2.5">
+                <div className="flex flex-col min-w-0 gap-[3px]">
+                  <div className="h-3 w-24 bg-surface rounded-full" />
+                  <div className="h-2 w-16 bg-surface rounded-full" />
                 </div>
-                <div className="h-3.5 w-36 bg-surface rounded-full mb-1" />
-                <div className="h-2.5 w-24 bg-surface rounded-full mb-3" />
-                <div className="flex items-center justify-between">
-                  <div className="h-4 w-16 bg-surface rounded-full" />
-                  <div className="h-7 w-20 bg-primary/20 rounded-lg" />
+                <div className="flex flex-col items-end gap-[3px] flex-shrink-0">
+                  <div className="h-4 w-10 bg-surface rounded-full" />
+                  <div className="h-2 w-12 bg-surface rounded-full" />
                 </div>
               </div>
             </div>
