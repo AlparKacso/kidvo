@@ -198,9 +198,9 @@ export default async function ActivityDetailPage({ params }: Props) {
 
             {/* Header card */}
             <div className="bg-white border border-border rounded-lg overflow-hidden relative">
-              {/* Cover photo */}
+              {/* Cover photo — 4:3 to match the activity card hero */}
               {listing.cover_image_url && (
-                <div className="h-[220px] overflow-hidden">
+                <div className="aspect-[4/3] overflow-hidden bg-surface">
                   <img src={listing.cover_image_url} alt={listing.title} className="w-full h-full object-cover" />
                 </div>
               )}
