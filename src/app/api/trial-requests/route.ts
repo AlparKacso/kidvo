@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendNewTrialRequestToProvider } from '@/lib/email'
+import { normalizePhone } from '@/lib/phone'
 
 const DAYS    = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidvo.eu'
@@ -25,12 +26,11 @@ export async function POST(req: Request) {
   }
 
   // If the parent supplied a phone in the booking modal AND has none on file, save it back to the profile.
-  const trimmedPhone = typeof phone === 'string' ? phone.trim() : ''
-  const phoneRegex   = /^[+\d\s\-()]{7,20}$/
-  if (trimmedPhone && phoneRegex.test(trimmedPhone) && !(existingProfile as any)?.phone) {
+  const normalizedPhone = typeof phone === 'string' ? normalizePhone(phone) : null
+  if (normalizedPhone && !(existingProfile as any)?.phone) {
     const { error: phoneErr } = await adminDb
       .from('users')
-      .update({ phone: trimmedPhone })
+      .update({ phone: normalizedPhone })
       .eq('id', user.id)
     if (phoneErr) console.error('[trial] phone save error:', phoneErr.message)
   }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
+import { normalizePhone } from '@/lib/phone'
 
 interface Profile {
   id:        string
@@ -89,25 +90,35 @@ export function SettingsClient({ profile, provider, email }: Props) {
 
   async function saveProfile() {
     if (!fullName.trim()) { setProfileError(t('nameRequired')); return }
-    if (phone.trim() && !/^[+\d\s\-()]{7,20}$/.test(phone.trim())) {
-      setProfileError(t('phoneInvalid'))
-      return
+    let normalizedPhone: string | null = null
+    if (phone.trim()) {
+      normalizedPhone = normalizePhone(phone)
+      if (!normalizedPhone) { setProfileError(t('phoneInvalid')); return }
     }
     setProfileError('')
     setProfileState('saving')
     const supabase = createClient()
     const { error } = await supabase
       .from('users')
-      .update({ full_name: fullName.trim(), phone: phone.trim() || null })
+      .update({ full_name: fullName.trim(), phone: normalizedPhone })
       .eq('id', profile!.id)
 
     if (error) { setProfileError(error.message); setProfileState('error') }
-    else { setProfileState('saved'); setTimeout(() => setProfileState('idle'), 2500) }
+    else {
+      if (normalizedPhone) setPhone(normalizedPhone)
+      setProfileState('saved')
+      setTimeout(() => setProfileState('idle'), 2500)
+    }
   }
 
   async function saveProvider() {
     if (!displayName.trim()) { setProviderError(t('displayNameRequired')); return }
     if (!contactEmail.trim()) { setProviderError(t('contactEmailRequired')); return }
+    let normalizedContactPhone: string | null = null
+    if (contactPhone.trim()) {
+      normalizedContactPhone = normalizePhone(contactPhone)
+      if (!normalizedContactPhone) { setProviderError(t('phoneInvalid')); return }
+    }
     setProviderError('')
     setProviderState('saving')
     const supabase = createClient()
@@ -120,12 +131,16 @@ export function SettingsClient({ profile, provider, email }: Props) {
         display_name:  displayName.trim(),
         bio:           bio.trim() || null,
         contact_email: contactEmail.trim(),
-        contact_phone: contactPhone.trim() || null,
+        contact_phone: normalizedContactPhone,
       })
       .eq('user_id', user.id)
 
     if (error) { setProviderError(error.message); setProviderState('error') }
-    else { setProviderState('saved'); setTimeout(() => setProviderState('idle'), 2500) }
+    else {
+      if (normalizedContactPhone) setContactPhone(normalizedContactPhone)
+      setProviderState('saved')
+      setTimeout(() => setProviderState('idle'), 2500)
+    }
   }
 
   async function sendResetLink() {

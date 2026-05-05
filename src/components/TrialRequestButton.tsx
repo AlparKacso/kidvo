@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { normalizePhone } from '@/lib/phone'
 
 interface Kid { id: string; name: string }
 
@@ -70,11 +71,14 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
   }
 
   async function submit() {
-    const trimmedPhone = phone.trim()
-    if (trimmedPhone && !/^[+\d\s\-()]{7,20}$/.test(trimmedPhone)) {
-      setState('error')
-      setErrorMsg(t('phoneInvalid'))
-      return
+    let normalizedPhone: string | null = null
+    if (phone.trim()) {
+      normalizedPhone = normalizePhone(phone)
+      if (!normalizedPhone) {
+        setState('error')
+        setErrorMsg(t('phoneInvalid'))
+        return
+      }
     }
     setState('submitting')
 
@@ -86,7 +90,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
         preferred_day: preferredDay,
         message:       message || null,
         child_id:      childId,
-        phone:         trimmedPhone || null,
+        phone:         normalizedPhone,
       }),
     })
 
