@@ -35,7 +35,8 @@ test.describe('provider: login → list activity → submit', () => {
     if (email) await cleanupUser(email)
   })
 
-  test('publish a new listing via the wizard', { timeout: 120_000 }, async ({ page }) => {
+  test('publish a new listing via the wizard', async ({ page }) => {
+    test.setTimeout(120_000)
     // Dismiss the cookie banner so it doesn't overlay the wizard buttons.
     await page.goto('/auth/login')
     await page.evaluate(() => localStorage.setItem('kidvo_cookie_consent', 'accepted'))
