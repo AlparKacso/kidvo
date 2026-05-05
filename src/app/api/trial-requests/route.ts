@@ -11,17 +11,28 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { listing_id, preferred_day, message, child_id } = await req.json()
+  const { listing_id, preferred_day, message, child_id, phone } = await req.json()
   if (!listing_id) return NextResponse.json({ error: 'Missing listing_id' }, { status: 400 })
 
   // Ensure the user has a profile row — auto-create if missing (e.g. if create-profile failed at signup)
   const adminDb = createAdminClient()
-  const { data: existingProfile } = await adminDb.from('users').select('id').eq('id', user.id).single()
+  const { data: existingProfile } = await adminDb.from('users').select('id, phone').eq('id', user.id).single()
   if (!existingProfile) {
     const email    = user.email ?? ''
     const fullName = (user.user_metadata?.full_name as string | undefined) ?? email.split('@')[0]
     await adminDb.from('users').insert({ id: user.id, email, full_name: fullName, role: 'parent', city: 'Timișoara' })
     console.warn('[trial] auto-created missing user profile for', email)
+  }
+
+  // If the parent supplied a phone in the booking modal AND has none on file, save it back to the profile.
+  const trimmedPhone = typeof phone === 'string' ? phone.trim() : ''
+  const phoneRegex   = /^[+\d\s\-()]{7,20}$/
+  if (trimmedPhone && phoneRegex.test(trimmedPhone) && !(existingProfile as any)?.phone) {
+    const { error: phoneErr } = await adminDb
+      .from('users')
+      .update({ phone: trimmedPhone })
+      .eq('id', user.id)
+    if (phoneErr) console.error('[trial] phone save error:', phoneErr.message)
   }
 
   const { data: request, error } = await supabase
@@ -34,11 +45,11 @@ export async function POST(req: Request) {
 
   const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
     adminDb.from('listings').select('title, provider_id').eq('id', listing_id).single(),
-    supabase.from('users').select('full_name, email').eq('id', user.id).single(),
+    adminDb.from('users').select('full_name, email, phone').eq('id', user.id).single(),
   ])
 
   const listing = listingRaw as any
-  const parent  = parentRaw  as { full_name: string; email: string } | null
+  const parent  = parentRaw  as { full_name: string; email: string; phone: string | null } | null
 
   let providerEmail  = ''
   let providerName   = ''
@@ -62,6 +73,7 @@ export async function POST(req: Request) {
         providerEmail,
         parentName:   parent.full_name,
         parentEmail:  parent.email,
+        parentPhone:  parent.phone,
         listingTitle: listing.title,
         preferredDay: preferred_day !== null ? DAYS[preferred_day] : null,
         message:      message || null,

@@ -103,6 +103,7 @@ await send('sendNewTrialRequestToProvider', () =>
     listingTitle:  'Junior Football Academy',
     parentName:    'Maria Popescu',
     parentEmail:   TEST,
+    parentPhone:   '+40 711 222 333',
     preferredDay:  'Saturday morning',
     message:       'My son is 7 and loves football. Is this suitable for beginners?',
     locale:        'ro',

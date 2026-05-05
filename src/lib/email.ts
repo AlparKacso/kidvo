@@ -71,6 +71,7 @@ export async function sendNewTrialRequestToProvider(opts: {
   listingTitle:  string
   parentName:    string
   parentEmail:   string
+  parentPhone:   string | null
   preferredDay:  string | null
   message:       string | null
   locale:        Locale
@@ -82,6 +83,7 @@ export async function sendNewTrialRequestToProvider(opts: {
     detailRow(l('activity'),      opts.listingTitle),
     detailRow(l('from'),          opts.parentName),
     detailRow(l('email'),         `<a href="mailto:${opts.parentEmail}" style="color:${PRIMARY};">${opts.parentEmail}</a>`),
+    opts.parentPhone  ? detailRow(l('phone'),        `<a href="tel:${opts.parentPhone}" style="color:${PRIMARY};">${opts.parentPhone}</a>`) : '',
     opts.preferredDay ? detailRow(l('preferredDay'), opts.preferredDay) : '',
     opts.message      ? detailRow(l('message'),       `<em>${opts.message}</em>`)  : '',
   ].join('')
@@ -454,9 +456,19 @@ export async function sendTrialCancelledByParent(opts: {
   providerEmail: string
   providerName:  string
   listingTitle:  string
+  parentName:    string | null
+  parentEmail:   string | null
+  parentPhone:   string | null
   locale:        Locale
 }) {
   const t = emailT('trialCancelledByParent', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+
+  const rows = [
+    opts.parentName  ? detailRow(l('from'),  opts.parentName) : '',
+    opts.parentEmail ? detailRow(l('email'), `<a href="mailto:${opts.parentEmail}" style="color:${PRIMARY};">${opts.parentEmail}</a>`) : '',
+    opts.parentPhone ? detailRow(l('phone'), `<a href="tel:${opts.parentPhone}" style="color:${PRIMARY};">${opts.parentPhone}</a>`) : '',
+  ].join('')
 
   return getResend().emails.send({
     from:    FROM,
@@ -466,6 +478,7 @@ export async function sendTrialCancelledByParent(opts: {
       ${h1(t.heading)}
       ${p(interp(t.body, { name: opts.providerName }))}
       ${p(interp(t.body2, { listing: opts.listingTitle }))}
+      ${rows ? detailTable(rows) : ''}
       ${btn(t.cta, `${APP_URL}/listings`)}
     `),
   })

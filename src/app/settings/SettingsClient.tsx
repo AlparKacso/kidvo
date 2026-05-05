@@ -195,6 +195,9 @@ export function SettingsClient({ profile, provider, email }: Props) {
                 type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                 placeholder={t('phonePlaceholder')} className={inputCls}
               />
+              {!profile?.phone && (
+                <p className="text-[11px] text-ink-muted mt-1">{t('phoneHint')}</p>
+              )}
             </Field>
 
             {profileError && (
@@ -241,6 +244,9 @@ export function SettingsClient({ profile, provider, email }: Props) {
                   type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)}
                   placeholder={t('contactPhonePlaceholder')} className={inputCls}
                 />
+                {!provider?.contact_phone && (
+                  <p className="text-[11px] text-ink-muted mt-1">{t('contactPhoneHint')}</p>
+                )}
               </Field>
 
               {providerError && (

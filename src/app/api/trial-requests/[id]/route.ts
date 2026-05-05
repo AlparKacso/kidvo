@@ -31,21 +31,27 @@ export async function DELETE(
 
   // Notify provider (fire-and-forget)
   try {
-    const { data: listingRaw } = await supabase
-      .from('listings').select('title, provider_id').eq('id', (trial as any).listing_id).single()
+    const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
+      supabase.from('listings').select('title, provider_id').eq('id', (trial as any).listing_id).single(),
+      supabase.from('users').select('full_name, email, phone').eq('id', user.id).single(),
+    ])
     if (listingRaw) {
       const { data: provRaw } = await supabase
         .from('providers')
         .select('display_name, contact_email, user:users(email, full_name, locale)')
         .eq('id', (listingRaw as any).provider_id)
         .single()
-      const p = provRaw as any
+      const p   = provRaw   as any
+      const par = parentRaw as { full_name: string | null; email: string | null; phone: string | null } | null
       const providerEmail = p?.contact_email || p?.user?.email || ''
       if (providerEmail) {
         await sendTrialCancelledByParent({
           providerEmail,
           providerName:  p?.display_name || p?.user?.full_name || 'there',
           listingTitle:  (listingRaw as any).title,
+          parentName:    par?.full_name ?? null,
+          parentEmail:   par?.email     ?? null,
+          parentPhone:   par?.phone     ?? null,
           locale:        p?.user?.locale === 'en' ? 'en' : 'ro',
         }).catch(() => {})
       }

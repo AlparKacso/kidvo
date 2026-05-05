@@ -22,12 +22,14 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
   const [state, setState]       = useState<State>('idle')
   const [preferredDay, setDay]  = useState<number | null>(null)
   const [message, setMessage]   = useState('')
+  const [phone,    setPhone]    = useState('')
+  const [hasPhone, setHasPhone] = useState<boolean | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [kids,     setKids]     = useState<Kid[] | null>(null)
   const [childId,  setChildId]  = useState<string | null>(null)
   const t = useTranslations('trial')
 
-  // Pre-fetch kids on mount so data is ready when modal opens (no lag)
+  // Pre-fetch kids + phone-on-file on mount so data is ready when modal opens (no lag)
   useEffect(() => {
     if (!isLoggedIn) return
     fetch('/api/kids')
@@ -36,8 +38,9 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
         const list = (data.kids ?? []) as Kid[]
         setKids(list)
         if (list.length === 1) setChildId(list[0].id)
+        setHasPhone(!!data.hasPhone)
       })
-      .catch(() => setKids([]))
+      .catch(() => { setKids([]); setHasPhone(false) })
   }, [isLoggedIn])
 
   useEffect(() => {
@@ -67,6 +70,12 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
   }
 
   async function submit() {
+    const trimmedPhone = phone.trim()
+    if (trimmedPhone && !/^[+\d\s\-()]{7,20}$/.test(trimmedPhone)) {
+      setState('error')
+      setErrorMsg(t('phoneInvalid'))
+      return
+    }
     setState('submitting')
 
     const res = await fetch('/api/trial-requests', {
@@ -77,6 +86,7 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
         preferred_day: preferredDay,
         message:       message || null,
         child_id:      childId,
+        phone:         trimmedPhone || null,
       }),
     })
 
@@ -201,6 +211,22 @@ export function TrialRequestButton({ listingId, listingTitle, schedules, isFull,
                 ))}
               </div>
             </div>
+
+            {hasPhone === false && (
+              <div className="mb-4">
+                <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">
+                  {t('phoneLabel')} <span className="text-ink-muted font-normal normal-case">{t('optional')}</span>
+                </label>
+                <input
+                  type="tel"
+                  placeholder={t('phonePlaceholder')}
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded bg-bg font-body text-sm text-ink placeholder:text-ink-muted outline-none focus:border-primary transition-all"
+                />
+                <p className="text-[11px] text-ink-muted mt-1">{t('phoneHint')}</p>
+              </div>
+            )}
 
             <div className="mb-5">
               <label className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-mid block mb-1.5">
