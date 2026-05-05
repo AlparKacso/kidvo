@@ -55,7 +55,7 @@ export default async function NewListingPage() {
     }
   }
 
-  const provider = providerRaw as unknown as { id: string } | null
+  const provider = providerRaw as unknown as { id: string; display_name: string } | null
 
   if (!provider) redirect('/browse')
 
@@ -65,6 +65,7 @@ export default async function NewListingPage() {
         categories={categories ?? []}
         areas={areas ?? []}
         providerId={provider.id}
+        providerName={provider.display_name ?? ''}
       />
     </AppShell>
   )

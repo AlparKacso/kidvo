@@ -1,9 +1,12 @@
+'use client'
+
+import { useCallback, useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { SaveButton } from '@/components/ui/SaveButton'
-import { CategoryIconChip } from '@/components/ui/CategoryIcon'
+import { detectBrightness, getProviderInitials, type ContrastMode } from '@/lib/imageBrightness'
 import type { ListingWithRelations } from '@/types/database'
-import { getTranslations } from 'next-intl/server'
 
 const CATEGORY_EMOJI: Record<string, string> = {
   sport:       '⚽',
@@ -25,176 +28,327 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 function formatDays(schedules: ListingWithRelations['schedules']): string {
   if (!schedules?.length) return ''
   const days = [...new Set(schedules.map(s => DAY_LABELS[s.day_of_week]))]
-  return days.join(' · ')
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const clean = hex.replace('#', '')
-  const r = parseInt(clean.substring(0, 2), 16)
-  const g = parseInt(clean.substring(2, 4), 16)
-  const b = parseInt(clean.substring(4, 6), 16)
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return `rgba(124,58,237,${alpha})`
-  return `rgba(${r},${g},${b},${alpha})`
+  return days.join(' + ')
 }
 
 interface ActivityCardProps {
-  listing:      ListingWithRelations
-  featured?:    boolean
-  savedIds?:    string[]
-  avgRating?:   number | null
-  reviewCount?: number
+  listing:       ListingWithRelations
+  featured?:     boolean
+  savedIds?:     string[]
+  avgRating?:    number | null
+  reviewCount?:  number
+  /** Test override — normally auto-detected from image luminance. */
+  forceContrast?: ContrastMode
 }
 
-export async function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount }: ActivityCardProps) {
-  const t = await getTranslations('card')
-  const isFull   = (listing.spots_available ?? 1) === 0
-  const accent   = listing.category.accent_color
-  const isSaved  = savedIds?.includes(listing.id) ?? false
-  const days     = formatDays(listing.schedules)
-  const spots    = listing.spots_available
-  const isUrgent = spots !== null && spots > 0 && spots <= 3
-  const provider = (listing.provider as any)?.display_name ?? ''
+export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount, forceContrast }: ActivityCardProps) {
+  const t = useTranslations('card')
+
+  const accent      = listing.category.accent_color
+  const isFull      = (listing.spots_available ?? 1) === 0
+  const isSaved     = savedIds?.includes(listing.id) ?? false
+  const days        = formatDays(listing.schedules)
+  const provider    = (listing.provider as { display_name?: string })?.display_name ?? ''
+  const emoji       = CATEGORY_EMOJI[listing.category.slug] ?? '✨'
+  const initials    = getProviderInitials(provider)
+  const cover       = (listing as { cover_image_url?: string | null }).cover_image_url ?? null
+  const pricingType = (listing as { pricing_type?: string }).pricing_type
+  const hasRating   = typeof avgRating === 'number' && avgRating > 0
+  const ages        = `Ages ${listing.age_min}–${listing.age_max}`
+
+  const initialContrast: ContrastMode = forceContrast ?? (cover ? 'normal' : 'placeholder')
+  const [contrast, setContrast] = useState<ContrastMode>(initialContrast)
+  const [imgLoaded, setImgLoaded] = useState(false)
+
+  const handleImgLoad = useCallback(
+    (img: HTMLImageElement) => {
+      setImgLoaded(true)
+      if (forceContrast === undefined) {
+        setContrast(detectBrightness(img))
+      }
+    },
+    [forceContrast],
+  )
+
+  // Cached / already-complete images can finish loading before React attaches
+  // onLoad. Fire the load logic manually when the ref attaches if complete.
+  const imgRef = useCallback(
+    (node: HTMLImageElement | null) => {
+      if (node && node.complete && node.naturalWidth > 0) {
+        handleImgLoad(node)
+      }
+    },
+    [handleImgLoad],
+  )
+
+  const showPlaceholder = contrast === 'placeholder'
+  const showFrostedPlate = contrast === 'bright' || showPlaceholder
+
+  const placeholderBg = `linear-gradient(160deg, color-mix(in oklab, ${accent} 18%, white), color-mix(in oklab, ${accent} 38%, white))`
+
+  const metaParts = [
+    ages,
+    days,
+  ].filter(Boolean)
 
   return (
-    <div className={cn(
-      'bg-white rounded-[22px] border-[1.5px] border-border shadow-card relative flex flex-col',
-      isFull ? 'opacity-65' : 'card-hover',
-    )}>
-      {/* Stretched link */}
-      {!isFull && (
-        <Link href={`/browse/${listing.id}`} className="absolute inset-0 z-0" aria-label={listing.title} />
+    <article
+      className={cn(
+        'relative bg-white rounded-xl border border-border shadow-card-on-white flex flex-col transition-all duration-200',
+        'motion-safe:hover:-translate-y-[3px] hover:shadow-card-hover-lg',
       )}
+    >
+      <Link
+        href={`/browse/${listing.id}`}
+        className="absolute inset-0 z-0 rounded-xl"
+        aria-label={listing.title}
+      />
 
-      {/* ── Header: cover photo or gradient + emoji ── */}
-      <div
-        className="h-[120px] flex items-center justify-center relative overflow-hidden rounded-t-[20px]"
-        style={!(listing as any).cover_image_url ? { background: `linear-gradient(135deg, ${hexToRgba(accent, 0.15)}, ${hexToRgba(accent, 0.40)})` } : {}}
-      >
-        {(listing as any).cover_image_url
-          ? <img src={(listing as any).cover_image_url} alt={listing.title} className="absolute inset-0 w-full h-full object-cover" />
-          : <span style={{ fontSize: '52px', lineHeight: 1 }}>{CATEGORY_EMOJI[listing.category.slug] ?? '✨'}</span>
-        }
-
-        {/* Featured badge — top-left overlay */}
-        {featured && (
+      {/* ── Hero (4:3) ── */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl flex flex-col justify-between p-[12px] pointer-events-none">
+        {/* Image OR typographic placeholder (absolute inset-0) */}
+        {showPlaceholder ? (
           <div
-            className="absolute top-3 left-3 rounded-full font-display text-[11px] font-semibold"
-            style={{ background: '#fef9e6', color: '#b45309', padding: '3px 9px' }}
+            className="absolute inset-0 flex flex-col items-center justify-center text-center px-[30px] pointer-events-none"
+            style={{ background: placeholderBg, paddingTop: '14%', paddingBottom: '22%' }}
           >
-            {t('featured')}
+            <div
+              className="absolute pointer-events-none"
+              style={{ top: 14, right: 14, fontSize: 18, opacity: 0.55, lineHeight: 1 }}
+              aria-hidden
+            >
+              {emoji}
+            </div>
+            {initials ? (
+              <>
+                <div
+                  className="font-display"
+                  style={{
+                    fontWeight: 900,
+                    fontSize: 56,
+                    lineHeight: 1,
+                    letterSpacing: '-3px',
+                    color: accent,
+                  }}
+                  aria-hidden
+                >
+                  {initials}
+                </div>
+                {provider && (
+                  <div
+                    className="font-display uppercase line-clamp-1 max-w-full"
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 11.5,
+                      letterSpacing: '0.22em',
+                      color: accent,
+                      opacity: 0.7,
+                      marginTop: 8,
+                    }}
+                  >
+                    {provider}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ fontSize: 56, lineHeight: 1 }} aria-hidden>{emoji}</div>
+            )}
+          </div>
+        ) : (
+          cover && (
+            <img
+              ref={imgRef}
+              src={cover}
+              alt=""
+              crossOrigin="anonymous"
+              className={cn(
+                'absolute inset-0 w-full h-full object-cover transition-opacity duration-[250ms]',
+                imgLoaded ? 'opacity-100' : 'opacity-0',
+                isFull && 'saturate-[0.4] brightness-[0.85]',
+              )}
+              onLoad={(e) => handleImgLoad(e.currentTarget)}
+              onError={() => setContrast('placeholder')}
+            />
+          )
+        )}
+
+        {/* Scrim — hidden when frosted-plate */}
+        {!showFrostedPlate && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0) 70%)',
+            }}
+          />
+        )}
+
+        {/* Top row: category chip + featured pill + save button */}
+        <div className="relative z-[2] flex justify-between items-start gap-1.5 pointer-events-none">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full backdrop-blur-md font-display uppercase max-w-full"
+            style={{
+              background: 'rgba(255,255,255,0.95)',
+              color: accent,
+              padding: '5px 11px',
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+            }}
+          >
+            <span aria-hidden style={{ fontSize: 12 }}>{emoji}</span>
+            <span className="truncate">{listing.category.name}</span>
+          </span>
+
+          <div className="flex items-start gap-1.5 shrink-0">
+            {featured && (
+              <span
+                className="inline-flex items-center rounded-full font-display uppercase bg-gold text-ink"
+                style={{
+                  padding: '5px 11px',
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  letterSpacing: '0.08em',
+                  marginTop: !isFull ? 3 : 0, // align with 36px save button center-ish
+                }}
+              >
+                {t('featured')}
+              </span>
+            )}
+            {!isFull && (
+              <div className="pointer-events-auto">
+                <SaveButton listingId={listing.id} initialSaved={isSaved} variant="poster" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom overlay: meta + title */}
+        <div
+          className={cn(
+            'relative z-[2] text-white pointer-events-none',
+            showFrostedPlate &&
+              'rounded-[14px] border border-white/10 backdrop-blur-[14px] backdrop-saturate-[1.2] -mx-0.5 -mb-0.5 px-[14px] py-[12px]',
+          )}
+          style={
+            showFrostedPlate
+              ? { background: 'rgba(20,20,28,0.55)' }
+              : undefined
+          }
+        >
+          {metaParts.length > 0 && (
+            <div
+              className="inline-flex items-center font-display uppercase"
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                color: 'rgba(255,255,255,0.85)',
+                gap: 8,
+                marginBottom: 6,
+              }}
+            >
+              {metaParts.map((part, i) => (
+                <span key={i} className="inline-flex items-center" style={{ gap: 8 }}>
+                  {i > 0 && (
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 3,
+                        height: 3,
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.45)',
+                        display: 'inline-block',
+                      }}
+                    />
+                  )}
+                  <span>{part}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <h3
+            className="font-display m-0 line-clamp-2"
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              lineHeight: 1.15,
+              letterSpacing: '-0.6px',
+              textWrap: 'balance',
+              textShadow: showFrostedPlate ? 'none' : '0 2px 14px rgba(0,0,0,0.4)',
+            }}
+          >
+            {listing.title}
+          </h3>
+        </div>
+
+        {/* Lock chip — centered when full */}
+        {isFull && (
+          <div
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[3] inline-flex items-center gap-1.5 rounded-full backdrop-blur-sm font-display whitespace-nowrap pointer-events-none"
+            style={{
+              background: 'rgba(28,28,39,0.85)',
+              color: '#fff',
+              padding: '8px 14px',
+              fontSize: 11.5,
+              fontWeight: 700,
+            }}
+          >
+            <span aria-hidden>🔒</span>
+            <span>{t('atCapacity')}</span>
           </div>
         )}
       </div>
 
-      {/* Save button — anchored to card root (not image) so dropdown is never clipped */}
-      {!isFull && (
-        <div className="absolute top-3 right-3 z-10 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-border bg-white/90">
-          <SaveButton listingId={listing.id} initialSaved={isSaved} variant="icon" />
-        </div>
-      )}
-
-      {/* ── Body ── */}
-      <div className="p-4 flex-1 flex flex-col">
-        {/* Category chip */}
-        <div className="mb-2.5">
-          <CategoryIconChip
-            slug={listing.category.slug}
-            name={listing.category.name}
-            accentColor={accent}
-          />
-        </div>
-
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-2.5">
-          <span
-            className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
-            style={{ background: hexToRgba(accent, 0.12), color: accent, padding: '3px 9px' }}
-          >
-            Ages {listing.age_min}–{listing.age_max}
-          </span>
-
-          {days && (
-            <span
-              className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
-              style={{ background: '#f1f0f5', color: '#55527a', padding: '3px 9px' }}
-            >
-              {days}
-            </span>
-          )}
-
-          {!isFull && spots !== null && (
-            isUrgent ? (
-              <span
-                className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
-                style={{ background: '#fef9e6', color: '#b45309', padding: '3px 9px' }}
-              >
-                {spots} {spots === 1 ? 'spot' : 'spots'} left
-              </span>
-            ) : (
-              <span
-                className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
-                style={{ background: '#e8fde9', color: '#15803d', padding: '3px 9px' }}
-              >
-                Open spots
-              </span>
-            )
-          )}
-        </div>
-
-        {/* Title */}
-        <div
-          className="font-display font-extrabold text-ink mb-1 leading-snug"
-          style={{ fontSize: '16px', letterSpacing: '-0.3px' }}
-        >
-          {listing.title}
-        </div>
-
-        {/* Meta: provider + rating */}
-        <div className="text-[13px] text-ink-muted mt-auto">
-          {[
-            provider,
-            avgRating && avgRating > 0
-              ? `★ ${avgRating.toFixed(1)}${reviewCount ? ` (${reviewCount})` : ''}`
-              : null,
-          ].filter(Boolean).join(' · ')}
-          {!provider && !avgRating && listing.area.name}
-        </div>
-      </div>
-
       {/* ── Footer ── */}
-      <div className="relative z-10 flex items-center border-t border-border px-4 py-3 gap-2">
-        <div className="whitespace-nowrap">
-          <span className="font-display font-extrabold text-ink" style={{ fontSize: '16px' }}>
-            {listing.price_monthly} RON
-          </span>
-          <span className="text-[11px] text-ink-muted">{(listing as any).pricing_type === 'session' ? t('perSession') : t('perMonth')}</span>
+      <div
+        className="relative z-[1] flex justify-between items-center pointer-events-none"
+        style={{ padding: '12px 14px', gap: 10 }}
+      >
+        <div className="flex flex-col min-w-0" style={{ gap: 2 }}>
+          {provider && (
+            <div
+              className="font-display text-ink truncate"
+              style={{ fontSize: 13, fontWeight: 700 }}
+            >
+              {provider}
+            </div>
+          )}
+          {hasRating && (
+            <div
+              className="inline-flex items-center text-ink-mid"
+              style={{ fontSize: 11.5, gap: 4 }}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="#f5c542" aria-hidden>
+                <path d="m12 2 3 7h7l-5.5 4 2 7-6.5-4.5L5.5 20l2-7L2 9h7z" />
+              </svg>
+              <b className="font-display text-ink">{avgRating!.toFixed(1)}</b>
+              <span>· {reviewCount ?? 0}</span>
+            </div>
+          )}
+          {!provider && !hasRating && listing.area?.name && (
+            <div className="text-ink-mid" style={{ fontSize: 11.5 }}>
+              {listing.area.name}
+            </div>
+          )}
         </div>
 
-        {isFull ? (
+        <div className="text-right font-display whitespace-nowrap">
           <span
-            className="ml-auto whitespace-nowrap rounded-full font-display text-[12px] font-semibold"
-            style={{ background: '#f1f0f5', color: '#55527a', padding: '5px 12px' }}
+            className="text-ink"
+            style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.3px' }}
           >
-            {t('fullyBooked')}
+            {listing.price_monthly}
           </span>
-        ) : listing.trial_available ? (
-          <Link
-            href={`/browse/${listing.id}?book=1`}
-            className="ml-auto whitespace-nowrap rounded-[8px] font-display text-[12px] font-semibold bg-blue text-white hover:bg-blue-deep transition-colors"
-            style={{ padding: '6px 12px' }}
+          <span
+            className="block text-ink-muted"
+            style={{ fontSize: 10.5, fontWeight: 500, marginTop: -1 }}
           >
-            {t('bookTrial')}
-          </Link>
-        ) : (
-          <Link
-            href={`/browse/${listing.id}`}
-            className="ml-auto whitespace-nowrap rounded-[8px] font-display text-[12px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
-            style={{ padding: '6px 12px' }}
-          >
-            {t('viewListing')}
-          </Link>
-        )}
+            RON {pricingType === 'session' ? t('perSession') : t('perMonth')}
+          </span>
+        </div>
       </div>
-    </div>
+    </article>
   )
 }

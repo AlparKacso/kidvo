@@ -8,6 +8,7 @@ import { TrialRequestButton }    from '@/components/TrialRequestButton'
 import { SaveButton }            from '@/components/ui/SaveButton'
 import { ShareButton }           from '@/components/ui/ShareButton'
 import { ContactProviderButton } from '@/components/ui/ContactProviderButton'
+import { CoverPhotoZoom }        from '@/components/ui/CoverPhotoZoom'
 import { StarRating }            from '@/components/ui/StarRating'
 import { ReviewForm }            from '@/components/ui/ReviewForm'
 import { EditReviewForm }        from '@/components/ui/EditReviewForm'
@@ -131,6 +132,10 @@ export default async function ActivityDetailPage({ params }: Props) {
   const canReview    = hasConfirmed && !ownReview
   const isOwner      = !!user && (provider as any)?.user_id === user.id
 
+  // Mirror the mobile sticky CTA's render condition so we know when to
+  // hide the duplicate trial CTA inside the sidebar booking card.
+  const hasMobileStickyCta = !isOwner && listing.trial_available && (schedules?.length ?? 0) > 0
+
   const avgRating    = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
   // Build Course JSON-LD for structured data
@@ -198,12 +203,6 @@ export default async function ActivityDetailPage({ params }: Props) {
 
             {/* Header card */}
             <div className="bg-white border border-border rounded-lg overflow-hidden relative">
-              {/* Cover photo */}
-              {listing.cover_image_url && (
-                <div className="h-[220px] overflow-hidden">
-                  <img src={listing.cover_image_url} alt={listing.title} className="w-full h-full object-cover" />
-                </div>
-              )}
               <div className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent }} />
               <div className="pl-6 pr-5 py-5">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -442,6 +441,12 @@ export default async function ActivityDetailPage({ params }: Props) {
           {/* ── RIGHT — sticky ── */}
           <div className="order-1 md:order-2 flex flex-col gap-3 md:sticky md:top-[70px]">
 
+            {/* Photo card — 4:3 to match the activity card hero on /browse;
+                clicking opens a full-screen modal when source is high-res. */}
+            {listing.cover_image_url && (
+              <CoverPhotoZoom src={listing.cover_image_url} alt={listing.title} />
+            )}
+
             {/* CTA card */}
             <div className="bg-white border border-border rounded-lg p-5">
               <div className="flex items-baseline gap-1.5 mb-0.5">
@@ -461,31 +466,35 @@ export default async function ActivityDetailPage({ params }: Props) {
                 )}
               </div>
 
-              {listing.trial_available ? (
-                <Suspense fallback={
-                  <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
-                    {t('bookTrial')}
-                  </button>
-                }>
-                  <TrialRequestButton
-                    listingId={listing.id}
-                    listingTitle={listing.title}
-                    schedules={schedules ?? []}
-                    isFull={isFull}
-                    isLoggedIn={!!user}
-                  />
-                </Suspense>
-              ) : (
-                <div className="w-full text-center text-xs py-2 mb-1 px-3 rounded bg-surface border border-border text-ink-muted">
-                  {listing.trial_disabled_reason === 'cohort'
-                    ? t('trialCohort')
-                    : listing.trial_disabled_reason === 'full'
-                    ? t('trialFull')
-                    : listing.trial_disabled_reason === 'contact_us'
-                    ? t('trialContact')
-                    : t('noTrialAvailable')}
-                </div>
-              )}
+              {/* On mobile the sticky bottom-CTA covers booking, so hide the
+                  duplicate in-card trial button when the sticky is present. */}
+              <div className={hasMobileStickyCta ? 'hidden md:block' : ''}>
+                {listing.trial_available ? (
+                  <Suspense fallback={
+                    <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
+                      {t('bookTrial')}
+                    </button>
+                  }>
+                    <TrialRequestButton
+                      listingId={listing.id}
+                      listingTitle={listing.title}
+                      schedules={schedules ?? []}
+                      isFull={isFull}
+                      isLoggedIn={!!user}
+                    />
+                  </Suspense>
+                ) : (
+                  <div className="w-full text-center text-xs py-2 mb-1 px-3 rounded bg-surface border border-border text-ink-muted">
+                    {listing.trial_disabled_reason === 'cohort'
+                      ? t('trialCohort')
+                      : listing.trial_disabled_reason === 'full'
+                      ? t('trialFull')
+                      : listing.trial_disabled_reason === 'contact_us'
+                      ? t('trialContact')
+                      : t('noTrialAvailable')}
+                  </div>
+                )}
+              </div>
               <div className="mt-2">
                 <ContactProviderButton
                   listingId={listing.id}

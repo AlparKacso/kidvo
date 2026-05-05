@@ -693,6 +693,7 @@
     "previewDetails": "Details",
     "previewTrialAvailable": "Trial available",
     "previewAges": "Ages {min}–{max}",
+    "previewTitlePlaceholder": "Activity title",
     "pricingType": "Pricing type",
     "pricingType_month": "Per month",
     "pricingType_session": "Per session",
@@ -733,7 +734,8 @@
     "fullyBooked": "Fully booked",
     "bookTrial": "Book trial →",
     "viewListing": "View listing →",
-    "featured": "Featured"
+    "featured": "Featured",
+    "atCapacity": "At capacity · waitlist"
   },
   "feedback": {
     "placeholder": "What feature or section is missing? What would help you most?",

@@ -693,6 +693,7 @@
     "previewDetails": "Detalii",
     "previewTrialAvailable": "Probă disponibilă",
     "previewAges": "Vârste {min}–{max}",
+    "previewTitlePlaceholder": "Titlul activității",
     "pricingType": "Tip preț",
     "pricingType_month": "Pe lună",
     "pricingType_session": "Pe ședință",
@@ -733,7 +734,8 @@
     "fullyBooked": "Complet ocupat",
     "bookTrial": "Rezervă probă →",
     "viewListing": "Vezi anunțul →",
-    "featured": "Recomandat"
+    "featured": "Recomandat",
+    "atCapacity": "Capacitate epuizată · listă de așteptare"
   },
   "feedback": {
     "placeholder": "Ce funcționalitate sau secțiune lipsește? Ce te-ar ajuta cel mai mult?",
