@@ -445,6 +445,7 @@
     "phoneLabel": "Phone",
     "phonePlaceholder": "+40 7xx xxx xxx",
     "phoneHint": "Add a phone so providers can reach you faster about bookings.",
+    "phoneHintProvider": "Add a phone so parents can reach you faster about bookings.",
     "saved": "Changes saved.",
     "saveChanges": "Save changes",
     "saving": "Saving...",

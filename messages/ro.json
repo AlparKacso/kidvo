@@ -445,6 +445,7 @@
     "phoneLabel": "Telefon",
     "phonePlaceholder": "+40 7xx xxx xxx",
     "phoneHint": "Adaugă un număr de telefon pentru ca furnizorii să te poată contacta mai rapid despre rezervări.",
+    "phoneHintProvider": "Adaugă un număr de telefon pentru ca părinții să te poată contacta mai rapid despre rezervări.",
     "saved": "Modificări salvate.",
     "saveChanges": "Salvează modificările",
     "saving": "Se salvează...",

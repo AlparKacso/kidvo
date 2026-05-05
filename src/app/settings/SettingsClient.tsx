@@ -211,7 +211,7 @@ export function SettingsClient({ profile, provider, email }: Props) {
                 placeholder={t('phonePlaceholder')} className={inputCls}
               />
               {!profile?.phone && (
-                <p className="text-[11px] text-ink-muted mt-1">{t('phoneHint')}</p>
+                <p className="text-[11px] text-ink-muted mt-1">{t(isProvider ? 'phoneHintProvider' : 'phoneHint')}</p>
               )}
             </Field>
 
