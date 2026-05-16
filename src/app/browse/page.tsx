@@ -46,6 +46,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const params   = await searchParams
   const supabase = await createClient()
   const t = await getTranslations('browse')
+  const tEvents = await getTranslations('events')
 
   const [{ data: categoriesRaw }, { data: areasRaw }] = await Promise.all([
     supabase.from('categories').select('*').order('sort_order'),
@@ -190,18 +191,18 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                 <path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" />
                 <path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" />
               </svg>
-              {t('activitiesEyebrow')}
+              {tEvents('activitiesEyebrow')}
             </div>
             <div className="font-display font-black text-ink leading-[1.1] mt-1.5" style={{ fontSize: '22px', letterSpacing: '-0.8px' }}>
-              {t('activitiesTitle')}
+              {tEvents('activitiesTitle')}
             </div>
-            <div className="text-[13px] text-ink-mid mt-0.5">{t('activitiesSub', { count: total })}</div>
+            <div className="text-[13px] text-ink-mid mt-0.5">{tEvents('activitiesSub', { count: total })}</div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <span className="w-px h-9 bg-border" />
             <div className="text-right">
               <div className="font-display font-black text-ink leading-none" style={{ fontSize: '30px', letterSpacing: '-1.4px' }}>{total}</div>
-              <div className="font-display text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-muted mt-1">{t('activitiesCountLabel')}</div>
+              <div className="font-display text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-muted mt-1">{tEvents('activitiesCountLabel')}</div>
             </div>
           </div>
         </div>

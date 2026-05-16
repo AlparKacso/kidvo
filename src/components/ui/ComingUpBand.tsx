@@ -82,7 +82,7 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
       <div className="relative">
         <div
           ref={rowRef}
-          className="grid grid-flow-col auto-cols-[minmax(238px,1fr)] gap-4 overflow-x-auto snap-x snap-mandatory p-[4px_4px_18px] -mx-1 [scrollbar-width:thin]"
+          className="grid grid-flow-col auto-cols-[248px] justify-start gap-4 overflow-x-auto snap-x snap-mandatory p-[4px_4px_18px] -mx-1 [scrollbar-width:thin]"
         >
           {events.map(ev => (
             <div key={ev.id} className="snap-start">
