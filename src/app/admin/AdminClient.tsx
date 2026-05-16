@@ -186,6 +186,120 @@ function ReviewRow({ review, onModerate }: {
   )
 }
 
+function EventDraftRow({ draft, categories, areas, onResolve }: {
+  draft: any
+  categories: { id: string; name: string; slug: string }[]
+  areas: { id: string; name: string }[]
+  onResolve: (id: string) => void
+}) {
+  const [loading, setLoading] = useState(false)
+  const [confirm, setConfirm] = useState<string | null>(null)
+  const [showRaw, setShowRaw] = useState(false)
+  const [categoryId, setCategoryId] = useState<string>(draft.suggested_category_id ?? '')
+  const [areaId, setAreaId]         = useState<string>(draft.suggested_area_id ?? '')
+
+  const canApprove = !!draft.title && !!categoryId && !!areaId
+
+  async function resolve(action: 'approve' | 'reject') {
+    setLoading(true)
+    const res = await fetch(`/api/admin/event-drafts/${draft.id}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action, categoryId, areaId }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      alert(body.error ?? 'Failed')
+      setLoading(false)
+      setConfirm(null)
+      return
+    }
+    onResolve(draft.id)
+    setLoading(false)
+    setConfirm(null)
+  }
+
+  const fmtDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'
+
+  return (
+    <div className="bg-white border border-border rounded-lg p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-lt text-primary">{draft.source}</span>
+            <span className="text-[10px] text-ink-muted">{fmtDate(draft.created_at)}</span>
+          </div>
+          <div className="font-display text-sm font-semibold text-ink mb-0.5">{draft.title ?? <span className="text-danger">(no title — cannot publish)</span>}</div>
+          <div className="text-xs text-ink-mid mb-2 flex flex-col gap-0.5">
+            <span><span className="text-ink-muted">When:</span> {fmtDate(draft.event_start_at)} → {fmtDate(draft.event_end_at)}</span>
+            {draft.venue_name     && <span><span className="text-ink-muted">Venue:</span> {draft.venue_name}</span>}
+            {draft.price_label    && <span><span className="text-ink-muted">Price:</span> {draft.price_label}</span>}
+            {draft.organizer_name && <span><span className="text-ink-muted">Organizer:</span> {draft.organizer_name}</span>}
+            {draft.event_url      && <a href={draft.event_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{draft.event_url}</a>}
+          </div>
+          {draft.description && (
+            <p className="text-xs text-ink-mid bg-bg rounded px-2.5 py-2 mb-2 whitespace-pre-wrap">{draft.description}</p>
+          )}
+
+          {/* Category + area picker (listings FKs are NOT NULL) */}
+          <div className="flex gap-2 flex-wrap mb-1">
+            <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
+              className="text-xs border border-border rounded px-2 py-1.5 bg-white text-ink">
+              <option value="">Category…</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <select value={areaId} onChange={e => setAreaId(e.target.value)}
+              className="text-xs border border-border rounded px-2 py-1.5 bg-white text-ink">
+              <option value="">Area…</option>
+              {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          </div>
+
+          {draft.raw_payload && (
+            <button onClick={() => setShowRaw(v => !v)} className="text-[11px] text-ink-muted hover:text-primary transition-colors">
+              {showRaw ? '▾ Hide' : '▸ Show'} raw payload
+            </button>
+          )}
+          {showRaw && (
+            <pre className="text-[10px] text-ink-mid bg-bg rounded p-2 mt-1 overflow-x-auto max-h-48">{JSON.stringify(draft.raw_payload, null, 2)}</pre>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2 flex-shrink-0">
+          {confirm === 'approve' ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-ink-muted">Publish?</span>
+              <button onClick={() => resolve('approve')} disabled={loading} className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-success text-white disabled:opacity-50">Yes</button>
+              <button onClick={() => setConfirm(null)} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid">No</button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirm('approve')}
+              disabled={!canApprove}
+              title={canApprove ? '' : 'Needs a title, category and area'}
+              className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-success text-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ✓ Approve
+            </button>
+          )}
+          {confirm === 'reject' ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-ink-muted">Reject?</span>
+              <button onClick={() => resolve('reject')} disabled={loading} className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-danger text-white disabled:opacity-50">Yes</button>
+              <button onClick={() => setConfirm(null)} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid">No</button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirm('reject')} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:border-danger/50 hover:text-danger transition-colors">
+              ✕ Reject
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface Stats {
   totalParents:    number
   totalProviders:  number
@@ -407,6 +521,9 @@ interface Props {
   slowTrials:        any[]
   slowProviderCount: number
   allProviders:      ProviderSummary[]
+  eventDrafts:       any[]
+  categories:        { id: string; name: string; slug: string }[]
+  areas:             { id: string; name: string }[]
   stats:             Stats
 }
 
@@ -490,7 +607,7 @@ function EmailListModal({ emails, title, onClose }: { emails: string[]; title?: 
   )
 }
 
-export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, providerEmails, slowTrials, slowProviderCount, allProviders, stats }: Props) {
+export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, providerEmails, slowTrials, slowProviderCount, allProviders, eventDrafts: initialEventDrafts, categories, areas, stats }: Props) {
   const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([
     ...initialPending,
@@ -498,6 +615,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
     ...initialPaused,
   ])
   const [reviews, setReviews]               = useState<any[]>(initialReviews)
+  const [eventDrafts, setEventDrafts]       = useState<any[]>(initialEventDrafts)
   const [showParentEmails,   setShowParentEmails]   = useState(false)
   const [showProviderEmails, setShowProviderEmails] = useState(false)
   const [showSlowProviders,  setShowSlowProviders]  = useState(false)
@@ -511,6 +629,11 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
   function handleReviewModerated(id: string) {
     setReviews(prev => prev.filter(r => r.id !== id))
     router.refresh() // bust Router Cache so next visit to /admin gets fresh data
+  }
+
+  function handleDraftResolved(id: string) {
+    setEventDrafts(prev => prev.filter(d => d.id !== id))
+    router.refresh()
   }
 
   const pending = listings.filter(l => l.status === 'pending')
@@ -570,6 +693,34 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
         {showAllProviders && (
           <AllProvidersModal providers={allProviders} onClose={() => setShowAllProviders(false)} />
         )}
+
+        {/* Event drafts pending review (scraped / assisted ingestion) */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted">Events pending review</div>
+              {eventDrafts.length > 0 && (
+                <span className="w-5 h-5 rounded-full bg-primary-lt text-primary font-display text-[10px] font-bold flex items-center justify-center">{eventDrafts.length}</span>
+              )}
+            </div>
+            <Link href="/admin/event-drafts/new"
+              className="font-display text-xs font-semibold text-primary hover:text-primary-deep transition-colors">
+              + Add event (assisted)
+            </Link>
+          </div>
+          {eventDrafts.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {eventDrafts.map(d => (
+                <EventDraftRow key={d.id} draft={d} categories={categories} areas={areas} onResolve={handleDraftResolved} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white border border-border rounded-lg p-6 text-center">
+              <div className="text-xl mb-1">📅</div>
+              <div className="font-display text-sm font-semibold text-ink-mid">No event drafts pending review</div>
+            </div>
+          )}
+        </div>
 
         {/* Pending reviews — top priority */}
         {reviews.length > 0 && (

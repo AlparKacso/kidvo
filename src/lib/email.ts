@@ -163,6 +163,23 @@ export async function sendNewListingToAdmin(opts: {
   })
 }
 
+// ── Admin — new scraped/assisted event drafts pending review ─────────────────
+export async function sendNewEventDraftsToAdmin(opts: {
+  count:  number
+  source: string
+}) {
+  return getResend().emails.send({
+    from:    FROM,
+    to:      ADMIN_EMAIL,
+    subject: `${opts.count} new event draft${opts.count === 1 ? '' : 's'} pending review`,
+    html: layout(`
+      ${h1('New event drafts')}
+      ${p(`<strong>${opts.count}</strong> event draft${opts.count === 1 ? '' : 's'} from <strong>${opts.source}</strong> ${opts.count === 1 ? 'is' : 'are'} waiting for your review before going live.`)}
+      ${btn('Review in Admin →', `${APP_URL}/admin`)}
+    `),
+  })
+}
+
 // ── 4. Admin — new review pending moderation (always English) ────────────────
 export async function sendNewReviewToAdmin(opts: {
   reviewId:     string

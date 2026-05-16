@@ -2,8 +2,10 @@ export type UserRole    = 'parent' | 'provider' | 'both' | 'admin'
 export type ParentPlan  = 'free' | 'pro'
 export type ProviderPlan = 'free' | 'featured'
 export type ListingStatus = 'draft' | 'pending' | 'active' | 'paused'
+export type ListingType   = 'activity' | 'event'
 export type RequestStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled'
 export type ReviewStatus  = 'pending' | 'approved' | 'rejected'
+export type EventDraftStatus = 'new' | 'approved' | 'rejected'
 
 export interface Database {
   public: {
@@ -100,6 +102,13 @@ export interface Database {
           trial_disabled_reason:  string | null
           featured:               boolean
           status:           ListingStatus
+          type:             ListingType
+          event_start_at:   string | null
+          event_end_at:     string | null
+          event_url:        string | null
+          venue_name:       string | null
+          price_label:      string | null
+          organizer_name:   string | null
           cover_image_url:  string | null
           maps_url:         string | null
           created_at:       string
@@ -160,6 +169,32 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['reviews']['Row'], 'id' | 'created_at'>
         Update: { rating?: number; comment?: string | null; status?: ReviewStatus }
       }
+      event_drafts: {
+        Row: {
+          id:                    string
+          source:                string
+          external_id:           string | null
+          dedup_hash:            string
+          raw_payload:           unknown | null
+          title:                 string | null
+          description:           string | null
+          event_start_at:        string | null
+          event_end_at:          string | null
+          event_url:             string | null
+          venue_name:            string | null
+          price_label:           string | null
+          organizer_name:        string | null
+          cover_image_url:       string | null
+          suggested_category_id: string | null
+          suggested_area_id:     string | null
+          status:                EventDraftStatus
+          promoted_listing_id:   string | null
+          created_at:            string
+          updated_at:            string
+        }
+        Insert: Omit<Database['public']['Tables']['event_drafts']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['event_drafts']['Insert']>
+      }
     }
   }
 }
@@ -171,6 +206,7 @@ export type Category = Database['public']['Tables']['categories']['Row']
 export type Area = Database['public']['Tables']['areas']['Row']
 export type Provider = Database['public']['Tables']['providers']['Row']
 export type Child = Database['public']['Tables']['children']['Row']
+export type EventDraft = Database['public']['Tables']['event_drafts']['Row']
 
 export type ListingWithRelations = Listing & {
   category:  Category

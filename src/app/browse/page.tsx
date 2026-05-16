@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { AppShell }      from '@/components/layout/AppShell'
 import { ActivityCard }  from '@/components/ui/ActivityCard'
+import { ComingUpBand }  from '@/components/ui/ComingUpBand'
 import { CategoryPills } from '@/components/ui/CategoryPills'
 import { SearchBar }     from '@/components/ui/SearchBar'
 import { createClient }  from '@/lib/supabase/server'
@@ -55,6 +56,17 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const categories = categoriesRaw as unknown as any[] | null
   const areas      = areasRaw      as unknown as any[] | null
 
+  // Upcoming events for the "Coming up" band (separate from the activity grid).
+  const nowIso = new Date().toISOString()
+  const { data: eventsRaw } = await supabase
+    .from('listings')
+    .select(`*, category:categories(*), area:areas(*), provider:providers(*), schedules:listing_schedules(*)`)
+    .eq('status', 'active')
+    .eq('type', 'event')
+    .gte('event_end_at', nowIso)
+    .order('event_start_at', { ascending: true })
+  const events = (eventsRaw as unknown as ListingWithRelations[] | null) ?? []
+
   // Build query
   let query = supabase
     .from('listings')
@@ -66,6 +78,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       schedules:listing_schedules(*)
     `)
     .eq('status', 'active')
+    .eq('type', 'activity')
     .order('featured', { ascending: false })
     .order('created_at', { ascending: false })
 
@@ -163,6 +176,33 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           </div>
           <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
             {t('subtitle', { count: total })}
+          </div>
+        </div>
+
+        {/* ── Coming up events band (renders only when there are upcoming events) ── */}
+        <ComingUpBand events={events} />
+
+        {/* ── Activities landmark — "you've left events, this is activities" ── */}
+        <div className="pt-2 border-t border-border flex items-end justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-[7px] font-display text-[10.5px] font-bold uppercase tracking-[0.16em] text-ink-muted">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" />
+              </svg>
+              {t('activitiesEyebrow')}
+            </div>
+            <div className="font-display font-black text-ink leading-[1.1] mt-1.5" style={{ fontSize: '22px', letterSpacing: '-0.8px' }}>
+              {t('activitiesTitle')}
+            </div>
+            <div className="text-[13px] text-ink-mid mt-0.5">{t('activitiesSub', { count: total })}</div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="w-px h-9 bg-border" />
+            <div className="text-right">
+              <div className="font-display font-black text-ink leading-none" style={{ fontSize: '30px', letterSpacing: '-1.4px' }}>{total}</div>
+              <div className="font-display text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-muted mt-1">{t('activitiesCountLabel')}</div>
+            </div>
           </div>
         </div>
 

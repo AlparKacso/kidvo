@@ -1,0 +1,128 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
+
+// Approve → promote an event_draft to a live listing owned by the system
+// "Kidvo Events" provider. Reject → mark the draft rejected. Mirrors the
+// auth pattern of /api/admin/listings/[id]/status.
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params
+  const { action, categoryId, areaId } = await request.json()
+
+  if (action !== 'approve' && action !== 'reject') {
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: userRow } = await supabase.from('users').select('email').eq('id', user.id).single()
+  if ((userRow as { email?: string } | null)?.email !== ADMIN_EMAIL) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const adminDb = createAdminClient()
+
+  const { data: draftRaw, error: draftErr } = await adminDb
+    .from('event_drafts')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (draftErr || !draftRaw) {
+    return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+  }
+  const draft = draftRaw as Record<string, any>
+
+  if (draft.status !== 'new') {
+    return NextResponse.json({ error: `Draft already ${draft.status}` }, { status: 409 })
+  }
+
+  // ── Reject ────────────────────────────────────────────────────────────────
+  if (action === 'reject') {
+    const { error } = await adminDb
+      .from('event_drafts')
+      .update({ status: 'rejected', updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) {
+      console.error('[event-drafts] reject error:', error.message)
+      return NextResponse.json({ error: 'Failed to reject draft' }, { status: 500 })
+    }
+    return NextResponse.json({ ok: true, status: 'rejected' })
+  }
+
+  // ── Approve → promote to a live listing ───────────────────────────────────
+  if (!draft.title) {
+    return NextResponse.json({ error: 'Draft has no title — cannot publish' }, { status: 400 })
+  }
+  // listings.category_id / area_id are NOT NULL. Admin picks them on approve;
+  // fall back to the draft's suggested values.
+  const finalCategory = categoryId || draft.suggested_category_id
+  const finalArea     = areaId     || draft.suggested_area_id
+  if (!finalCategory || !finalArea) {
+    return NextResponse.json({ error: 'Pick a category and area before approving' }, { status: 400 })
+  }
+
+  const { data: prov, error: provErr } = await adminDb
+    .from('providers')
+    .select('id')
+    .eq('display_name', 'Kidvo Events')
+    .limit(1)
+    .single()
+  if (provErr || !prov) {
+    return NextResponse.json(
+      { error: 'Kidvo Events provider not found — run the events migration seed first' },
+      { status: 500 },
+    )
+  }
+
+  const { data: listing, error: insErr } = await adminDb
+    .from('listings')
+    .insert({
+      provider_id:     (prov as { id: string }).id,
+      category_id:     finalCategory,
+      area_id:         finalArea,
+      title:           draft.title,
+      description:     draft.description,
+      type:            'event',
+      status:          'active',
+      published_at:    new Date().toISOString(),
+      event_start_at:  draft.event_start_at,
+      event_end_at:    draft.event_end_at,
+      event_url:       draft.event_url,
+      venue_name:      draft.venue_name,
+      price_label:     draft.price_label,
+      organizer_name:  draft.organizer_name,
+      cover_image_url: draft.cover_image_url,
+      trial_available: false,
+    })
+    .select('id')
+    .single()
+
+  if (insErr || !listing) {
+    console.error('[event-drafts] promote insert error:', insErr?.message)
+    return NextResponse.json({ error: 'Failed to create listing' }, { status: 500 })
+  }
+
+  const listingId = (listing as { id: string }).id
+  const { error: markErr } = await adminDb
+    .from('event_drafts')
+    .update({ status: 'approved', promoted_listing_id: listingId, updated_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (markErr) {
+    // Roll back the listing so we don't leave an orphaned event with the
+    // draft still in "new" (would double-publish on a retry).
+    await adminDb.from('listings').delete().eq('id', listingId)
+    console.error('[event-drafts] mark-approved error, rolled back listing:', markErr.message)
+    return NextResponse.json({ error: 'Failed to finalize approval' }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, status: 'approved', listingId })
+}

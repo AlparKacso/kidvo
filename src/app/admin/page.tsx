@@ -36,6 +36,9 @@ export default async function AdminPage() {
     trialsResult,
     slowTrialsResult,
     allProvidersResult,
+    eventDraftsResult,
+    categoriesResult,
+    areasResult,
   ] = await Promise.all([
     // All listings with relations (for listing moderation panel)
     supabase
@@ -80,6 +83,17 @@ export default async function AdminPage() {
         listings(id, title, status, created_at)
       `)
       .order('display_name'),
+
+    // Event drafts pending review (scraped / assisted ingestion)
+    supabase
+      .from('event_drafts')
+      .select('*')
+      .eq('status', 'new')
+      .order('created_at', { ascending: false }),
+
+    // Categories + areas for the approve picker (listings FKs are NOT NULL)
+    supabase.from('categories').select('id, name, slug').order('sort_order'),
+    supabase.from('areas').select('id, name').order('name'),
   ])
 
   const listingsRaw    = (listingsResult.data    as unknown as { status: string }[] | null) ?? []
@@ -108,6 +122,10 @@ export default async function AdminPage() {
       listings:       (p.listings ?? []) as { id: string; title: string; status: string; created_at: string }[],
     }
   })
+
+  const eventDrafts = (eventDraftsResult.data as unknown as any[] | null) ?? []
+  const categories  = (categoriesResult.data  as unknown as { id: string; name: string; slug: string }[] | null) ?? []
+  const areas       = (areasResult.data       as unknown as { id: string; name: string }[] | null) ?? []
 
   const pending = listingsRaw.filter(l => l.status === 'pending')
   const active  = listingsRaw.filter(l => l.status === 'active')
@@ -145,6 +163,9 @@ export default async function AdminPage() {
       slowTrials={slowTrials}
       slowProviderCount={slowProviderCount}
       allProviders={allProviders}
+      eventDrafts={eventDrafts}
+      categories={categories}
+      areas={areas}
       stats={{
         totalParents: totalParents,
         totalProviders: totalProviders,

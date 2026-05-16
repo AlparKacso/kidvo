@@ -16,6 +16,19 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
+
+  // ── 0. Auto-expire past events ────────────────────────────────────────────
+  // Runs every day before the digest logic (and before any early return) so
+  // events past their end time leave the public site without manual work.
+  // Idempotent; rows with a null event_end_at are excluded by the .lt filter.
+  const { error: expireErr } = await supabase
+    .from('listings')
+    .update({ status: 'paused' })
+    .eq('type', 'event')
+    .eq('status', 'active')
+    .lt('event_end_at', new Date().toISOString())
+  if (expireErr) console.error('[digest] event auto-expire error:', expireErr.message)
+
   const cutoff   = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
   // ── 1. New listings published in the last 24 h ────────────────────────────

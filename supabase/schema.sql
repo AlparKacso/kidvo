@@ -96,12 +96,23 @@ CREATE TABLE IF NOT EXISTS public.listings (
   featured              BOOLEAN     NOT NULL DEFAULT false,
   status                TEXT        NOT NULL DEFAULT 'draft'
                                     CHECK (status IN ('draft', 'pending', 'active', 'paused')),
+  type                  TEXT        NOT NULL DEFAULT 'activity'
+                                    CHECK (type IN ('activity', 'event')),
+  event_start_at        TIMESTAMPTZ,
+  event_end_at          TIMESTAMPTZ,
+  event_url             TEXT,
+  venue_name            TEXT,
+  price_label           TEXT,
+  organizer_name        TEXT,
   cover_image_url       TEXT,
   maps_url              TEXT,
   published_at          TIMESTAMPTZ,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX IF NOT EXISTS listings_type_idx         ON public.listings(type);
+CREATE INDEX IF NOT EXISTS listings_event_end_at_idx ON public.listings(event_end_at);
 
 -- listing_schedules
 CREATE TABLE IF NOT EXISTS public.listing_schedules (
@@ -112,6 +123,35 @@ CREATE TABLE IF NOT EXISTS public.listing_schedules (
   time_end    TEXT    NOT NULL,
   group_label TEXT
 );
+
+-- event_drafts (staging for scraped / assisted event ingestion;
+-- admin-reviewed before promotion to a live listing — unvetted content
+-- never touches `listings`. UNIQUE dedup_hash makes re-scraping idempotent.)
+CREATE TABLE IF NOT EXISTS public.event_drafts (
+  id                    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  source                TEXT        NOT NULL,           -- 'scraper:<name>' | 'assisted'
+  external_id           TEXT,
+  dedup_hash            TEXT        NOT NULL UNIQUE,
+  raw_payload           JSONB,
+  title                 TEXT,
+  description           TEXT,
+  event_start_at        TIMESTAMPTZ,
+  event_end_at          TIMESTAMPTZ,
+  event_url             TEXT,
+  venue_name            TEXT,
+  price_label           TEXT,
+  organizer_name        TEXT,
+  cover_image_url       TEXT,
+  suggested_category_id UUID        REFERENCES public.categories(id) ON DELETE SET NULL,
+  suggested_area_id     UUID        REFERENCES public.areas(id)      ON DELETE SET NULL,
+  status                TEXT        NOT NULL DEFAULT 'new'
+                                    CHECK (status IN ('new', 'approved', 'rejected')),
+  promoted_listing_id   UUID        REFERENCES public.listings(id)   ON DELETE SET NULL,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS event_drafts_status_idx ON public.event_drafts(status);
 
 -- listing_views (analytics)
 CREATE TABLE IF NOT EXISTS public.listing_views (
@@ -273,6 +313,15 @@ CREATE POLICY "listing_schedules_write_own"     ON public.listing_schedules FOR 
     JOIN public.providers p ON p.id = l.provider_id
     WHERE l.id = listing_schedules.listing_id AND p.user_id = auth.uid()
   ));
+
+-- event_drafts (admin only — public never sees unvetted drafts)
+ALTER TABLE public.event_drafts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "event_drafts_select_admin" ON public.event_drafts;
+DROP POLICY IF EXISTS "event_drafts_insert_admin" ON public.event_drafts;
+DROP POLICY IF EXISTS "event_drafts_update_admin" ON public.event_drafts;
+CREATE POLICY "event_drafts_select_admin" ON public.event_drafts FOR SELECT USING (public.is_admin());
+CREATE POLICY "event_drafts_insert_admin" ON public.event_drafts FOR INSERT WITH CHECK (public.is_admin());
+CREATE POLICY "event_drafts_update_admin" ON public.event_drafts FOR UPDATE USING (public.is_admin());
 
 -- listing_views
 ALTER TABLE public.listing_views ENABLE ROW LEVEL SECURITY;
@@ -440,3 +489,22 @@ INSERT INTO public.tips (body) VALUES
   ('Encourage happy parents to leave a review after a trial. Social proof is your best marketing tool.'),
   ('Make sure your listing description answers: What will my child learn? What age is it best for? What should they bring?')
 ON CONFLICT DO NOTHING;
+
+-- System "Kidvo Events" provider — owns admin-curated / scraped events.
+-- Reuses the alpar.kacso+1@gmail.com account. Upsert: an existing provider
+-- row is renamed to "Kidvo Events" in place (reversible, no cascade);
+-- otherwise it's created. No-op until the public.users row exists; safe to
+-- re-run. Code resolves this provider by display_name = 'Kidvo Events'.
+INSERT INTO public.providers (user_id, display_name, bio, contact_email, plan, verified)
+SELECT u.id,
+       'Kidvo Events',
+       'Curated children''s events across Timișoara, gathered by Kidvo.',
+       u.email,
+       'free',
+       true
+FROM public.users u
+WHERE u.email = 'alpar.kacso+1@gmail.com'
+ON CONFLICT (user_id) DO UPDATE
+  SET display_name = 'Kidvo Events',
+      bio          = EXCLUDED.bio,
+      verified     = true;

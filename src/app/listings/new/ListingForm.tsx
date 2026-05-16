@@ -33,6 +33,7 @@ interface ScheduleRow {
 }
 
 interface FormData {
+  type:            'activity' | 'event'
   title:           string
   category_id:     string
   area_id:         string
@@ -42,6 +43,10 @@ interface FormData {
   age_min:         string
   age_max:         string
   schedules:       ScheduleRow[]
+  event_start_at:  string
+  event_end_at:    string
+  venue_name:      string
+  price_label:     string
   price_monthly:   string
   spots_total:     string
   spots_available: string
@@ -60,8 +65,10 @@ const TIMES = [
   '19:00','19:30','20:00','20:30','21:00',
 ]
 const INITIAL: FormData = {
+  type: 'activity',
   title: '', category_id: '', area_id: '', address: '', maps_url: '', language: ['Romanian'],
   age_min: '', age_max: '', schedules: [],
+  event_start_at: '', event_end_at: '', venue_name: '', price_label: '',
   price_monthly: '', spots_total: '', spots_available: '', description: '',
   includes: [''], trial_available: true, trial_disabled_reason: 'cohort', cover_image_url: '',
   pricing_type: 'month',
@@ -340,7 +347,9 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
   const [showCropModal, setShowCropModal] = useState(false)
 
   // Draft autosave — only for new listings (edit mode reads from DB)
-  const draftKey = `kidvo:listing-draft:${providerId}`
+  // v2: FormData shape changed when events were added — old drafts are
+  // simply not found under the new key, so they discard gracefully.
+  const draftKey = `kidvo:listing-draft:v2:${providerId}`
   const [pendingDraft, setPendingDraft]     = useState<SavedDraft | null>(null)
   const [restoreDecided, setRestoreDecided] = useState(isEdit)
 
@@ -356,6 +365,14 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
 
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
     setData(prev => ({ ...prev, [key]: value }))
+  }
+
+  // Switching type clears the fields that no longer apply so a half-filled
+  // activity can't leak into an event submission (or vice versa).
+  function setType(type: FormData['type']) {
+    setData(prev => type === 'event'
+      ? { ...prev, type, schedules: [] }
+      : { ...prev, type, event_start_at: '', event_end_at: '', venue_name: '', price_label: '' })
   }
 
   function removeSchedule(i: number) { set('schedules', data.schedules.filter((_, idx) => idx !== i)) }
@@ -447,11 +464,26 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
     return avail > total
   }
 
+  const isEvent = data.type === 'event'
+
+  function eventDatesInvalid(): boolean {
+    if (!data.event_start_at || !data.event_end_at) return false
+    return new Date(data.event_end_at) < new Date(data.event_start_at)
+  }
+
   function canProceed(): boolean {
     if (step === 0) return agreed
     if (step === 1) return !!(data.title && data.category_id && data.area_id && data.age_min && data.age_max)
-    if (step === 2) return data.schedules.length > 0
-    if (step === 3) return !!(data.price_monthly && data.description) && !spotsInvalid()
+    if (step === 2) {
+      return isEvent
+        ? !!(data.event_start_at && data.event_end_at) && !eventDatesInvalid()
+        : data.schedules.length > 0
+    }
+    if (step === 3) {
+      return isEvent
+        ? !!(data.price_label && data.description)
+        : !!(data.price_monthly && data.description) && !spotsInvalid()
+    }
     return true
   }
 
@@ -476,23 +508,31 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
         coverImageUrl = publicUrl
       }
 
+      const eventMode = data.type === 'event'
       const payload = {
+        type:            data.type,
         category_id:     data.category_id,
         area_id:         data.area_id,
         title:           data.title,
         description:     data.description,
         age_min:         parseInt(data.age_min),
         age_max:         parseInt(data.age_max),
-        price_monthly:   parseInt(data.price_monthly),
-        pricing_type:    data.pricing_type,
-        spots_total:     data.spots_total ? parseInt(data.spots_total) : null,
-        spots_available: data.spots_available ? parseInt(data.spots_available) : null,
+        // Events use a free-text price_label; price_monthly is NOT NULL so
+        // it stays 0 and pricing_type keeps its default for events.
+        price_monthly:   eventMode ? 0 : parseInt(data.price_monthly),
+        pricing_type:    eventMode ? 'month' : data.pricing_type,
+        price_label:     eventMode ? (data.price_label || null) : null,
+        event_start_at:  eventMode && data.event_start_at ? new Date(data.event_start_at).toISOString() : null,
+        event_end_at:    eventMode && data.event_end_at   ? new Date(data.event_end_at).toISOString()   : null,
+        venue_name:      eventMode ? (data.venue_name || null) : null,
+        spots_total:     eventMode ? null : (data.spots_total ? parseInt(data.spots_total) : null),
+        spots_available: eventMode ? null : (data.spots_available ? parseInt(data.spots_available) : null),
         address:         data.address,
         maps_url:        data.maps_url || null,
         language:        data.language.join(', '),
-        includes:        data.includes.filter(Boolean),
-        trial_available:       data.trial_available,
-        trial_disabled_reason: data.trial_available ? null : data.trial_disabled_reason,
+        includes:        eventMode ? [] : data.includes.filter(Boolean),
+        trial_available:       eventMode ? false : data.trial_available,
+        trial_disabled_reason: eventMode ? null : (data.trial_available ? null : data.trial_disabled_reason),
         cover_image_url: coverImageUrl || null,
         status:          'pending',
       }
@@ -617,8 +657,28 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
           {step === 1 && (
             <div className="flex flex-col gap-5">
               <div>
-                <Label>{t('activityTitle')}</Label>
-                <input className={cn(inputCls, showErrors && !data.title?.trim() && 'border-danger')} placeholder={t('activityTitlePlaceholder')} value={data.title} onChange={e => set('title', e.target.value)} />
+                <Label hint={t('typeHint')}>{t('typeLabel')}</Label>
+                <div className="flex gap-2">
+                  {(['activity', 'event'] as const).map(tp => (
+                    <button
+                      key={tp}
+                      type="button"
+                      onClick={() => setType(tp)}
+                      className={cn(
+                        'flex-1 py-2 rounded border font-display text-xs font-semibold transition-all',
+                        data.type === tp
+                          ? 'bg-primary-lt border-primary text-primary'
+                          : 'bg-bg border-border text-ink-mid hover:border-primary'
+                      )}
+                    >
+                      {t(`type_${tp}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label>{isEvent ? t('eventTitle') : t('activityTitle')}</Label>
+                <input className={cn(inputCls, showErrors && !data.title?.trim() && 'border-danger')} placeholder={isEvent ? t('eventTitlePlaceholder') : t('activityTitlePlaceholder')} value={data.title} onChange={e => set('title', e.target.value)} />
                 {showErrors && !data.title?.trim() && (
                   <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
                 )}
@@ -706,8 +766,47 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
             </div>
           )}
 
-          {/* Step 2 */}
-          {step === 2 && (
+          {/* Step 2 — event: date & venue */}
+          {step === 2 && isEvent && (
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>{t('eventStart')}</Label>
+                  <input
+                    type="datetime-local"
+                    className={cn(inputCls, showErrors && !data.event_start_at && 'border-danger')}
+                    value={data.event_start_at}
+                    onChange={e => set('event_start_at', e.target.value)}
+                  />
+                  {showErrors && !data.event_start_at && (
+                    <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                  )}
+                </div>
+                <div>
+                  <Label>{t('eventEnd')}</Label>
+                  <input
+                    type="datetime-local"
+                    className={cn(inputCls, ((showErrors && !data.event_end_at) || eventDatesInvalid()) && 'border-danger')}
+                    value={data.event_end_at}
+                    onChange={e => set('event_end_at', e.target.value)}
+                  />
+                  {showErrors && !data.event_end_at && (
+                    <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                  )}
+                </div>
+              </div>
+              {eventDatesInvalid() && (
+                <p className="text-[11px] text-danger -mt-3">{t('eventDateError')}</p>
+              )}
+              <div>
+                <Label hint={t('venueHint')}>{t('venue')}</Label>
+                <input className={inputCls} placeholder={t('venuePlaceholder')} value={data.venue_name} onChange={e => set('venue_name', e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          {/* Step 2 — activity: weekly schedule */}
+          {step === 2 && !isEvent && (
             <div className="flex flex-col gap-5">
               <div>
                 <Label hint={t('scheduleHint')}>{t('scheduleLabel')}</Label>
@@ -836,46 +935,63 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
                 </div>
               </div>
 
-              <div>
-                <Label>{t('pricingType')}</Label>
-                <div className="flex gap-2">
-                  {(['month', 'session'] as const).map(pt => (
-                    <button
-                      key={pt}
-                      type="button"
-                      onClick={() => set('pricing_type', pt)}
-                      className={cn(
-                        'flex-1 py-2 rounded border font-display text-xs font-semibold transition-all',
-                        data.pricing_type === pt
-                          ? 'bg-primary-lt border-primary text-primary'
-                          : 'bg-bg border-border text-ink-mid hover:border-primary'
-                      )}
-                    >
-                      {t(`pricingType_${pt}`)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+              {isEvent ? (
                 <div>
-                  <Label hint={t('priceHint')}>{data.pricing_type === 'session' ? t('priceLabelSession') : t('priceLabelMonth')}</Label>
-                  <input className={cn(inputCls, showErrors && !data.price_monthly && 'border-danger')} type="number" min={0} placeholder={t('pricePlaceholder')} value={data.price_monthly} onChange={e => set('price_monthly', e.target.value)} />
-                  {showErrors && !data.price_monthly && (
+                  <Label hint={t('eventPriceHint')}>{t('eventPriceLabel')}</Label>
+                  <input
+                    className={cn(inputCls, showErrors && !data.price_label && 'border-danger')}
+                    placeholder={t('eventPricePlaceholder')}
+                    value={data.price_label}
+                    onChange={e => set('price_label', e.target.value)}
+                  />
+                  {showErrors && !data.price_label && (
                     <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
                   )}
                 </div>
-                <div>
-                  <Label hint={t('spotsTotalHint')}>{t('spotsTotal')}</Label>
-                  <input className={inputCls} type="number" min={1} placeholder={t('spotsTotalPlaceholder')} value={data.spots_total} onChange={e => set('spots_total', e.target.value)} />
-                </div>
-                <div>
-                  <Label hint={t('spotsAvailableHint')}>{t('spotsAvailable')}</Label>
-                  <input className={cn(inputCls, spotsInvalid() && 'border-danger')} type="number" min={0} placeholder={t('spotsAvailablePlaceholder')} value={data.spots_available} onChange={e => set('spots_available', e.target.value)} />
-                </div>
-              </div>
-              {spotsInvalid() && (
-                <p className="text-[11px] text-danger -mt-3">{t('spotsInvalid')}</p>
+              ) : (
+                <>
+                  <div>
+                    <Label>{t('pricingType')}</Label>
+                    <div className="flex gap-2">
+                      {(['month', 'session'] as const).map(pt => (
+                        <button
+                          key={pt}
+                          type="button"
+                          onClick={() => set('pricing_type', pt)}
+                          className={cn(
+                            'flex-1 py-2 rounded border font-display text-xs font-semibold transition-all',
+                            data.pricing_type === pt
+                              ? 'bg-primary-lt border-primary text-primary'
+                              : 'bg-bg border-border text-ink-mid hover:border-primary'
+                          )}
+                        >
+                          {t(`pricingType_${pt}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                    <div>
+                      <Label hint={t('priceHint')}>{data.pricing_type === 'session' ? t('priceLabelSession') : t('priceLabelMonth')}</Label>
+                      <input className={cn(inputCls, showErrors && !data.price_monthly && 'border-danger')} type="number" min={0} placeholder={t('pricePlaceholder')} value={data.price_monthly} onChange={e => set('price_monthly', e.target.value)} />
+                      {showErrors && !data.price_monthly && (
+                        <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label hint={t('spotsTotalHint')}>{t('spotsTotal')}</Label>
+                      <input className={inputCls} type="number" min={1} placeholder={t('spotsTotalPlaceholder')} value={data.spots_total} onChange={e => set('spots_total', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label hint={t('spotsAvailableHint')}>{t('spotsAvailable')}</Label>
+                      <input className={cn(inputCls, spotsInvalid() && 'border-danger')} type="number" min={0} placeholder={t('spotsAvailablePlaceholder')} value={data.spots_available} onChange={e => set('spots_available', e.target.value)} />
+                    </div>
+                  </div>
+                  {spotsInvalid() && (
+                    <p className="text-[11px] text-danger -mt-3">{t('spotsInvalid')}</p>
+                  )}
+                </>
               )}
               <div>
                 <Label hint={t('aboutHint')}>{t('aboutLabel')}</Label>
@@ -884,6 +1000,7 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
                   <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
                 )}
               </div>
+              {!isEvent && (
               <div>
                 <Label hint={t('includesHint')}>{t('includesLabel')}</Label>
                 <div className="flex flex-col gap-2">
@@ -902,7 +1019,8 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
                   </button>
                 </div>
               </div>
-              {/* Trial sessions */}
+              )}
+              {!isEvent && (
               <div className="border border-border rounded-lg p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -942,6 +1060,7 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
                   </div>
                 )}
               </div>
+              )}
             </div>
           )}
 
@@ -954,9 +1073,19 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
                 <div className="flex justify-between"><span className="text-ink-muted">{t('reviewCategory')}</span><span className="font-semibold text-ink">{categories.find(c => c.id === data.category_id)?.name}</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">{t('reviewArea')}</span><span className="font-semibold text-ink">{areas.find(a => a.id === data.area_id)?.name}</span></div>
                 <div className="flex justify-between"><span className="text-ink-muted">{t('reviewAges')}</span><span className="font-semibold text-ink">{data.age_min === data.age_max ? t('reviewAgesFrom', { min: data.age_min }) : t('reviewAgesRange', { min: data.age_min, max: data.age_max })}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewPrice')}</span><span className="font-semibold text-ink">{data.price_monthly} RON/{data.pricing_type === 'session' ? t('perSession') : t('perMonth')}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewSessions')}</span><span className="font-semibold text-ink">{t('reviewSlots', { n: data.schedules.length })}</span></div>
-                <div className="flex justify-between"><span className="text-ink-muted">{t('reviewTrial')}</span><span className="font-semibold text-ink">{data.trial_available ? t('previewTrialAvailable') : { cohort: t('reasonCohort'), full: t('reasonFull'), contact_us: t('reasonDirect') }[data.trial_disabled_reason] ?? t('reasonDirect')}</span></div>
+                {isEvent ? (
+                  <>
+                    <div className="flex justify-between"><span className="text-ink-muted">{t('reviewPrice')}</span><span className="font-semibold text-ink">{data.price_label || '—'}</span></div>
+                    <div className="flex justify-between"><span className="text-ink-muted">{t('reviewWhen')}</span><span className="font-semibold text-ink">{data.event_start_at ? new Date(data.event_start_at).toLocaleString() : '—'}</span></div>
+                    {data.venue_name && <div className="flex justify-between"><span className="text-ink-muted">{t('reviewVenue')}</span><span className="font-semibold text-ink">{data.venue_name}</span></div>}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between"><span className="text-ink-muted">{t('reviewPrice')}</span><span className="font-semibold text-ink">{data.price_monthly} RON/{data.pricing_type === 'session' ? t('perSession') : t('perMonth')}</span></div>
+                    <div className="flex justify-between"><span className="text-ink-muted">{t('reviewSessions')}</span><span className="font-semibold text-ink">{t('reviewSlots', { n: data.schedules.length })}</span></div>
+                    <div className="flex justify-between"><span className="text-ink-muted">{t('reviewTrial')}</span><span className="font-semibold text-ink">{data.trial_available ? t('previewTrialAvailable') : { cohort: t('reasonCohort'), full: t('reasonFull'), contact_us: t('reasonDirect') }[data.trial_disabled_reason] ?? t('reasonDirect')}</span></div>
+                  </>
+                )}
               </div>
               {error && <div className="bg-danger-lt border border-danger/20 text-danger text-sm rounded p-3">{error}</div>}
             </div>
