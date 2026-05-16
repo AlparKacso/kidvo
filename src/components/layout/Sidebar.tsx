@@ -26,11 +26,12 @@ interface NavItemProps {
   label:         string
   badge?:        number
   badgeVariant?: 'purple' | 'blue'
+  newBadge?:     string
   exact?:        boolean
   excludes?:     string[]
 }
 
-function NavItem({ href, icon, label, badge, badgeVariant = 'purple', exact, excludes }: NavItemProps) {
+function NavItem({ href, icon, label, badge, badgeVariant = 'purple', newBadge, exact, excludes }: NavItemProps) {
   const pathname = usePathname()
   const active   = exact
     ? pathname === href
@@ -63,6 +64,11 @@ function NavItem({ href, icon, label, badge, badgeVariant = 'purple', exact, exc
           {badge}
         </span>
       )}
+      {newBadge && !(badge && badge > 0) && (
+        <span className="ml-auto font-display text-[9px] font-bold tracking-[0.08em] uppercase px-[7px] py-px rounded-full bg-gold text-ink pulse-gold">
+          {newBadge}
+        </span>
+      )}
     </Link>
   )
 }
@@ -85,6 +91,7 @@ function NavSection({ label, children }: { label: string; children: React.ReactN
 const IconHome      = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9l7-7 7 7M3.5 8v7a1 1 0 0 0 1 1H8V12h4v4h3.5a1 1 0 0 0 1-1V8"/></svg>
 const IconBrowse    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="8" cy="8" r="5.5"/><path d="M13 13l3 3"/></svg>
 const IconSaved     = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 14.5S2.5 10 2.5 6a4 4 0 0 1 6.5-3.1A4 4 0 0 1 15.5 6C15.5 10 9 14.5 9 14.5Z"/></svg>
+const IconEvents    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="3.5" width="13" height="12" rx="1.5"/><path d="M2.5 7h13M6 2v3M12 2v3"/><path d="M9 9.3l.7 1.5 1.6.2-1.2 1.1.3 1.6L9 13l-1.4.7.3-1.6-1.2-1.1 1.6-.2z"/></svg>
 const IconKids      = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="9" cy="5.5" r="3"/><path d="M2.5 16c0-3 2.9-5.5 6.5-5.5s6.5 2.5 6.5 5.5"/></svg>
 const IconTrials    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2" y="3.5" width="14" height="11" rx="1.5"/><path d="M6 3.5V2M12 3.5V2M2 7.5h14"/></svg>
 const IconListings  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2.5" y="2" width="13" height="14" rx="1.5"/><path d="M6 6h6M6 9h6M6 12h4"/></svg>
@@ -209,6 +216,7 @@ export function Sidebar({
         <NavSection label={t('discover')}>
           <NavItem href="/dashboard" icon={<IconHome />}   label={t('dashboard')} exact />
           <NavItem href="/browse"    icon={<IconBrowse />} label={t('browse')}    exact />
+          <NavItem href="/events"    icon={<IconEvents />} label={t('events')}    newBadge={t('new')} />
         </NavSection>
 
         {!isProvider && (

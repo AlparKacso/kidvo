@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useRef } from 'react'
+import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { EventCard } from '@/components/ui/EventCard'
@@ -57,8 +58,8 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
           </h2>
           <p className="text-[13.5px] text-ink-mid m-0 max-w-[480px]">{t('sub')}</p>
         </div>
-        {pills.length > 0 && (
-          <div className="flex items-center gap-3.5 shrink-0">
+        <div className="flex items-center gap-3.5 shrink-0">
+          {pills.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
               {pills.map((p, i) => (
                 <span
@@ -75,8 +76,11 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
                 </span>
               ))}
             </div>
-          </div>
-        )}
+          )}
+          <Link href="/events" className="font-display text-[13px] font-bold text-primary hover:text-primary-deep transition-colors whitespace-nowrap">
+            {t('seeAll', { count: events.length })}
+          </Link>
+        </div>
       </header>
 
       <div className="relative">

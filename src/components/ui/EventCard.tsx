@@ -145,7 +145,7 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
 
   return (
     <Link
-      href={`/browse/${listing.id}`}
+      href={`/events/${listing.id}`}
       className="relative flex flex-col bg-white border-[1.5px] border-border rounded-xl shadow-card overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-card-hover no-underline"
     >
       <div className="relative overflow-hidden aspect-[4/5]">
