@@ -8,6 +8,7 @@ import { LegalModal } from '@/components/ui/LegalModal'
 import { TermsContent } from '@/components/ui/LegalContent'
 import { CoverCropModal } from '@/components/ui/CoverCropModal'
 import { getProviderInitials } from '@/lib/imageBrightness'
+import { bucharestLocalToUtcIso } from '@/lib/eventDate'
 import type { Category, Area } from '@/types/database'
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -522,8 +523,8 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
         price_monthly:   eventMode ? 0 : parseInt(data.price_monthly),
         pricing_type:    eventMode ? 'month' : data.pricing_type,
         price_label:     eventMode ? (data.price_label || null) : null,
-        event_start_at:  eventMode && data.event_start_at ? new Date(data.event_start_at).toISOString() : null,
-        event_end_at:    eventMode && data.event_end_at   ? new Date(data.event_end_at).toISOString()   : null,
+        event_start_at:  eventMode ? bucharestLocalToUtcIso(data.event_start_at) : null,
+        event_end_at:    eventMode ? bucharestLocalToUtcIso(data.event_end_at)   : null,
         venue_name:      eventMode ? (data.venue_name || null) : null,
         spots_total:     eventMode ? null : (data.spots_total ? parseInt(data.spots_total) : null),
         spots_available: eventMode ? null : (data.spots_available ? parseInt(data.spots_available) : null),

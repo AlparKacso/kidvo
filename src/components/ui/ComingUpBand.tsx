@@ -54,18 +54,22 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
       className="relative mt-1.5 mb-[22px] rounded-[22px] border-[1.5px] border-primary-border p-4 md:p-[22px_22px_6px]"
       style={{ background: 'linear-gradient(140deg, rgba(124,58,237,0.07) 0%, rgba(245,197,66,0.10) 100%)' }}
     >
-      <header className="flex flex-col gap-3 md:flex-row md:justify-between md:items-end mb-4">
-        <div>
-          <div className="inline-flex items-center gap-[7px] font-display text-[10.5px] font-bold uppercase tracking-[0.16em] text-primary">
-            <span className="w-[7px] h-[7px] rounded-full bg-danger [animation:weekendPulse_1.8s_infinite]" />
-            {t('eyebrow')}
-          </div>
-          <h2 className="font-display font-black text-[22px] md:text-[26px] tracking-[-1px] text-ink leading-[1.1] mt-1.5 mb-1">
-            {t('title')}
-          </h2>
-          <p className="text-[13.5px] text-ink-mid m-0 max-w-[480px]">{t('sub')}</p>
+      <Link
+        href="/events"
+        className="absolute top-3.5 right-4 z-[6] font-display text-[12px] font-bold text-primary hover:text-primary-deep transition-colors whitespace-nowrap"
+      >
+        {t('seeAll', { count: events.length })}
+      </Link>
+      <header className="mb-4 pr-16">
+        <div className="inline-flex items-center gap-[7px] font-display text-[10.5px] font-bold uppercase tracking-[0.16em] text-primary">
+          <span className="w-[7px] h-[7px] rounded-full bg-danger [animation:weekendPulse_1.8s_infinite]" />
+          {t('eyebrow')}
         </div>
-        <div className="flex flex-wrap items-center gap-2 md:shrink-0">
+        <h2 className="font-display font-black text-[22px] md:text-[26px] tracking-[-1px] text-ink leading-[1.1] mt-1.5 mb-1">
+          {t('title')}
+        </h2>
+        <p className="text-[12px] text-ink-mid m-0 truncate">{t('sub')}</p>
+        <div className="flex flex-nowrap items-center gap-2 mt-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {chips.map(c => {
             const active = filter === c.key
             return (
@@ -74,25 +78,19 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
                 type="button"
                 onClick={() => setFilter(c.key)}
                 className={cn(
-                  'font-display text-[12px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap border transition-colors',
+                  'shrink-0 font-display text-[11.5px] font-semibold px-2.5 py-1.5 rounded-full whitespace-nowrap border transition-colors',
                   active
                     ? 'bg-ink text-white border-ink'
                     : 'bg-white/70 text-ink-mid border-border hover:border-primary hover:text-primary',
                 )}
               >
                 {c.label}
-                <span className={cn('ml-1.5 text-[11px] font-bold', active ? 'opacity-80' : 'text-ink-muted')}>
+                <span className={cn('ml-1 text-[10.5px] font-bold', active ? 'opacity-80' : 'text-ink-muted')}>
                   {counts[c.key] ?? 0}
                 </span>
               </button>
             )
           })}
-          <Link
-            href="/events"
-            className="font-display text-[13px] font-bold text-primary hover:text-primary-deep transition-colors whitespace-nowrap ml-1"
-          >
-            {t('seeAll', { count: events.length })}
-          </Link>
         </div>
       </header>
 

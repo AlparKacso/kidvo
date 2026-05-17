@@ -61,7 +61,7 @@ export function BottomNav({ isProvider = false, providerPendingTrials = 0, userE
       <NavItem href="/browse"    icon={<IconBrowse />}    label={t('browse')}    exact />
       <NavItem href="/events"    icon={<IconEvents />}    label={t('events')} />
       {!isProvider && (
-        <NavItem href="/kids" icon={<IconKids />} label={t('kidsActivities')} exact />
+        <NavItem href="/kids" icon={<IconKids />} label={t('activities')} exact />
       )}
       {isProvider && (
         <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} />

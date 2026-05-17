@@ -21,14 +21,42 @@ export interface EventDateParts {
   compact: string
 }
 
+// All event times are Timișoara wall-clock (Europe/Bucharest), formatted in
+// 24h. We always format in this zone so the server (UTC runtime) and the
+// browser agree — otherwise an 18:00 event renders as 15:00 server-side.
+const TZ = 'Europe/Bucharest'
+
 export function fmtEventDate(date: Date, locale: Locale): EventDateParts {
-  const day  = DAYS_SHORT[locale][date.getDay()]
-  const dnum = date.getDate()
-  const mo   = MONTHS_SHORT[locale][date.getMonth()]
-  const hh   = String(date.getHours()).padStart(2, '0')
-  const mm   = String(date.getMinutes()).padStart(2, '0')
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(date).map(x => [x.type, x.value]),
+  ) as Record<string, string>
+
+  const Y = +p.year, Mo = +p.month, D = +p.day
+  const hh = p.hour === '24' ? '00' : p.hour   // en-GB emits '24' at midnight
+  const mm = p.minute
+  const wd = new Date(Y, Mo - 1, D, 12).getDay()
+  const day = DAYS_SHORT[locale][wd]
+  const mo  = MONTHS_SHORT[locale][Mo - 1]
   const time = `${hh}:${mm}`
-  return { day, dnum, mo, time, compact: `${day} ${dnum} ${mo} · ${time}` }
+  return { day, dnum: D, mo, time, compact: `${day} ${D} ${mo} · ${time}` }
+}
+
+// Convert a <input type="datetime-local"> value ("YYYY-MM-DDTHH:mm"),
+// entered as Timișoara wall time, to the correct UTC ISO instant — DST-safe.
+export function bucharestLocalToUtcIso(local: string): string | null {
+  if (!local) return null
+  const [d, tm = '00:00'] = local.split('T')
+  const [Y, M, D] = d.split('-').map(Number)
+  const [h, mi]   = tm.split(':').map(Number)
+  const asUtc = Date.UTC(Y, M - 1, D, h, mi)
+  const ref   = new Date(asUtc)
+  const tzWall  = new Date(ref.toLocaleString('en-US', { timeZone: TZ }))
+  const utcWall = new Date(ref.toLocaleString('en-US', { timeZone: 'UTC' }))
+  const offset  = tzWall.getTime() - utcWall.getTime()
+  return new Date(asUtc - offset).toISOString()
 }
 
 // Two exhaustive buckets — every upcoming event is "this week" (starts
@@ -43,8 +71,8 @@ export interface Urgency {
 }
 
 const URGENCY_LABEL: Record<Locale, Record<UrgencyKey, string>> = {
-  ro: { thisweek: 'Săptămâna aceasta', nextweek: 'Săptămâna viitoare' },
-  en: { thisweek: 'This week',         nextweek: 'Next week' },
+  ro: { thisweek: 'Săpt. curentă', nextweek: 'Săpt. viitoare' },
+  en: { thisweek: 'This week',     nextweek: 'Next week' },
 }
 
 const DAY_MS = 86_400_000

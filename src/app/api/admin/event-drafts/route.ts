@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { dedupHash } from '@/lib/scrapers/dedup'
+import { bucharestLocalToUtcIso } from '@/lib/eventDate'
 
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
 
@@ -35,8 +36,8 @@ export async function POST(request: Request) {
       raw_payload:     body,
       title:           body.title.trim(),
       description:     body.description || null,
-      event_start_at:  body.eventStartAt || null,
-      event_end_at:    body.eventEndAt || null,
+      event_start_at:  body.eventStartAt ? bucharestLocalToUtcIso(body.eventStartAt) : null,
+      event_end_at:    body.eventEndAt   ? bucharestLocalToUtcIso(body.eventEndAt)   : null,
       event_url:       body.eventUrl || null,
       venue_name:      body.venueName || null,
       price_label:     body.priceLabel || null,

@@ -4,15 +4,17 @@ import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 interface Props {
-  src:    string
-  alt:    string
+  src:     string
+  alt:     string
+  /** Thumbnail aspect — 4:3 activity hero (default) | 4:5 event poster */
+  aspect?: '4/3' | '4/5'
 }
 
 // Below this width the source is too low-res to upscale into a
 // full-screen modal — we just leave the photo as a static thumbnail.
 const ZOOM_MIN_WIDTH = 800
 
-export function CoverPhotoZoom({ src, alt }: Props) {
+export function CoverPhotoZoom({ src, alt, aspect = '4/3' }: Props) {
   const [open, setOpen]               = useState(false)
   const [zoomable, setZoomable]       = useState(false)
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null)
@@ -62,7 +64,8 @@ export function CoverPhotoZoom({ src, alt }: Props) {
       {/* Thumbnail card — clickable when source is zoomable */}
       <div
         className={[
-          'group relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-surface shadow-card-on-white',
+          'group relative overflow-hidden rounded-xl border border-border bg-surface shadow-card-on-white',
+          aspect === '4/5' ? 'aspect-[4/5]' : 'aspect-[4/3]',
           zoomable ? 'cursor-zoom-in' : '',
         ].join(' ')}
         onClick={zoomable ? () => setOpen(true) : undefined}

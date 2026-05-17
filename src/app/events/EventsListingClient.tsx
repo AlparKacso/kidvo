@@ -85,41 +85,44 @@ export function EventsListingClient({ events, areas, languages }: Props) {
         </div>
       </div>
 
-      {/* Filters — chips + dropdowns, wrap to multiple lines on mobile */}
-      <div className="flex flex-wrap items-center gap-2">
-        {chips.map(c => {
-          const active = filter === c.key
-          return (
-            <button
-              key={c.key}
-              type="button"
-              onClick={() => setFilter(c.key)}
-              className={cn(
-                'font-display text-[12.5px] font-semibold px-3.5 py-1.5 rounded-full border transition-colors',
-                active ? 'bg-ink text-white border-ink'
-                       : 'bg-white text-ink-mid border-border hover:border-primary hover:text-primary',
-              )}
-            >
-              {c.label}
-              <span className={cn('ml-1.5 text-[11px] font-bold', active ? 'opacity-80' : 'text-ink-muted')}>
-                {counts[c.key] ?? 0}
-              </span>
-            </button>
-          )
-        })}
-        <span className="w-px h-5 bg-border mx-1 hidden sm:block" />
-        <select value={area} onChange={e => setArea(e.target.value)} className={selectCls} aria-label={t('filterArea')}>
-          <option value="">{t('filterArea')}</option>
-          {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </select>
-        <select value={age} onChange={e => setAge(e.target.value)} className={selectCls} aria-label={t('filterAge')}>
-          <option value="">{t('filterAge')}</option>
-          {Array.from({ length: 16 }, (_, i) => i + 3).map(n => <option key={n} value={n}>{n}</option>)}
-        </select>
-        <select value={lang} onChange={e => setLang(e.target.value)} className={selectCls} aria-label={t('filterLanguage')}>
-          <option value="">{t('filterLanguage')}</option>
-          {languages.map(l => <option key={l} value={l}>{l}</option>)}
-        </select>
+      {/* Filters — row 1: urgency chips · row 2: Area/Age/Language dropdowns */}
+      <div className="flex flex-col gap-2.5">
+        <div className="flex flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {chips.map(c => {
+            const active = filter === c.key
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setFilter(c.key)}
+                className={cn(
+                  'shrink-0 font-display text-[12.5px] font-semibold px-3.5 py-1.5 rounded-full border transition-colors',
+                  active ? 'bg-ink text-white border-ink'
+                         : 'bg-white text-ink-mid border-border hover:border-primary hover:text-primary',
+                )}
+              >
+                {c.label}
+                <span className={cn('ml-1.5 text-[11px] font-bold', active ? 'opacity-80' : 'text-ink-muted')}>
+                  {counts[c.key] ?? 0}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex items-center gap-2">
+          <select value={area} onChange={e => setArea(e.target.value)} className={`${selectCls} flex-1 min-w-0`} aria-label={t('filterArea')}>
+            <option value="">{t('filterArea')}</option>
+            {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
+          <select value={age} onChange={e => setAge(e.target.value)} className={`${selectCls} flex-1 min-w-0`} aria-label={t('filterAge')}>
+            <option value="">{t('filterAge')}</option>
+            {Array.from({ length: 16 }, (_, i) => i + 3).map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+          <select value={lang} onChange={e => setLang(e.target.value)} className={`${selectCls} flex-1 min-w-0`} aria-label={t('filterLanguage')}>
+            <option value="">{t('filterLanguage')}</option>
+            {languages.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
       </div>
 
       {groups.length === 0 ? (

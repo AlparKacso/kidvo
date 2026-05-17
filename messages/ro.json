@@ -744,11 +744,11 @@
   "events": {
     "eyebrow": "Apropiate",
     "title": "Evenimente apropiate",
-    "sub": "Întâmplări de o singură dată — concerte, ateliere, joacă liberă.",
+    "sub": "Întâmplări unice — concerte, ateliere, joacă.",
     "today": "Azi",
     "tomorrow": "Mâine",
     "thisWeekend": "Acest weekend",
-    "thisWeek": "Săptămâna aceasta",
+    "thisWeek": "Săpt. curentă",
     "nextWeek": "Săpt. viitoare",
     "viewOnMaps": "Vezi pe Google Maps →",
     "language": "Limbă",
