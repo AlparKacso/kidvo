@@ -1,83 +1,96 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { EventCard } from '@/components/ui/EventCard'
-import { urgencyFor, type Locale } from '@/lib/eventDate'
+import { urgencyFor, type Locale, type UrgencyKey } from '@/lib/eventDate'
 import type { ListingWithRelations } from '@/types/database'
 
 interface ComingUpBandProps {
   events: ListingWithRelations[]
 }
 
+type Filter = 'all' | UrgencyKey
+
 export function ComingUpBand({ events }: ComingUpBandProps) {
   const locale = useLocale() as Locale
   const t = useTranslations('events')
   const rowRef = useRef<HTMLDivElement>(null)
-
-  // Single shared "now" so urgency is consistent across the band render.
   const now = useMemo(() => new Date(), [])
+  const [filter, setFilter] = useState<Filter>('all')
 
-  const counts = useMemo(() => {
-    let today = 0, tomorrow = 0, weekend = 0
-    for (const ev of events) {
-      if (!ev.event_start_at) continue
-      const k = urgencyFor(new Date(ev.event_start_at), now, locale).key
-      if (k === 'today') today++
-      else if (k === 'tomorrow') tomorrow++
-      else if (k === 'weekend') weekend++
-    }
-    return { today, tomorrow, weekend }
-  }, [events, now, locale])
+  const annotated = useMemo(() =>
+    events
+      .filter(e => e.event_start_at)
+      .map(e => ({ ev: e, key: urgencyFor(new Date(e.event_start_at!), now, locale).key })),
+    [events, now, locale])
+
+  const counts = useMemo(() => ({
+    all:      annotated.length,
+    thisweek: annotated.filter(a => a.key === 'thisweek').length,
+    nextweek: annotated.filter(a => a.key === 'nextweek').length,
+  }), [annotated])
 
   if (!events || events.length === 0) return null
 
-  const scroll = (dx: number) => rowRef.current?.scrollBy({ left: dx, behavior: 'smooth' })
+  const visible = filter === 'all' ? annotated : annotated.filter(a => a.key === filter)
 
-  const pills = [
-    counts.today    && { n: counts.today,    label: t('today'),       hot: true },
-    counts.tomorrow && { n: counts.tomorrow, label: t('tomorrow'),    hot: false },
-    counts.weekend  && { n: counts.weekend,  label: t('thisWeekend'), hot: false },
-  ].filter(Boolean) as { n: number; label: string; hot: boolean }[]
+  const scroll = (dir: number) => {
+    const el = rowRef.current
+    if (!el) return
+    el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.85, 360), behavior: 'smooth' })
+  }
+
+  const chips: { key: Filter; label: string }[] = [
+    { key: 'all',      label: t('filterAll') },
+    { key: 'thisweek', label: t('thisWeek') },
+    { key: 'nextweek', label: t('nextWeek') },
+  ]
 
   return (
     <section
-      className="relative mt-1.5 mb-[22px] rounded-[22px] border-[1.5px] border-primary-border p-[22px_22px_6px]"
+      className="relative mt-1.5 mb-[22px] rounded-[22px] border-[1.5px] border-primary-border p-4 md:p-[22px_22px_6px]"
       style={{ background: 'linear-gradient(140deg, rgba(124,58,237,0.07) 0%, rgba(245,197,66,0.10) 100%)' }}
     >
-      <header className="flex justify-between items-end gap-4 mb-4 flex-wrap">
+      <header className="flex flex-col gap-3 md:flex-row md:justify-between md:items-end mb-4">
         <div>
           <div className="inline-flex items-center gap-[7px] font-display text-[10.5px] font-bold uppercase tracking-[0.16em] text-primary">
             <span className="w-[7px] h-[7px] rounded-full bg-danger [animation:weekendPulse_1.8s_infinite]" />
             {t('eyebrow')}
           </div>
-          <h2 className="font-display font-black text-[26px] tracking-[-1px] text-ink leading-[1.1] mt-1.5 mb-1">
+          <h2 className="font-display font-black text-[22px] md:text-[26px] tracking-[-1px] text-ink leading-[1.1] mt-1.5 mb-1">
             {t('title')}
           </h2>
           <p className="text-[13.5px] text-ink-mid m-0 max-w-[480px]">{t('sub')}</p>
         </div>
-        <div className="flex items-center gap-3.5 shrink-0">
-          {pills.length > 0 && (
-            <div className="flex gap-1.5 flex-wrap">
-              {pills.map((p, i) => (
-                <span
-                  key={i}
-                  className={cn(
-                    'font-display text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap border',
-                    p.hot
-                      ? 'bg-gold-lt text-gold-text border-gold/40'
-                      : 'bg-white/70 text-ink-mid border-border',
-                  )}
-                >
-                  <b className="text-ink font-extrabold mr-0.5">{p.n}</b>
-                  {p.label.toLowerCase()}
+        <div className="flex flex-wrap items-center gap-2 md:shrink-0">
+          {chips.map(c => {
+            const active = filter === c.key
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setFilter(c.key)}
+                className={cn(
+                  'font-display text-[12px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap border transition-colors',
+                  active
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white/70 text-ink-mid border-border hover:border-primary hover:text-primary',
+                )}
+              >
+                {c.label}
+                <span className={cn('ml-1.5 text-[11px] font-bold', active ? 'opacity-80' : 'text-ink-muted')}>
+                  {counts[c.key] ?? 0}
                 </span>
-              ))}
-            </div>
-          )}
-          <Link href="/events" className="font-display text-[13px] font-bold text-primary hover:text-primary-deep transition-colors whitespace-nowrap">
+              </button>
+            )
+          })}
+          <Link
+            href="/events"
+            className="font-display text-[13px] font-bold text-primary hover:text-primary-deep transition-colors whitespace-nowrap ml-1"
+          >
             {t('seeAll', { count: events.length })}
           </Link>
         </div>
@@ -86,30 +99,36 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
       <div className="relative">
         <div
           ref={rowRef}
-          className="grid grid-flow-col auto-cols-[248px] justify-start gap-4 overflow-x-auto snap-x snap-mandatory p-[4px_4px_18px] -mx-1 [scrollbar-width:thin]"
+          className="flex md:grid md:grid-flow-col md:auto-cols-[248px] gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory px-[10%] md:px-1 -mx-1 pb-[18px] pt-1 [scrollbar-width:thin]"
         >
-          {events.map(ev => (
-            <div key={ev.id} className="snap-start">
+          {visible.length === 0 ? (
+            <div className="w-full text-center text-sm text-ink-muted py-6">{t('emptyTitle')}</div>
+          ) : visible.map(({ ev }) => (
+            <div key={ev.id} className="w-[80%] shrink-0 snap-center md:w-auto md:shrink">
               <EventCard listing={ev} now={now} />
             </div>
           ))}
         </div>
-        <button
-          type="button"
-          aria-label={t('scrollPrev')}
-          onClick={() => scroll(-360)}
-          className="absolute top-1/2 -translate-y-1/2 -left-3.5 w-8 h-8 rounded-full bg-white border border-border shadow-card flex items-center justify-center z-[5] text-ink transition-all hover:bg-primary-lt hover:text-primary hover:border-primary"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-        </button>
-        <button
-          type="button"
-          aria-label={t('scrollNext')}
-          onClick={() => scroll(360)}
-          className="absolute top-1/2 -translate-y-1/2 -right-3.5 w-8 h-8 rounded-full bg-white border border-border shadow-card flex items-center justify-center z-[5] text-ink transition-all hover:bg-primary-lt hover:text-primary hover:border-primary"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-        </button>
+        {visible.length > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label={t('scrollPrev')}
+              onClick={() => scroll(-1)}
+              className="hidden md:flex absolute top-1/2 -translate-y-1/2 -left-3.5 w-8 h-8 rounded-full bg-white border border-border shadow-card items-center justify-center z-[5] text-ink transition-all hover:bg-primary-lt hover:text-primary hover:border-primary"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <button
+              type="button"
+              aria-label={t('scrollNext')}
+              onClick={() => scroll(1)}
+              className="hidden md:flex absolute top-1/2 -translate-y-1/2 -right-3.5 w-8 h-8 rounded-full bg-white border border-border shadow-card items-center justify-center z-[5] text-ink transition-all hover:bg-primary-lt hover:text-primary hover:border-primary"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+          </>
+        )}
       </div>
     </section>
   )

@@ -71,7 +71,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     .limit(3)
   const similar = (similarRaw as unknown as ListingWithRelations[] | null) ?? []
 
-  const toneCls = urg?.tone === 'hot' ? 'bg-ink text-gold' : urg?.tone === 'warm' ? 'bg-gold text-ink' : 'bg-white/90 text-ink-mid'
+  const toneCls = urg?.tone === 'warm' ? 'bg-gold text-ink' : 'bg-white/90 text-ink-mid'
 
   return (
     <AppShell>
@@ -97,7 +97,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <div className="relative flex flex-col gap-3">
             {urg?.label && (
               <span className={`self-start inline-flex items-center gap-[5px] px-2.5 py-1 rounded-full font-display text-[10.5px] font-bold uppercase tracking-[0.08em] border border-white/50 backdrop-blur-[6px] ${toneCls}`}>
-                {urg.key === 'today' && <span className="w-1.5 h-1.5 rounded-full bg-gold pulse-gold" />}
+                {urg.key === 'thisweek' && <span className="w-1.5 h-1.5 rounded-full bg-ink/40" />}
                 {urg.label}
               </span>
             )}
@@ -152,14 +152,24 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <div className="bg-white border border-border rounded-xl p-5 shadow-card flex flex-col gap-3">
               <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted">{t('practicalDetails')}</div>
               {date && <Detail label={t('whenWhere')} value={`${date.day} ${date.dnum} ${date.mo} · ${date.time}`} />}
-              {venue && <Detail label={t('location')} value={`${venue}, Timișoara`} />}
-              <div className="rounded-lg overflow-hidden border border-border">
-                <svg viewBox="0 0 320 120" className="w-full h-[110px]" preserveAspectRatio="none" aria-hidden="true">
-                  <rect width="320" height="120" fill="#eef0f6" />
-                  <path d="M0 70 L90 55 L170 80 L250 50 L320 68" stroke="#cdd2e4" strokeWidth="3" fill="none" />
-                  <circle cx="170" cy="62" r="7" fill="#7c3aed" /><circle cx="170" cy="62" r="13" fill="#7c3aed" opacity="0.2" />
-                </svg>
-              </div>
+              {(ev.address || ev.venue_name || venue) && (
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-display text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-muted">{t('location')}</span>
+                  <span className="text-[13px] text-ink">
+                    {ev.venue_name && <span className="font-semibold">{ev.venue_name}</span>}
+                    {ev.venue_name && ev.address ? ' · ' : ''}
+                    {ev.address || (!ev.venue_name ? venue : '')}
+                  </span>
+                  {ev.maps_url && (
+                    <a href={ev.maps_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary font-display font-semibold mt-1 hover:underline">
+                      <svg width="11" height="11" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a5 5 0 0 1 5 5c0 3.5-5 8-5 8s-5-4.5-5-8a5 5 0 0 1 5-5Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="6.5" r="1.5" fill="currentColor"/></svg>
+                      {t('viewOnMaps')}
+                    </a>
+                  )}
+                </div>
+              )}
+              {ev.language && <Detail label={t('language')} value={ev.language} />}
               {ev.spots_total != null && <Detail label={t('capacity')} value={String(ev.spots_total)} />}
               <Detail label={t('ages')} value={`${ev.age_min}–${ev.age_max}`} />
             </div>

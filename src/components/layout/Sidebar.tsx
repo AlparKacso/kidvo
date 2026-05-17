@@ -11,8 +11,8 @@ import { LegalModal } from '@/components/ui/LegalModal'
 import { TermsContent, PrivacyContent } from '@/components/ui/LegalContent'
 
 /* Logo — prototype: padding 2px 8px 22px inside the aside's 14px base */
-const KidvoLogo = () => (
-  <Link href="/dashboard" className="flex items-center px-[8px] pt-[2px] pb-[22px] hover:opacity-80 transition-opacity">
+const KidvoLogo = ({ isProvider }: { isProvider: boolean }) => (
+  <Link href={isProvider ? '/dashboard' : '/browse'} className="flex items-center px-[8px] pt-[2px] pb-[22px] hover:opacity-80 transition-opacity">
     <span className="font-display font-black leading-none" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
       <span className="text-ink">kid</span>
       <span className="text-primary">vo</span>
@@ -209,7 +209,7 @@ export function Sidebar({
   return (
     <aside className="w-sidebar min-w-sidebar bg-white border-r border-border flex flex-col sticky top-0 h-screen overflow-y-auto px-[14px] pt-[20px] pb-[16px]">
 
-      <KidvoLogo />
+      <KidvoLogo isProvider={isProvider} />
 
       <nav className="flex-1 flex flex-col">
 

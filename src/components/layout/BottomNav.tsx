@@ -20,6 +20,7 @@ const IconBrowse   = () => <svg width="18" height="18" viewBox="0 0 15 15" fill=
 const IconKids     = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 13.5c0-2.5 2.4-4.5 5.5-4.5s5.5 2 5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none"/></svg>
 const IconSaved    = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M7.5 13S2 9 2 5.5a3.5 3.5 0 0 1 5.5-2.9A3.5 3.5 0 0 1 13 5.5C13 9 7.5 13 7.5 13Z" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
 const IconBookings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 3V2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+const IconEvents   = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="3" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 6h11M5 1.5v3M10 1.5v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M7.5 8l.45 1 1.05.1-.8.7.25 1.05-.95-.55-.95.55.25-1.05-.8-.7 1.05-.1z" fill="currentColor"/></svg>
 const IconSettings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
 const IconListings  = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 const IconAnalytics = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="10" width="3" height="4" rx="0.75" fill="currentColor"/><rect x="6" y="6" width="3" height="8" rx="0.75" fill="currentColor"/><rect x="11" y="2" width="3" height="12" rx="0.75" fill="currentColor"/></svg>
@@ -58,6 +59,7 @@ export function BottomNav({ isProvider = false, providerPendingTrials = 0, userE
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border flex items-stretch safe-area-bottom">
       <NavItem href="/dashboard" icon={<IconDashboard />} label={t('dashboard')} exact />
       <NavItem href="/browse"    icon={<IconBrowse />}    label={t('browse')}    exact />
+      <NavItem href="/events"    icon={<IconEvents />}    label={t('events')} />
       {!isProvider && (
         <NavItem href="/kids" icon={<IconKids />} label={t('kidsActivities')} exact />
       )}

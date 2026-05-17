@@ -148,7 +148,7 @@ export function Topbar({
           </div>
         ) : (
           <>
-            <Link href="/dashboard" className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
+            <Link href={isProvider ? '/dashboard' : '/browse'} className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
               <span style={{ color: '#1c1c27' }}>kid</span><span style={{ color: '#7c3aed' }}>vo</span>
             </Link>
             <div className="flex-1" />

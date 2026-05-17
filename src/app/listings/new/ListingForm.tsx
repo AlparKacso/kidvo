@@ -665,13 +665,14 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
                       type="button"
                       onClick={() => setType(tp)}
                       className={cn(
-                        'flex-1 py-2 rounded border font-display text-xs font-semibold transition-all',
+                        'flex-1 py-2.5 rounded border font-display transition-all text-center',
                         data.type === tp
                           ? 'bg-primary-lt border-primary text-primary'
                           : 'bg-bg border-border text-ink-mid hover:border-primary'
                       )}
                     >
-                      {t(`type_${tp}`)}
+                      <span className="block text-sm font-extrabold uppercase tracking-[0.06em]">{t(`type_${tp}_word`)}</span>
+                      <span className="block text-[10.5px] font-medium opacity-70 mt-0.5">{t(`type_${tp}`)}</span>
                     </button>
                   ))}
                 </div>
@@ -1140,6 +1141,7 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
       {showCropModal && rawImageSrc && (
         <CoverCropModal
           src={rawImageSrc}
+          variant={data.type === 'event' ? 'event' : 'activity'}
           onConfirm={(blob, previewUrl) => {
             setCoverFile(new File([blob], 'cover.jpg', { type: 'image/jpeg' }))
             setCoverPreview(previewUrl)

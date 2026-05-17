@@ -31,40 +31,30 @@ export function fmtEventDate(date: Date, locale: Locale): EventDateParts {
   return { day, dnum, mo, time, compact: `${day} ${dnum} ${mo} · ${time}` }
 }
 
-export type UrgencyKey = 'today' | 'tomorrow' | 'weekend' | 'next' | 'later'
-export type UrgencyTone = 'hot' | 'warm' | 'cool'
+// Two exhaustive buckets — every upcoming event is "this week" (starts
+// within 7 days) or "next week" (everything later). No content is hidden.
+export type UrgencyKey = 'thisweek' | 'nextweek'
+export type UrgencyTone = 'warm' | 'cool'
 
 export interface Urgency {
   key:   UrgencyKey
   tone:  UrgencyTone
-  /** null for `later` — no pill is rendered. */
-  label: string | null
+  label: string
 }
 
-const URGENCY_LABEL: Record<Locale, Record<Exclude<UrgencyKey, 'later'>, string>> = {
-  ro: { today: 'Azi', tomorrow: 'Mâine', weekend: 'Acest weekend', next: 'Săpt. viitoare' },
-  en: { today: 'Today', tomorrow: 'Tomorrow', weekend: 'This weekend', next: 'Next week' },
+const URGENCY_LABEL: Record<Locale, Record<UrgencyKey, string>> = {
+  ro: { thisweek: 'Săptămâna aceasta', nextweek: 'Săptămâna viitoare' },
+  en: { thisweek: 'This week',         nextweek: 'Next week' },
 }
 
 const DAY_MS = 86_400_000
 
 export function urgencyFor(start: Date, now: Date, locale: Locale): Urgency {
   const ms = start.getTime() - now.getTime()
-  if (ms < DAY_MS && start.toDateString() === now.toDateString()) {
-    return { key: 'today', tone: 'hot', label: URGENCY_LABEL[locale].today }
+  if (ms < 7 * DAY_MS) {
+    return { key: 'thisweek', tone: 'warm', label: URGENCY_LABEL[locale].thisweek }
   }
-  const tomorrow = new Date(now)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  if (start.toDateString() === tomorrow.toDateString()) {
-    return { key: 'tomorrow', tone: 'warm', label: URGENCY_LABEL[locale].tomorrow }
-  }
-  if (ms < 4 * DAY_MS) {
-    return { key: 'weekend', tone: 'warm', label: URGENCY_LABEL[locale].weekend }
-  }
-  if (ms < 14 * DAY_MS) {
-    return { key: 'next', tone: 'cool', label: URGENCY_LABEL[locale].next }
-  }
-  return { key: 'later', tone: 'cool', label: null }
+  return { key: 'nextweek', tone: 'cool', label: URGENCY_LABEL[locale].nextweek }
 }
 
 // Category emoji — mirrors the existing map in ActivityCard / ListingForm.

@@ -2,24 +2,24 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 
-// Locked to ActivityCard hero ratio: 800 × 600 = 4:3
-const OUT_W = 800
-const OUT_H = 600
-const ASPECT = OUT_W / OUT_H  // ≈ 1.333
-
-// Preview canvas — same width as the panel (280), height matches 4:3
-const PREVIEW_W = 280
-const PREVIEW_H = 210
-
 interface Crop { x: number; y: number; w: number; h: number }
 
 interface Props {
   src:       string                                        // data-URL of the raw file
   onConfirm: (blob: Blob, previewUrl: string) => void
   onCancel:  () => void
+  /** 'activity' → 4:3 ActivityCard hero · 'event' → 4:5 poster card */
+  variant?:  'activity' | 'event'
 }
 
-export function CoverCropModal({ src, onConfirm, onCancel }: Props) {
+export function CoverCropModal({ src, onConfirm, onCancel, variant = 'activity' }: Props) {
+  // Crop ratio matches where the image is shown: 4:3 landscape for activity
+  // cards, 4:5 portrait for the event poster card.
+  const ASPECT    = variant === 'event' ? 0.8 : 4 / 3
+  const OUT_W     = 800
+  const OUT_H     = Math.round(OUT_W / ASPECT)        // 1000 (event) | 600
+  const PREVIEW_W = 280
+  const PREVIEW_H = Math.round(PREVIEW_W / ASPECT)    // 350  (event) | 210
   const imgRef     = useRef<HTMLImageElement>(null)
   const previewRef = useRef<HTMLCanvasElement>(null)
 

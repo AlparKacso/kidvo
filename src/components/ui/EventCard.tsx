@@ -138,10 +138,7 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
     locale,
   } : null
 
-  const toneCls =
-    urgency?.tone === 'hot'  ? 'bg-ink text-gold'
-  : urgency?.tone === 'warm' ? 'bg-gold text-ink'
-  :                            'bg-white/90 text-ink-mid'
+  const toneCls = urgency?.tone === 'warm' ? 'bg-gold text-ink' : 'bg-white/90 text-ink-mid'
 
   return (
     <Link
@@ -166,7 +163,7 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
               'self-start inline-flex items-center gap-[5px] px-2.5 py-1 rounded-full font-display text-[10.5px] font-bold uppercase tracking-[0.08em] whitespace-nowrap border border-white/50 backdrop-blur-[6px] [box-shadow:0_4px_12px_rgba(0,0,0,0.16)]',
               toneCls,
             )}>
-              {urgency.key === 'today' && <span className="w-1.5 h-1.5 rounded-full bg-gold pulse-gold" />}
+              {urgency.key === 'thisweek' && <span className="w-1.5 h-1.5 rounded-full bg-ink/40" />}
               {urgency.label}
             </span>
           )}
