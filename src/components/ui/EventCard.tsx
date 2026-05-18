@@ -74,9 +74,9 @@ function CalendarMenu({ event }: { event: CalendarEvent }) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(v => !v) }}
-        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/90 border border-border text-ink backdrop-blur-[4px] transition-all hover:bg-white hover:text-primary"
+        className="w-9 h-9 flex items-center justify-center rounded-full bg-black/35 border border-white/15 text-white backdrop-blur-md transition-all hover:bg-black/45"
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" />
           <path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4" />
         </svg>
@@ -171,7 +171,7 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
 
         {/* icon row: save + calendar (top-right) */}
         <div className="absolute top-3 right-3 flex gap-1.5 z-[4]">
-          <SaveButton listingId={listing.id} initialSaved={initialSaved} variant="icon" />
+          <SaveButton listingId={listing.id} initialSaved={initialSaved} variant="poster" />
           {calEvent && <CalendarMenu event={calEvent} />}
         </div>
       </div>

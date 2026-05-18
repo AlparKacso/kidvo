@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { LegalModal } from '@/components/ui/LegalModal'
 import { TermsContent } from '@/components/ui/LegalContent'
 import { CoverCropModal } from '@/components/ui/CoverCropModal'
 import { getProviderInitials } from '@/lib/imageBrightness'
-import { bucharestLocalToUtcIso } from '@/lib/eventDate'
+import { bucharestLocalToUtcIso, fmtEventDate, categoryPalette, categoryEmoji, isFreePrice, type Locale } from '@/lib/eventDate'
 import type { Category, Area } from '@/types/database'
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -130,6 +130,8 @@ function PreviewCard({ data, categories, areas, coverPreview, providerName }: {
 }) {
   const t = useTranslations('wizard')
   const tCard = useTranslations('card')
+  const tEvents = useTranslations('events')
+  const locale = useLocale() as Locale
 
   const cat   = categories.find(c => c.id === data.category_id)
   const area  = areas.find(a => a.id === data.area_id)
@@ -140,6 +142,65 @@ function PreviewCard({ data, categories, areas, coverPreview, providerName }: {
       {t('previewEmpty')}
     </div>
   )
+
+  // ── Event poster preview (mirrors EventCard) ──
+  if (data.type === 'event') {
+    const slug = cat?.slug ?? 'other'
+    const [c1, c2, c3] = categoryPalette(slug)
+    const evEmoji = categoryEmoji(slug)
+    const startD = data.event_start_at ? new Date(data.event_start_at) : null
+    const evDate = startD && !isNaN(startD.getTime()) ? fmtEventDate(startD, locale) : null
+    const free = isFreePrice(data.price_label)
+    return (
+      <article className="relative bg-white rounded-xl border-[1.5px] border-border shadow-card-on-white flex flex-col overflow-hidden max-w-[280px]">
+        <div className="relative aspect-[4/5] overflow-hidden">
+          {coverPreview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={coverPreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className="absolute inset-0" style={{ background: `linear-gradient(155deg, ${c1} 0%, ${c2} 70%, ${c3} 110%)` }}>
+              <div className="absolute inset-0 flex items-center justify-center" style={{ fontSize: 'clamp(48px,9vw,80px)', filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.18))' }}>{evEmoji}</div>
+            </div>
+          )}
+          {evDate && (
+            <div className="absolute top-3 left-3 inline-flex flex-col items-center min-w-[60px] bg-white rounded-[12px] px-2.5 pt-2 pb-[7px] font-display border border-white/40 [box-shadow:0_8px_24px_rgba(0,0,0,0.18)]">
+              <div className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-danger leading-none">{evDate.day}</div>
+              <div className="text-[24px] font-black text-ink leading-none tracking-[-1px] mt-[3px] mb-px">{evDate.dnum}</div>
+              <div className="text-[9.5px] font-bold uppercase tracking-[0.1em] text-ink-mid leading-none">{evDate.mo}</div>
+              <div className="text-[10.5px] font-semibold text-ink leading-none mt-1.5 pt-[5px] border-t border-border w-full text-center tracking-[-0.2px]">{evDate.time}</div>
+            </div>
+          )}
+        </div>
+        <div className="px-4 pt-3.5 pb-2">
+          <div className="font-display font-extrabold text-[16px] leading-[1.25] tracking-[-0.4px] text-ink [text-wrap:balance]">
+            {data.title || t('previewTitlePlaceholder')}
+          </div>
+          {data.venue_name && (
+            <div className="inline-flex items-center gap-[5px] font-body text-[12px] text-ink-mid mt-1.5">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-muted shrink-0" aria-hidden="true">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+              </svg>
+              {data.venue_name}
+            </div>
+          )}
+        </div>
+        <div className="px-4 py-[11px] border-t border-border flex justify-between items-center gap-2.5 mt-auto">
+          <span className={cn(
+            'inline-flex items-center font-display font-extrabold text-[12.5px] tracking-[-0.2px] px-[11px] py-[5px] rounded-full whitespace-nowrap border',
+            free ? 'bg-success-lt text-success border-success/25' : 'bg-gold-lt text-ink border-gold/50',
+          )}>
+            {data.price_label || '—'}
+          </span>
+          {providerName && (
+            <div className="text-[11px] text-ink-mid leading-[1.4] text-right flex-1 min-w-0">
+              <span className="text-ink-muted">{tEvents('organizedBy')}</span>{' '}
+              <span className="text-ink font-semibold block whitespace-nowrap overflow-hidden text-ellipsis">{providerName}</span>
+            </div>
+          )}
+        </div>
+      </article>
+    )
+  }
 
   // Day labels for the meta line — use English short form to match ActivityCard
   const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
