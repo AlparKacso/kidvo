@@ -107,7 +107,7 @@
     "manyFamilies": "Multe"
   },
   "browse": {
-    "title": "Explorează activități",
+    "title": "Descoperă în Timișoara",
     "subtitle": "Timișoara · {count} {count, plural, one {activitate disponibilă} other {activități disponibile}}",
     "featured": "Activități recomandate",
     "featuredSub": "Selecție kidvo",
@@ -744,7 +744,7 @@
     "eventPricePlaceholder": "ex. Gratuit, sau 30 RON / copil"
   },
   "events": {
-    "eyebrow": "Apropiate",
+    "eyebrow": "Evenimente",
     "title": "Evenimente apropiate",
     "sub": "Întâmplări unice — concerte, ateliere, joacă.",
     "today": "Azi",
@@ -765,7 +765,7 @@
     "calIcs": "Descarcă .ics",
     "scrollPrev": "Evenimente anterioare",
     "scrollNext": "Evenimente următoare",
-    "activitiesEyebrow": "Activități recurente",
+    "activitiesEyebrow": "Activități",
     "activitiesTitle": "Programe săptămânale",
     "activitiesSub": "{count} activități active · majoritatea oferă o primă ședință gratuită",
     "activitiesCountLabel": "Activități",
@@ -784,6 +784,8 @@
     "groupLater": "Mai târziu",
     "emptyTitle": "Niciun eveniment cu acest filtru",
     "emptySub": "Încearcă alt filtru sau revino mâine — evenimente noi apar zilnic.",
+    "emptyAllTitle": "Încă niciun eveniment",
+    "emptyAllSub": "Actualizăm zilnic — revino curând.",
     "aboutEvent": "Despre eveniment",
     "whatToExpect": "La ce să te aștepți",
     "practicalDetails": "Detalii practice",

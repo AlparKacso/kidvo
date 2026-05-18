@@ -50,7 +50,7 @@ export async function AppShell({ children }: AppShellProps) {
   const [profileRes, bookingsRes, listingsRes] = await Promise.all([
     supabase.from('users').select('full_name, role').eq('id', authUser.id).single(),
     supabase.from('trial_requests').select('*', { count: 'exact', head: true }).eq('user_id', authUser.id).eq('status', 'pending'),
-    supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'activity'),
   ])
 
   const profile = profileRes.data as unknown as { full_name: string; role: string } | null

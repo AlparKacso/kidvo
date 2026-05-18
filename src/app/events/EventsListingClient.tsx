@@ -171,18 +171,27 @@ export function EventsListingClient({ events, areas, languages }: Props) {
       </div>
 
       {groups.length === 0 ? (
-        <div className="border-[1.5px] border-dashed border-border-mid rounded-[22px] p-12 text-center">
-          <div className="text-[42px] mb-2">🔍</div>
-          <div className="font-display text-base font-bold text-ink mb-1">{t('emptyTitle')}</div>
-          <div className="text-sm text-ink-mid mb-4">{t('emptySub')}</div>
-          <button
-            type="button"
-            onClick={resetAll}
-            className="inline-flex items-center font-display text-sm font-semibold px-4 py-2 rounded-full bg-primary text-white hover:bg-primary-deep transition-colors"
-          >
-            {t('filterAll')} →
-          </button>
-        </div>
+        annotated.length === 0 ? (
+          // No events exist at all (e.g. fresh prod) — not a filter result.
+          <div className="border-[1.5px] border-dashed border-border-mid rounded-[22px] p-12 text-center">
+            <div className="text-[42px] mb-2">📅</div>
+            <div className="font-display text-base font-bold text-ink mb-1">{t('emptyAllTitle')}</div>
+            <div className="text-sm text-ink-mid">{t('emptyAllSub')}</div>
+          </div>
+        ) : (
+          <div className="border-[1.5px] border-dashed border-border-mid rounded-[22px] p-12 text-center">
+            <div className="text-[42px] mb-2">🔍</div>
+            <div className="font-display text-base font-bold text-ink mb-1">{t('emptyTitle')}</div>
+            <div className="text-sm text-ink-mid mb-4">{t('emptySub')}</div>
+            <button
+              type="button"
+              onClick={resetAll}
+              className="inline-flex items-center font-display text-sm font-semibold px-4 py-2 rounded-full bg-primary text-white hover:bg-primary-deep transition-colors"
+            >
+              {t('filterAll')} →
+            </button>
+          </div>
+        )
       ) : (
         groups.map(g => (
           <div key={g.key}>

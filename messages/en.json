@@ -107,7 +107,7 @@
     "manyFamilies": "Many"
   },
   "browse": {
-    "title": "Browse activities",
+    "title": "Discover in Timișoara",
     "subtitle": "Timișoara · {count} {count, plural, one {activity available} other {activities available}}",
     "featured": "Featured activities",
     "featuredSub": "Handpicked by kidvo",
@@ -744,7 +744,7 @@
     "eventPricePlaceholder": "e.g. Free, or 30 RON / child"
   },
   "events": {
-    "eyebrow": "Coming up",
+    "eyebrow": "Events",
     "title": "Happening soon",
     "sub": "One-off — concerts, workshops, play.",
     "today": "Today",
@@ -765,7 +765,7 @@
     "calIcs": "Download .ics",
     "scrollPrev": "Previous events",
     "scrollNext": "Next events",
-    "activitiesEyebrow": "Recurring activities",
+    "activitiesEyebrow": "Activities",
     "activitiesTitle": "Weekly programs",
     "activitiesSub": "{count} active activities · most offer a free first session",
     "activitiesCountLabel": "Activities",
@@ -784,6 +784,8 @@
     "groupLater": "Later",
     "emptyTitle": "No events match this filter",
     "emptySub": "Try a different filter — or come back tomorrow, new events drop daily.",
+    "emptyAllTitle": "No events yet",
+    "emptyAllSub": "We refresh daily — check back soon.",
     "aboutEvent": "About this event",
     "whatToExpect": "What to expect",
     "practicalDetails": "Practical details",

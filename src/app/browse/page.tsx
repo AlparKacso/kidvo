@@ -175,15 +175,13 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           >
             {t('title')}
           </div>
-          <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
-            {t('subtitle', { count: total })}
-          </div>
         </div>
 
         {/* ── Coming up events band (renders only when there are upcoming events) ── */}
         <ComingUpBand events={events} />
 
-        {/* ── Activities landmark — "you've left events, this is activities" ── */}
+        {/* ── Activities landmark — only when an events band precedes it ── */}
+        {events.length > 0 && (
         <div className="pt-2 border-t border-border flex items-end justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-[7px] font-display text-[10.5px] font-bold uppercase tracking-[0.16em] text-ink-muted">
@@ -206,6 +204,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             </div>
           </div>
         </div>
+        )}
 
         {/* ── Search + filters ── */}
         <Suspense>
