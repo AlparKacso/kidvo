@@ -11,15 +11,6 @@ import { LegalModal } from '@/components/ui/LegalModal'
 import { TermsContent, PrivacyContent } from '@/components/ui/LegalContent'
 
 /* Logo — prototype: padding 2px 8px 22px inside the aside's 14px base */
-const KidvoLogo = ({ isProvider }: { isProvider: boolean }) => (
-  <Link href={isProvider ? '/dashboard' : '/browse'} className="flex items-center px-[8px] pt-[2px] pb-[22px] hover:opacity-80 transition-opacity">
-    <span className="font-display font-black leading-none" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
-      <span className="text-ink">kid</span>
-      <span className="text-primary">vo</span>
-    </span>
-  </Link>
-)
-
 interface NavItemProps {
   href:          string
   icon:          React.ReactNode
@@ -239,15 +230,40 @@ export function Sidebar({
       collapsed ? 'w-[68px] min-w-[68px] px-[10px]' : 'w-sidebar min-w-sidebar px-[14px]',
     )}>
 
-      {collapsed ? (
-        <Link href={isProvider ? '/dashboard' : '/browse'} className="flex items-center justify-center pt-[2px] pb-[22px] hover:opacity-80 transition-opacity">
-          <span className="font-display font-black leading-none" style={{ fontSize: '20px', letterSpacing: '-1px' }}>
-            <span className="text-ink">k</span><span className="text-primary">v</span>
-          </span>
-        </Link>
-      ) : (
-        <KidvoLogo isProvider={isProvider} />
-      )}
+      {(() => {
+        const ToggleBtn = (
+          <button
+            onClick={toggleCollapsed}
+            title={collapsed ? t('expand') : t('collapse')}
+            aria-label={collapsed ? t('expand') : t('collapse')}
+            className="w-7 h-7 rounded-[7px] flex items-center justify-center text-ink-muted hover:bg-sidebar-hover hover:text-ink transition-colors flex-shrink-0"
+          >
+            <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+              className={cn('transition-transform', collapsed && 'rotate-180')}>
+              <path d="M11 4l-5 5 5 5" />
+            </svg>
+          </button>
+        )
+        return collapsed ? (
+          <div className="flex flex-col items-center gap-2.5 pt-[2px] pb-[18px]">
+            <Link href={isProvider ? '/dashboard' : '/browse'} className="hover:opacity-80 transition-opacity">
+              <span className="font-display font-black leading-none" style={{ fontSize: '20px', letterSpacing: '-1px' }}>
+                <span className="text-ink">k</span><span className="text-primary">v</span>
+              </span>
+            </Link>
+            {ToggleBtn}
+          </div>
+        ) : (
+          <div className="flex items-center justify-between pt-[2px] pb-[22px] pl-[8px]">
+            <Link href={isProvider ? '/dashboard' : '/browse'} className="flex items-center hover:opacity-80 transition-opacity">
+              <span className="font-display font-black leading-none" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
+                <span className="text-ink">kid</span><span className="text-primary">vo</span>
+              </span>
+            </Link>
+            {ToggleBtn}
+          </div>
+        )
+      })()}
 
       <nav className="flex-1 flex flex-col">
 
@@ -279,25 +295,6 @@ export function Sidebar({
         </NavSection>
 
         <div className="mt-auto pt-3 flex flex-col">
-          {/* Collapse / expand toggle */}
-          <button
-            onClick={toggleCollapsed}
-            title={collapsed ? t('expand') : t('collapse')}
-            aria-label={collapsed ? t('expand') : t('collapse')}
-            className={cn(
-              'flex items-center rounded-[8px] py-[9px] font-display text-[12px] font-semibold text-ink-muted hover:bg-sidebar-hover hover:text-ink transition-colors',
-              collapsed ? 'justify-center px-0' : 'gap-[9px] px-[10px]',
-            )}
-          >
-            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
-                className={cn('transition-transform', collapsed && 'rotate-180')}>
-                <path d="M11 4l-5 5 5 5" />
-              </svg>
-            </span>
-            {!collapsed && t('collapse')}
-          </button>
-
           {!collapsed && (
             <>
               <FeedbackNudge isProvider={isProvider} />

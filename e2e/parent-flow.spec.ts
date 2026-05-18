@@ -74,8 +74,11 @@ test.describe('parent: login → browse → request trial', () => {
     await tuePill.click()
 
     // 5. Fill in a message so we can identify this row later.
+    // The detail page mounts both the desktop booking-card and the mobile
+    // sticky-CTA trial modals in the DOM (responsive), so scope to the
+    // visible one to avoid a strict-mode match on two textareas.
     const msg = `E2E test ${Date.now()}`
-    await page.locator('textarea').fill(msg)
+    await page.locator('textarea:visible').first().fill(msg)
 
     // 6. Submit.
     await page.getByRole('button', { name: /Send request|Trimite/i }).click()
