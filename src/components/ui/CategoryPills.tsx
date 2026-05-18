@@ -37,7 +37,7 @@ export function CategoryPills({ categories }: CategoryPillsProps) {
     const next = new URLSearchParams(params.toString())
     if (slug === 'all') next.delete('category')
     else next.set('category', slug)
-    router.push(`/browse?${next.toString()}`)
+    router.push(`/browse?${next.toString()}`, { scroll: false })
   }
 
   const pills: PillItem[] = [

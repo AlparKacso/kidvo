@@ -65,6 +65,15 @@ const TIMES = [
   '15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30',
   '19:00','19:30','20:00','20:30','21:00',
 ]
+// Events can be any time of day — explicit 24h list so the picker is
+// unambiguous regardless of the device locale (Romanian time).
+const EVENT_TIMES = Array.from({ length: 48 }, (_, i) =>
+  `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`,
+)
+const dtDate = (v: string) => (v ? v.split('T')[0] : '')
+const dtTime = (v: string) => (v && v.includes('T') ? v.split('T')[1].slice(0, 5) : '')
+const joinDateTime = (d: string, tm: string) => (d ? `${d}T${tm || '00:00'}` : '')
+
 const INITIAL: FormData = {
   type: 'activity',
   title: '', category_id: '', area_id: '', address: '', maps_url: '', language: ['Romanian'],
@@ -834,25 +843,45 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
             <div className="flex flex-col gap-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>{t('eventStart')}</Label>
-                  <input
-                    type="datetime-local"
-                    className={cn(inputCls, showErrors && !data.event_start_at && 'border-danger')}
-                    value={data.event_start_at}
-                    onChange={e => set('event_start_at', e.target.value)}
-                  />
+                  <Label hint={t('time24Hint')}>{t('eventStart')}</Label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      className={cn(inputCls, 'flex-1', showErrors && !data.event_start_at && 'border-danger')}
+                      value={dtDate(data.event_start_at)}
+                      onChange={e => set('event_start_at', joinDateTime(e.target.value, dtTime(data.event_start_at)))}
+                    />
+                    <select
+                      className={cn(selectCls, 'w-[110px]', showErrors && !data.event_start_at && 'border-danger')}
+                      value={dtTime(data.event_start_at)}
+                      onChange={e => set('event_start_at', joinDateTime(dtDate(data.event_start_at), e.target.value))}
+                    >
+                      <option value="">{t('timePlaceholder')}</option>
+                      {EVENT_TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+                    </select>
+                  </div>
                   {showErrors && !data.event_start_at && (
                     <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
                   )}
                 </div>
                 <div>
-                  <Label>{t('eventEnd')}</Label>
-                  <input
-                    type="datetime-local"
-                    className={cn(inputCls, ((showErrors && !data.event_end_at) || eventDatesInvalid()) && 'border-danger')}
-                    value={data.event_end_at}
-                    onChange={e => set('event_end_at', e.target.value)}
-                  />
+                  <Label hint={t('time24Hint')}>{t('eventEnd')}</Label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      className={cn(inputCls, 'flex-1', ((showErrors && !data.event_end_at) || eventDatesInvalid()) && 'border-danger')}
+                      value={dtDate(data.event_end_at)}
+                      onChange={e => set('event_end_at', joinDateTime(e.target.value, dtTime(data.event_end_at)))}
+                    />
+                    <select
+                      className={cn(selectCls, 'w-[110px]', ((showErrors && !data.event_end_at) || eventDatesInvalid()) && 'border-danger')}
+                      value={dtTime(data.event_end_at)}
+                      onChange={e => set('event_end_at', joinDateTime(dtDate(data.event_end_at), e.target.value))}
+                    >
+                      <option value="">{t('timePlaceholder')}</option>
+                      {EVENT_TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+                    </select>
+                  </div>
                   {showErrors && !data.event_end_at && (
                     <p className="text-[11px] text-danger mt-1">{t('fieldRequired')}</p>
                   )}

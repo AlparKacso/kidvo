@@ -28,14 +28,14 @@ export function SearchBar({ areas, languages }: Props) {
     values.area ? next.set('area', values.area) : next.delete('area')
     values.age  ? next.set('age',  values.age)  : next.delete('age')
     values.lang ? next.set('lang', values.lang) : next.delete('lang')
-    startTransition(() => router.push(`/browse?${next.toString()}`))
+    startTransition(() => router.push(`/browse?${next.toString()}`, { scroll: false }))
   }
 
   function clear() {
     setQ(''); setArea(''); setAge(''); setLang('')
     const next = new URLSearchParams(params.toString())
     next.delete('q'); next.delete('area'); next.delete('age'); next.delete('lang')
-    startTransition(() => router.push(`/browse?${next.toString()}`))
+    startTransition(() => router.push(`/browse?${next.toString()}`, { scroll: false }))
   }
 
   const XIcon = () => (

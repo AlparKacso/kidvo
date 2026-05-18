@@ -733,6 +733,8 @@
     "eventTitlePlaceholder": "ex. Concert pentru familii la Filarmonică",
     "eventStart": "Începe",
     "eventEnd": "Se termină",
+    "time24Hint": "Ora României, format 24h",
+    "timePlaceholder": "Ora",
     "eventDateError": "Sfârșitul trebuie să fie după început.",
     "venue": "Locație",
     "venueHint": "Locul exact unde are loc evenimentul.",

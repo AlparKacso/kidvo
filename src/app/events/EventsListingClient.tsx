@@ -17,11 +17,21 @@ interface Props {
   languages: string[]
 }
 
-const selectCls = 'font-display text-[12.5px] font-semibold text-ink-mid bg-white border border-border rounded-full px-3.5 py-1.5 outline-none focus:border-primary cursor-pointer'
+// Same pill-select styling as the activities SearchBar mobile filters.
+const pillSelect = (active: boolean) => cn(
+  'w-full px-2 py-2 rounded-full border font-display text-xs font-semibold outline-none cursor-pointer appearance-none transition-all',
+  active ? 'bg-primary-lt border-primary-border text-primary' : 'bg-white border-border text-ink-mid',
+)
+const XIcon = () => (
+  <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+    <path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+)
 
 export function EventsListingClient({ events, areas, languages }: Props) {
   const locale = useLocale() as Locale
   const t = useTranslations('events')
+  const ts = useTranslations('search')
   const now = useMemo(() => new Date(), [])
 
   const [filter, setFilter] = useState<Filter>('all')
@@ -118,20 +128,46 @@ export function EventsListingClient({ events, areas, languages }: Props) {
             })}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <select value={area} onChange={e => setArea(e.target.value)} className={`${selectCls} flex-1 min-w-0`} aria-label={t('filterArea')}>
-            <option value="">{t('filterArea')}</option>
+        <div className="grid grid-cols-3 gap-2 max-w-[680px]">
+          <select value={area} onChange={e => setArea(e.target.value)} style={{ textAlignLast: 'center' }} className={pillSelect(!!area)} aria-label={ts('allAreas')}>
+            <option value="">{ts('allAreas')}</option>
             {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-          <select value={age} onChange={e => setAge(e.target.value)} className={`${selectCls} flex-1 min-w-0`} aria-label={t('filterAge')}>
-            <option value="">{t('filterAge')}</option>
-            {Array.from({ length: 16 }, (_, i) => i + 3).map(n => <option key={n} value={n}>{n}</option>)}
+          <select value={age} onChange={e => setAge(e.target.value)} style={{ textAlignLast: 'center' }} className={pillSelect(!!age)} aria-label={ts('allAges')}>
+            <option value="">{ts('allAges')}</option>
+            {[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18].map(n => <option key={n} value={n}>{ts('ageX', { age: n })}</option>)}
           </select>
-          <select value={lang} onChange={e => setLang(e.target.value)} className={`${selectCls} flex-1 min-w-0`} aria-label={t('filterLanguage')}>
-            <option value="">{t('filterLanguage')}</option>
+          <select value={lang} onChange={e => setLang(e.target.value)} style={{ textAlignLast: 'center' }} className={pillSelect(!!lang)} aria-label={ts('allLanguages')}>
+            <option value="">{ts('allLanguages')}</option>
             {languages.map(l => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
+
+        {(area || age || lang) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {area && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-lt border border-primary-border rounded-full font-display text-xs font-semibold text-primary">
+                {areas.find(a => a.id === area)?.name}
+                <button onClick={() => setArea('')} className="hover:opacity-70 transition-opacity"><XIcon /></button>
+              </span>
+            )}
+            {age && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-lt border border-primary-border rounded-full font-display text-xs font-semibold text-primary">
+                {ts('ageX', { age })}
+                <button onClick={() => setAge('')} className="hover:opacity-70 transition-opacity"><XIcon /></button>
+              </span>
+            )}
+            {lang && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-lt border border-primary-border rounded-full font-display text-xs font-semibold text-primary">
+                🌍 {lang}
+                <button onClick={() => setLang('')} className="hover:opacity-70 transition-opacity"><XIcon /></button>
+              </span>
+            )}
+            <button onClick={() => { setArea(''); setAge(''); setLang('') }} className="font-display text-xs font-semibold text-ink-muted hover:text-danger transition-colors ml-1">
+              {ts('clearAll')}
+            </button>
+          </div>
+        )}
       </div>
 
       {groups.length === 0 ? (

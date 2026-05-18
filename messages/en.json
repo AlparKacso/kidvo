@@ -733,6 +733,8 @@
     "eventTitlePlaceholder": "e.g. Family Concert at Filarmonica",
     "eventStart": "Starts",
     "eventEnd": "Ends",
+    "time24Hint": "Romanian time, 24h",
+    "timePlaceholder": "Time",
     "eventDateError": "End must be after the start.",
     "venue": "Venue",
     "venueHint": "The specific place the event happens.",
