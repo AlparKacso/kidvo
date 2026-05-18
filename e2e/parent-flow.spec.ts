@@ -5,6 +5,7 @@ import {
   createProvider,
   createListing,
   cleanupUser,
+  dismissGates,
   E2E_PASSWORD,
 } from './fixtures'
 
@@ -48,12 +49,10 @@ test.describe('parent: login → browse → request trial', () => {
   })
 
   test('request a trial from a listing', async ({ page }) => {
-    // Dismiss the cookie banner so it can't overlay buttons.
-    await page.goto('/auth/login')
-    await page.evaluate(() => localStorage.setItem('kidvo_cookie_consent', 'accepted'))
+    // Clear the staging password gate + cookie banner, then go to login.
+    await dismissGates(page, '/auth/login')
 
     // 1. Log in via the real login form.
-    await page.goto('/auth/login')
     await page.getByPlaceholder('you@example.com').fill(parentEmail)
     await page.locator('input[type="password"]').fill(E2E_PASSWORD)
     await page.locator('button[type="submit"]').click()

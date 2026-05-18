@@ -47,10 +47,11 @@ export async function AppShell({ children }: AppShellProps) {
   let isProvider = false
   let userEmail  = authUser.email ?? ''
 
-  const [profileRes, bookingsRes, listingsRes] = await Promise.all([
+  const [profileRes, bookingsRes, listingsRes, eventsRes] = await Promise.all([
     supabase.from('users').select('full_name, role').eq('id', authUser.id).single(),
     supabase.from('trial_requests').select('*', { count: 'exact', head: true }).eq('user_id', authUser.id).eq('status', 'pending'),
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'activity'),
+    supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('type', 'event').gte('event_end_at', new Date().toISOString()),
   ])
 
   const profile = profileRes.data as unknown as { full_name: string; role: string } | null
@@ -63,6 +64,7 @@ export async function AppShell({ children }: AppShellProps) {
 
   const pendingBookings = bookingsRes.count ?? 0
   const listingsCount   = listingsRes.count ?? 0
+  const hasEvents       = (eventsRes.count ?? 0) > 0
 
   // Provider-side pending trial requests across their listings — drives the
   // nav badge so providers don't miss new bookings between dashboard visits.
@@ -95,6 +97,7 @@ export async function AppShell({ children }: AppShellProps) {
           pendingBookings={pendingBookings}
           providerPendingTrials={providerPendingTrials}
           userEmail={userEmail}
+          hasEvents={hasEvents}
         />
       </div>
 
@@ -113,7 +116,7 @@ export async function AppShell({ children }: AppShellProps) {
       </div>
 
       {/* Bottom nav — mobile only */}
-      <BottomNav isProvider={isProvider} providerPendingTrials={providerPendingTrials} userEmail={userEmail} />
+      <BottomNav isProvider={isProvider} providerPendingTrials={providerPendingTrials} userEmail={userEmail} hasEvents={hasEvents} />
     </div>
   )
 }

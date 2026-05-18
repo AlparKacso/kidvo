@@ -205,6 +205,7 @@ interface SidebarProps {
   pendingBookings?:        number
   providerPendingTrials?:  number
   userEmail?:              string
+  hasEvents?:              boolean
 }
 
 export function Sidebar({
@@ -212,6 +213,7 @@ export function Sidebar({
   pendingBookings        = 0,
   providerPendingTrials  = 0,
   userEmail              = '',
+  hasEvents              = false,
 }: SidebarProps) {
   const isAdmin = userEmail === ADMIN_EMAIL
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
@@ -252,7 +254,9 @@ export function Sidebar({
         <NavSection label={t('discover')} collapsed={collapsed}>
           <NavItem href="/dashboard" icon={<IconHome />}   label={t('dashboard')} exact collapsed={collapsed} />
           <NavItem href="/browse"    icon={<IconBrowse />} label={t('browse')}    exact collapsed={collapsed} />
-          <NavItem href="/events"    icon={<IconEvents />} label={t('events')}    newBadge={t('new')} collapsed={collapsed} />
+          {hasEvents && (
+            <NavItem href="/events"  icon={<IconEvents />} label={t('events')}    newBadge={t('new')} collapsed={collapsed} />
+          )}
         </NavSection>
 
         {!isProvider && (

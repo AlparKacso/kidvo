@@ -3,6 +3,7 @@ import {
   adminClient,
   createProvider,
   cleanupUser,
+  dismissGates,
   E2E_PASSWORD,
 } from './fixtures'
 
@@ -37,12 +38,10 @@ test.describe('provider: login → list activity → submit', () => {
 
   test('publish a new listing via the wizard', async ({ page }) => {
     test.setTimeout(120_000)
-    // Dismiss the cookie banner so it doesn't overlay the wizard buttons.
-    await page.goto('/auth/login')
-    await page.evaluate(() => localStorage.setItem('kidvo_cookie_consent', 'accepted'))
+    // Clear the staging password gate + cookie banner, then go to login.
+    await dismissGates(page, '/auth/login')
 
     // 1. Log in.
-    await page.goto('/auth/login')
     await page.getByPlaceholder('you@example.com').fill(email)
     await page.locator('input[type="password"]').fill(E2E_PASSWORD)
     await page.locator('button[type="submit"]').click()

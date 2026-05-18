@@ -13,6 +13,7 @@ interface Props {
   isProvider?:            boolean
   providerPendingTrials?: number
   userEmail?:             string
+  hasEvents?:             boolean
 }
 
 const IconDashboard = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/></svg>
@@ -52,14 +53,16 @@ function NavItem({ href, icon, label, exact, excludes, badge }: { href: string; 
   )
 }
 
-export function BottomNav({ isProvider = false, providerPendingTrials = 0, userEmail = '' }: Props) {
+export function BottomNav({ isProvider = false, providerPendingTrials = 0, userEmail = '', hasEvents = false }: Props) {
   const t       = useTranslations('nav')
   const isAdmin = userEmail === ADMIN_EMAIL
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border flex items-stretch safe-area-bottom">
       <NavItem href="/dashboard" icon={<IconDashboard />} label={t('dashboard')} exact />
       <NavItem href="/browse"    icon={<IconBrowse />}    label={t('browse')}    exact />
-      <NavItem href="/events"    icon={<IconEvents />}    label={t('events')} />
+      {hasEvents && (
+        <NavItem href="/events"  icon={<IconEvents />}    label={t('events')} />
+      )}
       {!isProvider && (
         <NavItem href="/kids" icon={<IconKids />} label={t('activities')} exact />
       )}
