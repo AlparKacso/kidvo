@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -29,30 +29,42 @@ interface NavItemProps {
   newBadge?:     string
   exact?:        boolean
   excludes?:     string[]
+  collapsed?:    boolean
 }
 
-function NavItem({ href, icon, label, badge, badgeVariant = 'purple', newBadge, exact, excludes }: NavItemProps) {
+function NavItem({ href, icon, label, badge, badgeVariant = 'purple', newBadge, exact, excludes, collapsed }: NavItemProps) {
   const pathname = usePathname()
   const active   = exact
     ? pathname === href
     : pathname.startsWith(href) && !(excludes?.some(e => pathname.startsWith(e)))
+  const hasBadge = (badge !== undefined && badge > 0) || !!newBadge
 
   return (
     <Link
       href={href}
+      title={collapsed ? label : undefined}
+      aria-label={collapsed ? label : undefined}
       className={cn(
-        'flex items-center gap-[9px] px-[10px] py-[9px] rounded-[8px] font-display text-[13.5px] font-medium transition-colors',
+        'flex items-center rounded-[8px] font-display text-[13.5px] font-medium transition-colors',
+        collapsed ? 'justify-center px-0 py-[10px]' : 'gap-[9px] px-[10px] py-[9px]',
         active
           ? 'bg-ink text-white'
           : 'text-sidebar-text hover:bg-sidebar-hover hover:text-ink'
       )}
     >
       {/* Prototype: 16×16 icons at 0.65 opacity inactive */}
-      <span className={cn('w-4 h-4 flex items-center justify-center flex-shrink-0', active ? 'opacity-100' : 'opacity-[.65]')}>
+      <span className={cn('relative w-4 h-4 flex items-center justify-center flex-shrink-0', active ? 'opacity-100' : 'opacity-[.65]')}>
         {icon}
+        {collapsed && hasBadge && (
+          <span className={cn(
+            'absolute -top-1 -right-1.5 w-2 h-2 rounded-full ring-2',
+            active ? 'ring-ink' : 'ring-white',
+            newBadge && !(badge && badge > 0) ? 'bg-gold' : 'bg-primary',
+          )} />
+        )}
       </span>
-      {label}
-      {badge !== undefined && badge > 0 && (
+      {!collapsed && label}
+      {!collapsed && badge !== undefined && badge > 0 && (
         <span
           className={cn(
             'ml-auto font-display text-[10.5px] font-bold px-[7px] py-px rounded-full',
@@ -64,7 +76,7 @@ function NavItem({ href, icon, label, badge, badgeVariant = 'purple', newBadge, 
           {badge}
         </span>
       )}
-      {newBadge && !(badge && badge > 0) && (
+      {!collapsed && newBadge && !(badge && badge > 0) && (
         <span className="ml-auto font-display text-[9px] font-bold tracking-[0.08em] uppercase px-[7px] py-px rounded-full bg-gold text-ink pulse-gold">
           {newBadge}
         </span>
@@ -74,13 +86,13 @@ function NavItem({ href, icon, label, badge, badgeVariant = 'purple', newBadge, 
 }
 
 /* Prototype: nav-section margin-bottom 20px, nav-label margin-bottom 4px */
-function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
+function NavSection({ label, children, collapsed }: { label: string; children: React.ReactNode; collapsed?: boolean }) {
   return (
     <div className="mb-[20px]">
-      <span className="block font-display text-[10.5px] font-bold tracking-[.1em] uppercase text-ink-muted px-[10px] mb-[4px]">
-        {label}
-      </span>
-      <div className="flex flex-col">
+      {collapsed
+        ? <div className="h-px bg-border/70 mx-[10px] mb-[8px]" />
+        : <span className="block font-display text-[10.5px] font-bold tracking-[.1em] uppercase text-ink-muted px-[10px] mb-[4px]">{label}</span>}
+      <div className="flex flex-col gap-0.5">
         {children}
       </div>
     </div>
@@ -203,49 +215,95 @@ export function Sidebar({
 }: SidebarProps) {
   const isAdmin = userEmail === ADMIN_EMAIL
   const [legalOpen, setLegalOpen] = useState<'terms' | 'privacy' | null>(null)
+  const [collapsed, setCollapsed] = useState(false)
   const t = useTranslations('nav')
+
+  useEffect(() => {
+    try { setCollapsed(localStorage.getItem('kidvo:sidebar-collapsed') === '1') } catch { /* ignore */ }
+  }, [])
+
+  function toggleCollapsed() {
+    setCollapsed(prev => {
+      const next = !prev
+      try { localStorage.setItem('kidvo:sidebar-collapsed', next ? '1' : '0') } catch { /* ignore */ }
+      return next
+    })
+  }
 
   /* Prototype aside: padding 20px 14px 16px, flex column */
   return (
-    <aside className="w-sidebar min-w-sidebar bg-white border-r border-border flex flex-col sticky top-0 h-screen overflow-y-auto px-[14px] pt-[20px] pb-[16px]">
+    <aside className={cn(
+      'bg-white border-r border-border flex flex-col sticky top-0 h-screen overflow-y-auto overflow-x-hidden pt-[20px] pb-[16px] transition-[width] duration-150',
+      collapsed ? 'w-[68px] min-w-[68px] px-[10px]' : 'w-sidebar min-w-sidebar px-[14px]',
+    )}>
 
-      <KidvoLogo isProvider={isProvider} />
+      {collapsed ? (
+        <Link href={isProvider ? '/dashboard' : '/browse'} className="flex items-center justify-center pt-[2px] pb-[22px] hover:opacity-80 transition-opacity">
+          <span className="font-display font-black leading-none" style={{ fontSize: '20px', letterSpacing: '-1px' }}>
+            <span className="text-ink">k</span><span className="text-primary">v</span>
+          </span>
+        </Link>
+      ) : (
+        <KidvoLogo isProvider={isProvider} />
+      )}
 
       <nav className="flex-1 flex flex-col">
 
-        <NavSection label={t('discover')}>
-          <NavItem href="/dashboard" icon={<IconHome />}   label={t('dashboard')} exact />
-          <NavItem href="/browse"    icon={<IconBrowse />} label={t('browse')}    exact />
-          <NavItem href="/events"    icon={<IconEvents />} label={t('events')}    newBadge={t('new')} />
+        <NavSection label={t('discover')} collapsed={collapsed}>
+          <NavItem href="/dashboard" icon={<IconHome />}   label={t('dashboard')} exact collapsed={collapsed} />
+          <NavItem href="/browse"    icon={<IconBrowse />} label={t('browse')}    exact collapsed={collapsed} />
+          <NavItem href="/events"    icon={<IconEvents />} label={t('events')}    newBadge={t('new')} collapsed={collapsed} />
         </NavSection>
 
         {!isProvider && (
-          <NavSection label={t('myFamily')}>
-            <NavItem href="/kids" icon={<IconKids />} label={t('kidsActivities')} badge={pendingBookings} badgeVariant="blue" exact />
+          <NavSection label={t('myFamily')} collapsed={collapsed}>
+            <NavItem href="/kids" icon={<IconKids />} label={t('kidsActivities')} badge={pendingBookings} badgeVariant="blue" exact collapsed={collapsed} />
           </NavSection>
         )}
 
         {isProvider && (
-          <NavSection label={t('myListings')}>
-            <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} badgeVariant="purple" />
+          <NavSection label={t('myListings')} collapsed={collapsed}>
+            <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} badgeVariant="purple" collapsed={collapsed} />
           </NavSection>
         )}
 
-        <NavSection label={t('account')}>
-          <NavItem href="/settings" icon={<IconSettings />} label={t('settings')} exact />
+        <NavSection label={t('account')} collapsed={collapsed}>
+          <NavItem href="/settings" icon={<IconSettings />} label={t('settings')} exact collapsed={collapsed} />
           {isAdmin && (
-            <NavItem href="/admin" icon={<IconAdmin />} label={t('admin')} exact />
+            <NavItem href="/admin" icon={<IconAdmin />} label={t('admin')} exact collapsed={collapsed} />
           )}
         </NavSection>
 
-        {/* Feedback nudge — pushed to bottom, shown for all roles */}
-        <div className="mt-auto pt-3">
-          <FeedbackNudge isProvider={isProvider} />
-          <div className="flex items-center gap-3 px-[10px] pt-4">
-            <button onClick={() => setLegalOpen('terms')}   className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">{t('terms')}</button>
-            <span className="text-border select-none">·</span>
-            <button onClick={() => setLegalOpen('privacy')} className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">{t('privacy')}</button>
-          </div>
+        <div className="mt-auto pt-3 flex flex-col">
+          {/* Collapse / expand toggle */}
+          <button
+            onClick={toggleCollapsed}
+            title={collapsed ? t('expand') : t('collapse')}
+            aria-label={collapsed ? t('expand') : t('collapse')}
+            className={cn(
+              'flex items-center rounded-[8px] py-[9px] font-display text-[12px] font-semibold text-ink-muted hover:bg-sidebar-hover hover:text-ink transition-colors',
+              collapsed ? 'justify-center px-0' : 'gap-[9px] px-[10px]',
+            )}
+          >
+            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+                className={cn('transition-transform', collapsed && 'rotate-180')}>
+                <path d="M11 4l-5 5 5 5" />
+              </svg>
+            </span>
+            {!collapsed && t('collapse')}
+          </button>
+
+          {!collapsed && (
+            <>
+              <FeedbackNudge isProvider={isProvider} />
+              <div className="flex items-center gap-3 px-[10px] pt-4">
+                <button onClick={() => setLegalOpen('terms')}   className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">{t('terms')}</button>
+                <span className="text-border select-none">·</span>
+                <button onClick={() => setLegalOpen('privacy')} className="font-display text-[11px] font-medium text-ink-muted hover:text-ink-mid transition-colors">{t('privacy')}</button>
+              </div>
+            </>
+          )}
 
       {legalOpen === 'terms'   && <LegalModal title="Terms of Use"    onClose={() => setLegalOpen(null)}><TermsContent /></LegalModal>}
       {legalOpen === 'privacy' && <LegalModal title="Privacy Policy"  onClose={() => setLegalOpen(null)}><PrivacyContent /></LegalModal>}

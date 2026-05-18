@@ -196,13 +196,6 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             </div>
             <div className="text-[13px] text-ink-mid mt-0.5">{tEvents('activitiesSub', { count: total })}</div>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="w-px h-9 bg-border" />
-            <div className="text-right">
-              <div className="font-display font-black text-ink leading-none" style={{ fontSize: '30px', letterSpacing: '-1.4px' }}>{total}</div>
-              <div className="font-display text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-muted mt-1">{tEvents('activitiesCountLabel')}</div>
-            </div>
-          </div>
         </div>
         )}
 
