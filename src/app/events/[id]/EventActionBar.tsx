@@ -34,16 +34,16 @@ export function EventActionBar({
     try { await navigator.clipboard.writeText(url); alert(t('linkCopied')) } catch { /* noop */ }
   }
 
-  const btn = 'inline-flex items-center gap-2 font-display text-[13px] font-semibold px-3 sm:px-4 py-2.5 rounded-lg border transition-colors whitespace-nowrap'
   const calItem = 'flex items-center gap-2.5 w-full text-left bg-transparent border-none px-2.5 py-2 rounded-lg font-display text-[13px] font-semibold text-ink cursor-pointer no-underline hover:bg-primary-lt hover:text-primary'
+  const iconBtn = 'w-11 h-11 shrink-0 flex items-center justify-center rounded-lg border transition-colors bg-white text-ink-mid border-border hover:border-primary hover:text-primary'
 
   return (
     <div className="flex items-stretch gap-2 w-full sm:w-auto">
       {calEvent && (
-        <div ref={calRef} className="relative flex-[2] sm:flex-none">
+        <div ref={calRef} className="relative flex-1 sm:flex-none">
           <button type="button" onClick={() => setCalOpen(v => !v)} aria-haspopup="menu" aria-expanded={calOpen}
-            className={`${btn} w-full justify-center bg-ink text-white border-ink hover:opacity-90`}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            className="w-full h-11 flex items-center justify-center gap-2 px-4 rounded-lg border border-ink bg-ink text-white font-display text-[13px] font-semibold whitespace-nowrap transition-colors hover:opacity-90">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
               <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
             {t('addToCalendar')} ▾
@@ -64,15 +64,12 @@ export function EventActionBar({
           )}
         </div>
       )}
-      <button type="button" onClick={share} className={`${btn} flex-1 sm:flex-none justify-center bg-white text-ink-mid border-border hover:border-primary hover:text-primary`}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+      <button type="button" onClick={share} aria-label={t('share')} title={t('share')} className={iconBtn}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
         </svg>
-        {t('share')}
       </button>
-      <div className="flex-1 sm:flex-none flex">
-        <SaveButton listingId={listingId} initialSaved={initialSaved} variant="full" />
-      </div>
+      <SaveButton listingId={listingId} initialSaved={initialSaved} variant="square" />
     </div>
   )
 }

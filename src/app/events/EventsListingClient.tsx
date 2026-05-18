@@ -87,27 +87,36 @@ export function EventsListingClient({ events, areas, languages }: Props) {
 
       {/* Filters — row 1: urgency chips · row 2: Area/Age/Language dropdowns */}
       <div className="flex flex-col gap-2.5">
-        <div className="flex flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {chips.map(c => {
-            const active = filter === c.key
-            return (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => setFilter(c.key)}
-                className={cn(
-                  'shrink-0 font-display text-[12.5px] font-semibold px-3.5 py-1.5 rounded-full border transition-colors',
-                  active ? 'bg-ink text-white border-ink'
-                         : 'bg-white text-ink-mid border-border hover:border-primary hover:text-primary',
-                )}
-              >
-                {c.label}
-                <span className={cn('ml-1.5 text-[11px] font-bold', active ? 'opacity-80' : 'text-ink-muted')}>
-                  {counts[c.key] ?? 0}
-                </span>
-              </button>
-            )
-          })}
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-2 sm:flex-wrap" style={{ width: 'max-content' }}>
+            {chips.map(c => {
+              const active = filter === c.key
+              const glyph = c.key === 'all' ? '✦' : '🗓'
+              const activeStyle = active
+                ? c.key === 'all'
+                  ? { background: '#1c1c27', color: '#ffffff', borderColor: '#1c1c27' }
+                  : { background: '#f0e8ff', color: '#7c3aed', borderColor: '#7c3aed' }
+                : {}
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setFilter(c.key)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full font-display text-[13px] font-semibold transition-all border-[1.5px] whitespace-nowrap',
+                    active ? '' : 'bg-white border-border text-ink-mid hover:border-primary/40 hover:text-primary hover:bg-primary-lt/50',
+                  )}
+                  style={{ padding: '6px 14px', ...activeStyle }}
+                >
+                  <span style={{ fontSize: '13px', lineHeight: 1 }}>{glyph}</span>
+                  {c.label}
+                  <span className={cn('text-[11px] font-bold', active ? 'opacity-70' : 'text-ink-muted')}>
+                    {counts[c.key] ?? 0}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <select value={area} onChange={e => setArea(e.target.value)} className={`${selectCls} flex-1 min-w-0`} aria-label={t('filterArea')}>

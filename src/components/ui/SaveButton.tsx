@@ -11,7 +11,7 @@ interface Kid { id: string; name: string }
 interface SaveButtonProps {
   listingId:    string
   initialSaved: boolean
-  variant?:     'icon' | 'full' | 'poster'   // icon = small card button, full = full-width detail page button, poster = frosted-dark circle on poster card
+  variant?:     'icon' | 'full' | 'poster' | 'square'   // icon = small card button, full = full-width detail page button, poster = frosted-dark circle on poster card, square = 44px icon-only (detail action row)
 }
 
 export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveButtonProps) {
@@ -163,6 +163,30 @@ export function SaveButton({ listingId, initialSaved, variant = 'icon' }: SaveBu
             strokeLinecap="round"
             strokeLinejoin="round"
           >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </button>
+        {Picker}
+      </div>
+    )
+  }
+
+  if (variant === 'square') {
+    return (
+      <div className="relative flex-shrink-0">
+        <button
+          onClick={toggle}
+          disabled={loading}
+          aria-label={saved ? t('removeTitle') : t('saveTitle')}
+          title={saved ? t('removeTitle') : t('saveTitle')}
+          className={cn(
+            'w-11 h-11 rounded-lg border flex items-center justify-center transition-all',
+            saved
+              ? 'bg-gold-lt border-gold text-gold-deep'
+              : 'bg-white border-border text-ink-mid hover:border-primary hover:text-primary',
+          )}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </button>

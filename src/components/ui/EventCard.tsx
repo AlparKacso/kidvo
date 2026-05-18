@@ -181,17 +181,22 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
           {listing.title}
         </div>
         {venue && (
-          <div className="inline-flex items-center gap-[5px] font-body text-[12px] text-ink-mid mt-1.5">
+          <div className="flex items-center gap-[5px] font-body text-[12px] text-ink-mid mt-1.5 min-w-0">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-muted shrink-0" aria-hidden="true">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
-            {venue}
+            <span className="truncate">{venue}</span>
+          </div>
+        )}
+        {organizer && (
+          <div className="text-[11px] text-ink-muted mt-1 truncate">
+            {t('organizedBy')} <span className="text-ink-mid font-semibold">{organizer}</span>
           </div>
         )}
       </div>
 
-      <div className="px-4 py-[11px] border-t border-border flex justify-between items-center gap-2.5 mt-auto">
+      <div className="px-4 py-[11px] border-t border-border flex items-center mt-auto">
         <span className={cn(
           'inline-flex items-center font-display font-extrabold text-[12.5px] tracking-[-0.2px] px-[11px] py-[5px] rounded-full whitespace-nowrap border',
           free
@@ -200,12 +205,6 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
         )}>
           {priceLbl}
         </span>
-        {organizer && (
-          <div className="text-[11px] text-ink-mid leading-[1.4] text-right flex-1 min-w-0">
-            <span className="text-ink-muted">{t('organizedBy')}</span>{' '}
-            <span className="text-ink font-semibold block whitespace-nowrap overflow-hidden text-ellipsis">{organizer}</span>
-          </div>
-        )}
       </div>
     </Link>
   )
