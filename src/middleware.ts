@@ -2,6 +2,16 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // ── Cron endpoints ────────────────────────────────────────────────────────
+  // /api/cron/* authenticate themselves via `Authorization: Bearer
+  // CRON_SECRET` and are hit by Vercel Cron / manual triggers that carry no
+  // session cookie. They must bypass BOTH the staging password gate and the
+  // auth redirect below — otherwise they 307 to /staging-login (staging) or
+  // /auth/login (prod) and never run.
+  if (request.nextUrl.pathname.startsWith('/api/cron/')) {
+    return NextResponse.next()
+  }
+
   // ── Staging password gate ─────────────────────────────────────────────────
   if (process.env.STAGING_PASSWORD) {
     const cookie = request.cookies.get('staging_auth')?.value
