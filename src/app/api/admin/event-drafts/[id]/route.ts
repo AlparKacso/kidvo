@@ -100,14 +100,26 @@ export async function POST(
       price_label:     draft.price_label,
       organizer_name:  draft.organizer_name,
       cover_image_url: draft.cover_image_url,
+      // Set every column schema.sql intends to default explicitly — staging
+      // has the NOT NULL constraints WITHOUT the defaults (schema drift), so
+      // relying on DB defaults fails there. Scraped events carry no age/price.
+      age_min:         3,
+      age_max:         18,
+      price_monthly:   0,
+      pricing_type:    'month',
+      language:        'Română',
+      featured:        false,
       trial_available: false,
     })
     .select('id')
     .single()
 
   if (insErr || !listing) {
-    console.error('[event-drafts] promote insert error:', insErr?.message)
-    return NextResponse.json({ error: 'Failed to create listing' }, { status: 500 })
+    console.error('[event-drafts] promote insert error:', insErr?.message, insErr?.details)
+    return NextResponse.json(
+      { error: 'Failed to create listing', detail: insErr?.message ?? null },
+      { status: 500 },
+    )
   }
 
   const listingId = (listing as { id: string }).id

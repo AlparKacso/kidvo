@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
 import { extractJsonLdEvents } from '@/lib/scrapers/jsonld'
+import { SOURCE_ADAPTERS } from '@/lib/scrapers/sources'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -35,11 +36,24 @@ export async function GET(req: NextRequest) {
         ldJsonBlocks: $('script[type="application/ld+json"]').length,
         detailAnchors: $('a[href*="/evenimente/"]').length,
         eventNodes: extractJsonLdEvents(body, t.name).length,
-        bodyHead: body.replace(/\s+/g, ' ').slice(0, 280),
+        bodyHead: body.replace(/\s+/g, ' ').slice(0, 200),
       })
     } catch (e) {
       out.push({ name: t.name, error: e instanceof Error ? e.message : String(e) })
     }
   }
-  return NextResponse.json({ ok: true, probes: out })
+
+  // Exercise the REAL adapter path (the same code the cron runs) so we can
+  // compare raw-fetch vs adapter output on the identical deployment.
+  const adapters: Record<string, unknown>[] = []
+  for (const a of SOURCE_ADAPTERS) {
+    if (!a.enabled) continue
+    try {
+      const evs = await a.fetchEvents()
+      adapters.push({ name: a.name, count: evs.length, sample: evs.slice(0, 3).map(e => ({ title: e.title, startAt: e.startAt, venue: e.venue })) })
+    } catch (e) {
+      adapters.push({ name: a.name, error: e instanceof Error ? e.message : String(e) })
+    }
+  }
+  return NextResponse.json({ ok: true, probes: out, adapters })
 }

@@ -7,6 +7,9 @@ export async function fetchHtml(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: { 'User-Agent': UA, Accept: 'text/html' },
     signal: AbortSignal.timeout(15_000),
+    // Scrapers must always hit the live site — Next.js App Router caches
+    // fetch() by default, which would serve a stale/empty body on repeat runs.
+    cache: 'no-store',
   })
   if (!res.ok) throw new Error(`${url} → ${res.status}`)
   return res.text()
