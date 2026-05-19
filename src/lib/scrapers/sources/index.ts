@@ -1,9 +1,13 @@
 import type { SourceAdapter } from '../types'
 import { exampleSource } from './example-source'
+import { onevent } from './onevent'
+import { zilesinopti } from './zilesinopti'
 
-// Registry of scraper sources. Add one entry per public Timișoara event
-// site. Disabled adapters are listed but skipped by the cron, so this is
-// safe to ship before real source URLs are provided.
+// Registry of scraper sources. Disabled adapters are listed but skipped by
+// the cron. Both live aggregators parse schema.org Event JSON-LD (robust,
+// no fragile CSS selectors); the example template stays disabled.
 export const SOURCE_ADAPTERS: SourceAdapter[] = [
+  onevent,
+  zilesinopti,
   exampleSource,
 ]
