@@ -35,6 +35,7 @@ function hexToRgba(hex: string, alpha: number): string {
 export default async function LandingPage() {
   const supabase = await createClient()
   const t = await getTranslations('landing')
+  const tCard = await getTranslations('card')
 
   const [
     { data: categoriesRaw },
@@ -47,7 +48,7 @@ export default async function LandingPage() {
     supabase.from('categories').select('slug, name, accent_color').order('sort_order'),
     supabase
       .from('listings')
-      .select('id, title, cover_image_url, price_monthly, age_min, age_max, category:categories(slug, name, accent_color), area:areas(name)')
+      .select('id, title, cover_image_url, price_monthly, pricing_type, age_min, age_max, category:categories(slug, name, accent_color), area:areas(name)')
       .eq('status', 'active')
       .not('cover_image_url', 'is', null)
       .order('featured', { ascending: false })
@@ -78,6 +79,7 @@ export default async function LandingPage() {
   const categories = (categoriesRaw ?? []) as { slug: string; name: string; accent_color: string }[]
   type ShowcaseListing = {
     id: string; title: string; cover_image_url: string | null; price_monthly: number
+    pricing_type: 'monthly' | 'session' | null
     age_min: number; age_max: number
     category: { slug: string; name: string; accent_color: string }
     area: { name: string }
@@ -320,7 +322,7 @@ export default async function LandingPage() {
                       <span className="font-display font-extrabold text-ink" style={{ fontSize: '16px' }}>
                         {act.price_monthly} RON
                       </span>
-                      <span className="text-[11px] text-ink-muted">/mo</span>
+                      <span className="text-[11px] text-ink-muted">{act.pricing_type === 'session' ? tCard('perSession') : tCard('perMonth')}</span>
                     </div>
                     <span
                       className="ml-auto whitespace-nowrap rounded-full font-display text-[12px] font-bold"
