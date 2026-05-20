@@ -205,15 +205,17 @@ export function SettingsClient({ profile, provider, email }: Props) {
                 placeholder={t('fullNamePlaceholder')} className={inputCls}
               />
             </Field>
-            <Field label={t('phoneLabel')} optional>
-              <input
-                type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                placeholder={t('phonePlaceholder')} className={inputCls}
-              />
-              {!profile?.phone && (
-                <p className="text-[11px] text-ink-muted mt-1">{t(isProvider ? 'phoneHintProvider' : 'phoneHint')}</p>
-              )}
-            </Field>
+            {!isProvider && (
+              <Field label={t('phoneLabel')} optional>
+                <input
+                  type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                  placeholder={t('phonePlaceholder')} className={inputCls}
+                />
+                {!profile?.phone && (
+                  <p className="text-[11px] text-ink-muted mt-1">{t('phoneHint')}</p>
+                )}
+              </Field>
+            )}
 
             {profileError && (
               <div className="px-3 py-2 bg-danger-lt border border-danger/20 rounded text-sm text-danger">{profileError}</div>
