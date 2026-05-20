@@ -25,10 +25,15 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-function formatDays(schedules: ListingWithRelations['schedules']): string {
+function formatDays(schedules: ListingWithRelations['schedules'], everyDayLabel: string): string {
   if (!schedules?.length) return ''
-  const days = [...new Set(schedules.map(s => DAY_LABELS[s.day_of_week]))]
-  return days.join(' + ')
+  const indices = [...new Set(schedules.map(s => s.day_of_week))].sort((a, b) => a - b)
+  if (indices.length === 7) return everyDayLabel
+  const contiguous = indices.every((d, i) => i === 0 || d === indices[i - 1] + 1)
+  if (contiguous && indices.length >= 5) {
+    return `${DAY_LABELS[indices[0]]}–${DAY_LABELS[indices[indices.length - 1]]}`
+  }
+  return indices.map(i => DAY_LABELS[i]).join(' + ')
 }
 
 interface ActivityCardProps {
@@ -47,7 +52,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
   const accent      = listing.category.accent_color
   const isFull      = (listing.spots_available ?? 1) === 0
   const isSaved     = savedIds?.includes(listing.id) ?? false
-  const days        = formatDays(listing.schedules)
+  const days        = formatDays(listing.schedules, t('everyDay'))
   const provider    = (listing.provider as { display_name?: string })?.display_name ?? ''
   const emoji       = CATEGORY_EMOJI[listing.category.slug] ?? '✨'
   const initials    = getProviderInitials(provider)
@@ -238,32 +243,18 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
         >
           {metaParts.length > 0 && (
             <div
-              className="inline-flex items-center font-display uppercase"
+              className="flex flex-col font-display uppercase"
               style={{
                 fontSize: 11,
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 color: 'rgba(255,255,255,0.85)',
-                gap: 8,
+                gap: 2,
                 marginBottom: 6,
               }}
             >
               {metaParts.map((part, i) => (
-                <span key={i} className="inline-flex items-center" style={{ gap: 8 }}>
-                  {i > 0 && (
-                    <span
-                      aria-hidden
-                      style={{
-                        width: 3,
-                        height: 3,
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.45)',
-                        display: 'inline-block',
-                      }}
-                    />
-                  )}
-                  <span>{part}</span>
-                </span>
+                <span key={i} className="line-clamp-1">{part}</span>
               ))}
             </div>
           )}

@@ -822,7 +822,8 @@
     "bookTrial": "Book trial →",
     "viewListing": "View listing →",
     "featured": "Featured",
-    "atCapacity": "At capacity · waitlist"
+    "atCapacity": "At capacity · waitlist",
+    "everyDay": "Every day"
   },
   "feedback": {
     "placeholder": "What feature or section is missing? What would help you most?",
