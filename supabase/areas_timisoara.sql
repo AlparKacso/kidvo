@@ -25,7 +25,11 @@ INSERT INTO areas (name, slug) VALUES
   ('Bega',                    'bega'),
   ('Fratelia',                'fratelia'),
   ('Calea Aradului',          'calea-aradului'),
+  ('Calea Buziașului',        'calea-buziasului'),
   ('Ghiroda Nouă',            'ghiroda-noua'),
+  ('Braytim',                 'braytim'),
+  ('Soarelui',                'soarelui'),
+  ('Aeroport',                'aeroport'),
   -- Suburbs / communes
   ('Dumbrăvița',              'dumbravita'),
   ('Ghiroda',                 'ghiroda'),

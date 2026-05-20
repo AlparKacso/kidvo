@@ -139,7 +139,7 @@
     "noSpots": "Fără locuri disponibile",
     "spotsAvailable": "Locuri disponibile",
     "bookTrial": "Solicită ședință de probă",
-    "trialCohort": "📅 Program pe cohorte — contactați-ne pentru următoarea serie",
+    "trialCohort": "📅 Grupe închise — contactați-ne pentru următoarea serie",
     "trialFull": "🔒 La capacitate maximă — verificați mai târziu",
     "trialContact": "💬 Contactați furnizorul direct pentru o vizită",
     "noTrialAvailable": "Nicio ședință de probă disponibilă — contactați furnizorul",
@@ -611,7 +611,7 @@
       {
         "icon": "🎯",
         "title": "Ședințele de probă sunt activate implicit",
-        "desc": "Fiecare anunț trebuie să ofere o ședință de probă. Dacă activitatea ta are un motiv legitim pentru care nu poate (program pe cohorte, capacitate maximă), poți explica — părinții vor vedea motivul tău."
+        "desc": "Fiecare anunț trebuie să ofere o ședință de probă. Dacă activitatea ta are un motiv legitim pentru care nu poate (grupe închise, capacitate maximă), poți explica — părinții vor vedea motivul tău."
       },
       {
         "icon": "🤝",
@@ -693,7 +693,7 @@
     "trialLabel": "Ședințe de probă",
     "trialOn": "Părinții pot rezerva o primă ședință gratuită",
     "trialOff": "Părinții vor vedea un motiv în loc de butonul de rezervare",
-    "reasonCohort": "Pe cohorte",
+    "reasonCohort": "Grupe închise",
     "reasonFull": "La capacitate maximă",
     "reasonDirect": "Contactați direct",
     "back": "Înapoi",
