@@ -54,7 +54,16 @@ export function AssistedDraftForm() {
 
   async function save() {
     setError('')
-    if (!f.title.trim()) { setError('Title is required'); return }
+    const missing: string[] = []
+    if (!f.title.trim())         missing.push('title')
+    if (!f.eventStartAt)         missing.push('start')
+    if (!f.eventEndAt)           missing.push('end')
+    if (!f.venueName.trim())     missing.push('venue')
+    if (!f.coverImageUrl.trim()) missing.push('cover image')
+    if (missing.length) {
+      setError(`Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`)
+      return
+    }
     setSaving(true)
     try {
       const res = await fetch('/api/admin/event-drafts', {
@@ -92,21 +101,21 @@ export function AssistedDraftForm() {
         </div>
       </div>
 
-      {/* Editable fields */}
+      {/* Editable fields — * marks required (also enforced server-side) */}
       <div className="bg-white border border-border rounded-lg p-4 flex flex-col gap-3">
         <Field label="Title *"><input className={inputCls} value={f.title} onChange={e => set('title', e.target.value)} /></Field>
         <Field label="Description"><textarea className={inputCls} rows={4} value={f.description} onChange={e => set('description', e.target.value)} /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Starts"><input type="datetime-local" className={inputCls} value={f.eventStartAt} onChange={e => set('eventStartAt', e.target.value)} /></Field>
-          <Field label="Ends"><input type="datetime-local" className={inputCls} value={f.eventEndAt} onChange={e => set('eventEndAt', e.target.value)} /></Field>
+          <Field label="Starts *"><input type="datetime-local" className={inputCls} value={f.eventStartAt} onChange={e => set('eventStartAt', e.target.value)} /></Field>
+          <Field label="Ends *"><input type="datetime-local" className={inputCls} value={f.eventEndAt} onChange={e => set('eventEndAt', e.target.value)} /></Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Venue"><input className={inputCls} value={f.venueName} onChange={e => set('venueName', e.target.value)} /></Field>
+          <Field label="Venue *"><input className={inputCls} value={f.venueName} onChange={e => set('venueName', e.target.value)} /></Field>
           <Field label="Price (free text)"><input className={inputCls} placeholder="Free / 30 RON" value={f.priceLabel} onChange={e => set('priceLabel', e.target.value)} /></Field>
         </div>
         <Field label="Organizer"><input className={inputCls} value={f.organizerName} onChange={e => set('organizerName', e.target.value)} /></Field>
         <Field label="Event URL"><input className={inputCls} value={f.eventUrl} onChange={e => set('eventUrl', e.target.value)} /></Field>
-        <Field label="Cover image URL"><input className={inputCls} value={f.coverImageUrl} onChange={e => set('coverImageUrl', e.target.value)} /></Field>
+        <Field label="Cover image URL *"><input className={inputCls} value={f.coverImageUrl} onChange={e => set('coverImageUrl', e.target.value)} /></Field>
       </div>
 
       {error && <div className="bg-danger-lt border border-danger/20 text-danger text-sm rounded p-3">{error}</div>}

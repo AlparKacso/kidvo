@@ -6,7 +6,7 @@ import { bucharestLocalToUtcIso } from '@/lib/eventDate'
 
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
 
-// Admin-only: create an assisted event_draft from admin-entered fields
+// Admin-only: create a manual event_draft from admin-entered fields
 // (after they've prefilled via fetch-meta and corrected). Lands in the
 // same review queue as scraped drafts.
 export async function POST(request: Request) {
@@ -20,29 +20,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  if (!body.title?.trim()) {
-    return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+  // Required fields per events rules (2026-05-21): title, start, end,
+  // venue, cover image. Optional: organizer, price, description, event URL.
+  const missing: string[] = []
+  if (!body.title?.trim())         missing.push('title')
+  if (!body.eventStartAt)          missing.push('start')
+  if (!body.eventEndAt)            missing.push('end')
+  if (!body.venueName?.trim())     missing.push('venue')
+  if (!body.coverImageUrl?.trim()) missing.push('cover image')
+  if (missing.length) {
+    return NextResponse.json(
+      { error: `Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}` },
+      { status: 400 },
+    )
   }
 
-  const externalId = (body.eventUrl || `${body.title}|${body.eventStartAt ?? ''}`).trim()
+  const externalId = (body.eventUrl || `${body.title}|${body.eventStartAt}`).trim()
   const adminDb = createAdminClient()
 
   const { error } = await adminDb
     .from('event_drafts')
     .upsert({
-      source:          'assisted',
+      source:          'manual',
       external_id:     externalId,
-      dedup_hash:      dedupHash('assisted', externalId),
+      dedup_hash:      dedupHash('manual', externalId),
       raw_payload:     body,
       title:           body.title.trim(),
       description:     body.description || null,
-      event_start_at:  body.eventStartAt ? bucharestLocalToUtcIso(body.eventStartAt) : null,
-      event_end_at:    body.eventEndAt   ? bucharestLocalToUtcIso(body.eventEndAt)   : null,
+      event_start_at:  bucharestLocalToUtcIso(body.eventStartAt),
+      event_end_at:    bucharestLocalToUtcIso(body.eventEndAt),
       event_url:       body.eventUrl || null,
-      venue_name:      body.venueName || null,
+      venue_name:      body.venueName.trim(),
       price_label:     body.priceLabel || null,
       organizer_name:  body.organizerName || null,
-      cover_image_url: body.coverImageUrl || null,
+      cover_image_url: body.coverImageUrl.trim(),
       status:          'new',
     }, { onConflict: 'dedup_hash' })
 
