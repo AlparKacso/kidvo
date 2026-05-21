@@ -125,6 +125,14 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
   const priceLbl  = listing.price_label || '—'
   const free      = isFreePrice(listing.price_label)
 
+  // Scraped events link externally to the source — they have no internal
+  // detail page. The check uses `organizer_name` *raw* (not the fallback
+  // chain) because scraped rows fall back to provider "Kidvo Events", which
+  // would make the "Found by" branch unreachable.
+  const isScraped    = (listing.source ?? '').startsWith('scraper:')
+  const externalHref = isScraped && listing.event_url ? listing.event_url : null
+  const showFoundBy  = isScraped && !listing.organizer_name
+
   const date    = start ? fmtEventDate(start, locale) : null
   const urgency = start ? urgencyFor(start, now ?? new Date(), locale) : null
 
@@ -140,11 +148,10 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
 
   const toneCls = urgency?.tone === 'warm' ? 'bg-gold text-ink' : 'bg-white/90 text-ink-mid'
 
-  return (
-    <Link
-      href={`/events/${listing.id}`}
-      className="relative flex flex-col bg-white border-[1.5px] border-border rounded-xl shadow-card overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-card-hover no-underline"
-    >
+  const wrapperCls = "relative flex flex-col bg-white border-[1.5px] border-border rounded-xl shadow-card overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:shadow-card-hover no-underline"
+
+  const inner = (
+    <>
       <div className="relative overflow-hidden aspect-[4/5]">
         <PosterCover slug={slug} emoji={emoji} cover={cover} />
 
@@ -179,6 +186,16 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
       <div className="px-4 pt-3.5 pb-2">
         <div className="font-display font-extrabold text-[16px] leading-[1.25] tracking-[-0.4px] text-ink [text-wrap:balance]">
           {listing.title}
+          {externalHref && (
+            <svg
+              className="inline-block ml-1 mb-[3px] text-ink-muted"
+              width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+            >
+              <path d="M14 3h7v7" />
+              <path d="M10 14L21 3" />
+              <path d="M21 14v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h6" />
+            </svg>
+          )}
         </div>
         {venue && (
           <div className="flex items-center gap-[5px] font-body text-[12px] text-ink-mid mt-1.5 min-w-0">
@@ -189,11 +206,15 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
             <span className="truncate">{venue}</span>
           </div>
         )}
-        {organizer && (
+        {showFoundBy ? (
+          <div className="text-[11px] text-ink-muted mt-1 truncate">
+            <span className="text-ink-mid font-semibold">{t('foundBy')}</span>
+          </div>
+        ) : organizer ? (
           <div className="text-[11px] text-ink-muted mt-1 truncate">
             {t('organizedBy')} <span className="text-ink-mid font-semibold">{organizer}</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="px-4 py-[11px] border-t border-border flex items-center mt-auto">
@@ -206,6 +227,16 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
           {priceLbl}
         </span>
       </div>
+    </>
+  )
+
+  return externalHref ? (
+    <a href={externalHref} target="_blank" rel="noopener nofollow" className={wrapperCls}>
+      {inner}
+    </a>
+  ) : (
+    <Link href={`/events/${listing.id}`} className={wrapperCls}>
+      {inner}
     </Link>
   )
 }

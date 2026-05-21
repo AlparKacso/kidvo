@@ -86,12 +86,13 @@ export interface Database {
         Row: {
           id:              string
           provider_id:     string
-          category_id:     string
-          area_id:         string
+          category_id:     string | null
+          area_id:         string | null
           title:           string
           description:     string | null
-          age_min:         number
-          age_max:         number
+          age_min:         number | null
+          age_max:         number | null
+          source:          string
           price_monthly:   number
           spots_total:     number | null
           spots_available: number | null

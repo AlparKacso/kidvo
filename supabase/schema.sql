@@ -77,12 +77,15 @@ CREATE TABLE IF NOT EXISTS public.providers (
 CREATE TABLE IF NOT EXISTS public.listings (
   id                    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   provider_id           UUID        NOT NULL REFERENCES public.providers(id) ON DELETE CASCADE,
-  category_id           UUID        NOT NULL REFERENCES public.categories(id),
-  area_id               UUID        NOT NULL REFERENCES public.areas(id),
+  -- category/area/age are required for type='activity' (enforced by the
+  -- listings_activity_shape_chk CHECK below) and NULL for type='event'.
+  category_id           UUID        REFERENCES public.categories(id),
+  area_id               UUID        REFERENCES public.areas(id),
   title                 TEXT        NOT NULL,
   description           TEXT,
-  age_min               INTEGER     NOT NULL DEFAULT 3,
-  age_max               INTEGER     NOT NULL DEFAULT 18,
+  age_min               INTEGER,
+  age_max               INTEGER,
+  source                TEXT        NOT NULL DEFAULT 'manual',  -- 'manual' | 'scraper:<adapter>'
   price_monthly         NUMERIC     NOT NULL DEFAULT 0,
   pricing_type          TEXT        NOT NULL DEFAULT 'month'
                                     CHECK (pricing_type IN ('month', 'session')),
@@ -113,6 +116,22 @@ CREATE TABLE IF NOT EXISTS public.listings (
 
 CREATE INDEX IF NOT EXISTS listings_type_idx         ON public.listings(type);
 CREATE INDEX IF NOT EXISTS listings_event_end_at_idx ON public.listings(event_end_at);
+CREATE INDEX IF NOT EXISTS listings_source_idx       ON public.listings(source);
+
+-- Activities must carry category/area/age; events may NULL them.
+ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_activity_shape_chk;
+ALTER TABLE public.listings ADD CONSTRAINT listings_activity_shape_chk CHECK (
+  type <> 'activity' OR (
+    category_id IS NOT NULL AND area_id IS NOT NULL
+    AND age_min IS NOT NULL AND age_max IS NOT NULL
+  )
+);
+
+-- Scraped events have no internal detail page — the card links to event_url.
+ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_scraped_event_url_chk;
+ALTER TABLE public.listings ADD CONSTRAINT listings_scraped_event_url_chk CHECK (
+  type <> 'event' OR source = 'manual' OR event_url IS NOT NULL
+);
 
 -- listing_schedules
 CREATE TABLE IF NOT EXISTS public.listing_schedules (

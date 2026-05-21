@@ -186,26 +186,23 @@ function ReviewRow({ review, onModerate }: {
   )
 }
 
-function EventDraftRow({ draft, categories, areas, onResolve }: {
+function EventDraftRow({ draft, onResolve }: {
   draft: any
-  categories: { id: string; name: string; slug: string }[]
-  areas: { id: string; name: string }[]
   onResolve: (id: string) => void
 }) {
   const [loading, setLoading] = useState(false)
   const [confirm, setConfirm] = useState<string | null>(null)
   const [showRaw, setShowRaw] = useState(false)
-  const [categoryId, setCategoryId] = useState<string>(draft.suggested_category_id ?? '')
-  const [areaId, setAreaId]         = useState<string>(draft.suggested_area_id ?? '')
 
-  const canApprove = !!draft.title && !!categoryId && !!areaId
+  const isScraped  = typeof draft.source === 'string' && draft.source.startsWith('scraper:')
+  const canApprove = !!draft.title && (!isScraped || !!draft.event_url)
 
   async function resolve(action: 'approve' | 'reject') {
     setLoading(true)
     const res = await fetch(`/api/admin/event-drafts/${draft.id}`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action, categoryId, areaId }),
+      body:    JSON.stringify({ action }),
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
@@ -242,20 +239,6 @@ function EventDraftRow({ draft, categories, areas, onResolve }: {
             <p className="text-xs text-ink-mid bg-bg rounded px-2.5 py-2 mb-2 whitespace-pre-wrap">{draft.description}</p>
           )}
 
-          {/* Category + area picker (listings FKs are NOT NULL) */}
-          <div className="flex gap-2 flex-wrap mb-1">
-            <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
-              className="text-xs border border-border rounded px-2 py-1.5 bg-white text-ink">
-              <option value="">Category…</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <select value={areaId} onChange={e => setAreaId(e.target.value)}
-              className="text-xs border border-border rounded px-2 py-1.5 bg-white text-ink">
-              <option value="">Area…</option>
-              {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-          </div>
-
           {draft.raw_payload && (
             <button onClick={() => setShowRaw(v => !v)} className="text-[11px] text-ink-muted hover:text-primary transition-colors">
               {showRaw ? '▾ Hide' : '▸ Show'} raw payload
@@ -277,7 +260,7 @@ function EventDraftRow({ draft, categories, areas, onResolve }: {
             <button
               onClick={() => setConfirm('approve')}
               disabled={!canApprove}
-              title={canApprove ? '' : 'Needs a title, category and area'}
+              title={canApprove ? '' : isScraped ? 'Scraped draft needs a title and source URL' : 'Draft needs a title'}
               className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-success text-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >
               ✓ Approve
@@ -522,8 +505,6 @@ interface Props {
   slowProviderCount: number
   allProviders:      ProviderSummary[]
   eventDrafts:       any[]
-  categories:        { id: string; name: string; slug: string }[]
-  areas:             { id: string; name: string }[]
   stats:             Stats
 }
 
@@ -607,7 +588,7 @@ function EmailListModal({ emails, title, onClose }: { emails: string[]; title?: 
   )
 }
 
-export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, providerEmails, slowTrials, slowProviderCount, allProviders, eventDrafts: initialEventDrafts, categories, areas, stats }: Props) {
+export function AdminClient({ pending: initialPending, active: initialActive, paused: initialPaused, pendingReviews: initialReviews, parentEmails, providerEmails, slowTrials, slowProviderCount, allProviders, eventDrafts: initialEventDrafts, stats }: Props) {
   const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([
     ...initialPending,
@@ -711,7 +692,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
           {eventDrafts.length > 0 ? (
             <div className="flex flex-col gap-3">
               {eventDrafts.map(d => (
-                <EventDraftRow key={d.id} draft={d} categories={categories} areas={areas} onResolve={handleDraftResolved} />
+                <EventDraftRow key={d.id} draft={d} onResolve={handleDraftResolved} />
               ))}
             </div>
           ) : (

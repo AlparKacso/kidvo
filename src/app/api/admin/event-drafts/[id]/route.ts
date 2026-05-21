@@ -61,13 +61,19 @@ export async function POST(
   if (!draft.title) {
     return NextResponse.json({ error: 'Draft has no title — cannot publish' }, { status: 400 })
   }
-  // listings.category_id / area_id are NOT NULL. Admin picks them on approve;
-  // fall back to the draft's suggested values.
-  const finalCategory = categoryId || draft.suggested_category_id
-  const finalArea     = areaId     || draft.suggested_area_id
-  if (!finalCategory || !finalArea) {
-    return NextResponse.json({ error: 'Pick a category and area before approving' }, { status: 400 })
+  // Scraped events have no internal detail page — the card links to the
+  // source URL. Without it there's nowhere to send the user.
+  const isScraped = typeof draft.source === 'string' && draft.source.startsWith('scraper:')
+  if (isScraped && !draft.event_url) {
+    return NextResponse.json(
+      { error: 'Scraped event missing source URL — cannot publish' },
+      { status: 400 },
+    )
   }
+  // Events promote with NULL category/area/age. Admin may still override via
+  // the request body (existing UI), but it's no longer required.
+  const finalCategory = categoryId || draft.suggested_category_id || null
+  const finalArea     = areaId     || draft.suggested_area_id     || null
 
   const { data: prov, error: provErr } = await adminDb
     .from('providers')
@@ -91,6 +97,7 @@ export async function POST(
       title:           draft.title,
       description:     draft.description,
       type:            'event',
+      source:          draft.source,
       status:          'active',
       published_at:    new Date().toISOString(),
       event_start_at:  draft.event_start_at,
@@ -100,11 +107,11 @@ export async function POST(
       price_label:     draft.price_label,
       organizer_name:  draft.organizer_name,
       cover_image_url: draft.cover_image_url,
-      // Set every column schema.sql intends to default explicitly — staging
-      // has the NOT NULL constraints WITHOUT the defaults (schema drift), so
-      // relying on DB defaults fails there. Scraped events carry no age/price.
-      age_min:         3,
-      age_max:         18,
+      // Events promote with NULL age (no Age/Zone/Category at any point in
+      // the events flow). The activity-shaped columns below stay defensive:
+      // staging has them NOT NULL without defaults (schema drift).
+      age_min:         null,
+      age_max:         null,
       price_monthly:   0,
       pricing_type:    'month',
       language:        'Română',
