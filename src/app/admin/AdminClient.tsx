@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { bucharestLocalToUtcIso, utcIsoToBucharestLocal } from '@/lib/eventDate'
+import { CoverCropModal } from '@/components/ui/CoverCropModal'
 
 const STATUS_STYLES: Record<string, string> = {
   active:  'bg-success-lt text-success',
@@ -17,6 +18,15 @@ type Listing = any
 
 // ── Inline event-card editor ─────────────────────────────────────────────────
 const editInputCls = 'w-full px-2.5 py-1.5 border border-border rounded bg-white font-body text-xs text-ink outline-none focus:border-primary transition-all'
+
+// 24h time list — 30-min steps, locale-independent (matches the wizard).
+const EVENT_TIMES = Array.from({ length: 48 }, (_, i) =>
+  `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`,
+)
+// Helpers over a combined "YYYY-MM-DDTHH:mm" value (the datetime-local shape).
+const dtDate = (v: string) => (v ? v.split('T')[0] : '')
+const dtTime = (v: string) => (v && v.includes('T') ? v.split('T')[1].slice(0, 5) : '')
+const joinDateTime = (d: string, tm: string) => (d ? `${d}T${tm || '00:00'}` : '')
 
 function EditField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -46,9 +56,26 @@ function EventFieldsEditor({ row, endpoint, onCancel, onSaved }: {
     organizerName: row.organizer_name ?? '',
     coverImageUrl: row.cover_image_url ?? '',
   })
-  const [saving, setSaving] = useState(false)
-  const [error, setError]   = useState('')
+  const [saving, setSaving]       = useState(false)
+  const [error, setError]         = useState('')
+  const [rawImageSrc, setRawSrc]  = useState('')
+  const [showCrop, setShowCrop]   = useState(false)
+  const [uploading, setUploading] = useState(false)
   function set<K extends keyof typeof f>(k: K, v: string) { setF(prev => ({ ...prev, [k]: v })) }
+
+  async function uploadCover(blob: Blob) {
+    setShowCrop(false)
+    setRawSrc('')
+    setUploading(true)
+    setError('')
+    const fd = new FormData()
+    fd.append('file', new File([blob], 'cover.jpg', { type: 'image/jpeg' }))
+    const res = await fetch('/api/admin/event-cover', { method: 'POST', body: fd })
+    const body = await res.json().catch(() => ({}))
+    setUploading(false)
+    if (!res.ok) { setError(body.error ?? 'Image upload failed'); return }
+    set('coverImageUrl', body.url)
+  }
 
   async function save() {
     setError('')
@@ -82,24 +109,80 @@ function EventFieldsEditor({ row, endpoint, onCancel, onSaved }: {
       <EditField label="Title *"><input className={editInputCls} value={f.title} onChange={e => set('title', e.target.value)} /></EditField>
       <EditField label="Description"><textarea className={editInputCls} rows={3} value={f.description} onChange={e => set('description', e.target.value)} /></EditField>
       <div className="grid grid-cols-2 gap-2">
-        <EditField label="Starts *"><input type="datetime-local" className={editInputCls} value={f.eventStartAt} onChange={e => set('eventStartAt', e.target.value)} /></EditField>
-        <EditField label="Ends *"><input type="datetime-local" className={editInputCls} value={f.eventEndAt} onChange={e => set('eventEndAt', e.target.value)} /></EditField>
+        <EditField label="Starts *">
+          <div className="flex gap-1.5">
+            <input type="date" className={editInputCls} value={dtDate(f.eventStartAt)}
+              onChange={e => set('eventStartAt', joinDateTime(e.target.value, dtTime(f.eventStartAt)))} />
+            <select className={cn(editInputCls, 'w-[84px]')} value={dtTime(f.eventStartAt)}
+              onChange={e => set('eventStartAt', joinDateTime(dtDate(f.eventStartAt), e.target.value))}>
+              <option value="">––:––</option>
+              {EVENT_TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+            </select>
+          </div>
+        </EditField>
+        <EditField label="Ends *">
+          <div className="flex gap-1.5">
+            <input type="date" className={editInputCls} value={dtDate(f.eventEndAt)}
+              onChange={e => set('eventEndAt', joinDateTime(e.target.value, dtTime(f.eventEndAt)))} />
+            <select className={cn(editInputCls, 'w-[84px]')} value={dtTime(f.eventEndAt)}
+              onChange={e => set('eventEndAt', joinDateTime(dtDate(f.eventEndAt), e.target.value))}>
+              <option value="">––:––</option>
+              {EVENT_TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+            </select>
+          </div>
+        </EditField>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <EditField label="Venue"><input className={editInputCls} value={f.venueName} onChange={e => set('venueName', e.target.value)} /></EditField>
         <EditField label="Price"><input className={editInputCls} placeholder="Free / 30 RON" value={f.priceLabel} onChange={e => set('priceLabel', e.target.value)} /></EditField>
       </div>
       <EditField label="Organizer"><input className={editInputCls} value={f.organizerName} onChange={e => set('organizerName', e.target.value)} /></EditField>
-      <EditField label="Cover image URL"><input className={editInputCls} value={f.coverImageUrl} onChange={e => set('coverImageUrl', e.target.value)} /></EditField>
+      <EditField label="Cover image">
+        <div className="flex items-start gap-3">
+          <div className="w-16 h-20 rounded border border-border bg-surface overflow-hidden flex-shrink-0 flex items-center justify-center">
+            {f.coverImageUrl
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={f.coverImageUrl} alt="" className="w-full h-full object-cover" />
+              : <span className="text-ink-muted text-[10px]">none</span>}
+          </div>
+          <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+            <label className={cn(
+              'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-border bg-white font-display text-[11px] font-semibold text-ink-mid transition-all self-start',
+              uploading ? 'opacity-50 cursor-default' : 'cursor-pointer hover:border-primary hover:text-primary',
+            )}>
+              {uploading ? 'Uploading…' : f.coverImageUrl ? 'Replace photo' : 'Upload photo'}
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploading}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = () => { setRawSrc(reader.result as string); setShowCrop(true) }
+                  reader.readAsDataURL(file)
+                  e.target.value = ''
+                }} />
+            </label>
+            <input className={editInputCls} placeholder="or paste an image URL"
+              value={f.coverImageUrl} onChange={e => set('coverImageUrl', e.target.value)} />
+          </div>
+        </div>
+      </EditField>
       {error && <div className="bg-danger-lt border border-danger/20 text-danger text-xs rounded p-2">{error}</div>}
       <div className="flex gap-2">
-        <button onClick={save} disabled={saving} className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-success text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
+        <button onClick={save} disabled={saving || uploading} className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-success text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
           {saving ? 'Saving…' : 'Save'}
         </button>
         <button onClick={onCancel} disabled={saving} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">
           Cancel
         </button>
       </div>
+      {showCrop && rawImageSrc && (
+        <CoverCropModal
+          src={rawImageSrc}
+          variant="event"
+          onConfirm={blob => { uploadCover(blob) }}
+          onCancel={() => { setShowCrop(false); setRawSrc('') }}
+        />
+      )}
     </div>
   )
 }
