@@ -187,10 +187,13 @@ function EventFieldsEditor({ row, endpoint, onCancel, onSaved }: {
   )
 }
 
-function ListingRow({ listing, onStatusChange, onUpdate }: {
+function ListingRow({ listing, onStatusChange, onUpdate, selected, onToggleSelect, onUnmerge }: {
   listing: Listing
   onStatusChange: (id: string, status: string) => void
   onUpdate: (id: string, patch: Record<string, unknown>) => void
+  selected?: boolean
+  onToggleSelect?: (id: string) => void
+  onUnmerge?: (id: string) => void
 }) {
   const [loading, setLoading] = useState(false)
   const [confirm, setConfirm] = useState<string | null>(null)
@@ -221,7 +224,22 @@ function ListingRow({ listing, onStatusChange, onUpdate }: {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             {isEvent ? (
-              <span className="font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-lt text-primary">{listing.source ?? 'event'}</span>
+              <>
+                <input
+                  type="checkbox"
+                  checked={!!selected}
+                  onChange={() => onToggleSelect?.(listing.id)}
+                  title="Select to merge into a series"
+                  className="w-3.5 h-3.5 accent-primary cursor-pointer flex-shrink-0"
+                />
+                <span className="font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-lt text-primary">{listing.source ?? 'event'}</span>
+                {listing.series_id && (
+                  <span className="font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-gold-lt text-gold-text inline-flex items-center gap-1">
+                    series
+                    <button onClick={() => onUnmerge?.(listing.id)} title="Remove from series" className="hover:text-danger transition-colors">✕</button>
+                  </span>
+                )}
+              </>
             ) : (
               <>
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: category?.accent_color }} />
@@ -819,6 +837,49 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
   const [showProviderEmails, setShowProviderEmails] = useState(false)
   const [showSlowProviders,  setShowSlowProviders]  = useState(false)
   const [showAllProviders,   setShowAllProviders]   = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [merging, setMerging]   = useState(false)
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function mergeSelected() {
+    const ids = [...selected]
+    if (ids.length < 2) return
+    setMerging(true)
+    const res = await fetch('/api/admin/listings/series', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'merge', listingIds: ids }),
+    })
+    const body = await res.json().catch(() => ({}))
+    setMerging(false)
+    if (!res.ok) { alert(body.error ?? 'Failed to merge'); return }
+    setListings(prev => prev.map(l => selected.has(l.id) ? { ...l, series_id: body.seriesId } : l))
+    setSelected(new Set())
+    router.refresh()
+  }
+
+  async function unmergeOne(id: string) {
+    const res = await fetch('/api/admin/listings/series', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'unmerge', listingIds: [id] }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      alert(body.error ?? 'Failed to unmerge')
+      return
+    }
+    setListings(prev => prev.map(l => l.id === id ? { ...l, series_id: null } : l))
+    router.refresh()
+  }
 
   function handleStatusChange(id: string, status: string) {
     setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l))
@@ -903,6 +964,26 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
           <AllProvidersModal providers={allProviders} onClose={() => setShowAllProviders(false)} />
         )}
 
+        {/* Merge bar — appears when ≥2 event rows are checkbox-selected */}
+        {selected.size >= 2 && (
+          <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[400] flex items-center gap-3 bg-ink text-white rounded-full pl-4 pr-2 py-2 shadow-card-hover">
+            <span className="font-display text-xs font-semibold whitespace-nowrap">{selected.size} events selected</span>
+            <button
+              onClick={mergeSelected}
+              disabled={merging}
+              className="px-3 py-1.5 rounded-full bg-primary text-white font-display text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity whitespace-nowrap"
+            >
+              {merging ? 'Merging…' : 'Merge into series'}
+            </button>
+            <button
+              onClick={() => setSelected(new Set())}
+              className="px-2.5 py-1.5 rounded-full font-display text-xs font-semibold text-white/70 hover:text-white transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
         {/* Event drafts pending review (scraped / assisted ingestion) */}
         <div className="mb-8">
           <div className="flex items-center justify-between gap-2 mb-3">
@@ -959,7 +1040,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
               <span className="w-5 h-5 rounded-full bg-gold-lt text-gold-text font-display text-[10px] font-bold flex items-center justify-center">{pending.length}</span>
             </div>
             <div className="flex flex-col gap-3">
-              {pending.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} />)}
+              {pending.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} selected={selected.has(l.id)} onToggleSelect={toggleSelect} onUnmerge={unmergeOne} />)}
             </div>
           </div>
         )}
@@ -976,7 +1057,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
           <div className="mb-8">
             <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted mb-3">Active listings</div>
             <div className="flex flex-col gap-3">
-              {active.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} />)}
+              {active.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} selected={selected.has(l.id)} onToggleSelect={toggleSelect} onUnmerge={unmergeOne} />)}
             </div>
           </div>
         )}
@@ -986,7 +1067,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
           <div>
             <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted mb-3">Paused listings</div>
             <div className="flex flex-col gap-3">
-              {paused.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} />)}
+              {paused.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} selected={selected.has(l.id)} onToggleSelect={toggleSelect} onUnmerge={unmergeOne} />)}
             </div>
           </div>
         )}
