@@ -93,6 +93,7 @@ export interface Database {
           age_min:         number | null
           age_max:         number | null
           source:          string
+          series_id:       string | null
           price_monthly:   number
           spots_total:     number | null
           spots_available: number | null

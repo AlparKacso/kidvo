@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { EventCard } from '@/components/ui/EventCard'
 import { urgencyFor, type Locale, type UrgencyKey } from '@/lib/eventDate'
+import { groupEventsBySeries } from '@/lib/events/series'
 import type { ListingWithRelations } from '@/types/database'
 
 type Filter = 'all' | UrgencyKey
@@ -22,10 +23,14 @@ export function EventsListingClient({ events }: Props) {
 
   const [filter, setFilter] = useState<Filter>('all')
 
+  // One entry per series (or standalone event) — repeating occurrences
+  // collapse to their next-upcoming lead.
   const annotated = useMemo(() =>
-    events
-      .filter(e => e.event_start_at)
-      .map(e => ({ ev: e, key: urgencyFor(new Date(e.event_start_at!), now, locale).key })),
+    groupEventsBySeries(events).map(g => ({
+      ev:    g.lead,
+      extra: g.extraCount,
+      key:   urgencyFor(new Date(g.lead.event_start_at!), now, locale).key,
+    })),
     [events, now, locale])
 
   const counts = useMemo(() => ({
@@ -37,7 +42,7 @@ export function EventsListingClient({ events }: Props) {
   const visible = filter === 'all' ? annotated : annotated.filter(a => a.key === filter)
 
   const groups = BUCKET_ORDER
-    .map(key => ({ key, items: visible.filter(a => a.key === key).map(a => a.ev) }))
+    .map(key => ({ key, items: visible.filter(a => a.key === key) }))
     .filter(g => g.items.length > 0)
 
   const groupLabel: Record<UrgencyKey, string> = { thisweek: t('thisWeek'), nextweek: t('nextWeek') }
@@ -130,7 +135,7 @@ export function EventsListingClient({ events }: Props) {
               <span className="w-5 h-5 rounded-full bg-primary-lt text-primary font-display text-[10px] font-bold flex items-center justify-center">{g.items.length}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {g.items.map(ev => <EventCard key={ev.id} listing={ev} now={now} />)}
+              {g.items.map(a => <EventCard key={a.ev.id} listing={a.ev} seriesCount={a.extra} now={now} />)}
             </div>
           </div>
         ))

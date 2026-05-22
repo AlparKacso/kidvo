@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
   age_min               INTEGER,
   age_max               INTEGER,
   source                TEXT        NOT NULL DEFAULT 'manual',  -- 'manual' | 'scraper:<adapter>'
+  series_id             UUID,                                   -- groups repeating event occurrences; NULL = standalone
   price_monthly         NUMERIC     NOT NULL DEFAULT 0,
   pricing_type          TEXT        NOT NULL DEFAULT 'month'
                                     CHECK (pricing_type IN ('month', 'session')),
@@ -117,6 +118,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
 CREATE INDEX IF NOT EXISTS listings_type_idx         ON public.listings(type);
 CREATE INDEX IF NOT EXISTS listings_event_end_at_idx ON public.listings(event_end_at);
 CREATE INDEX IF NOT EXISTS listings_source_idx       ON public.listings(source);
+CREATE INDEX IF NOT EXISTS listings_series_id_idx    ON public.listings(series_id);
 
 -- Activities must carry category/area/age; events may NULL them.
 ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_activity_shape_chk;

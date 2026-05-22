@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { EventCard } from '@/components/ui/EventCard'
 import { urgencyFor, type Locale, type UrgencyKey } from '@/lib/eventDate'
+import { groupEventsBySeries } from '@/lib/events/series'
 import type { ListingWithRelations } from '@/types/database'
 
 interface ComingUpBandProps {
@@ -21,10 +22,14 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
   const now = useMemo(() => new Date(), [])
   const [filter, setFilter] = useState<Filter>('all')
 
+  // One entry per series (or standalone event) — repeating occurrences
+  // collapse to their next-upcoming lead.
   const annotated = useMemo(() =>
-    events
-      .filter(e => e.event_start_at)
-      .map(e => ({ ev: e, key: urgencyFor(new Date(e.event_start_at!), now, locale).key })),
+    groupEventsBySeries(events).map(g => ({
+      ev:    g.lead,
+      extra: g.extraCount,
+      key:   urgencyFor(new Date(g.lead.event_start_at!), now, locale).key,
+    })),
     [events, now, locale])
 
   const counts = useMemo(() => ({
@@ -64,7 +69,7 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
             href="/events"
             className="font-display text-[12px] font-bold text-primary hover:text-primary-deep transition-colors whitespace-nowrap"
           >
-            {t('seeAll', { count: events.length })}
+            {t('seeAll', { count: annotated.length })}
           </Link>
         </div>
         <h2 className="font-display font-black text-[22px] md:text-[26px] tracking-[-1px] text-ink leading-[1.1] mt-1.5 mb-1">
@@ -103,9 +108,9 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
         >
           {visible.length === 0 ? (
             <div className="w-full text-center text-sm text-ink-muted py-6">{t('emptyTitle')}</div>
-          ) : visible.map(({ ev }) => (
+          ) : visible.map(({ ev, extra }) => (
             <div key={ev.id} className="w-[80%] shrink-0 snap-center md:w-auto md:shrink">
-              <EventCard listing={ev} now={now} />
+              <EventCard listing={ev} seriesCount={extra} now={now} />
             </div>
           ))}
         </div>

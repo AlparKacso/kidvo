@@ -17,6 +17,8 @@ interface EventCardProps {
   initialSaved?: boolean
   /** Reference "now" for urgency. Defaults to client time. */
   now?:         Date
+  /** Additional future occurrences in the same series (drives the pill). */
+  seriesCount?: number
 }
 
 function PosterCover({ slug, emoji, cover }: { slug: string; emoji: string; cover: string | null }) {
@@ -109,7 +111,7 @@ function CalendarMenu({ event }: { event: CalendarEvent }) {
   )
 }
 
-export function EventCard({ listing, initialSaved = false, now }: EventCardProps) {
+export function EventCard({ listing, initialSaved = false, now, seriesCount = 0 }: EventCardProps) {
   const locale = useLocale() as Locale
   const t = useTranslations('events')
 
@@ -180,15 +182,22 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
               </span>
             )}
           </div>
-          {urgency?.label && (
-            <span className={cn(
-              'self-start inline-flex items-center gap-[5px] px-2.5 py-1 rounded-full font-display text-[10.5px] font-bold uppercase tracking-[0.08em] whitespace-nowrap border border-white/50 backdrop-blur-[6px] [box-shadow:0_4px_12px_rgba(0,0,0,0.16)]',
-              toneCls,
-            )}>
-              {urgency.key === 'thisweek' && <span className="w-1.5 h-1.5 rounded-full bg-ink/40" />}
-              {urgency.label}
-            </span>
-          )}
+          <div className="self-start flex flex-col items-start gap-1.5">
+            {urgency?.label && (
+              <span className={cn(
+                'inline-flex items-center gap-[5px] px-2.5 py-1 rounded-full font-display text-[10.5px] font-bold uppercase tracking-[0.08em] whitespace-nowrap border border-white/50 backdrop-blur-[6px] [box-shadow:0_4px_12px_rgba(0,0,0,0.16)]',
+                toneCls,
+              )}>
+                {urgency.key === 'thisweek' && <span className="w-1.5 h-1.5 rounded-full bg-ink/40" />}
+                {urgency.label}
+              </span>
+            )}
+            {seriesCount > 0 && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full font-display text-[10.5px] font-bold uppercase tracking-[0.08em] whitespace-nowrap border border-white/50 backdrop-blur-[6px] bg-primary text-white [box-shadow:0_4px_12px_rgba(0,0,0,0.16)]">
+                {t('moreDates', { n: seriesCount })}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* icon row: save + calendar (top-right) */}
