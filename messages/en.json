@@ -756,6 +756,7 @@
     "nextWeek": "Next week",
     "organizedBy": "organized by",
     "foundBy": "Found by Kidvo Events",
+    "multiDayPill": "+{n, plural, one {# day} other {# days}}",
     "viewOnMaps": "View on Google Maps →",
     "language": "Language",
     "filterArea": "Area",

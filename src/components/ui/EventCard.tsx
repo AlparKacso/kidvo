@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { SaveButton } from '@/components/ui/SaveButton'
 import {
   fmtEventDate, urgencyFor, categoryEmoji, categoryPalette, isFreePrice,
-  type Locale,
+  utcIsoToBucharestLocal, type Locale,
 } from '@/lib/eventDate'
 import { googleCalendarUrl, downloadIcs, type CalendarEvent } from '@/lib/calendarLinks'
 import type { ListingWithRelations } from '@/types/database'
@@ -136,6 +136,14 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
   const date    = start ? fmtEventDate(start, locale) : null
   const urgency = start ? urgencyFor(start, now ?? new Date(), locale) : null
 
+  // Multi-day continuous event (e.g. a festival): count extra calendar days
+  // it spans, in Timișoara local time. The date sticker shows day 1.
+  const startDay  = startStr ? utcIsoToBucharestLocal(startStr).slice(0, 10) : ''
+  const endDay    = endStr   ? utcIsoToBucharestLocal(endStr).slice(0, 10)   : ''
+  const extraDays = startDay && endDay
+    ? Math.max(0, Math.round((Date.parse(endDay) - Date.parse(startDay)) / 86_400_000))
+    : 0
+
   const calEvent: CalendarEvent | null = start && end ? {
     title: listing.title,
     start,
@@ -155,16 +163,23 @@ export function EventCard({ listing, initialSaved = false, now }: EventCardProps
       <div className="relative overflow-hidden aspect-[4/5]">
         <PosterCover slug={slug} emoji={emoji} cover={cover} />
 
-        {/* overlays: date sticker (top-left) + urgency (bottom-left) */}
+        {/* overlays: date sticker (+ multi-day pill) top-left · urgency bottom-left */}
         <div className="absolute inset-0 flex flex-col justify-between p-3 pointer-events-none">
-          {date && (
-            <div className="self-start inline-flex flex-col items-center min-w-[60px] bg-white rounded-[12px] px-2.5 pt-2 pb-[7px] font-display border border-white/40 [box-shadow:0_8px_24px_rgba(0,0,0,0.18)]">
-              <div className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-danger leading-none">{date.day}</div>
-              <div className="text-[24px] font-black text-ink leading-none tracking-[-1px] mt-[3px] mb-px">{date.dnum}</div>
-              <div className="text-[9.5px] font-bold uppercase tracking-[0.1em] text-ink-mid leading-none">{date.mo}</div>
-              <div className="text-[10.5px] font-semibold text-ink leading-none mt-1.5 pt-[5px] border-t border-border w-full text-center tracking-[-0.2px]">{date.time}</div>
-            </div>
-          )}
+          <div className="self-start flex flex-col items-start gap-1.5">
+            {date && (
+              <div className="inline-flex flex-col items-center min-w-[60px] bg-white rounded-[12px] px-2.5 pt-2 pb-[7px] font-display border border-white/40 [box-shadow:0_8px_24px_rgba(0,0,0,0.18)]">
+                <div className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-danger leading-none">{date.day}</div>
+                <div className="text-[24px] font-black text-ink leading-none tracking-[-1px] mt-[3px] mb-px">{date.dnum}</div>
+                <div className="text-[9.5px] font-bold uppercase tracking-[0.1em] text-ink-mid leading-none">{date.mo}</div>
+                <div className="text-[10.5px] font-semibold text-ink leading-none mt-1.5 pt-[5px] border-t border-border w-full text-center tracking-[-0.2px]">{date.time}</div>
+              </div>
+            )}
+            {extraDays > 0 && (
+              <span className="inline-flex items-center px-2 py-[3px] rounded-full bg-white/90 text-ink-mid font-display text-[10px] font-bold uppercase tracking-[0.06em] border border-white/50 backdrop-blur-[6px] [box-shadow:0_4px_12px_rgba(0,0,0,0.16)]">
+                {t('multiDayPill', { n: extraDays })}
+              </span>
+            )}
+          </div>
           {urgency?.label && (
             <span className={cn(
               'self-start inline-flex items-center gap-[5px] px-2.5 py-1 rounded-full font-display text-[10.5px] font-bold uppercase tracking-[0.08em] whitespace-nowrap border border-white/50 backdrop-blur-[6px] [box-shadow:0_4px_12px_rgba(0,0,0,0.16)]',

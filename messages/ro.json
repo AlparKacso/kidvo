@@ -762,6 +762,7 @@
     "addToCalendarShort": "Calendar",
     "organizedBy": "organizat de",
     "foundBy": "Găsit de Kidvo Events",
+    "multiDayPill": "+{n, plural, one {# zi} other {# zile}}",
     "addToCalendar": "Adaugă în calendar",
     "calGoogle": "Google Calendar",
     "calApple": "Apple Calendar",
