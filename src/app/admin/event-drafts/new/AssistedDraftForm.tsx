@@ -60,6 +60,7 @@ export function AssistedDraftForm() {
     if (!f.eventEndAt)           missing.push('end')
     if (!f.venueName.trim())     missing.push('venue')
     if (!f.coverImageUrl.trim()) missing.push('cover image')
+    if (!f.eventUrl.trim())      missing.push('event URL')
     if (missing.length) {
       setError(`Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`)
       return
@@ -114,7 +115,7 @@ export function AssistedDraftForm() {
           <Field label="Price (free text)"><input className={inputCls} placeholder="Free / 30 RON" value={f.priceLabel} onChange={e => set('priceLabel', e.target.value)} /></Field>
         </div>
         <Field label="Organizer"><input className={inputCls} value={f.organizerName} onChange={e => set('organizerName', e.target.value)} /></Field>
-        <Field label="Event URL"><input className={inputCls} value={f.eventUrl} onChange={e => set('eventUrl', e.target.value)} /></Field>
+        <Field label="Event URL *"><input className={inputCls} value={f.eventUrl} onChange={e => set('eventUrl', e.target.value)} /></Field>
         <Field label="Cover image URL *"><input className={inputCls} value={f.coverImageUrl} onChange={e => set('coverImageUrl', e.target.value)} /></Field>
       </div>
 

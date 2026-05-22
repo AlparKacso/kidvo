@@ -6,9 +6,16 @@ import { bucharestLocalToUtcIso } from '@/lib/eventDate'
 
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
 
-// Admin-only: create a manual event_draft from admin-entered fields
+// Admin-only: create an assisted event_draft from admin-entered fields
 // (after they've prefilled via fetch-meta and corrected). Lands in the
 // same review queue as scraped drafts.
+//
+// Source is `scraper:assisted` — the `scraper:` prefix is the behavior
+// switch that makes the published card link out to event_url (no internal
+// detail page), show the external glyph, and fall back to "Found by Kidvo
+// Events". An admin curating an external event is doing by hand what the
+// scraper does, so it gets the same treatment. (No matching SOURCE_ADAPTER
+// exists — the cron never produces this value.)
 export async function POST(request: Request) {
   const body = await request.json()
 
@@ -20,14 +27,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Required fields per events rules (2026-05-21): title, start, end,
-  // venue, cover image. Optional: organizer, price, description, event URL.
+  // Required: title, start, end, venue, cover image, and event URL — the
+  // last is the external link target a scraped-like card needs.
   const missing: string[] = []
   if (!body.title?.trim())         missing.push('title')
   if (!body.eventStartAt)          missing.push('start')
   if (!body.eventEndAt)            missing.push('end')
   if (!body.venueName?.trim())     missing.push('venue')
   if (!body.coverImageUrl?.trim()) missing.push('cover image')
+  if (!body.eventUrl?.trim())      missing.push('event URL')
   if (missing.length) {
     return NextResponse.json(
       { error: `Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}` },
@@ -35,21 +43,21 @@ export async function POST(request: Request) {
     )
   }
 
-  const externalId = (body.eventUrl || `${body.title}|${body.eventStartAt}`).trim()
+  const externalId = body.eventUrl.trim()
   const adminDb = createAdminClient()
 
   const { error } = await adminDb
     .from('event_drafts')
     .upsert({
-      source:          'manual',
+      source:          'scraper:assisted',
       external_id:     externalId,
-      dedup_hash:      dedupHash('manual', externalId),
+      dedup_hash:      dedupHash('scraper:assisted', externalId),
       raw_payload:     body,
       title:           body.title.trim(),
       description:     body.description || null,
       event_start_at:  bucharestLocalToUtcIso(body.eventStartAt),
       event_end_at:    bucharestLocalToUtcIso(body.eventEndAt),
-      event_url:       body.eventUrl || null,
+      event_url:       body.eventUrl.trim(),
       venue_name:      body.venueName.trim(),
       price_label:     body.priceLabel || null,
       organizer_name:  body.organizerName || null,
