@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { buildEventUpdate, missingEventFields } from '@/lib/events/editableFields'
 
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
 
@@ -144,4 +145,45 @@ export async function POST(
   }
 
   return NextResponse.json({ ok: true, status: 'approved', listingId })
+}
+
+// PATCH → inline-edit a still-pending draft's card fields before approval.
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params
+  const body = await request.json()
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { data: userRow } = await supabase.from('users').select('email').eq('id', user.id).single()
+  if ((userRow as { email?: string } | null)?.email !== ADMIN_EMAIL) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const missing = missingEventFields(body)
+  if (missing.length) {
+    return NextResponse.json(
+      { error: `Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}` },
+      { status: 400 },
+    )
+  }
+
+  const adminDb = createAdminClient()
+  const { data: draftRaw } = await adminDb
+    .from('event_drafts').select('status').eq('id', id).single()
+  if (!draftRaw) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+  if ((draftRaw as { status: string }).status !== 'new') {
+    return NextResponse.json({ error: 'Only pending drafts can be edited' }, { status: 409 })
+  }
+
+  const update = { ...buildEventUpdate(body), updated_at: new Date().toISOString() }
+  const { error } = await adminDb.from('event_drafts').update(update).eq('id', id)
+  if (error) {
+    console.error('[event-drafts] edit error:', error.message)
+    return NextResponse.json({ error: 'Failed to save draft' }, { status: 500 })
+  }
+  return NextResponse.json({ ok: true })
 }

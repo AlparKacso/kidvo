@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { bucharestLocalToUtcIso, utcIsoToBucharestLocal } from '@/lib/eventDate'
 
 const STATUS_STYLES: Record<string, string> = {
   active:  'bg-success-lt text-success',
@@ -14,12 +15,103 @@ const STATUS_STYLES: Record<string, string> = {
 
 type Listing = any
 
-function ListingRow({ listing, onStatusChange }: {
+// ── Inline event-card editor ─────────────────────────────────────────────────
+const editInputCls = 'w-full px-2.5 py-1.5 border border-border rounded bg-white font-body text-xs text-ink outline-none focus:border-primary transition-all'
+
+function EditField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted block mb-0.5">{label}</label>
+      {children}
+    </div>
+  )
+}
+
+// Editable event-card fields, shared by the pre-approval draft row and the
+// post-approval listing row. `event_url` and `source` are deliberately
+// absent — they stay locked (scraped-row integrity).
+function EventFieldsEditor({ row, endpoint, onCancel, onSaved }: {
+  row:      any
+  endpoint: string
+  onCancel: () => void
+  onSaved:  (patch: Record<string, unknown>) => void
+}) {
+  const [f, setF] = useState({
+    title:         row.title ?? '',
+    description:   row.description ?? '',
+    eventStartAt:  utcIsoToBucharestLocal(row.event_start_at),
+    eventEndAt:    utcIsoToBucharestLocal(row.event_end_at),
+    venueName:     row.venue_name ?? '',
+    priceLabel:    row.price_label ?? '',
+    organizerName: row.organizer_name ?? '',
+    coverImageUrl: row.cover_image_url ?? '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError]   = useState('')
+  function set<K extends keyof typeof f>(k: K, v: string) { setF(prev => ({ ...prev, [k]: v })) }
+
+  async function save() {
+    setError('')
+    const missing: string[] = []
+    if (!f.title.trim()) missing.push('title')
+    if (!f.eventStartAt) missing.push('start')
+    if (!f.eventEndAt)   missing.push('end')
+    if (missing.length) { setError(`Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`); return }
+    setSaving(true)
+    const res = await fetch(endpoint, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(f),
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) { setError(body.error ?? 'Failed to save'); setSaving(false); return }
+    onSaved({
+      title:           f.title.trim(),
+      description:     f.description || null,
+      event_start_at:  bucharestLocalToUtcIso(f.eventStartAt),
+      event_end_at:    bucharestLocalToUtcIso(f.eventEndAt),
+      venue_name:      f.venueName.trim() || null,
+      price_label:     f.priceLabel || null,
+      organizer_name:  f.organizerName || null,
+      cover_image_url: f.coverImageUrl.trim() || null,
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5 bg-bg rounded-lg p-3 mt-1">
+      <EditField label="Title *"><input className={editInputCls} value={f.title} onChange={e => set('title', e.target.value)} /></EditField>
+      <EditField label="Description"><textarea className={editInputCls} rows={3} value={f.description} onChange={e => set('description', e.target.value)} /></EditField>
+      <div className="grid grid-cols-2 gap-2">
+        <EditField label="Starts *"><input type="datetime-local" className={editInputCls} value={f.eventStartAt} onChange={e => set('eventStartAt', e.target.value)} /></EditField>
+        <EditField label="Ends *"><input type="datetime-local" className={editInputCls} value={f.eventEndAt} onChange={e => set('eventEndAt', e.target.value)} /></EditField>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <EditField label="Venue"><input className={editInputCls} value={f.venueName} onChange={e => set('venueName', e.target.value)} /></EditField>
+        <EditField label="Price"><input className={editInputCls} placeholder="Free / 30 RON" value={f.priceLabel} onChange={e => set('priceLabel', e.target.value)} /></EditField>
+      </div>
+      <EditField label="Organizer"><input className={editInputCls} value={f.organizerName} onChange={e => set('organizerName', e.target.value)} /></EditField>
+      <EditField label="Cover image URL"><input className={editInputCls} value={f.coverImageUrl} onChange={e => set('coverImageUrl', e.target.value)} /></EditField>
+      {error && <div className="bg-danger-lt border border-danger/20 text-danger text-xs rounded p-2">{error}</div>}
+      <div className="flex gap-2">
+        <button onClick={save} disabled={saving} className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-success text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        <button onClick={onCancel} disabled={saving} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ListingRow({ listing, onStatusChange, onUpdate }: {
   listing: Listing
   onStatusChange: (id: string, status: string) => void
+  onUpdate: (id: string, patch: Record<string, unknown>) => void
 }) {
   const [loading, setLoading] = useState(false)
   const [confirm, setConfirm] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
 
   async function updateStatus(status: string) {
     setLoading(true)
@@ -36,38 +128,64 @@ function ListingRow({ listing, onStatusChange }: {
   const category = listing.category
   const area     = listing.area
   const provider = listing.provider
+  const isEvent  = listing.type === 'event'
+  const fmtDay   = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'
 
   return (
     <div className="bg-white border border-border rounded-lg p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: category?.accent_color }} />
-            <span className="font-display text-xs text-ink-muted">{category?.name} · {area?.name}</span>
+            {isEvent ? (
+              <span className="font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-lt text-primary">{listing.source ?? 'event'}</span>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: category?.accent_color }} />
+                <span className="font-display text-xs text-ink-muted">{category?.name} · {area?.name}</span>
+              </>
+            )}
             <span className={cn('inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold capitalize ml-auto', STATUS_STYLES[listing.status])}>
               {listing.status}
             </span>
           </div>
           <div className="font-display text-sm font-bold text-ink">{listing.title}</div>
           <div className="text-xs text-ink-muted mt-0.5">
-            Ages {listing.age_min}–{listing.age_max} · {listing.price_monthly} RON/mo · by {provider?.display_name}
+            {isEvent
+              ? <>{fmtDay(listing.event_start_at)}{listing.venue_name ? ` · ${listing.venue_name}` : ''} · by {provider?.display_name}</>
+              : <>Ages {listing.age_min}–{listing.age_max} · {listing.price_monthly} RON/mo · by {provider?.display_name}</>}
           </div>
           <div className="text-xs text-ink-muted">{provider?.contact_email}</div>
         </div>
       </div>
 
+      {editing ? (
+        <EventFieldsEditor
+          row={listing}
+          endpoint={`/api/admin/listings/${listing.id}`}
+          onCancel={() => setEditing(false)}
+          onSaved={patch => { onUpdate(listing.id, patch); setEditing(false) }}
+        />
+      ) : (
+      <>
       {listing.description && (
         <p className="text-xs text-ink-muted mb-3 line-clamp-2">{listing.description}</p>
       )}
 
       <div className="flex items-center gap-2 flex-wrap">
         <Link
-          href={`/browse/${listing.id}`}
+          href={isEvent ? `/events/${listing.id}` : `/browse/${listing.id}`}
           target="_blank"
           className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
         >
           Preview ↗
         </Link>
+
+        {isEvent && (
+          <button onClick={() => setEditing(true)} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:border-primary/50 hover:text-primary transition-colors">
+            ✎ Edit
+          </button>
+        )}
 
         {listing.status !== 'active' && (
           confirm === 'active' ? (
@@ -111,6 +229,8 @@ function ListingRow({ listing, onStatusChange }: {
           )
         )}
       </div>
+      </>
+      )}
     </div>
   )
 }
@@ -186,13 +306,15 @@ function ReviewRow({ review, onModerate }: {
   )
 }
 
-function EventDraftRow({ draft, onResolve }: {
+function EventDraftRow({ draft, onResolve, onUpdate }: {
   draft: any
   onResolve: (id: string) => void
+  onUpdate: (id: string, patch: Record<string, unknown>) => void
 }) {
   const [loading, setLoading] = useState(false)
   const [confirm, setConfirm] = useState<string | null>(null)
   const [showRaw, setShowRaw] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   const isScraped  = typeof draft.source === 'string' && draft.source.startsWith('scraper:')
   const canApprove = !!draft.title && (!isScraped || !!draft.event_url)
@@ -221,12 +343,21 @@ function EventDraftRow({ draft, onResolve }: {
 
   return (
     <div className="bg-white border border-border rounded-lg p-4">
+      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+        <span className="font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-lt text-primary">{draft.source}</span>
+        <span className="text-[10px] text-ink-muted">{fmtDate(draft.created_at)}</span>
+      </div>
+
+      {editing ? (
+        <EventFieldsEditor
+          row={draft}
+          endpoint={`/api/admin/event-drafts/${draft.id}`}
+          onCancel={() => setEditing(false)}
+          onSaved={patch => { onUpdate(draft.id, patch); setEditing(false) }}
+        />
+      ) : (
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-display text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-lt text-primary">{draft.source}</span>
-            <span className="text-[10px] text-ink-muted">{fmtDate(draft.created_at)}</span>
-          </div>
           <div className="font-display text-sm font-semibold text-ink mb-0.5">{draft.title ?? <span className="text-danger">(no title — cannot publish)</span>}</div>
           <div className="text-xs text-ink-mid mb-2 flex flex-col gap-0.5">
             <span><span className="text-ink-muted">When:</span> {fmtDate(draft.event_start_at)} → {fmtDate(draft.event_end_at)}</span>
@@ -250,6 +381,9 @@ function EventDraftRow({ draft, onResolve }: {
         </div>
 
         <div className="flex flex-col gap-2 flex-shrink-0">
+          <button onClick={() => setEditing(true)} className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:border-primary/50 hover:text-primary transition-colors">
+            ✎ Edit
+          </button>
           {confirm === 'approve' ? (
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-ink-muted">Publish?</span>
@@ -279,6 +413,7 @@ function EventDraftRow({ draft, onResolve }: {
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }
@@ -617,6 +752,16 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
     router.refresh()
   }
 
+  function handleDraftUpdated(id: string, patch: Record<string, unknown>) {
+    setEventDrafts(prev => prev.map(d => d.id === id ? { ...d, ...patch } : d))
+    router.refresh()
+  }
+
+  function handleListingUpdated(id: string, patch: Record<string, unknown>) {
+    setListings(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l))
+    router.refresh()
+  }
+
   const pending = listings.filter(l => l.status === 'pending')
   const active  = listings.filter(l => l.status === 'active')
   const paused  = listings.filter(l => l.status === 'paused')
@@ -692,7 +837,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
           {eventDrafts.length > 0 ? (
             <div className="flex flex-col gap-3">
               {eventDrafts.map(d => (
-                <EventDraftRow key={d.id} draft={d} onResolve={handleDraftResolved} />
+                <EventDraftRow key={d.id} draft={d} onResolve={handleDraftResolved} onUpdate={handleDraftUpdated} />
               ))}
             </div>
           ) : (
@@ -731,7 +876,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
               <span className="w-5 h-5 rounded-full bg-gold-lt text-gold-text font-display text-[10px] font-bold flex items-center justify-center">{pending.length}</span>
             </div>
             <div className="flex flex-col gap-3">
-              {pending.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} />)}
+              {pending.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} />)}
             </div>
           </div>
         )}
@@ -748,7 +893,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
           <div className="mb-8">
             <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted mb-3">Active listings</div>
             <div className="flex flex-col gap-3">
-              {active.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} />)}
+              {active.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} />)}
             </div>
           </div>
         )}
@@ -758,7 +903,7 @@ export function AdminClient({ pending: initialPending, active: initialActive, pa
           <div>
             <div className="font-display text-[11px] font-semibold tracking-label uppercase text-ink-muted mb-3">Paused listings</div>
             <div className="flex flex-col gap-3">
-              {paused.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} />)}
+              {paused.map(l => <ListingRow key={l.id} listing={l} onStatusChange={handleStatusChange} onUpdate={handleListingUpdated} />)}
             </div>
           </div>
         )}
