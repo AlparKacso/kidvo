@@ -23,6 +23,15 @@ const EMPTY: Fields = {
 
 const inputCls = 'w-full px-3 py-2 border border-border rounded bg-white font-body text-sm text-ink outline-none focus:border-primary transition-all'
 
+// 24h time list — 30-min steps, locale-independent (matches the wizard).
+const EVENT_TIMES = Array.from({ length: 48 }, (_, i) =>
+  `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`,
+)
+// Helpers over a combined "YYYY-MM-DDTHH:mm" value.
+const dtDate = (v: string) => (v ? v.split('T')[0] : '')
+const dtTime = (v: string) => (v && v.includes('T') ? v.split('T')[1].slice(0, 5) : '')
+const joinDateTime = (d: string, tm: string) => (d ? `${d}T${tm || '00:00'}` : '')
+
 export function AssistedDraftForm() {
   const router = useRouter()
   const [url, setUrl]         = useState('')
@@ -107,8 +116,28 @@ export function AssistedDraftForm() {
         <Field label="Title *"><input className={inputCls} value={f.title} onChange={e => set('title', e.target.value)} /></Field>
         <Field label="Description"><textarea className={inputCls} rows={4} value={f.description} onChange={e => set('description', e.target.value)} /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Starts *"><input type="datetime-local" className={inputCls} value={f.eventStartAt} onChange={e => set('eventStartAt', e.target.value)} /></Field>
-          <Field label="Ends *"><input type="datetime-local" className={inputCls} value={f.eventEndAt} onChange={e => set('eventEndAt', e.target.value)} /></Field>
+          <Field label="Starts *">
+            <div className="flex gap-2">
+              <input type="date" className={inputCls} value={dtDate(f.eventStartAt)}
+                onChange={e => set('eventStartAt', joinDateTime(e.target.value, dtTime(f.eventStartAt)))} />
+              <select className={`${inputCls} w-[104px]`} value={dtTime(f.eventStartAt)}
+                onChange={e => set('eventStartAt', joinDateTime(dtDate(f.eventStartAt), e.target.value))}>
+                <option value="">––:––</option>
+                {EVENT_TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+              </select>
+            </div>
+          </Field>
+          <Field label="Ends *">
+            <div className="flex gap-2">
+              <input type="date" className={inputCls} value={dtDate(f.eventEndAt)}
+                onChange={e => set('eventEndAt', joinDateTime(e.target.value, dtTime(f.eventEndAt)))} />
+              <select className={`${inputCls} w-[104px]`} value={dtTime(f.eventEndAt)}
+                onChange={e => set('eventEndAt', joinDateTime(dtDate(f.eventEndAt), e.target.value))}>
+                <option value="">––:––</option>
+                {EVENT_TIMES.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+              </select>
+            </div>
+          </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Venue *"><input className={inputCls} value={f.venueName} onChange={e => set('venueName', e.target.value)} /></Field>
