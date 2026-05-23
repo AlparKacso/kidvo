@@ -208,7 +208,10 @@ export function EventCard({ listing, initialSaved = false, now, seriesCount = 0 
       </div>
 
       <div className="px-4 pt-3.5 pb-2">
-        <div className="font-display font-extrabold text-[16px] leading-[1.25] tracking-[-0.4px] text-ink [text-wrap:balance]">
+        <div
+          className="font-display font-extrabold text-[16px] leading-[1.25] tracking-[-0.4px] text-ink [text-wrap:balance] line-clamp-3 min-h-[60px]"
+          title={listing.title}
+        >
           {listing.title}
           {externalHref && (
             <svg
