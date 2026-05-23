@@ -135,7 +135,15 @@ export function EventsListingClient({ events }: Props) {
               <span className="w-5 h-5 rounded-full bg-primary-lt text-primary font-display text-[10px] font-bold flex items-center justify-center">{g.items.length}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {g.items.map(a => <EventCard key={a.ev.id} listing={a.ev} seriesCount={a.extra} now={now} />)}
+              {g.items.map(a => (
+                // Mobile: match the /browse slider card width (~83% of the
+                // page container = same effective width as the ComingUpBand
+                // card after its `p-4` section + 92% wrapper). sm: and up
+                // revert to filling the grid cell.
+                <div key={a.ev.id} className="w-[83%] mx-auto sm:w-auto sm:mx-0">
+                  <EventCard listing={a.ev} seriesCount={a.extra} now={now} />
+                </div>
+              ))}
             </div>
           </div>
         ))
