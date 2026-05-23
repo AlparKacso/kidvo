@@ -94,6 +94,7 @@ export interface Database {
           age_max:         number | null
           source:          string
           series_id:       string | null
+          fingerprint:     string | null
           price_monthly:   number
           spots_total:     number | null
           spots_available: number | null
@@ -175,6 +176,7 @@ export interface Database {
         Row: {
           id:                    string
           source:                string
+          fingerprint:           string | null
           external_id:           string | null
           dedup_hash:            string
           raw_payload:           unknown | null

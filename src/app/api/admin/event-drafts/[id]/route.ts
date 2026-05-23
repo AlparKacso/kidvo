@@ -99,6 +99,7 @@ export async function POST(
       description:     draft.description,
       type:            'event',
       source:          draft.source,
+      fingerprint:     draft.fingerprint ?? null,
       status:          'active',
       published_at:    new Date().toISOString(),
       event_start_at:  draft.event_start_at,

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { dedupHash } from '@/lib/scrapers/dedup'
+import { eventFingerprint } from '@/lib/scrapers/fingerprint'
 import { bucharestLocalToUtcIso } from '@/lib/eventDate'
 
 const ADMIN_EMAIL = 'alpar.kacso@gmail.com'
@@ -43,20 +44,52 @@ export async function POST(request: Request) {
     )
   }
 
+  const startUtc   = bucharestLocalToUtcIso(body.eventStartAt)
+  const endUtc     = bucharestLocalToUtcIso(body.eventEndAt)
   const externalId = body.eventUrl.trim()
-  const adminDb = createAdminClient()
+  const adminDb    = createAdminClient()
+
+  // Cross-source dedup — unless the admin explicitly overrides via
+  // `forceCreate: true`, refuse to insert if an event with the same
+  // fingerprint already exists (in a pending draft or an active/pending/
+  // paused listing). The form surfaces the 409 and offers "Add anyway".
+  const fingerprint = eventFingerprint({
+    title:     body.title,
+    startAt:   startUtc,
+    venueName: body.venueName,
+  })
+
+  if (fingerprint && !body.forceCreate) {
+    const [{ data: dupDraft }, { data: dupListing }] = await Promise.all([
+      adminDb.from('event_drafts').select('id, title').eq('fingerprint', fingerprint).eq('status', 'new').limit(1).maybeSingle(),
+      adminDb.from('listings').select('id, title').eq('type', 'event').eq('fingerprint', fingerprint).in('status', ['active', 'pending', 'paused']).limit(1).maybeSingle(),
+    ])
+    const dup = (dupListing ?? dupDraft) as { id: string; title: string } | null
+    if (dup) {
+      return NextResponse.json(
+        {
+          error:         'duplicate',
+          duplicateId:   dup.id,
+          duplicateKind: dupListing ? 'listing' : 'draft',
+          duplicateTitle: dup.title,
+        },
+        { status: 409 },
+      )
+    }
+  }
 
   const { error } = await adminDb
     .from('event_drafts')
     .upsert({
       source:          'scraper:assisted',
+      fingerprint:     fingerprint || null,
       external_id:     externalId,
       dedup_hash:      dedupHash('scraper:assisted', externalId),
       raw_payload:     body,
       title:           body.title.trim(),
       description:     body.description || null,
-      event_start_at:  bucharestLocalToUtcIso(body.eventStartAt),
-      event_end_at:    bucharestLocalToUtcIso(body.eventEndAt),
+      event_start_at:  startUtc,
+      event_end_at:    endUtc,
       event_url:       body.eventUrl.trim(),
       venue_name:      body.venueName.trim(),
       price_label:     body.priceLabel || null,

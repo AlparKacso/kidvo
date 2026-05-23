@@ -32,15 +32,25 @@ const dtDate = (v: string) => (v ? v.split('T')[0] : '')
 const dtTime = (v: string) => (v && v.includes('T') ? v.split('T')[1].slice(0, 5) : '')
 const joinDateTime = (d: string, tm: string) => (d ? `${d}T${tm || '00:00'}` : '')
 
+interface Duplicate {
+  duplicateId:    string
+  duplicateKind:  'draft' | 'listing'
+  duplicateTitle: string
+}
+
 export function AssistedDraftForm() {
   const router = useRouter()
   const [url, setUrl]         = useState('')
   const [fetching, setFetch]  = useState(false)
   const [saving, setSaving]   = useState(false)
   const [error, setError]     = useState('')
+  const [dup, setDup]         = useState<Duplicate | null>(null)
   const [f, setF]             = useState<Fields>(EMPTY)
 
-  function set<K extends keyof Fields>(k: K, v: Fields[K]) { setF(prev => ({ ...prev, [k]: v })) }
+  function set<K extends keyof Fields>(k: K, v: Fields[K]) {
+    setF(prev => ({ ...prev, [k]: v }))
+    setDup(null) // any field change clears the stale duplicate warning
+  }
 
   async function fetchMeta() {
     setError(''); setFetch(true)
@@ -74,13 +84,27 @@ export function AssistedDraftForm() {
       setError(`Missing required field${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}`)
       return
     }
+    return submit(false)
+  }
+
+  async function submit(forceCreate: boolean) {
     setSaving(true)
     try {
       const res = await fetch('/api/admin/event-drafts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(f),
+        body: JSON.stringify({ ...f, ...(forceCreate ? { forceCreate: true } : {}) }),
       })
       const body = await res.json().catch(() => ({}))
+      if (res.status === 409 && body.error === 'duplicate') {
+        setDup({
+          duplicateId:    body.duplicateId,
+          duplicateKind:  body.duplicateKind,
+          duplicateTitle: body.duplicateTitle ?? '(untitled)',
+        })
+        setError('')
+        setSaving(false)
+        return
+      }
       if (!res.ok) { setError(body.error ?? 'Failed to save'); setSaving(false); return }
       router.push('/admin')
     } catch {
@@ -150,7 +174,42 @@ export function AssistedDraftForm() {
 
       {error && <div className="bg-danger-lt border border-danger/20 text-danger text-sm rounded p-3">{error}</div>}
 
-      <button onClick={save} disabled={saving}
+      {dup && (
+        <div className="bg-gold-lt border border-gold/40 text-ink rounded p-3 flex flex-col gap-2">
+          <div className="text-sm">
+            An event matching this title + time + venue already exists as a{' '}
+            <span className="font-semibold">{dup.duplicateKind}</span>:{' '}
+            {dup.duplicateKind === 'listing' ? (
+              <Link href={`/events/${dup.duplicateId}`} target="_blank" className="font-semibold text-primary hover:underline">
+                {dup.duplicateTitle} ↗
+              </Link>
+            ) : (
+              <span className="font-semibold">{dup.duplicateTitle}</span>
+            )}
+            .
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => submit(true)}
+              disabled={saving}
+              className="px-3 py-1.5 rounded font-display text-xs font-semibold bg-success text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {saving ? 'Saving…' : 'Add anyway'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDup(null)}
+              disabled={saving}
+              className="px-3 py-1.5 rounded font-display text-xs font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button onClick={save} disabled={saving || !!dup}
         className="self-start px-5 py-2.5 rounded font-display text-sm font-semibold bg-success text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
         {saving ? 'Saving…' : 'Save to review queue'}
       </button>
