@@ -104,12 +104,12 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
       <div className="relative">
         <div
           ref={rowRef}
-          className="flex md:grid md:grid-flow-col md:auto-cols-[248px] gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory px-[6%] md:px-1 -mx-1 pb-[18px] pt-1 [scrollbar-width:thin]"
+          className="flex md:grid md:grid-flow-col md:auto-cols-[248px] gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory px-[4%] md:px-1 -mx-1 pb-[18px] pt-1 [scrollbar-width:thin]"
         >
           {visible.length === 0 ? (
             <div className="w-full text-center text-sm text-ink-muted py-6">{t('emptyTitle')}</div>
           ) : visible.map(({ ev, extra }) => (
-            <div key={ev.id} className="w-[88%] shrink-0 snap-center md:w-auto md:shrink">
+            <div key={ev.id} className="w-[92%] shrink-0 snap-center md:w-auto md:shrink">
               <EventCard listing={ev} seriesCount={extra} now={now} />
             </div>
           ))}
