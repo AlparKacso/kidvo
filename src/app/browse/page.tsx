@@ -5,6 +5,7 @@ import { ComingUpBand }  from '@/components/ui/ComingUpBand'
 import { CategoryPills } from '@/components/ui/CategoryPills'
 import { SearchBar }     from '@/components/ui/SearchBar'
 import { createClient }  from '@/lib/supabase/server'
+import { eventsEnabled } from '@/lib/eventsEnabled'
 import { getTranslations } from 'next-intl/server'
 import type { ListingWithRelations } from '@/types/database'
 
@@ -58,15 +59,21 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const areas      = areasRaw      as unknown as any[] | null
 
   // Upcoming events for the "Coming up" band (separate from the activity grid).
+  // Honors the NEXT_PUBLIC_EVENTS_ENABLED kill-switch — when disabled we
+  // skip the fetch entirely so `events` stays empty and ComingUpBand renders
+  // null (same as the zero-events guard's natural path).
   const nowIso = new Date().toISOString()
-  const { data: eventsRaw } = await supabase
-    .from('listings')
-    .select(`*, category:categories(*), area:areas(*), provider:providers(*), schedules:listing_schedules(*)`)
-    .eq('status', 'active')
-    .eq('type', 'event')
-    .gte('event_end_at', nowIso)
-    .order('event_start_at', { ascending: true })
-  const events = (eventsRaw as unknown as ListingWithRelations[] | null) ?? []
+  let events: ListingWithRelations[] = []
+  if (eventsEnabled()) {
+    const { data: eventsRaw } = await supabase
+      .from('listings')
+      .select(`*, category:categories(*), area:areas(*), provider:providers(*), schedules:listing_schedules(*)`)
+      .eq('status', 'active')
+      .eq('type', 'event')
+      .gte('event_end_at', nowIso)
+      .order('event_start_at', { ascending: true })
+    events = (eventsRaw as unknown as ListingWithRelations[] | null) ?? []
+  }
 
   // Build query
   let query = supabase

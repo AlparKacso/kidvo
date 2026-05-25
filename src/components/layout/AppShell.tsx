@@ -5,6 +5,7 @@ import { Topbar }     from './Topbar'
 import { BottomNav }  from './BottomNav'
 import { getTranslations } from 'next-intl/server'
 import { LocaleToggle } from '@/components/ui/LocaleToggle'
+import { eventsEnabled } from '@/lib/eventsEnabled'
 
 interface AppShellProps {
   children:     React.ReactNode
@@ -64,7 +65,9 @@ export async function AppShell({ children }: AppShellProps) {
 
   const pendingBookings = bookingsRes.count ?? 0
   const listingsCount   = listingsRes.count ?? 0
-  const hasEvents       = (eventsRes.count ?? 0) > 0
+  // Honor the NEXT_PUBLIC_EVENTS_ENABLED kill-switch — when disabled,
+  // suppress the Events nav item even if active events exist in the DB.
+  const hasEvents       = eventsEnabled() && (eventsRes.count ?? 0) > 0
 
   // Provider-side pending trial requests across their listings — drives the
   // nav badge so providers don't miss new bookings between dashboard visits.

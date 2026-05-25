@@ -4,6 +4,7 @@ import { sendNewEventDraftsToAdmin } from '@/lib/email'
 import { SOURCE_ADAPTERS } from '@/lib/scrapers/sources'
 import { dedupHash } from '@/lib/scrapers/dedup'
 import { eventFingerprint } from '@/lib/scrapers/fingerprint'
+import { eventsEnabled } from '@/lib/eventsEnabled'
 
 export const dynamic = 'force-dynamic'
 // Per-source, idempotent (dedup_hash UNIQUE) — safe if a run is cut short.
@@ -21,6 +22,13 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Kill-switch: when events are disabled, the cron does nothing — no fetches,
+  // no drafts inserted, no admin emails. Vercel still hits the route daily;
+  // we just no-op until NEXT_PUBLIC_EVENTS_ENABLED is unset/true.
+  if (!eventsEnabled()) {
+    return NextResponse.json({ ok: true, disabled: true })
   }
 
   const supabase = createAdminClient()

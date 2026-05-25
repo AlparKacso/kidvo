@@ -7,6 +7,7 @@ import { EventCard } from '@/components/ui/EventCard'
 import { EventActionBar } from './EventActionBar'
 import { CoverPhotoZoom } from '@/components/ui/CoverPhotoZoom'
 import { createClient } from '@/lib/supabase/server'
+import { eventsEnabled } from '@/lib/eventsEnabled'
 import {
   fmtEventDate, urgencyFor, categoryEmoji, categoryPalette, isFreePrice, type Locale,
 } from '@/lib/eventDate'
@@ -29,6 +30,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  if (!eventsEnabled()) notFound()
+
   const { id } = await params
   const supabase = await createClient()
   const locale = (await getLocale()) as Locale

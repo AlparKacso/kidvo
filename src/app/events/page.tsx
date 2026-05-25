@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
+import { eventsEnabled } from '@/lib/eventsEnabled'
 import type { ListingWithRelations } from '@/types/database'
 import { EventsListingClient } from './EventsListingClient'
 
@@ -13,6 +15,8 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function EventsPage() {
+  if (!eventsEnabled()) notFound()
+
   const supabase = await createClient()
   const nowIso = new Date().toISOString()
 
