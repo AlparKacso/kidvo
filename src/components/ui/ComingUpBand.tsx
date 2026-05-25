@@ -110,7 +110,7 @@ export function ComingUpBand({ events }: ComingUpBandProps) {
             <div className="w-full text-center text-sm text-ink-muted py-6">{t('emptyTitle')}</div>
           ) : visible.map(({ ev, extra }) => (
             <div key={ev.id} className="w-[92%] shrink-0 snap-center md:w-auto md:shrink">
-              <EventCard listing={ev} seriesCount={extra} now={now} />
+              <EventCard listing={ev} seriesCount={extra} now={now} uniformHeight />
             </div>
           ))}
         </div>
