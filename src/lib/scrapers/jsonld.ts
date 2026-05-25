@@ -95,8 +95,13 @@ export function extractJsonLdEvents(html: string, source: string): RawEvent[] {
   const $ = cheerio.load(html)
   const nodes: Record<string, unknown>[] = []
   $('script[type="application/ld+json"]').each((_, el) => {
-    const txt = $(el).contents().text().trim()
+    let txt = $(el).contents().text().trim()
     if (!txt) return
+    // Strip CDATA wrappers — iabilet emits `/*<![CDATA[*/{...}/*]]>*/`;
+    // plain `<![CDATA[...]]>` also seen elsewhere. JSON.parse fails on these
+    // unless we peel them off first.
+    txt = txt.replace(/^\/\*<!\[CDATA\[\*\/\s*/, '').replace(/\s*\/\*\]\]>\*\/$/, '')
+    txt = txt.replace(/^<!\[CDATA\[\s*/, '').replace(/\s*\]\]>$/, '')
     try { collectEvents(JSON.parse(txt), nodes) } catch { /* skip bad block */ }
   })
 
