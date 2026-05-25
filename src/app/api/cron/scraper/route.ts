@@ -40,8 +40,15 @@ export async function GET(req: NextRequest) {
     if (r.fingerprint) blocking.add(r.fingerprint)
   }
 
+  // Belt-and-braces past-event filter: each adapter SHOULD drop past
+  // events itself (JSON-LD helper does; timisoreni does), but if a new
+  // adapter forgets, this layer still catches it before insert. 24h grace
+  // window matches the helper.
+  const pastCutoffMs = Date.now() - 24 * 60 * 60 * 1000
+
   const perSource: Record<string, number> = {}
   const skippedCrossSource: Record<string, number> = {}
+  const skippedPast: Record<string, number> = {}
   let totalNew = 0
 
   for (const adapter of SOURCE_ADAPTERS) {
@@ -52,7 +59,13 @@ export async function GET(req: NextRequest) {
       if (events.length === 0) { perSource[adapter.name] = 0; continue }
 
       let skipped = 0
+      let pastSkipped = 0
       const rows = events.flatMap(ev => {
+        // Reject events whose end (or start, when no end) is already in the past.
+        const endMs = ev.endAt ? new Date(ev.endAt).getTime()
+                   : ev.startAt ? new Date(ev.startAt).getTime() : NaN
+        if (Number.isFinite(endMs) && endMs < pastCutoffMs) { pastSkipped++; return [] }
+
         const fp = eventFingerprint({ title: ev.title, startAt: ev.startAt ?? null, venueName: ev.venue ?? null })
         if (fp && blocking.has(fp)) { skipped++; return [] }
         if (fp) blocking.add(fp) // also dedup within the same adapter run
@@ -74,6 +87,7 @@ export async function GET(req: NextRequest) {
         }]
       })
       skippedCrossSource[adapter.name] = skipped
+      skippedPast[adapter.name] = pastSkipped
 
       if (rows.length === 0) { perSource[adapter.name] = 0; continue }
 
@@ -104,5 +118,5 @@ export async function GET(req: NextRequest) {
       .catch(err => console.error('[scraper] admin email error:', err))
   }
 
-  return NextResponse.json({ ok: true, totalNew, perSource, skippedCrossSource })
+  return NextResponse.json({ ok: true, totalNew, perSource, skippedCrossSource, skippedPast })
 }

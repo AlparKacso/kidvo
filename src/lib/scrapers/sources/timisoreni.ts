@@ -82,6 +82,12 @@ async function fetchEvents(): Promise<RawEvent[]> {
   const items = await fetchHubItems(token)
   const out: RawEvent[] = []
 
+  // Past-event cutoff — mirror the JSON-LD helper's 24h grace window.
+  // The timisoreni API returns historical entries (Revelion 2025, etc.)
+  // so we must filter them out at adapter level; this adapter bypasses
+  // `extractJsonLdEvents` which has its own cutoff.
+  const cutoffMs = Date.now() - 24 * 60 * 60 * 1000
+
   for (const ev of items) {
     if (!ev.category_name || !KID_CATEGORIES.has(ev.category_name)) continue
     if (!ev.representations?.length) continue
@@ -95,6 +101,7 @@ async function fetchEvents(): Promise<RawEvent[]> {
       if (!startIso) continue
       // No end time in the API — default to +3h to match the other adapters.
       const endIso = new Date(new Date(startIso).getTime() + 3 * 3_600_000).toISOString()
+      if (new Date(endIso).getTime() < cutoffMs) continue   // already over
 
       const detailUrl  = `${SITE}/eveniment/${ev.url}/`
       const externalId = `${detailUrl}::${startIso}`
