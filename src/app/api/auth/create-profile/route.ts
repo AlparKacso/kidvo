@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { normalizePhone } from '@/lib/phone'
 
 export async function POST(req: Request) {
-  const { userId, email, fullName, role, locale } = await req.json()
+  const { userId, email, fullName, phone, role, locale } = await req.json()
 
   if (!userId || !email || !fullName || !role) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  }
+
+  // Phone is mandatory for new registrations (both parents and providers) so
+  // we can streamline communication. Existing phone-less users are unaffected
+  // — this is only enforced here, at signup, not as a DB constraint.
+  const normalizedPhone = normalizePhone(phone)
+  if (!normalizedPhone) {
+    return NextResponse.json({ error: 'A valid phone number is required.' }, { status: 400 })
   }
 
   // Validate optional locale (default handled by DB column default 'ro')
@@ -24,6 +33,7 @@ export async function POST(req: Request) {
     id:        userId,
     email,
     full_name: fullName,
+    phone:     normalizedPhone,
     role,
     city:      'Timișoara',
     locale:    validLocale,
@@ -39,6 +49,7 @@ export async function POST(req: Request) {
       user_id:       userId,
       display_name:  fullName,
       contact_email: email,
+      contact_phone: normalizedPhone,
     }, { onConflict: 'user_id' })
   }
 

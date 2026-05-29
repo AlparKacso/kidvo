@@ -4,10 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { isValidPhone, normalizePhone } from '@/lib/phone'
 import { useTranslations } from 'next-intl'
 
 export default function SignupPage() {
   const [fullName, setFullName]   = useState('')
+  const [phone, setPhone]         = useState('')
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
   const [role, setRole]           = useState<'parent' | 'provider'>('parent')
@@ -34,6 +36,12 @@ export default function SignupPage() {
 
     if (password.length < 6) {
       setError(tSignup('passwordTooShort'))
+      setLoading(false)
+      return
+    }
+
+    if (!isValidPhone(phone)) {
+      setError(tSignup('invalidPhone'))
       setLoading(false)
       return
     }
@@ -74,7 +82,7 @@ export default function SignupPage() {
     const profileRes = await fetch('/api/auth/create-profile', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ userId: data.user.id, email, fullName, role, locale: document.cookie.match(/NEXT_LOCALE=(\w+)/)?.[1] || 'ro' }),
+      body:    JSON.stringify({ userId: data.user.id, email, fullName, phone: normalizePhone(phone), role, locale: document.cookie.match(/NEXT_LOCALE=(\w+)/)?.[1] || 'ro' }),
     })
 
     if (!profileRes.ok) {
@@ -197,6 +205,19 @@ export default function SignupPage() {
                 onChange={e => setFullName(e.target.value)}
                 required
               />
+            </div>
+
+            <div>
+              <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">{tSignup('phone')}</label>
+              <input
+                className={inputCls}
+                type="tel"
+                placeholder={tSignup('phonePlaceholder')}
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                required
+              />
+              <p className="font-display text-[11px] text-ink-muted mt-1.5">{tSignup('phoneHint')}</p>
             </div>
 
             <div>
