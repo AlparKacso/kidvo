@@ -9,9 +9,11 @@ interface Props {
   contactEmail: string
   contactPhone: string | null
   isLoggedIn:   boolean
+  /** When trials aren't bookable, render as the inviting accent-purple primary CTA. */
+  primary?:     boolean
 }
 
-export function ContactProviderButton({ listingId, displayName, contactEmail, contactPhone, isLoggedIn }: Props) {
+export function ContactProviderButton({ listingId, displayName, contactEmail, contactPhone, isLoggedIn, primary = false }: Props) {
   const [open, setOpen] = useState(false)
   const t = useTranslations('contact')
 
@@ -35,7 +37,11 @@ export function ContactProviderButton({ listingId, displayName, contactEmail, co
     <>
       <button
         onClick={handleReveal}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors"
+        className={`w-full flex items-center justify-center gap-2 py-2.5 rounded font-display text-sm font-semibold transition-colors ${
+          primary
+            ? 'bg-primary text-white hover:bg-primary-deep'
+            : 'border border-border text-ink-mid hover:bg-surface'
+        }`}
       >
         <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><path d="M2 3.5h11M2 7.5h8M2 11.5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
         {t('showContact')}

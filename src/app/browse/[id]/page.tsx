@@ -502,6 +502,7 @@ export default async function ActivityDetailPage({ params }: Props) {
                   contactEmail={provider?.contact_email ?? ''}
                   contactPhone={provider?.contact_phone ?? null}
                   isLoggedIn={!!user}
+                  primary={!listing.trial_available}
                 />
               </div>
 
