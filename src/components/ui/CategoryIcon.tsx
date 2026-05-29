@@ -93,6 +93,13 @@ export function CategoryIcon({ slug, className, size = 14 }: CategoryIconProps) 
           <rect x="10" y="5.5" width="2" height="4" rx="0.5" fill="currentColor" stroke="none" />
         </svg>
       )
+    case 'health':
+      // Heart
+      return (
+        <svg {...s} className={className}>
+          <path d="M7.5 12.5C7.5 12.5 2 9 2 5.5A2.5 2.5 0 0 1 7.5 4 2.5 2.5 0 0 1 13 5.5c0 3.5-5.5 7-5.5 7Z" />
+        </svg>
+      )
     case 'all':
       // 4-square grid
       return (

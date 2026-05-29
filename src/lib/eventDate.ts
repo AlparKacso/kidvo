@@ -105,7 +105,7 @@ export function urgencyFor(start: Date, now: Date, locale: Locale): Urgency {
 export const CATEGORY_EMOJI: Record<string, string> = {
   sport: '⚽', dance: '💃', music: '🎵', coding: '💻',
   arts: '🎨', 'arts-crafts': '🎨', language: '🌍', languages: '🌍',
-  chess: '♟️', gym: '🤸', gymnastics: '🤸', other: '✨',
+  chess: '♟️', gym: '🤸', gymnastics: '🤸', health: '❤️', other: '✨',
 }
 
 export function categoryEmoji(slug: string | undefined | null): string {
@@ -126,6 +126,7 @@ const CATEGORY_PALETTE: Record<string, [string, string, string]> = {
   gym:          ['#92400e', '#d97706', '#fde68a'],
   gymnastics:   ['#92400e', '#d97706', '#fde68a'],
   chess:        ['#374151', '#6b7280', '#d1d5db'],
+  health:       ['#b91c1c', '#ef4444', '#fecaca'],
   other:        ['#fda4af', '#fb923c', '#fde047'],
 }
 

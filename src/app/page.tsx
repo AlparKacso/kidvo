@@ -19,6 +19,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   gym:         '🤸',
   gymnastics:  '🤸',
   babysitting: '🍼',
+  health:      '❤️',
   other:       '✨',
 }
 

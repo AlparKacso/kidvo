@@ -465,7 +465,8 @@ INSERT INTO public.categories (name, slug, accent_color, sort_order) VALUES
   ('Programare',        'coding',      '#3b82f6', 5),
   ('Gimnastică',        'gymnastics',  '#f59e0b', 6),
   ('Limbi străine',     'languages',   '#10b981', 7),
-  ('Altele',            'other',       '#6b7280', 8)
+  ('Sănătate',          'health',      '#ef4444', 8),
+  ('Altele',            'other',       '#6b7280', 9)
 ON CONFLICT (slug) DO NOTHING;
 
 -- Areas (Timișoara neighbourhoods + suburbs)
