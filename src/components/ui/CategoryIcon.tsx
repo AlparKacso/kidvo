@@ -51,6 +51,7 @@ export function CategoryIcon({ slug, className, size = 14 }: CategoryIconProps) 
         </svg>
       )
     case 'arts':
+    case 'arts-crafts':
       // Palette circle with color dots
       return (
         <svg {...s} className={className}>

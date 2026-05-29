@@ -17,6 +17,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   music:       '🎵',
   coding:      '💻',
   arts:        '🎨',
+  'arts-crafts': '🎨',
   language:    '🌍',
   languages:   '🌍',
   chess:       '♟️',
