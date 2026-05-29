@@ -58,7 +58,9 @@ interface ActivityCardProps {
 
 export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount, forceContrast }: ActivityCardProps) {
   const t = useTranslations('card')
+  const tCat = useTranslations('categories')
 
+  const catName     = tCat.has(listing.category.slug) ? tCat(listing.category.slug) : listing.category.name
   const accent      = listing.category.accent_color
   const isFull      = (listing.spots_available ?? 1) === 0
   const isSaved     = savedIds?.includes(listing.id) ?? false
@@ -212,7 +214,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
             }}
           >
             <span aria-hidden style={{ fontSize: 12 }}>{emoji}</span>
-            <span className="truncate">{listing.category.name}</span>
+            <span className="truncate">{catName}</span>
           </span>
 
           <div className="flex items-start gap-1.5 shrink-0">
