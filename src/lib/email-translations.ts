@@ -274,6 +274,26 @@ const translations = {
     },
   },
 
+  // #18 — Provider: parent revealed contact details
+  contactReveal: {
+    en: {
+      subject:      '{name} is interested in {listing}',
+      heading:      '{name} checked your contact details',
+      body:         'They just browsed <strong>{listing}</strong> on kidvo — but haven\'t requested a trial yet.',
+      body2:        'Might be a good moment to reach out with a quick follow-up call.',
+      cta:          'View your listings →',
+      genericName:  'A parent',
+    },
+    ro: {
+      subject:      '{name} este interesat de {listing}',
+      heading:      '{name} ți-a verificat datele de contact',
+      body:         'Tocmai a vizualizat <strong>{listing}</strong> pe kidvo — dar încă nu a cerut o probă.',
+      body2:        'Poate fi un moment bun să-l contactezi cu un apel de follow-up.',
+      cta:          'Vezi activitățile tale →',
+      genericName:  'Un părinte',
+    },
+  },
+
   // #16 — Provider: trial cancelled by parent
   trialCancelledByParent: {
     en: {

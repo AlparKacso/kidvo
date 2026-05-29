@@ -468,6 +468,41 @@ export async function sendNewListingsDigest(opts: {
   })
 }
 
+// ── Provider — parent revealed contact details ───────────────────────────────
+export async function sendContactRevealToProvider(opts: {
+  providerEmail: string
+  providerName:  string
+  listingTitle:  string
+  parentName:    string | null   // null when the stored name looks like an email-derived placeholder
+  parentEmail:   string
+  parentPhone:   string | null
+  locale:        Locale
+}) {
+  const t = emailT('contactReveal', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+  const name = opts.parentName?.trim() || t.genericName
+
+  const rows = [
+    detailRow(l('activity'), opts.listingTitle),
+    opts.parentName ? detailRow(l('from'), opts.parentName) : '',
+    detailRow(l('email'),    `<a href="mailto:${opts.parentEmail}" style="color:${PRIMARY};">${opts.parentEmail}</a>`),
+    opts.parentPhone ? detailRow(l('phone'), `<a href="tel:${opts.parentPhone}" style="color:${PRIMARY};">${opts.parentPhone}</a>`) : '',
+  ].join('')
+
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.providerEmail,
+    subject: interp(t.subject, { name, listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(interp(t.heading, { name }))}
+      ${p(interp(t.body, { listing: opts.listingTitle }))}
+      ${p(t.body2)}
+      ${detailTable(rows)}
+      ${btn(t.cta, `${APP_URL}/listings`)}
+    `),
+  })
+}
+
 // ── 16. Provider — trial cancelled by parent ──────────────────────────────────
 export async function sendTrialCancelledByParent(opts: {
   providerEmail: string
