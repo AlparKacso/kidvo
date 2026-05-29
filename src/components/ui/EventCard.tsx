@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { SaveButton } from '@/components/ui/SaveButton'
 import {
-  fmtEventDate, urgencyFor, categoryEmoji, categoryPalette, isFreePrice,
+  fmtEventDate, urgencyFor, categoryEmoji, categoryPalette,
   utcIsoToBucharestLocal, type Locale,
 } from '@/lib/eventDate'
 import { googleCalendarUrl, downloadIcs, type CalendarEvent } from '@/lib/calendarLinks'
@@ -130,8 +130,6 @@ export function EventCard({ listing, initialSaved = false, now, seriesCount = 0,
   const end       = endStr ? new Date(endStr) : (start ?? null)
   const venue     = listing.venue_name || listing.area?.name || ''
   const organizer = listing.organizer_name || listing.provider?.display_name || ''
-  const priceLbl  = listing.price_label || '—'
-  const free      = isFreePrice(listing.price_label)
 
   // Scraped events link externally to the source — they have no internal
   // detail page. The check uses `organizer_name` *raw* (not the fallback
@@ -213,7 +211,7 @@ export function EventCard({ listing, initialSaved = false, now, seriesCount = 0,
         </div>
       </div>
 
-      <div className="px-4 pt-3.5 pb-2">
+      <div className="px-4 pt-3.5 pb-3 flex flex-col flex-1">
         <div
           className={cn(
             'font-display font-extrabold text-[16px] leading-[1.25] tracking-[-0.4px] text-ink [text-wrap:balance] line-clamp-3',
@@ -235,15 +233,6 @@ export function EventCard({ listing, initialSaved = false, now, seriesCount = 0,
             </svg>
           )}
         </div>
-        {venue && (
-          <div className="flex items-center gap-[5px] font-body text-[12px] text-ink-mid mt-1.5 min-w-0">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-muted shrink-0" aria-hidden="true">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span className="truncate">{venue}</span>
-          </div>
-        )}
         {showFoundBy ? (
           <div className="text-[11px] text-ink-muted mt-1 truncate">
             <span className="text-ink-mid font-semibold">{t('foundBy')}</span>
@@ -253,17 +242,15 @@ export function EventCard({ listing, initialSaved = false, now, seriesCount = 0,
             {t('organizedBy')} <span className="text-ink-mid font-semibold">{organizer}</span>
           </div>
         ) : null}
-      </div>
-
-      <div className="px-4 py-[11px] border-t border-border flex items-center mt-auto">
-        <span className={cn(
-          'inline-flex items-center font-display font-extrabold text-[12.5px] tracking-[-0.2px] px-[11px] py-[5px] rounded-full whitespace-nowrap border',
-          free
-            ? 'bg-success-lt text-success border-success/25'
-            : 'bg-gold-lt text-ink border-gold/50',
-        )}>
-          {priceLbl}
-        </span>
+        {venue && (
+          <div className="flex items-center gap-[5px] font-body text-[12px] text-ink-mid mt-auto pt-[11px] border-t border-border min-w-0">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-muted shrink-0" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            <span className="truncate">{venue}</span>
+          </div>
+        )}
       </div>
     </>
   )
