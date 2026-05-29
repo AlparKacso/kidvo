@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useTranslations } from 'next-intl'
+import { localizeCategoryName } from '@/lib/categoryName'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -22,6 +23,7 @@ export function SavedClient({ initialSaves }: Props) {
   const [saves,         setSaves]         = useState(initialSaves)
   const [pendingRemove, setPendingRemove] = useState<string | null>(null) // saveId awaiting confirm
   const t = useTranslations('saved')
+  const tCat = useTranslations('categories')
 
   async function handleRemove(saveId: string, listingId: string) {
     setPendingRemove(null)
@@ -78,7 +80,7 @@ export function SavedClient({ initialSaves }: Props) {
                           <div className="text-xs text-ink-muted mt-0.5">{listing.provider.display_name}</div>
                         )}
                         <div className="text-xs text-ink-muted mt-0.5">
-                          {[category?.name, `Ages ${listing?.age_min}–${listing?.age_max}`, area?.name].filter(Boolean).join(' · ')}
+                          {[localizeCategoryName(tCat, category),`Ages ${listing?.age_min}–${listing?.age_max}`, area?.name].filter(Boolean).join(' · ')}
                         </div>
                       </div>
                     </div>
@@ -126,7 +128,7 @@ export function SavedClient({ initialSaves }: Props) {
                       <div className="text-xs text-ink-muted mt-0.5">{listing.provider.display_name}</div>
                     )}
                     <div className="text-xs text-ink-muted mt-0.5">
-                      {[category?.name, `Ages ${listing?.age_min}–${listing?.age_max}`, area?.name, formatSchedule(listing?.schedules ?? [])].filter(Boolean).join(' · ')}
+                      {[localizeCategoryName(tCat, category),`Ages ${listing?.age_min}–${listing?.age_max}`, area?.name, formatSchedule(listing?.schedules ?? [])].filter(Boolean).join(' · ')}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">

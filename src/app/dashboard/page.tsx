@@ -13,6 +13,7 @@ import { pickRecommendation } from '@/lib/recommendations'
 import { PerformanceModal } from '@/components/ui/PerformanceModal'
 import type { PerformanceRow } from '@/components/ui/PerformanceModal'
 import { getTranslations } from 'next-intl/server'
+import { localizeCategoryName } from '@/lib/categoryName'
 import { CancelTrialButton } from './CancelTrialButton'
 
 export const dynamic = 'force-dynamic'
@@ -223,6 +224,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
   const tDash = await getTranslations('dashboard')
+  const tCat = await getTranslations('categories')
 
   // Critical: role determines which dashboard to render — query separately so an
   // unrelated column issue (e.g. missing onboarding_dismissed) can never silently
@@ -704,7 +706,7 @@ export default async function DashboardPage() {
       kidName: kid.name as string,
       bars: sorted.slice(0, 5).map(c => ({
         slug: c.slug,
-        name: c.name,
+        name: localizeCategoryName(tCat, c),
         pct:  Math.round((c.count / total) * 100),
       })),
     }
@@ -728,7 +730,7 @@ export default async function DashboardPage() {
       othersCount: sorted.length > 3 ? sorted.length - 3 : 0,
       items: top3.map((c, i) => ({
         slug:  c.slug,
-        name:  c.name,
+        name:  localizeCategoryName(tCat, c),
         pct:   Math.round((c.count / total) * 100),
         color: DONUT_PALETTE[i].color,
         soft:  DONUT_PALETTE[i].soft,

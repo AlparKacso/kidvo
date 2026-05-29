@@ -21,7 +21,7 @@ export default async function MyKidsPage() {
         kid_id,
         listing:listings(
           id, title, price_monthly, age_min, age_max, status, spots_available, trial_available,
-          category:categories(name, accent_color),
+          category:categories(name, slug, accent_color),
           area:areas(name),
           provider:providers(display_name),
           schedules:listing_schedules(day_of_week, time_start, time_end)
@@ -36,7 +36,7 @@ export default async function MyKidsPage() {
         id, status, preferred_day, created_at, child_id, message,
         listing:listings(
           id, title, price_monthly,
-          category:categories(name, accent_color),
+          category:categories(name, slug, accent_color),
           area:areas(name),
           provider:providers(display_name, contact_email, contact_phone)
         )

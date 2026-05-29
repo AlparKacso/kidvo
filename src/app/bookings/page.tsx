@@ -5,6 +5,8 @@ import { AppShell } from '@/components/layout/AppShell'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 import { createClient } from '@/lib/supabase/server'
+import { getTranslations } from 'next-intl/server'
+import { localizeCategoryName } from '@/lib/categoryName'
 
 const STATUS_STYLES: Record<string, { pill: string; label: string; icon: string }> = {
   pending:   { pill: 'bg-gold-lt text-gold-text',    label: 'Awaiting response', icon: '⏳' },
@@ -20,6 +22,8 @@ export default async function ParentBookingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
+  const tCat = await getTranslations('categories')
+
   const [{ data: childrenRaw }, { data: requestsRaw }] = await Promise.all([
     supabase
       .from('children')
@@ -32,7 +36,7 @@ export default async function ParentBookingsPage() {
         *,
         listing:listings(
           id, title, price_monthly, trial_available,
-          category:categories(name, accent_color),
+          category:categories(name, slug, accent_color),
           area:areas(name),
           provider:providers(display_name, contact_email, contact_phone)
         )
@@ -130,7 +134,7 @@ export default async function ParentBookingsPage() {
 
                             {/* Meta */}
                             <div className="flex flex-wrap gap-3 mt-1 text-sm text-ink-muted">
-                              {category && <span>{category.name}</span>}
+                              {category && <span>{localizeCategoryName(tCat, category)}</span>}
                               {area && <span>· {area.name}</span>}
                               {listing?.price_monthly && <span>· {listing.price_monthly} RON/mo</span>}
                               {req.preferred_day !== null && <span>· Preferred: {DAYS[req.preferred_day]}</span>}

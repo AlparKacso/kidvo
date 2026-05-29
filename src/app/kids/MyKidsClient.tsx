@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { RecommendedCard, pickRecommendation } from '@/components/ui/RecommendedCard'
 import { useTranslations } from 'next-intl'
+import { localizeCategoryName } from '@/lib/categoryName'
 
 const CURRENT_YEAR  = new Date().getFullYear()
 // Day names are resolved via t('days.N') inside components
@@ -41,6 +42,7 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
 }) {
   const t = useTranslations('kids')
   const tGrades = useTranslations('grades')
+  const tCat = useTranslations('categories')
   const GRADES = [
     tGrades('preschool'),
     tGrades('grade1'), tGrades('grade2'), tGrades('grade3'), tGrades('grade4'),
@@ -110,7 +112,7 @@ function ChildForm({ areas, categories, initial, onSave, onCancel, saving }: {
                       : { background: 'white', borderColor: '#E4E4E0', color: '#5C5C60' }
                     }
                   >
-                    {cat.name}
+                    {localizeCategoryName(tCat, cat)}
                   </button>
                 )
               })}
@@ -156,6 +158,7 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
   onReassign?:  (bookingId: string, kidId: string) => Promise<void>
 }) {
   const t = useTranslations('kids')
+  const tCat = useTranslations('categories')
   const [showAll,     setShowAll]     = useState(false)
   const [assigningId, setAssigningId] = useState<string | null>(null)
   const shown = showAll ? bookings : bookings.slice(0, CAP)
@@ -200,7 +203,7 @@ function BookingsSection({ bookings, kids, isUnassigned = false, onReassign }: {
                       {listing?.title}
                     </Link>
                     <div className="text-xs text-ink-muted mt-0.5">
-                      {[category?.name, area?.name, req.preferred_day !== null ? t('preferred', { day: t(`days.${req.preferred_day}` as any) }) : null].filter(Boolean).join(' · ')}
+                      {[localizeCategoryName(tCat, category),area?.name, req.preferred_day !== null ? t('preferred', { day: t(`days.${req.preferred_day}` as any) }) : null].filter(Boolean).join(' · ')}
                     </div>
                     {req.status === 'confirmed' && provider && (
                       <div className="mt-2 p-2.5 bg-success-lt border border-success/20 rounded-lg">
@@ -254,6 +257,7 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
   onUnsave?:    (saveId: string, listingId: string, kidId: string | null) => void
 }) {
   const t = useTranslations('kids')
+  const tCat = useTranslations('categories')
   const [showAll,     setShowAll]     = useState(false)
   const [assigningId, setAssigningId] = useState<string | null>(null)
   const shown = showAll ? saves : saves.slice(0, CAP)
@@ -294,7 +298,7 @@ function SavesSection({ saves, kids, isUnassigned = false, onReassign, onUnsave 
                       )}
                     </div>
                     <div className="text-xs text-ink-muted mt-0.5">
-                      {[category?.name, `Ages ${listing?.age_min}–${listing?.age_max}`, area?.name].filter(Boolean).join(' · ')}
+                      {[localizeCategoryName(tCat, category),`Ages ${listing?.age_min}–${listing?.age_max}`, area?.name].filter(Boolean).join(' · ')}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="font-display text-sm font-bold text-ink">{listing?.price_monthly} RON</span>
@@ -344,6 +348,7 @@ interface Props {
 
 export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, categories, bookings: initialBookings, listings }: Props) {
   const t = useTranslations('kids')
+  const tCat = useTranslations('categories')
   const [kids,           setKids]           = useState<Child[]>(initialKids)
   const [localBookings,  setLocalBookings]  = useState<Booking[]>(initialBookings)
   const [localSaves,     setLocalSaves]     = useState<Save[]>(initialSaves)
@@ -613,7 +618,7 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
                       const cat = categories.find(c => c.slug === slug)
                       return cat ? (
                         <span key={slug} className="px-2.5 py-1 rounded-full text-[10px] font-display font-semibold text-white" style={{ background: cat.accent_color }}>
-                          {cat.name}
+                          {localizeCategoryName(tCat, cat)}
                         </span>
                       ) : null
                     })}

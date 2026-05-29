@@ -5,6 +5,7 @@ import { LocaleToggle } from '@/components/ui/LocaleToggle'
 import { PhoneShowcase } from '@/components/ui/PhoneShowcase'
 import { JsonLd } from '@/components/ui/JsonLd'
 import { getTranslations } from 'next-intl/server'
+import { localizeCategoryName } from '@/lib/categoryName'
 
 // ── Category emoji mapping (matches DB slugs) ──────────────────────────────
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -38,6 +39,7 @@ export default async function LandingPage() {
   const supabase = await createClient()
   const t = await getTranslations('landing')
   const tCard = await getTranslations('card')
+  const tCat = await getTranslations('categories')
 
   const [
     { data: categoriesRaw },
@@ -258,7 +260,7 @@ export default async function LandingPage() {
                 {CATEGORY_EMOJI[cat.slug] && (
                   <span style={{ fontSize: '14px', lineHeight: 1 }}>{CATEGORY_EMOJI[cat.slug]}</span>
                 )}
-                {cat.name}
+                {localizeCategoryName(tCat, cat)}
               </Link>
             ))}
           </div>
@@ -299,7 +301,7 @@ export default async function LandingPage() {
                         className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"
                         style={{ background: hexToRgba(accent, 0.12), color: accent, padding: '3px 9px' }}
                       >
-                        {act.category.name}
+                        {localizeCategoryName(tCat, act.category)}
                       </span>
                       <span
                         className="inline-flex items-center rounded-full font-display text-[11px] font-semibold"

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
+import { localizeCategoryName } from '@/lib/categoryName'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { LegalModal } from '@/components/ui/LegalModal'
@@ -142,6 +143,7 @@ function PreviewCard({ data, categories, areas, coverPreview, providerName }: {
   const t = useTranslations('wizard')
   const tCard = useTranslations('card')
   const tEvents = useTranslations('events')
+  const tCat = useTranslations('categories')
   const locale = useLocale() as Locale
 
   const cat   = categories.find(c => c.id === data.category_id)
@@ -302,7 +304,7 @@ function PreviewCard({ data, categories, areas, coverPreview, providerName }: {
               }}
             >
               <span aria-hidden style={{ fontSize: 12 }}>{emoji}</span>
-              <span className="truncate">{cat.name}</span>
+              <span className="truncate">{localizeCategoryName(tCat, cat)}</span>
             </span>
           )}
         </div>
@@ -432,6 +434,7 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
   const [tempEnd,   setTempEnd]         = useState('17:00')
 
   const t = useTranslations('wizard')
+  const tCat = useTranslations('categories')
   const STEPS = t.raw('steps') as string[]
   const DAYS  = [0,1,2,3,4,5,6].map(i => t(`days.${i}` as any))
   const rules = t.raw('rules') as { icon: string; title: string; desc: string }[]
@@ -768,7 +771,7 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
                       )}
                     >
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cat.accent_color }} />
-                      {cat.name}
+                      {localizeCategoryName(tCat, cat)}
                     </button>
                   ))}
                 </div>

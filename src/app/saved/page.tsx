@@ -17,7 +17,7 @@ export default async function SavedPage() {
       id,
       listing:listings(
         id, title, price_monthly, age_min, age_max, status,
-        category:categories(name, accent_color),
+        category:categories(name, slug, accent_color),
         area:areas(name),
         provider:providers(display_name),
         schedules:listing_schedules(day_of_week, time_start, time_end)

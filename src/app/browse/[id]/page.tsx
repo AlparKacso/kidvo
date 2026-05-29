@@ -15,6 +15,7 @@ import { EditReviewForm }        from '@/components/ui/EditReviewForm'
 import { EditableReview }        from '@/components/ui/EditableReview'
 import { JsonLd }                from '@/components/ui/JsonLd'
 import { getTranslations }       from 'next-intl/server'
+import { localizeCategoryName }  from '@/lib/categoryName'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -74,6 +75,7 @@ export default async function ActivityDetailPage({ params }: Props) {
   const { id }   = await params
   const supabase = await createClient()
   const t = await getTranslations('detail')
+  const tCat = await getTranslations('categories')
 
   const [{ data: listingRaw }, { data: { user } }] = await Promise.all([
     supabase
@@ -190,7 +192,7 @@ export default async function ActivityDetailPage({ params }: Props) {
         <div className="flex items-center gap-2 text-sm text-ink-muted mb-6 flex-wrap">
           <Link href="/browse" className="hover:text-primary transition-colors">{t('breadcrumb')}</Link>
           <span>›</span>
-          <Link href={`/browse?category=${category.slug}`} className="hover:text-primary transition-colors">{category.name}</Link>
+          <Link href={`/browse?category=${category.slug}`} className="hover:text-primary transition-colors">{localizeCategoryName(tCat, category)}</Link>
           <span>›</span>
           <span className="text-ink">{listing.title}</span>
         </div>
@@ -207,7 +209,7 @@ export default async function ActivityDetailPage({ params }: Props) {
               <div className="pl-6 pr-5 py-5">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: accent }} />
-                  <span className="text-xs text-ink-muted">{category.name} · {area.name} · Timișoara</span>
+                  <span className="text-xs text-ink-muted">{localizeCategoryName(tCat, category)} · {area.name} · Timișoara</span>
                   {!isFull && (
                     <span className="inline-flex px-1.5 py-0.5 rounded font-display text-[10px] font-semibold bg-success-lt text-success">{t('available')}</span>
                   )}
