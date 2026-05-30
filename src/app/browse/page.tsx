@@ -5,6 +5,7 @@ import { ComingUpBand }  from '@/components/ui/ComingUpBand'
 import { CategoryPills } from '@/components/ui/CategoryPills'
 import { SearchBar }     from '@/components/ui/SearchBar'
 import { createClient }  from '@/lib/supabase/server'
+import { getCategories, getAreas } from '@/lib/referenceData'
 import { eventsEnabled } from '@/lib/eventsEnabled'
 import { getTranslations } from 'next-intl/server'
 import type { ListingWithRelations } from '@/types/database'
@@ -49,14 +50,12 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const t = await getTranslations('browse')
   const tEvents = await getTranslations('events')
 
-  const [{ data: categoriesRaw }, { data: areasRaw }] = await Promise.all([
-    supabase.from('categories').select('*').order('sort_order'),
-    supabase.from('areas').select('*').order('name'),
+  const [categories, areas] = await Promise.all([
+    getCategories(),
+    getAreas(),
   ])
 
   const languages  = ['Romanian', 'Hungarian', 'Serbian', 'German', 'English']
-  const categories = categoriesRaw as unknown as any[] | null
-  const areas      = areasRaw      as unknown as any[] | null
 
   // Upcoming events for the "Coming up" band (separate from the activity grid).
   // Honors the NEXT_PUBLIC_EVENTS_ENABLED kill-switch — when disabled we
