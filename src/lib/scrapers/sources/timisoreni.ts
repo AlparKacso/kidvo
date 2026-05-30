@@ -8,19 +8,34 @@ import { bucharestLocalToUtcIso } from '@/lib/eventDate'
 //
 // The hub endpoint exposes 4 curated sections (toate, astazi, weekend,
 // populare) of up to 12 events each — there's no full-agenda paging. We
-// merge across sections (dedupe by event id) and filter to two categories
-// likely to contain kids-relevant content; the admin review queue catches
-// any false positives.
+// merge across sections (dedupe by event id) and keep only kid-relevant
+// events. The hub has NO kids category, so a category filter is useless
+// (it let adult opera/theatre through — Rigoletto, Mata Hari, …); instead
+// we match the other adapters and filter by title/description keywords +
+// an explicit young-age tag. The admin review queue catches the rest.
 
 const SITE      = 'https://www.timisoreni.ro'
 const API_BASE  = 'https://api.timisoreni.ro/api'
 const HUB_SLUG  = 'evenimente'
 const UA        = 'kidvo-events-bot/1.0 (+https://kidvo.eu)'
 
-// Categories that have produced kid-relevant events in practice. Skip:
-//   - Filme  (mainstream movies; mostly adult-leaning, mixed with kid films)
-//   - null   (uncategorized — Revelion, wine festival, etc.)
-const KID_CATEGORIES = new Set(['Evenimente', 'Spectacole'])
+// Kid-show keywords (Romanian + the occasional English title), same shape as
+// the eventbook/iabilet filters. Loose on purpose — admin review catches FPs.
+const KIDS_TITLE_RE = /\b(copii|copil|junior|micu[țt]|prich|pitic|frozen|scufi[țt]|prin[țt]es|purcelu[șs]i|ursule[țt]|p[ăa]pu[șs]i|marionet|basm|f[ăa]t[\s\-]?frumos|feerie|magia|harry\s+potter|alad[iî]n|mo[șs]|cr[ăa]ciun|hansel|zootopia|aristocrat|familie)\b/i
+
+// Explicit young-age tag, e.g. "(3-5 ani)" / "0-2 ani" — the educational
+// recitals carry these and have no keyword. Only count it when the lower
+// bound is young (≤12), so adult ranges like "16+ ani" don't match.
+function hasKidAgeTag(text: string): boolean {
+  const m = text.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s*ani/i)
+  return !!m && parseInt(m[1], 10) <= 12
+}
+
+// Match the title only — like iabilet/eventbook. Descriptions are too noisy
+// (a synopsis mentioning "copii" in passing produced false positives).
+function isKidEvent(name: string): boolean {
+  return KIDS_TITLE_RE.test(name) || hasKidAgeTag(name)
+}
 
 interface ApiRepresentation {
   date_start_formatted?: string   // "YYYY-MM-DD HH:MM:SS"
@@ -89,8 +104,8 @@ async function fetchEvents(): Promise<RawEvent[]> {
   const cutoffMs = Date.now() - 24 * 60 * 60 * 1000
 
   for (const ev of items) {
-    if (!ev.category_name || !KID_CATEGORIES.has(ev.category_name)) continue
     if (!ev.representations?.length) continue
+    if (!isKidEvent(ev.name)) continue
 
     for (const rep of ev.representations) {
       const day = (rep.date_start_formatted ?? '').split(' ')[0]   // "YYYY-MM-DD"
