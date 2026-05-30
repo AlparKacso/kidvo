@@ -34,6 +34,7 @@ export async function middleware(request: NextRequest) {
   const alwaysPublic = ['/', '/privacy', '/terms', '/teaser']
   if (alwaysPublic.includes(pathname)) return NextResponse.next()
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return NextResponse.next()
+  if (pathname === '/events' || pathname.startsWith('/events/')) return NextResponse.next()
   if (pathname === '/auth/callback') return NextResponse.next()
   if (pathname === '/opengraph-image' || pathname.endsWith('/opengraph-image')) return NextResponse.next()
   // Reset/forgot password pages must stay accessible regardless of auth state
