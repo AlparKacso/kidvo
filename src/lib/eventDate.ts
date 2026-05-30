@@ -75,8 +75,9 @@ export function utcIsoToBucharestLocal(iso: string | null | undefined): string {
   return `${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}`
 }
 
-// Two exhaustive buckets — every upcoming event is "this week" (starts
-// within 7 days) or "next week" (everything later). No content is hidden.
+// Two exhaustive buckets — every upcoming event is "this week" (starts on or
+// before the end of the current calendar week, Mon–Sun in Europe/Bucharest)
+// or "next week" (everything later). No content is hidden.
 export type UrgencyKey = 'thisweek' | 'nextweek'
 export type UrgencyTone = 'warm' | 'cool'
 
@@ -91,11 +92,29 @@ const URGENCY_LABEL: Record<Locale, Record<UrgencyKey, string>> = {
   en: { thisweek: 'This week',     nextweek: 'Next week' },
 }
 
-const DAY_MS = 86_400_000
+// The instant the current calendar week ends — i.e. next Monday 00:00 in
+// Europe/Bucharest, as a UTC Date. Events starting before it are "this week".
+// Computed in the Bucharest zone so a Sunday-night event doesn't leak into
+// next week (and vice-versa) due to the server's UTC clock.
+function endOfWeekBucharest(now: Date): Date {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+    }).formatToParts(now).map(x => [x.type, x.value]),
+  ) as Record<string, string>
+  // ISO weekday: Mon=1 … Sun=7 → days until next Monday.
+  const iso = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 }[parts.weekday] ?? 1
+  const daysUntilNextMonday = 8 - iso
+  // Advance the Bucharest calendar date by that many days (UTC arithmetic on
+  // the date-only value is safe — no DST hour involved), then resolve that
+  // local midnight back to a UTC instant.
+  const d = new Date(`${parts.year}-${parts.month}-${parts.day}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + daysUntilNextMonday)
+  return new Date(bucharestLocalToUtcIso(`${d.toISOString().slice(0, 10)}T00:00`)!)
+}
 
 export function urgencyFor(start: Date, now: Date, locale: Locale): Urgency {
-  const ms = start.getTime() - now.getTime()
-  if (ms < 7 * DAY_MS) {
+  if (start.getTime() < endOfWeekBucharest(now).getTime()) {
     return { key: 'thisweek', tone: 'warm', label: URGENCY_LABEL[locale].thisweek }
   }
   return { key: 'nextweek', tone: 'cool', label: URGENCY_LABEL[locale].nextweek }
