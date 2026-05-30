@@ -29,3 +29,6 @@ kidvo. /
 /playwright-report
 /test-results
 .env.test.local
+
+# Local design handoff scratch (not part of the app build)
+design_handoff_browse_cards/

@@ -23,6 +23,31 @@ export async function middleware(request: NextRequest) {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
+  const { pathname } = request.nextUrl
+
+  // ── Public routes — short-circuit BEFORE the auth round-trip ──────────────
+  // These render fine without a session, so we skip supabase.auth.getUser()
+  // (a network call to the auth server) entirely. This is the hot path:
+  // home, /browse and every /browse/<id> detail page. Logged-in display state
+  // is still resolved per-page by AppShell; token refresh still happens on the
+  // protected routes below, which is the only place it can be persisted anyway.
+  const alwaysPublic = ['/', '/privacy', '/terms', '/teaser']
+  if (alwaysPublic.includes(pathname)) return NextResponse.next()
+  if (pathname === '/browse' || pathname.startsWith('/browse/')) return NextResponse.next()
+  if (pathname === '/auth/callback') return NextResponse.next()
+  if (pathname === '/opengraph-image' || pathname.endsWith('/opengraph-image')) return NextResponse.next()
+  // Reset/forgot password pages must stay accessible regardless of auth state
+  // (recovery token arrives as a hash fragment — the server never sees it, so we
+  //  must not redirect logged-in users away before the client can consume it)
+  if (pathname === '/auth/forgot-password' || pathname === '/auth/reset-password') {
+    return NextResponse.next()
+  }
+  // Public auth API routes — must be accessible without a session
+  if (pathname === '/api/auth/forgot-password' || pathname === '/api/auth/create-profile') {
+    return NextResponse.next()
+  }
+
+  // ── Authenticated routes — validate (and refresh) the session ─────────────
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -43,23 +68,7 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const { pathname } = request.nextUrl
 
-  const alwaysPublic = ['/', '/privacy', '/terms', '/teaser']
-  if (alwaysPublic.includes(pathname)) return supabaseResponse
-  if (pathname === '/browse' || pathname.startsWith('/browse/')) return supabaseResponse
-  if (pathname === '/auth/callback') return supabaseResponse
-  if (pathname === '/opengraph-image' || pathname.endsWith('/opengraph-image')) return supabaseResponse
-  // Reset/forgot password pages must stay accessible regardless of auth state
-  // (recovery token arrives as a hash fragment — the server never sees it, so we
-  //  must not redirect logged-in users away before the client can consume it)
-  if (pathname === '/auth/forgot-password' || pathname === '/auth/reset-password') {
-    return supabaseResponse
-  }
-  // Public auth API routes — must be accessible without a session
-  if (pathname === '/api/auth/forgot-password' || pathname === '/api/auth/create-profile') {
-    return supabaseResponse
-  }
   const authRoutes = ['/auth/login', '/auth/signup']
   if (authRoutes.includes(pathname)) {
     if (user) return NextResponse.redirect(new URL('/dashboard', request.url))
