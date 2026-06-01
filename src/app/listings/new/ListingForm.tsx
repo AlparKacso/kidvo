@@ -11,6 +11,7 @@ import { CoverCropModal } from '@/components/ui/CoverCropModal'
 import { getProviderInitials } from '@/lib/imageBrightness'
 import { bucharestLocalToUtcIso, fmtEventDate, categoryPalette, categoryEmoji, isFreePrice, type Locale } from '@/lib/eventDate'
 import type { Category, Area } from '@/types/database'
+import { isValidPhone, normalizePhone } from '@/lib/phone'
 
 const CATEGORY_EMOJI: Record<string, string> = {
   sport:       '⚽',
@@ -394,6 +395,11 @@ interface ListingFormProps {
   areas:         Area[]
   providerId:    string
   providerName:  string
+  /** True when the provider already has a contact_phone on file. When false
+   *  (e.g. a Google signup that skipped phone), the wizard requires one before
+   *  publishing so every live listing is reachable. Defaults true so callers
+   *  that don't pass it (edit mode) never show the field. */
+  providerHasPhone?: boolean
   listingId?:    string
   initialData?:  Partial<FormData>
 }
@@ -407,9 +413,11 @@ interface SavedDraft {
 
 const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
-export function ListingForm({ categories, areas, providerId, providerName, listingId, initialData }: ListingFormProps) {
+export function ListingForm({ categories, areas, providerId, providerName, providerHasPhone = true, listingId, initialData }: ListingFormProps) {
   const isEdit                      = !!listingId
+  const needsPhone                  = !providerHasPhone
   const [step, setStep]             = useState(0)
+  const [contactPhone, setContactPhone] = useState('')
   const [data, setData]             = useState<FormData>({ ...INITIAL, ...initialData })
   const [saving, setSaving]         = useState(false)
   const [error,  setError]          = useState('')
@@ -556,6 +564,8 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
         : data.schedules.length > 0
     }
     if (step === 3) {
+      // A provider with no phone on file must supply a valid one here.
+      if (needsPhone && !isValidPhone(contactPhone)) return false
       return isEvent
         ? !!(data.price_label && data.description)
         : !!(data.price_monthly && data.description) && !spotsInvalid()
@@ -568,6 +578,22 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
     setError('')
     try {
       const supabase = createClient()
+
+      // Save the provider's contact phone if they didn't have one on file.
+      // Required by the wizard (canProceed) so every live listing is reachable.
+      if (needsPhone) {
+        const normalized = normalizePhone(contactPhone)
+        if (!normalized) {
+          setError(t('contactPhoneInvalid'))
+          setSaving(false)
+          return
+        }
+        const { error: phoneErr } = await supabase
+          .from('providers')
+          .update({ contact_phone: normalized })
+          .eq('id', providerId)
+        if (phoneErr) throw phoneErr
+      }
 
       // Upload cover image if a new file was selected
       let coverImageUrl = data.cover_image_url
@@ -984,6 +1010,23 @@ export function ListingForm({ categories, areas, providerId, providerName, listi
           {/* Step 3 */}
           {step === 3 && (
             <div className="flex flex-col gap-5">
+
+              {/* Contact phone — only when the provider has none on file (e.g. Google signup) */}
+              {needsPhone && (
+                <div>
+                  <Label hint={t('contactPhoneHint')}>{t('contactPhoneLabel')}</Label>
+                  <input
+                    type="tel"
+                    className={cn(inputCls, showErrors && !isValidPhone(contactPhone) && 'border-danger')}
+                    placeholder={t('contactPhonePlaceholder')}
+                    value={contactPhone}
+                    onChange={e => setContactPhone(e.target.value)}
+                  />
+                  {showErrors && !isValidPhone(contactPhone) && (
+                    <p className="text-[11px] text-danger mt-1">{t('contactPhoneInvalid')}</p>
+                  )}
+                </div>
+              )}
 
               {/* Cover photo */}
               <div>
