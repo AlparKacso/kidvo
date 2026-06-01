@@ -179,6 +179,9 @@
   },
   "auth": {
     "tagline": "Activities for kids in Timișoara",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithGoogleLoading": "Redirecting…",
+    "orDivider": "or",
     "login": {
       "title": "Welcome back",
       "subtitle": "Sign in to your kidvo account",

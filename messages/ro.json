@@ -179,6 +179,9 @@
   },
   "auth": {
     "tagline": "Activități pentru copii în Timișoara",
+    "continueWithGoogle": "Continuă cu Google",
+    "continueWithGoogleLoading": "Redirecționare…",
+    "orDivider": "sau",
     "login": {
       "title": "Bun venit înapoi",
       "subtitle": "Autentifică-te în contul tău kidvo",

@@ -11,6 +11,11 @@ export async function GET(request: NextRequest) {
   // `next` is set by deep links (e.g. signup with ?next=/browse/<id>). When absent,
   // we pick a role-appropriate landing below after the profile is loaded.
   const explicitNext = searchParams.get('next')
+  // `role` is passed by the Google signup button (parent|provider). OAuth can't
+  // collect the role mid-flow, so the signup page forwards the user's choice here.
+  const roleParam = searchParams.get('role')
+  const requestedRole =
+    roleParam === 'provider' || roleParam === 'parent' ? roleParam : null
 
   if (code) {
     const cookieStore = await cookies()
@@ -53,8 +58,12 @@ export async function GET(request: NextRequest) {
         if (!profile) {
           const email    = sessionData.user.email ?? ''
           const meta     = sessionData.user.user_metadata ?? {}
-          const fullName = (meta.full_name as string | undefined) ?? email.split('@')[0]
-          const role     = (meta.role as string | undefined) ?? 'parent'
+          // Google populates `full_name`/`name`; email signup sets `full_name`.
+          const fullName = (meta.full_name as string | undefined)
+            ?? (meta.name as string | undefined)
+            ?? email.split('@')[0]
+          // Role precedence: explicit ?role= from Google signup → signup metadata → parent.
+          const role     = requestedRole ?? (meta.role as string | undefined) ?? 'parent'
           const { data: created } = await adminDb
             .from('users')
             .insert({ id: userId, email, full_name: fullName, role, city: 'Timișoara', locale })
