@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
+import { GoogleButton, AuthDivider } from '@/components/auth/GoogleButton'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -70,6 +71,11 @@ export default function LoginPage() {
               {tLogin('confirmationFailed')}
             </div>
           )}
+
+          <GoogleButton />
+          <div className="my-4">
+            <AuthDivider />
+          </div>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div>
