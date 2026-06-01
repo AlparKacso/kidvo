@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { isValidPhone, normalizePhone } from '@/lib/phone'
 import { useTranslations } from 'next-intl'
+import { GoogleButton, AuthDivider } from '@/components/auth/GoogleButton'
 
 export default function SignupPage() {
   const [fullName, setFullName]   = useState('')
@@ -194,6 +195,9 @@ export default function SignupPage() {
                 {role === 'parent' ? tSignup('parentSub') : tSignup('providerSub')}
               </p>
             </div>
+
+            <GoogleButton role={role} />
+            <AuthDivider />
 
             <div>
               <label className="font-display text-[10.5px] font-bold tracking-[.08em] uppercase text-ink-mid block mb-1.5">{tSignup('fullName')}</label>
