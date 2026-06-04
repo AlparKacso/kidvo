@@ -145,3 +145,66 @@ test.describe('waitlist: provider offers a spot', () => {
     expect((entry as { status: string }).status).toBe('offered')
   })
 })
+
+test.describe('waitlist: manager — new group + offline student', () => {
+  let provEmail:  string
+  let providerId: string
+
+  test.beforeAll(async () => {
+    const prov = await createProvider('E2E WL Provider 3')
+    provEmail  = prov.email
+    providerId = prov.providerId
+  })
+
+  test.afterAll(async () => {
+    if (provEmail) await cleanupUser(provEmail)
+  })
+
+  test('provider creates a manual class and adds an offline student', async ({ page }) => {
+    test.setTimeout(90_000)
+    await dismissGates(page, '/auth/login')
+
+    await page.getByPlaceholder('you@example.com').fill(provEmail)
+    await page.locator('input[type="password"]').fill(E2E_PASSWORD)
+    await page.locator('button[type="submit"]').click()
+    await page.waitForURL(/\/(dashboard|listings)/, { timeout: 15_000 })
+
+    await page.goto('/listings/classes')
+    await expect(page.getByRole('heading', { name: /Classes & waitlist/i })).toBeVisible({ timeout: 10_000 })
+
+    // --- Start a new group (only the name is required) ---
+    const groupName = `E2E Group ${Date.now()}`
+    await page.getByRole('button', { name: /Start a new group/i }).first().click()
+    await expect(page.getByText(/Start a new group/i).first()).toBeVisible()
+    await page.getByPlaceholder(/Beginners/i).fill(groupName)
+    await page.getByRole('button', { name: /Create group/i }).click()
+
+    // The new manual class column appears.
+    await expect(page.getByText(groupName).first()).toBeVisible({ timeout: 15_000 })
+
+    // DB: a manual class (no listing) now exists.
+    const db = adminClient()
+    const { data: cls } = await db
+      .from('classes').select('id, listing_id').eq('provider_id', providerId).eq('name', groupName).single()
+    expect(cls).toBeTruthy()
+    expect((cls as { listing_id: string | null }).listing_id).toBeNull()
+    const classId = (cls as { id: string }).id
+
+    // --- Add an offline student (only the child name is required) ---
+    const childName = `E2E Walkin ${Date.now()}`
+    await page.getByRole('button', { name: /Add a student manually/i }).first().click()
+    await expect(page.getByText(/Add a student/i).first()).toBeVisible()
+    await page.getByPlaceholder(/e\.g\. Maria/i).fill(childName)
+    await page.getByRole('button', { name: 'Add', exact: true }).click()
+
+    await expect(page.getByText(childName).first()).toBeVisible({ timeout: 15_000 })
+
+    // DB: an offline, enrolled roster member.
+    const { data: members } = await db
+      .from('roster_members').select('source, status, child_name').eq('class_id', classId)
+    expect(members?.length).toBe(1)
+    expect((members?.[0] as { source: string }).source).toBe('offline')
+    expect((members?.[0] as { status: string }).status).toBe('enrolled')
+    expect((members?.[0] as { child_name: string }).child_name).toBe(childName)
+  })
+})
