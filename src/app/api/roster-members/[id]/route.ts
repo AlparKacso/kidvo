@@ -59,6 +59,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (action === 'return_to_pool') {
     if (member.waitlist_entry_id) {
       await supabase.from('waitlist_entries').update({ status: 'waiting' }).eq('id', member.waitlist_entry_id)
+      // Invalidate any still-pending offer so a stale Accept email can't resurrect this member.
+      await supabase.from('offers').update({ phase: 'expired', responded_at: new Date().toISOString() })
+        .eq('waitlist_entry_id', member.waitlist_entry_id).eq('phase', 'pending')
     }
     const { error } = await supabase.from('roster_members').delete().eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -82,6 +85,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
   if (member.waitlist_entry_id) {
     await supabase.from('waitlist_entries').update({ status: 'removed' }).eq('id', member.waitlist_entry_id)
+    // Invalidate any still-pending offer so a stale Accept email can't resurrect this member.
+    await supabase.from('offers').update({ phase: 'expired', responded_at: new Date().toISOString() })
+      .eq('waitlist_entry_id', member.waitlist_entry_id).eq('phase', 'pending')
   }
 
   const { error } = await supabase.from('roster_members').delete().eq('id', id)
