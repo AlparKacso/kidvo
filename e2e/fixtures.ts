@@ -146,7 +146,10 @@ export async function cleanupUser(email: string): Promise<void> {
  * never touches a real provider's data and never triggers an email to a
  * real account.
  */
-export async function createListing(providerId: string): Promise<{ id: string; title: string }> {
+export async function createListing(
+  providerId: string,
+  opts: { full?: boolean } = {},
+): Promise<{ id: string; title: string }> {
   const db = adminClient()
 
   // Pick the first available category + area so we don't hardcode IDs.
@@ -169,7 +172,8 @@ export async function createListing(providerId: string): Promise<{ id: string; t
       price_monthly:   100,
       pricing_type:    'month',
       spots_total:     10,
-      spots_available: 10,
+      // full=true → spots_available 0, which opens the waitlist.
+      spots_available: opts.full ? 0 : 10,
       address:         'Test address',
       language:        'Romanian',
       includes:        ['Test inclusion'],
@@ -191,6 +195,34 @@ export async function createListing(providerId: string): Promise<{ id: string; t
   if (schedErr) throw schedErr
 
   return listing as { id: string; title: string }
+}
+
+/**
+ * Seed a waiting waitlist entry for a parent on a listing. Cleaned up via the
+ * user/listing delete cascade in cleanupUser.
+ */
+export async function createWaitlistEntry(
+  listingId: string,
+  userId: string,
+  opts: { childName?: string; childAge?: number; contactEmail?: string } = {},
+): Promise<{ id: string }> {
+  const db = adminClient()
+  const { data, error } = await db
+    .from('waitlist_entries')
+    .insert({
+      listing_id:     listingId,
+      user_id:        userId,
+      child_name:     opts.childName ?? 'E2E Child',
+      child_age:      opts.childAge ?? 7,
+      preferred_days: [1],
+      status:         'waiting',
+      contact_name:   'E2E Parent',
+      contact_email:  opts.contactEmail ?? null,
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('e2e: failed to insert waitlist entry')
+  return data as { id: string }
 }
 
 /**
