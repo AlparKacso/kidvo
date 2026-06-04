@@ -98,6 +98,7 @@ const IconEvents    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill
 const IconKids      = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="9" cy="5.5" r="3"/><path d="M2.5 16c0-3 2.9-5.5 6.5-5.5s6.5 2.5 6.5 5.5"/></svg>
 const IconTrials    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2" y="3.5" width="14" height="11" rx="1.5"/><path d="M6 3.5V2M12 3.5V2M2 7.5h14"/></svg>
 const IconListings  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2.5" y="2" width="13" height="14" rx="1.5"/><path d="M6 6h6M6 9h6M6 12h4"/></svg>
+const IconClasses   = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="3" width="4.5" height="12" rx="1"/><rect x="11" y="3" width="4.5" height="8" rx="1"/></svg>
 const IconAnalytics = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 13.5l4-4.5 3.5 3L13 5"/><path d="M13 5h3v3"/></svg>
 const IconSettings  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="9" cy="9" r="6.5"/><circle cx="9" cy="9" r="2.5"/></svg>
 const IconAdmin     = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 1.5L2.5 4.5v4c0 3.5 2.9 6.5 6.5 7 3.6-.5 6.5-3.5 6.5-7v-4L9 1.5Z"/><path d="M6 9l2 2 4-4"/></svg>
@@ -195,6 +196,7 @@ interface SidebarProps {
   isProvider?:             boolean
   pendingBookings?:        number
   providerPendingTrials?:  number
+  providerWaitingCount?:   number
   userEmail?:              string
   hasEvents?:              boolean
 }
@@ -203,6 +205,7 @@ export function Sidebar({
   isProvider             = false,
   pendingBookings        = 0,
   providerPendingTrials  = 0,
+  providerWaitingCount   = 0,
   userEmail              = '',
   hasEvents              = false,
 }: SidebarProps) {
@@ -283,7 +286,8 @@ export function Sidebar({
 
         {isProvider && (
           <NavSection label={t('myListings')} collapsed={collapsed}>
-            <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} badgeVariant="purple" collapsed={collapsed} />
+            <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} badgeVariant="purple" excludes={['/listings/classes']} collapsed={collapsed} />
+            <NavItem href="/listings/classes" icon={<IconClasses />} label={t('classesWaitlist')} badge={providerWaitingCount} badgeVariant="blue" collapsed={collapsed} />
           </NavSection>
         )}
 

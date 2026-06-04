@@ -304,6 +304,35 @@ export default async function DashboardPage() {
       }
     }
 
+    // ── Waitlist (families waiting across the provider's listings) ──
+    const provListingIds = allListings.map(l => l.id)
+    let waitingCount = 0, waitingNewToday = 0
+    let waitlistFeed: any[] = []
+    let waitingByClass: { title: string; count: number; capacity: number | null }[] = []
+    if (provListingIds.length > 0) {
+      const { data: wlRaw } = await supabase
+        .from('waitlist_entries')
+        .select('id, listing_id, child_name, preferred_days, created_at, status, listing:listings(title, spots_total)')
+        .in('listing_id', provListingIds)
+        .eq('status', 'waiting')
+        .order('created_at', { ascending: false })
+      const wl = (wlRaw ?? []) as any[]
+      waitingCount = wl.length
+      const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0)
+      waitingNewToday = wl.filter(w => new Date(w.created_at) >= startOfToday).length
+      waitlistFeed = wl.slice(0, 5)
+      const byClass = new Map<string, { title: string; count: number; capacity: number | null }>()
+      wl.forEach(w => {
+        const key = w.listing_id as string
+        const title = (w.listing as any)?.title ?? '—'
+        const cap   = (w.listing as any)?.spots_total ?? null
+        const e = byClass.get(key) ?? { title, count: 0, capacity: cap }
+        e.count++
+        byClass.set(key, e)
+      })
+      waitingByClass = [...byClass.values()].sort((a, b) => b.count - a.count).slice(0, 5)
+    }
+
     // Derived metrics
     const activeCount      = allListings.filter(l => l.status === 'active').length
     const pausedCount      = allListings.filter(l => l.status === 'paused').length
@@ -354,16 +383,10 @@ export default async function DashboardPage() {
             href="/listings"
           />
           <StatCard
-            label={tDash('providerTotalViews')}
-            value={totalAllViews}
-            sub={tDash('allTime')}
-            accent="blue"
-            href="/listings"
-          />
-          <StatCard
             label={tDash('providerTrialRequests')}
             value={totalAllTrials}
             sub={`${tDash('confirmedN', { n: confirmedTrials })} · ${tDash('pendingN', { n: pendingTrials })}`}
+            accent="blue"
             href="/listings?tab=bookings"
           />
           <StatCard
@@ -372,6 +395,26 @@ export default async function DashboardPage() {
             sub={tDash('parentsUnlocked')}
             href="/listings"
           />
+          {/* Highlighted dark/gold "On the waitlist" card */}
+          <Link
+            href="/listings/classes"
+            className="block rounded-[16px] p-[18px] relative overflow-hidden transition-transform hover:-translate-y-[1px]"
+            style={{ background: 'linear-gradient(150deg,#1c1c27,#2a2438)', boxShadow: '0 2px 16px rgba(90,70,140,.10)' }}
+          >
+            <div className="absolute top-0 right-0 w-28 h-28 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle, #f5c542 0%, transparent 70%)', transform: 'translate(25%, -35%)' }} />
+            <div className="font-display text-[11px] font-bold uppercase tracking-[.08em] mb-2" style={{ color: '#f5c542' }}>
+              ★ {tDash('waitlistStatLabel')}
+            </div>
+            <div className="font-display text-[27px] font-extrabold leading-none tracking-[-1px] text-white">{waitingCount}</div>
+            <div className="flex items-center justify-between mt-[6px]">
+              <span className="font-display text-[11.5px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                {waitingNewToday > 0 ? tDash('waitlistNewToday', { n: waitingNewToday }) : tDash('waitlistFamilies')}
+              </span>
+              <span className="font-display text-[11px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                {tDash('waitlistManage')}
+              </span>
+            </div>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-[18px]">
@@ -459,6 +502,47 @@ export default async function DashboardPage() {
                 </div>
               )}
             </SectionCard>
+
+            {/* Waitlist activity */}
+            {waitingCount > 0 && (
+              <SectionCard
+                title={tDash('waitlistFeedTitle')}
+                sub={tDash('waitlistFeedSub')}
+                linkText={tDash('waitlistManage')}
+                linkHref="/listings/classes"
+              >
+                <div className="flex flex-col gap-[10px]">
+                  {waitlistFeed.map((w: any) => {
+                    const hoursAgo = Math.floor((Date.now() - new Date(w.created_at).getTime()) / 3_600_000)
+                    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0)
+                    const isNew = new Date(w.created_at) >= startOfToday
+                    const dayLabel = (w.preferred_days as number[] | null)?.length
+                      ? DAYS[(w.preferred_days as number[])[0]]
+                      : null
+                    return (
+                      <div key={w.id} className="flex items-center gap-3 px-4 py-3 rounded-[14px] border border-border" style={{ background: '#f9f8fd' }}>
+                        <span className="w-8 h-8 rounded-full bg-gold-lt flex items-center justify-center font-display text-[12px] font-bold text-gold-text flex-shrink-0">
+                          {(w.child_name ?? '?').slice(0, 1).toUpperCase()}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-display text-[13px] font-semibold text-ink truncate">{w.child_name}</div>
+                          <div className="font-display text-[11.5px] text-ink-muted truncate">
+                            {tDash('waitlistWants', { class: (w.listing as any)?.title ?? '—' })}
+                            {dayLabel ? ` · ${tDash('waitlistPrefers', { day: dayLabel })}` : ''}
+                          </div>
+                        </div>
+                        {isNew && (
+                          <span className="font-display text-[10px] font-bold uppercase tracking-[.06em] px-2 py-0.5 rounded-full bg-gold text-ink flex-shrink-0">{tDash('waitlistNew')}</span>
+                        )}
+                        <span className="font-display text-[11px] font-semibold text-ink-muted flex-shrink-0">
+                          {hoursAgo < 1 ? tDash('justNow') : hoursAgo < 24 ? `${hoursAgo}h` : `${Math.floor(hoursAgo / 24)}d`}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </SectionCard>
+            )}
 
             {/* ── Mobile-only: Top listings + Conversion (shown between requests and performance) ── */}
             {topListingsBars.length > 0 && totalAllViews > 0 && (
@@ -619,6 +703,31 @@ export default async function DashboardPage() {
                       <div className="font-display text-[10px] text-ink-muted mt-1">{s.label}</div>
                     </div>
                   ))}
+                </div>
+              </SectionCard>
+            )}
+
+            {/* Waiting by class */}
+            {waitingByClass.length > 0 && (
+              <SectionCard title={tDash('waitingByClass')} sub={tDash('waitingByClassSub')} linkText={tDash('waitlistManage')} linkHref="/listings/classes">
+                <div className="flex flex-col gap-[12px]">
+                  {waitingByClass.map(c => {
+                    const denom = c.capacity && c.capacity > 0 ? c.capacity : Math.max(c.count, 1)
+                    const pct   = Math.min(100, Math.round((c.count / denom) * 100))
+                    return (
+                      <div key={c.title} className="flex flex-col gap-[5px]">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-display text-[12.5px] font-semibold text-ink truncate leading-snug">{c.title}</span>
+                          <span className="font-display text-[12px] font-bold text-ink-muted flex-shrink-0">
+                            {c.capacity ? `${c.count}/${c.capacity}` : c.count}
+                          </span>
+                        </div>
+                        <div className="h-[10px] rounded-full overflow-hidden" style={{ background: '#ece8f5' }}>
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #d4a017, #f5c542)' }} />
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </SectionCard>
             )}

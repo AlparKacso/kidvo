@@ -69,9 +69,10 @@ export async function AppShell({ children }: AppShellProps) {
   // suppress the Events nav item even if active events exist in the DB.
   const hasEvents       = eventsEnabled() && (eventsRes.count ?? 0) > 0
 
-  // Provider-side pending trial requests across their listings — drives the
-  // nav badge so providers don't miss new bookings between dashboard visits.
+  // Provider-side pending trial requests + waiting families across their
+  // listings — drives the nav badges so providers don't miss activity.
   let providerPendingTrials = 0
+  let providerWaitingCount  = 0
   if (isProvider) {
     const { data: providerRow } = await supabase
       .from('providers').select('id').eq('user_id', authUser.id).single()
@@ -81,12 +82,16 @@ export async function AppShell({ children }: AppShellProps) {
         .from('listings').select('id').eq('provider_id', providerId)
       const listingIds = (provListings ?? []).map((l: { id: string }) => l.id)
       if (listingIds.length > 0) {
-        const { count } = await supabase
-          .from('trial_requests')
-          .select('*', { count: 'exact', head: true })
-          .in('listing_id', listingIds)
-          .eq('status', 'pending')
-        providerPendingTrials = count ?? 0
+        const [{ count: trialCount }, { count: waitingCount }] = await Promise.all([
+          supabase.from('trial_requests')
+            .select('*', { count: 'exact', head: true })
+            .in('listing_id', listingIds).eq('status', 'pending'),
+          supabase.from('waitlist_entries')
+            .select('*', { count: 'exact', head: true })
+            .in('listing_id', listingIds).eq('status', 'waiting'),
+        ])
+        providerPendingTrials = trialCount ?? 0
+        providerWaitingCount  = waitingCount ?? 0
       }
     }
   }
@@ -99,6 +104,7 @@ export async function AppShell({ children }: AppShellProps) {
           isProvider={isProvider}
           pendingBookings={pendingBookings}
           providerPendingTrials={providerPendingTrials}
+          providerWaitingCount={providerWaitingCount}
           userEmail={userEmail}
           hasEvents={hasEvents}
         />

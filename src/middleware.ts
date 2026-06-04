@@ -35,6 +35,11 @@ export async function middleware(request: NextRequest) {
   if (alwaysPublic.includes(pathname)) return NextResponse.next()
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return NextResponse.next()
   if (pathname === '/events' || pathname.startsWith('/events/')) return NextResponse.next()
+  // Tokenized waitlist offer — parents respond by email link without an account.
+  // The page and its token API are public; the provider's POST /api/offers
+  // (no trailing slash) stays protected by the auth check below.
+  if (pathname.startsWith('/offer/')) return NextResponse.next()
+  if (pathname.startsWith('/api/offers/')) return NextResponse.next()
   if (pathname === '/auth/callback') return NextResponse.next()
   if (pathname === '/opengraph-image' || pathname.endsWith('/opengraph-image')) return NextResponse.next()
   // Reset/forgot password pages must stay accessible regardless of auth state
