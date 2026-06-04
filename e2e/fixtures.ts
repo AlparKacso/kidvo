@@ -198,6 +198,40 @@ export async function createListing(
 }
 
 /**
+ * Seed a manual class (no listing) for a provider, prefilled enough that the
+ * quick-start wizard only needs the listing-only fields (price, description).
+ * Cleaned up via the provider delete cascade in cleanupUser.
+ */
+export async function createManualClass(providerId: string): Promise<{ id: string; name: string }> {
+  const db = adminClient()
+  const { data: cat } = await db.from('categories').select('id').limit(1).single()
+  const { data: area } = await db.from('areas').select('id').limit(1).single()
+  if (!cat || !area) throw new Error('e2e: no categories/areas to seed manual class')
+
+  const name = `E2E Manual Class ${Date.now()}`
+  const { data, error } = await db
+    .from('classes')
+    .insert({
+      provider_id: providerId,
+      listing_id:  null,
+      name,
+      category_id: (cat as { id: string }).id,
+      area_id:     (area as { id: string }).id,
+      age_min:     5,
+      age_max:     10,
+      capacity:    8,
+      days:        [1, 3],
+      time_start:  '16:00',
+      time_end:    '17:00',
+      language:    'Romanian',
+    })
+    .select('id, name')
+    .single()
+  if (error || !data) throw error ?? new Error('e2e: failed to insert manual class')
+  return data as { id: string; name: string }
+}
+
+/**
  * Seed a waiting waitlist entry for a parent on a listing. Cleaned up via the
  * user/listing delete cascade in cleanupUser.
  */
