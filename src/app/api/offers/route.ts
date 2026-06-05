@@ -89,7 +89,9 @@ export async function POST(req: Request) {
   const parentLocale = (parentRaw as { locale: string | null } | null)?.locale === 'en' ? 'en' : 'ro'
 
   if (entry.contact_email) {
-    sendSpotOfferToParent({
+    // Await — the offer email carries the parent's Accept link, so it must not
+    // be dropped by the function freezing after `return` (fire-and-forget risk).
+    await sendSpotOfferToParent({
       parentEmail:  entry.contact_email,
       parentName:   entry.contact_name ?? '',
       childName:    entry.child_name,

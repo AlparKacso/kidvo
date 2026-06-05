@@ -106,7 +106,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         locale = (uRaw as { locale: string | null } | null)?.locale === 'en' ? 'en' : 'ro'
       }
     }
-    sendWaitlistDeclineToParent({
+    await sendWaitlistDeclineToParent({
       parentEmail:  member.contact_email,
       parentName:   member.contact_name ?? '',
       providerName: member.class?.provider?.display_name ?? '',

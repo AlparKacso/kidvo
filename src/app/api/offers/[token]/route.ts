@@ -90,8 +90,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     const parentLocale = locale((parentRaw as { locale: string | null } | null)?.locale)
     const providerEmail = prov?.contact_email || prov?.user?.email || ''
 
+    // AWAIT both (concurrently) — fire-and-forget sends get cut off when the
+    // Vercel function freezes after `return`, dropping the second (provider) one.
+    const sends: Promise<unknown>[] = []
     if (entry?.contact_email) {
-      sendEnrollmentToParent({
+      sends.push(sendEnrollmentToParent({
         parentEmail:   entry.contact_email,
         parentName:    entry.contact_name ?? '',
         childName:     entry.child_name,
@@ -100,16 +103,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
         providerEmail,
         providerPhone: prov?.contact_phone ?? null,
         locale:        parentLocale,
-      }).catch(e => console.error('[enroll email parent]', e))
+      }))
     }
     if (providerEmail) {
-      sendEnrollmentToProvider({
+      sends.push(sendEnrollmentToProvider({
         providerEmail,
         parentName:   entry?.contact_name ?? '',
         childName:    entry?.child_name ?? '',
         listingTitle: entry?.listing?.title ?? offer.class?.name ?? '',
         locale:       locale(prov?.user?.locale),
-      }).catch(e => console.error('[enroll email provider]', e))
+      }))
+    }
+    for (const r of await Promise.allSettled(sends)) {
+      if (r.status === 'rejected') console.error('[enroll email]', r.reason)
     }
 
     return NextResponse.json({ phase: 'accepted', ...summary(offer) })

@@ -32,7 +32,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const adminDb = createAdminClient()
     const { data: uRaw } = await adminDb.from('users').select('locale').eq('id', entry.user_id).single()
     const locale = (uRaw as { locale: string | null } | null)?.locale === 'en' ? 'en' : 'ro'
-    sendWaitlistDeclineToParent({
+    await sendWaitlistDeclineToParent({
       parentEmail:  entry.contact_email,
       parentName:   entry.contact_name ?? '',
       providerName: entry.listing?.provider?.display_name ?? '',

@@ -79,19 +79,23 @@ export async function POST(req: Request) {
   const parentLocale = profile?.locale === 'en' ? 'en' : 'ro'
   const preferredDaysStr = days.length > 0 ? days.map(d => DAYS[d]).join(', ') : null
 
-  // Fire-and-forget both emails.
+  // AWAIT both emails (concurrently) before responding. Fire-and-forget sends
+  // are cut off when the Vercel function freezes after `return` — the second
+  // (provider) send was the one getting dropped, so providers never heard about
+  // a new waitlist signup. Awaiting guarantees both reach Resend.
+  const sends: Promise<unknown>[] = []
   if (listing && profile?.email) {
-    sendWaitlistConfirmationToParent({
+    sends.push(sendWaitlistConfirmationToParent({
       parentEmail:  profile.email,
       parentName:   profile.full_name ?? '',
       childName:    child_name,
       listingTitle: listing.title,
       position,
       locale:       parentLocale,
-    }).catch(e => console.error('[waitlist email parent]', e))
+    }))
   }
   if (listing && providerEmail) {
-    sendNewWaitlistEntryToProvider({
+    sends.push(sendNewWaitlistEntryToProvider({
       providerEmail,
       listingTitle:  listing.title,
       childName:     child_name,
@@ -101,7 +105,10 @@ export async function POST(req: Request) {
       preferredDays: preferredDaysStr,
       note:          note || null,
       locale:        providerLocale,
-    }).catch(e => console.error('[waitlist email provider]', e))
+    }))
+  }
+  for (const r of await Promise.allSettled(sends)) {
+    if (r.status === 'rejected') console.error('[waitlist email]', r.reason)
   }
 
   return NextResponse.json({ position })
