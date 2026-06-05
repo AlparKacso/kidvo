@@ -125,7 +125,7 @@ export async function AppShell({ children }: AppShellProps) {
       </div>
 
       {/* Bottom nav — mobile only */}
-      <BottomNav isProvider={isProvider} providerPendingTrials={providerPendingTrials} userEmail={userEmail} hasEvents={hasEvents} />
+      <BottomNav isProvider={isProvider} providerPendingTrials={providerPendingTrials} providerWaitingCount={providerWaitingCount} userEmail={userEmail} hasEvents={hasEvents} />
     </div>
   )
 }
