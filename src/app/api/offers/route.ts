@@ -75,15 +75,9 @@ export async function POST(req: Request) {
   const memberId = (memberRaw as { id: string }).id
 
   const token = `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, '')
-  // Offer expiry is opt-in: only stamp expires_at when WAITLIST_OFFER_EXPIRY_DAYS
-  // is configured. Unset → null → the offer never auto-expires (current default).
-  const expiryDays = Number(process.env.WAITLIST_OFFER_EXPIRY_DAYS)
-  const expiresAt = Number.isFinite(expiryDays) && expiryDays > 0
-    ? new Date(Date.now() + expiryDays * 86_400_000).toISOString()
-    : null
   const { error: offerErr } = await supabase
     .from('offers')
-    .insert({ waitlist_entry_id: entry.id, roster_member_id: memberId, class_id, token, phase: 'pending', expires_at: expiresAt })
+    .insert({ waitlist_entry_id: entry.id, roster_member_id: memberId, class_id, token, phase: 'pending' })
   if (offerErr) return NextResponse.json({ error: offerErr.message }, { status: 500 })
 
   await supabase.from('waitlist_entries').update({ status: 'offered' }).eq('id', entry.id)
