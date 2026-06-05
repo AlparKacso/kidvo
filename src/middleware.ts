@@ -18,6 +18,14 @@ export async function middleware(request: NextRequest) {
     if (cookie !== process.env.STAGING_PASSWORD) {
       const { pathname } = request.nextUrl
       if (pathname === '/staging-login') return NextResponse.next()
+      // Tokenized waitlist offer links are clicked by parents straight from email
+      // (no account, no staging password) — let them past the gate, mirroring prod
+      // where no gate exists. The unguessable token is the access control. Without
+      // this, email CTAs opened in an isolated browser (e.g. the Gmail app's
+      // in-app browser, which has no staging_auth cookie) bounce to /staging-login.
+      if (pathname.startsWith('/offer/') || pathname.startsWith('/api/offers/')) {
+        return NextResponse.next()
+      }
       return NextResponse.redirect(new URL('/staging-login', request.url))
     }
   }
