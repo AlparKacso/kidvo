@@ -717,7 +717,8 @@
     "declinedTitle": "Mulțumim că ne-ai anunțat",
     "declinedSub": "Nicio problemă — locul va fi oferit următoarei familii.",
     "expiredTitle": "Această ofertă a expirat",
-    "expiredSub": "Locul poate fi oferit altei familii."
+    "expiredSub": "Locul poate fi oferit altei familii.",
+    "browseCta": "Explorează activitățile →"
   },
   "contact": {
     "showContact": "Arată detalii de contact",

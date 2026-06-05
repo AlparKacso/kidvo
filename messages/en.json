@@ -717,7 +717,8 @@
     "declinedTitle": "Thanks for letting us know",
     "declinedSub": "No problem — the spot will be offered to the next family.",
     "expiredTitle": "This offer has expired",
-    "expiredSub": "The spot may have been offered to another family."
+    "expiredSub": "The spot may have been offered to another family.",
+    "browseCta": "Browse activities →"
   },
   "contact": {
     "showContact": "Show contact details",

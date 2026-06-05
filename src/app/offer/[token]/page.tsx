@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
@@ -60,6 +61,7 @@ export default function OfferPage() {
             <div className="text-3xl mb-2">🔍</div>
             <h1 className="font-display text-lg font-bold text-ink mb-1">{t('notFoundTitle')}</h1>
             <p className="font-display text-[13px] text-ink-muted">{t('notFoundSub')}</p>
+            <BrowseCta label={t('browseCta')} />
           </>
         )}
 
@@ -97,9 +99,21 @@ export default function OfferPage() {
                 ? t('declinedSub')
                 : t('expiredSub')}
             </p>
+            <BrowseCta label={t('browseCta')} />
           </>
         )}
       </div>
     </div>
+  )
+}
+
+function BrowseCta({ label }: { label: string }) {
+  return (
+    <Link
+      href="/browse"
+      className="inline-flex items-center justify-center mt-6 px-5 py-2.5 rounded-[10px] font-display text-sm font-bold bg-primary text-white hover:bg-primary-deep transition-colors"
+    >
+      {label}
+    </Link>
   )
 }
