@@ -15,6 +15,12 @@ const STATUS_STYLES: Record<string, { pill: string; label: string; icon: string 
   cancelled: { pill: 'bg-surface text-ink-muted',    label: 'Cancelled',         icon: '—'  },
 }
 
+const WAITLIST_STATUS: Record<string, { pill: string; label: string; icon: string; note?: string }> = {
+  waiting:  { pill: 'bg-gold-lt text-gold-text',  label: 'On the waitlist', icon: '📝' },
+  offered:  { pill: 'bg-[#e0f2ff] text-[#0369a1]', label: 'Spot offered',    icon: '🎉', note: 'A spot opened up — check your email to accept it.' },
+  enrolled: { pill: 'bg-success-lt text-success', label: 'Enrolled',        icon: '✅', note: 'You\'re in! The provider will reach out with the details.' },
+}
+
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
 
 export default async function ParentBookingsPage() {
@@ -24,7 +30,7 @@ export default async function ParentBookingsPage() {
 
   const tCat = await getTranslations('categories')
 
-  const [{ data: childrenRaw }, { data: requestsRaw }] = await Promise.all([
+  const [{ data: childrenRaw }, { data: requestsRaw }, { data: waitlistRaw }] = await Promise.all([
     supabase
       .from('children')
       .select('id, name')
@@ -43,10 +49,22 @@ export default async function ParentBookingsPage() {
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
+    // Parent's own waitlist entries (RLS: waitlist_parent_select). Read-only —
+    // no admin client needed, so this works regardless of email/offer plumbing.
+    supabase
+      .from('waitlist_entries')
+      .select(`
+        id, child_name, child_age, status, created_at,
+        listing:listings(id, title, category:categories(name, slug, accent_color), area:areas(name), provider:providers(display_name))
+      `)
+      .eq('user_id', user.id)
+      .neq('status', 'removed')
+      .order('created_at', { ascending: false }),
   ])
 
   const children = (childrenRaw ?? []) as { id: string; name: string }[]
   const requests = (requestsRaw ?? []) as any[]
+  const waitlists = (waitlistRaw ?? []) as any[]
 
   const total     = requests.length
   const pending   = requests.filter(r => r.status === 'pending').length
@@ -74,10 +92,13 @@ export default async function ParentBookingsPage() {
       <div>
         <div className="mb-6">
           <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">My Bookings</h1>
-          <p className="text-sm text-ink-muted">{total} total · {confirmed} confirmed · {pending} pending</p>
+          <p className="text-sm text-ink-muted">
+            {total} total · {confirmed} confirmed · {pending} pending
+            {waitlists.length > 0 && ` · ${waitlists.length} waitlist${waitlists.length !== 1 ? 's' : ''}`}
+          </p>
         </div>
 
-        {total === 0 && (
+        {total === 0 && waitlists.length === 0 && (
           <div className="bg-white border border-border rounded-lg p-12 text-center">
             <div className="text-3xl mb-3">📅</div>
             <div className="font-display text-sm font-semibold text-ink-mid mb-1">No trial requests yet</div>
@@ -183,6 +204,62 @@ export default async function ParentBookingsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Waitlists ─────────────────────────────────────────── */}
+        {waitlists.length > 0 && (
+          <div className={total > 0 ? 'mt-10' : ''}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-base leading-none">📝</span>
+              <span className="font-display text-[13px] font-bold text-ink">On the waitlist</span>
+              <span className="font-display text-[11px] text-ink-muted">· {waitlists.length} active</span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {waitlists.map(w => {
+                const listing  = w.listing as any
+                const category = listing?.category
+                const area     = listing?.area
+                const provider = listing?.provider
+                const status   = WAITLIST_STATUS[w.status] ?? WAITLIST_STATUS.waiting
+
+                return (
+                  <div key={w.id} className={`bg-white border rounded-lg p-5 ${w.status === 'enrolled' ? 'border-success/30' : w.status === 'offered' ? 'border-[#2aa7ff]/40' : 'border-border'}`}>
+                    <div className="flex items-start gap-4">
+                      <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: category?.accent_color ?? '#ccc' }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-display text-[10px] font-semibold ${status.pill}`}>
+                            {status.icon} {status.label}
+                          </span>
+                          <span className="text-[11px] text-ink-muted">
+                            Joined {new Date(w.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+
+                        <Link href={`/browse/${listing?.id}`} className="font-display text-base font-bold text-ink hover:text-primary transition-colors">
+                          {listing?.title}
+                        </Link>
+
+                        <div className="flex flex-wrap gap-3 mt-1 text-sm text-ink-muted">
+                          {w.child_name && <span>For {w.child_name}{w.child_age != null ? `, ${w.child_age}` : ''}</span>}
+                          {category && <span>· {localizeCategoryName(tCat, category)}</span>}
+                          {area && <span>· {area.name}</span>}
+                          {provider && <span>· {provider.display_name}</span>}
+                        </div>
+
+                        {status.note && (
+                          <div className={`mt-3 px-3 py-2 rounded text-xs ${w.status === 'enrolled' ? 'bg-success-lt text-success' : 'bg-[#e0f2ff] text-[#0369a1]'}`}>
+                            {status.note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
       </div>

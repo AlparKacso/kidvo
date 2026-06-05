@@ -576,6 +576,177 @@ export async function sendAdminProviderLeft(opts: {
   })
 }
 
+// ── Secondary (outline) button — used by the offer email's "Can't make it" ──
+function btnGhost(text: string, href: string) {
+  return `<a href="${href}" style="display:inline-block;margin:8px 0 16px 10px;background:white;color:#55527a;font-weight:700;font-size:13px;padding:9px 18px;border-radius:8px;border:1px solid #d5d0e0;text-decoration:none;">${text}</a>`
+}
+
+// ── 19. Parent — joined the waitlist (confirmation) ──────────────────────────
+export async function sendWaitlistConfirmationToParent(opts: {
+  parentEmail:  string
+  parentName:   string
+  childName:    string
+  listingTitle: string
+  position:     number
+  locale:       Locale
+}) {
+  const t = emailT('waitlistConfirmation', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+  const rows = [
+    detailRow(l('activity'), opts.listingTitle),
+    detailRow(l('child'),    opts.childName),
+    detailRow(l('position'), `#${opts.position}`),
+  ].join('')
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.parentEmail,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName, child: opts.childName, listing: opts.listingTitle }))}
+      ${detailTable(rows)}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/browse`)}
+    `),
+  })
+}
+
+// ── 20. Provider — new waitlist signup ───────────────────────────────────────
+export async function sendNewWaitlistEntryToProvider(opts: {
+  providerEmail: string
+  listingTitle:  string
+  childName:     string
+  childAge:      number | null
+  parentName:    string
+  parentPhone:   string | null
+  preferredDays: string | null
+  note:          string | null
+  locale:        Locale
+}) {
+  const t = emailT('newWaitlistEntry', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+  const rows = [
+    detailRow(l('activity'),      opts.listingTitle),
+    detailRow(l('child'),         opts.childAge != null ? `${opts.childName} · ${opts.childAge}` : opts.childName),
+    detailRow(l('parent'),        opts.parentName),
+    opts.parentPhone   ? detailRow(l('phone'),         `<a href="tel:${opts.parentPhone}" style="color:${PRIMARY};">${opts.parentPhone}</a>`) : '',
+    opts.preferredDays ? detailRow(l('preferredDays'), opts.preferredDays) : '',
+    opts.note          ? detailRow(l('note'),          `<em>${opts.note}</em>`) : '',
+  ].join('')
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.providerEmail,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body, { listing: opts.listingTitle }))}
+      ${detailTable(rows)}
+      ${btn(t.cta, `${APP_URL}/listings/classes`)}
+    `),
+  })
+}
+
+// ── 21. Parent — a spot opened (offer: Accept / Can't make it) ───────────────
+export async function sendSpotOfferToParent(opts: {
+  parentEmail:  string
+  parentName:   string
+  childName:    string
+  providerName: string
+  listingTitle: string
+  token:        string
+  locale:       Locale
+}) {
+  const t = emailT('spotOffer', opts.locale)
+  const base = `${APP_URL}/offer/${opts.token}`
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.parentEmail,
+    subject: interp(t.subject, { child: opts.childName, listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body,  { name: opts.parentName, listing: opts.listingTitle, provider: opts.providerName, child: opts.childName }))}
+      ${p(interp(t.body2, { provider: opts.providerName }))}
+      <div>${btn(t.accept, `${base}?action=accept`)}${btnGhost(t.decline, `${base}?action=decline`)}</div>
+      ${disclaimer(t.disclaimer)}
+    `),
+  })
+}
+
+// ── 22. Parent — enrolled after accepting an offer ───────────────────────────
+export async function sendEnrollmentToParent(opts: {
+  parentEmail:   string
+  parentName:    string
+  childName:     string
+  listingTitle:  string
+  providerName:  string
+  providerEmail: string
+  providerPhone: string | null
+  locale:        Locale
+}) {
+  const t = emailT('enrollmentParent', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+  const rows = [
+    detailRow(l('provider'), opts.providerName),
+    detailRow(l('email'),    `<a href="mailto:${opts.providerEmail}" style="color:${PRIMARY};">${opts.providerEmail}</a>`),
+    opts.providerPhone ? detailRow(l('phone'), `<a href="tel:${opts.providerPhone}" style="color:${PRIMARY};">${opts.providerPhone}</a>`) : '',
+  ].join('')
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.parentEmail,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName, child: opts.childName, listing: opts.listingTitle, provider: opts.providerName }))}
+      ${p(t.body2)}
+      ${detailTable(rows)}
+      ${disclaimer(t.disclaimer)}
+    `),
+  })
+}
+
+// ── 23. Provider — a family accepted the offer ───────────────────────────────
+export async function sendEnrollmentToProvider(opts: {
+  providerEmail: string
+  parentName:    string
+  childName:     string
+  listingTitle:  string
+  locale:        Locale
+}) {
+  const t = emailT('enrollmentProvider', opts.locale)
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.providerEmail,
+    subject: interp(t.subject, { child: opts.childName, listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body, { parent: opts.parentName, child: opts.childName, listing: opts.listingTitle }))}
+      ${btn(t.cta, `${APP_URL}/listings/classes`)}
+    `),
+  })
+}
+
+// ── 24. Parent — removed from the waitlist (polite decline note) ─────────────
+export async function sendWaitlistDeclineToParent(opts: {
+  parentEmail:  string
+  parentName:   string
+  providerName: string
+  listingTitle: string
+  locale:       Locale
+}) {
+  const t = emailT('waitlistDecline', opts.locale)
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.parentEmail,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName, provider: opts.providerName, listing: opts.listingTitle }))}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/browse`)}
+    `),
+  })
+}
+
 // ── Provider feedback (always English, goes to hello@kidvo.eu) ───────────────
 export async function sendProviderFeedback(
   providerName:  string,

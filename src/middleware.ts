@@ -18,6 +18,14 @@ export async function middleware(request: NextRequest) {
     if (cookie !== process.env.STAGING_PASSWORD) {
       const { pathname } = request.nextUrl
       if (pathname === '/staging-login') return NextResponse.next()
+      // Tokenized waitlist offer links are clicked by parents straight from email
+      // (no account, no staging password) — let them past the gate, mirroring prod
+      // where no gate exists. The unguessable token is the access control. Without
+      // this, email CTAs opened in an isolated browser (e.g. the Gmail app's
+      // in-app browser, which has no staging_auth cookie) bounce to /staging-login.
+      if (pathname.startsWith('/offer/') || pathname.startsWith('/api/offers/')) {
+        return NextResponse.next()
+      }
       return NextResponse.redirect(new URL('/staging-login', request.url))
     }
   }
@@ -35,6 +43,11 @@ export async function middleware(request: NextRequest) {
   if (alwaysPublic.includes(pathname)) return NextResponse.next()
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return NextResponse.next()
   if (pathname === '/events' || pathname.startsWith('/events/')) return NextResponse.next()
+  // Tokenized waitlist offer — parents respond by email link without an account.
+  // The page and its token API are public; the provider's POST /api/offers
+  // (no trailing slash) stays protected by the auth check below.
+  if (pathname.startsWith('/offer/')) return NextResponse.next()
+  if (pathname.startsWith('/api/offers/')) return NextResponse.next()
   if (pathname === '/auth/callback') return NextResponse.next()
   if (pathname === '/opengraph-image' || pathname.endsWith('/opengraph-image')) return NextResponse.next()
   // Reset/forgot password pages must stay accessible regardless of auth state

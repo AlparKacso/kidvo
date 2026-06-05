@@ -402,6 +402,13 @@ interface ListingFormProps {
   providerHasPhone?: boolean
   listingId?:    string
   initialData?:  Partial<FormData>
+  /** Quick-start: after a successful insert, link the new listing to this
+   *  manual class (sets classes.listing_id) so its roster & waitlist carry over. */
+  linkClassId?:  string
+  /** Where to send the provider after publishing (defaults to /listings). */
+  redirectTo?:   string
+  /** Optional banner rendered above the form (e.g. the quick-start prefill note). */
+  prefillBanner?: React.ReactNode
 }
 
 interface SavedDraft {
@@ -413,7 +420,7 @@ interface SavedDraft {
 
 const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
-export function ListingForm({ categories, areas, providerId, providerName, providerHasPhone = true, listingId, initialData }: ListingFormProps) {
+export function ListingForm({ categories, areas, providerId, providerName, providerHasPhone = true, listingId, initialData, linkClassId, redirectTo, prefillBanner }: ListingFormProps) {
   const isEdit                      = !!listingId
   const needsPhone                  = !providerHasPhone
   const [step, setStep]             = useState(0)
@@ -672,8 +679,17 @@ export function ListingForm({ categories, areas, providerId, providerName, provi
           body: JSON.stringify({ listingId: finalListingId, listingTitle: data.title }),
         }).catch(() => {})
       }
+      // Quick-start: link the new listing to the originating manual class so its
+      // roster & waitlist stay attached (await so the redirect lands on a linked state).
+      if (linkClassId && finalListingId) {
+        await fetch(`/api/classes/${linkClassId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listing_id: finalListingId }),
+        }).catch(() => {})
+      }
       try { localStorage.removeItem(draftKey) } catch {}
-      window.location.href = '/listings?submitted=1'
+      window.location.href = redirectTo ?? '/listings?submitted=1'
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
       setSaving(false)
@@ -688,6 +704,8 @@ export function ListingForm({ categories, areas, providerId, providerName, provi
       <p className="text-sm text-ink-muted mb-8">
         {isEdit ? t('subtitleEdit') : t('subtitleNew')}
       </p>
+
+      {prefillBanner}
 
       {pendingDraft && (
         <div className="mb-6 p-4 rounded-lg border border-primary/30 bg-primary-lt flex items-center justify-between gap-4 flex-wrap">

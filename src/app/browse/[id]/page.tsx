@@ -5,6 +5,8 @@ import { Suspense }              from 'react'
 import { AppShell }              from '@/components/layout/AppShell'
 import { createClient }          from '@/lib/supabase/server'
 import { TrialRequestButton }    from '@/components/TrialRequestButton'
+import { WaitlistButton }         from '@/components/WaitlistButton'
+import { isWaitlistOpen }         from '@/lib/classes'
 import { SaveButton }            from '@/components/ui/SaveButton'
 import { ShareButton }           from '@/components/ui/ShareButton'
 import { ContactProviderButton } from '@/components/ui/ContactProviderButton'
@@ -106,6 +108,7 @@ export default async function ActivityDetailPage({ params }: Props) {
 
   const isFull    = (listing.spots_available ?? 1) === 0
   const spotsLeft = listing.spots_available ?? null
+  const waitlistOpen = isWaitlistOpen(listing)
   const accent    = category.accent_color
 
   // Parallel: save status + approved reviews + eligibility
@@ -136,7 +139,7 @@ export default async function ActivityDetailPage({ params }: Props) {
 
   // Mirror the mobile sticky CTA's render condition so we know when to
   // hide the duplicate trial CTA inside the sidebar booking card.
-  const hasMobileStickyCta = !isOwner && listing.trial_available && (schedules?.length ?? 0) > 0
+  const hasMobileStickyCta = !isOwner && (waitlistOpen || (listing.trial_available && (schedules?.length ?? 0) > 0))
 
   const avgRating    = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
@@ -471,7 +474,20 @@ export default async function ActivityDetailPage({ params }: Props) {
               {/* On mobile the sticky bottom-CTA covers booking, so hide the
                   duplicate in-card trial button when the sticky is present. */}
               <div className={hasMobileStickyCta ? 'hidden md:block' : ''}>
-                {listing.trial_available ? (
+                {waitlistOpen ? (
+                  <>
+                    <div className="flex items-start gap-2 mb-3 p-2.5 rounded bg-gold-lt border border-gold/30">
+                      <span className="text-sm leading-none mt-0.5">✨</span>
+                      <span className="text-[11.5px] text-gold-text leading-snug">{t('waitlistNudge')}</span>
+                    </div>
+                    <WaitlistButton
+                      listingId={listing.id}
+                      listingTitle={listing.title}
+                      isLoggedIn={!!user}
+                      variant="card"
+                    />
+                  </>
+                ) : listing.trial_available ? (
                   <Suspense fallback={
                     <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
                       {t('bookTrial')}
@@ -570,26 +586,35 @@ export default async function ActivityDetailPage({ params }: Props) {
 
       {/* Mobile sticky CTA — keeps Book Trial reachable while parent scrolls reviews.
           Logged-in users have BottomNav at bottom-0; sit above it to avoid overlap. */}
-      {!isOwner && listing.trial_available && schedules && schedules.length > 0 && (
+      {!isOwner && (waitlistOpen || (listing.trial_available && schedules && schedules.length > 0)) && (
         <div className={`md:hidden fixed left-3 right-3 z-40 bg-bg/90 backdrop-blur-sm border border-border rounded-xl shadow-card-hover px-4 py-3 flex items-center gap-3 ${user ? 'bottom-[68px]' : 'bottom-3'}`}>
           <div className="flex-shrink-0">
             <div className="font-display text-base font-bold text-ink leading-none">{listing.price_monthly} RON</div>
             <div className="text-[11px] text-ink-muted mt-0.5">{listing.pricing_type === 'session' ? t('perSession') : t('perMonth')}</div>
           </div>
           <div className="flex-1">
-            <Suspense fallback={
-              <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
-                {t('bookTrial')}
-              </button>
-            }>
-              <TrialRequestButton
+            {waitlistOpen ? (
+              <WaitlistButton
                 listingId={listing.id}
                 listingTitle={listing.title}
-                schedules={schedules ?? []}
-                isFull={isFull}
                 isLoggedIn={!!user}
+                variant="sticky"
               />
-            </Suspense>
+            ) : (
+              <Suspense fallback={
+                <button disabled className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white opacity-60">
+                  {t('bookTrial')}
+                </button>
+              }>
+                <TrialRequestButton
+                  listingId={listing.id}
+                  listingTitle={listing.title}
+                  schedules={schedules ?? []}
+                  isFull={isFull}
+                  isLoggedIn={!!user}
+                />
+              </Suspense>
+            )}
           </div>
         </div>
       )}

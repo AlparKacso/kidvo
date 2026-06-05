@@ -6,6 +6,10 @@ export type ListingType   = 'activity' | 'event'
 export type RequestStatus = 'pending' | 'confirmed' | 'declined' | 'cancelled'
 export type ReviewStatus  = 'pending' | 'approved' | 'rejected'
 export type EventDraftStatus = 'new' | 'approved' | 'rejected'
+export type WaitlistStatus   = 'waiting' | 'offered' | 'enrolled' | 'removed'
+export type RosterSource      = 'kidvo' | 'trial' | 'offline'
+export type RosterStatus      = 'offered' | 'enrolled'
+export type OfferPhase        = 'pending' | 'accepted' | 'declined' | 'expired'
 
 export interface Database {
   public: {
@@ -199,6 +203,82 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['event_drafts']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['event_drafts']['Insert']>
       }
+      classes: {
+        Row: {
+          id:          string
+          provider_id: string
+          listing_id:  string | null
+          name:        string
+          category_id: string | null
+          area_id:     string | null
+          age_min:     number | null
+          age_max:     number | null
+          capacity:    number | null
+          days:        number[]
+          time_start:  string | null
+          time_end:    string | null
+          language:    string | null
+          created_at:  string
+          updated_at:  string
+        }
+        Insert: Omit<Database['public']['Tables']['classes']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['classes']['Insert']>
+      }
+      waitlist_entries: {
+        Row: {
+          id:             string
+          listing_id:     string
+          user_id:        string
+          child_id:       string | null
+          child_name:     string
+          child_age:      number | null
+          preferred_days: number[]
+          note:           string | null
+          contact_name:   string | null
+          contact_phone:  string | null
+          contact_email:  string | null
+          status:         WaitlistStatus
+          created_at:     string
+        }
+        Insert: Omit<Database['public']['Tables']['waitlist_entries']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['waitlist_entries']['Insert']>
+      }
+      roster_members: {
+        Row: {
+          id:                string
+          class_id:          string
+          source:            RosterSource
+          status:            RosterStatus
+          waitlist_entry_id: string | null
+          trial_request_id:  string | null
+          child_id:          string | null
+          child_name:        string
+          child_age:         number | null
+          contact_name:      string | null
+          contact_phone:     string | null
+          contact_email:     string | null
+          note:              string | null
+          created_at:        string
+          updated_at:        string
+        }
+        Insert: Omit<Database['public']['Tables']['roster_members']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['roster_members']['Insert']>
+      }
+      offers: {
+        Row: {
+          id:                string
+          waitlist_entry_id: string
+          roster_member_id:  string | null
+          class_id:          string
+          token:             string
+          phase:             OfferPhase
+          expires_at:        string | null
+          created_at:        string
+          responded_at:      string | null
+        }
+        Insert: Omit<Database['public']['Tables']['offers']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['offers']['Insert']>
+      }
     }
   }
 }
@@ -211,6 +291,10 @@ export type Area = Database['public']['Tables']['areas']['Row']
 export type Provider = Database['public']['Tables']['providers']['Row']
 export type Child = Database['public']['Tables']['children']['Row']
 export type EventDraft = Database['public']['Tables']['event_drafts']['Row']
+export type Class = Database['public']['Tables']['classes']['Row']
+export type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row']
+export type RosterMember = Database['public']['Tables']['roster_members']['Row']
+export type Offer = Database['public']['Tables']['offers']['Row']
 
 export type ListingWithRelations = Listing & {
   category:  Category

@@ -23,6 +23,13 @@ export const labels = {
   viewActivity: { en: 'View activity →', ro: 'Vezi activitatea →' },
   newProvider:  { en: 'NEW PROVIDER',  ro: 'FURNIZOR NOU' },
   by:           { en: 'by',            ro: 'de' },
+  child:        { en: 'Child',          ro: 'Copil' },
+  age:          { en: 'Age',            ro: 'Vârstă' },
+  preferredDays:{ en: 'Preferred days', ro: 'Zile preferate' },
+  parent:       { en: 'Parent',         ro: 'Părinte' },
+  note:         { en: 'Note',           ro: 'Notiță' },
+  class:        { en: 'Class',          ro: 'Grupă' },
+  position:     { en: 'Position',       ro: 'Poziție' },
 } as const
 
 export function label(key: keyof typeof labels, locale: Locale): string {
@@ -328,6 +335,114 @@ const translations = {
       body:     'Bună {name},',
       body2:    'Ne pare rău să-ți comunicăm că furnizorul activității <strong>{listing}</strong> și-a închis contul, astfel cererea ta de probă a fost anulată automat.',
       body3:    'Există o mulțime de alte activități minunate în Timișoara — găsește ce se potrivește copilului tău.',
+      cta:      'Explorează activitățile →',
+    },
+  },
+
+  // #19 — Parent: joined the waitlist (confirmation)
+  waitlistConfirmation: {
+    en: {
+      subject:  'You\'re on the waitlist — {listing}',
+      heading:  'You\'re on the waitlist! 📝',
+      body:     'Hi {name}, we saved {child} a spot in line for <strong>{listing}</strong>. The provider has been notified.',
+      body2:    'If a place opens up, you\'ll get an email with a link to accept it — no payment now.',
+      cta:      'Browse more activities →',
+    },
+    ro: {
+      subject:  'Ești pe lista de așteptare — {listing}',
+      heading:  'Ești pe lista de așteptare! 📝',
+      body:     'Bună {name}, am păstrat un loc la rând pentru {child} la <strong>{listing}</strong>. Furnizorul a fost notificat.',
+      body2:    'Dacă se eliberează un loc, vei primi un email cu un link pentru a-l accepta — fără plată acum.',
+      cta:      'Explorează mai multe activități →',
+    },
+  },
+
+  // #20 — Provider: new waitlist signup
+  newWaitlistEntry: {
+    en: {
+      subject:  'New waitlist signup — {listing}',
+      heading:  'New family on your waitlist',
+      body:     'A parent joined the waitlist for <strong>{listing}</strong>. Manage your waitlist and offer a spot when one opens.',
+      cta:      'Open Classes & waitlist →',
+    },
+    ro: {
+      subject:  'Înscriere nouă pe lista de așteptare — {listing}',
+      heading:  'O familie nouă pe lista ta de așteptare',
+      body:     'Un părinte s-a înscris pe lista de așteptare pentru <strong>{listing}</strong>. Gestionează lista și oferă un loc când se eliberează unul.',
+      cta:      'Deschide Grupe & listă de așteptare →',
+    },
+  },
+
+  // #21 — Parent: a spot opened (offer with Accept / Can't make it)
+  spotOffer: {
+    en: {
+      subject:  'A spot opened for {child} — {listing}',
+      heading:  'A spot just opened! 🎉',
+      body:     'Good news, {name}! A place opened up in <strong>{listing}</strong> with {provider} for {child}.',
+      body2:    'Let {provider} know if you\'d still like the spot. No payment now.',
+      accept:   'Accept the spot',
+      decline:  'Can\'t make it',
+      disclaimer: 'This spot may be offered to the next family if you don\'t respond.',
+    },
+    ro: {
+      subject:  'S-a eliberat un loc pentru {child} — {listing}',
+      heading:  'Tocmai s-a eliberat un loc! 🎉',
+      body:     'Vești bune, {name}! S-a eliberat un loc la <strong>{listing}</strong> cu {provider} pentru {child}.',
+      body2:    'Anunță-l pe {provider} dacă încă dorești locul. Fără plată acum.',
+      accept:   'Accept locul',
+      decline:  'Nu pot ajunge',
+      disclaimer: 'Acest loc poate fi oferit următoarei familii dacă nu răspunzi.',
+    },
+  },
+
+  // #22 — Parent: enrolled after accepting an offer
+  enrollmentParent: {
+    en: {
+      subject:  'You\'re in! — {listing}',
+      heading:  'You\'re enrolled! 🎉',
+      body:     'Great news, {name}! {child} now has a spot in <strong>{listing}</strong> with {provider}.',
+      body2:    'Reach out to arrange the details:',
+      disclaimer: 'All arrangements are directly between you and the provider. kidvo is not involved.',
+    },
+    ro: {
+      subject:  'Ai loc! — {listing}',
+      heading:  'Ești înscris! 🎉',
+      body:     'Vești bune, {name}! {child} are acum un loc la <strong>{listing}</strong> cu {provider}.',
+      body2:    'Contactează furnizorul pentru a aranja detaliile:',
+      disclaimer: 'Toate aranjamentele sunt direct între tine și furnizor. kidvo nu este implicat.',
+    },
+  },
+
+  // #23 — Provider: a family accepted the offer
+  enrollmentProvider: {
+    en: {
+      subject:  '{child} accepted the spot — {listing}',
+      heading:  'A family accepted their spot 🎉',
+      body:     '{parent} accepted the spot you offered for <strong>{listing}</strong>. {child} is now on the roster.',
+      cta:      'Open Classes & waitlist →',
+    },
+    ro: {
+      subject:  '{child} a acceptat locul — {listing}',
+      heading:  'O familie a acceptat locul 🎉',
+      body:     '{parent} a acceptat locul oferit pentru <strong>{listing}</strong>. {child} este acum pe listă.',
+      cta:      'Deschide Grupe & listă de așteptare →',
+    },
+  },
+
+  // #24 — Parent: removed from the waitlist (polite "couldn't accommodate" note)
+  waitlistDecline: {
+    en: {
+      subject:  'Waitlist update — {listing}',
+      heading:  'About your waitlist request',
+      body:     'Hi {name}, unfortunately {provider} couldn\'t accommodate your request for <strong>{listing}</strong> this time.',
+      body2:    'There are plenty of other great activities in Timișoara — find the right fit for your child.',
+      cta:      'Browse activities →',
+    },
+    ro: {
+      subject:  'Actualizare listă de așteptare — {listing}',
+      heading:  'Despre cererea ta de pe lista de așteptare',
+      body:     'Bună {name}, din păcate {provider} nu a putut acomoda cererea ta pentru <strong>{listing}</strong> de această dată.',
+      body2:    'Există o mulțime de alte activități minunate în Timișoara — găsește ce se potrivește copilului tău.',
       cta:      'Explorează activitățile →',
     },
   },

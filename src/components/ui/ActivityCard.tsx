@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { detectBrightness, getProviderInitials, type ContrastMode } from '@/lib/imageBrightness'
+import { isWaitlistOpen } from '@/lib/classes'
 import type { ListingWithRelations } from '@/types/database'
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -62,7 +63,9 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
 
   const catName     = tCat.has(listing.category.slug) ? tCat(listing.category.slug) : listing.category.name
   const accent      = listing.category.accent_color
-  const isFull      = (listing.spots_available ?? 1) === 0
+  // "Full" treatment (desaturated cover + lock chip + hidden save heart) also
+  // covers the at-capacity-no-trial case — both open the waitlist.
+  const isFull      = isWaitlistOpen(listing)
   const isSaved     = savedIds?.includes(listing.id) ?? false
   const days        = formatDays(listing.schedules, t('everyDay'))
   const provider    = (listing.provider as { display_name?: string })?.display_name ?? ''

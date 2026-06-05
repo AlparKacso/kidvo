@@ -12,6 +12,7 @@ const IconAdmin = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="no
 interface Props {
   isProvider?:            boolean
   providerPendingTrials?: number
+  providerWaitingCount?:  number
   userEmail?:             string
   hasEvents?:             boolean
 }
@@ -24,6 +25,7 @@ const IconBookings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill=
 const IconEvents   = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="3" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 6h11M5 1.5v3M10 1.5v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M7.5 8l.45 1 1.05.1-.8.7.25 1.05-.95-.55-.95.55.25-1.05-.8-.7 1.05-.1z" fill="currentColor"/></svg>
 const IconSettings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
 const IconListings  = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+const IconClasses   = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2" width="4.5" height="11" rx="1" stroke="currentColor" strokeWidth="1.3" fill="none"/><rect x="9" y="2" width="4.5" height="7" rx="1" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
 const IconAnalytics = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="10" width="3" height="4" rx="0.75" fill="currentColor"/><rect x="6" y="6" width="3" height="8" rx="0.75" fill="currentColor"/><rect x="11" y="2" width="3" height="12" rx="0.75" fill="currentColor"/></svg>
 
 function NavItem({ href, icon, label, exact, excludes, badge }: { href: string; icon: React.ReactNode; label: string; exact?: boolean; excludes?: string[]; badge?: number }) {
@@ -53,7 +55,7 @@ function NavItem({ href, icon, label, exact, excludes, badge }: { href: string; 
   )
 }
 
-export function BottomNav({ isProvider = false, providerPendingTrials = 0, userEmail = '', hasEvents = false }: Props) {
+export function BottomNav({ isProvider = false, providerPendingTrials = 0, providerWaitingCount = 0, userEmail = '', hasEvents = false }: Props) {
   const t       = useTranslations('nav')
   const isAdmin = userEmail === ADMIN_EMAIL
   return (
@@ -67,7 +69,10 @@ export function BottomNav({ isProvider = false, providerPendingTrials = 0, userE
         <NavItem href="/kids" icon={<IconKids />} label={t('activities')} exact />
       )}
       {isProvider && (
-        <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} />
+        <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} excludes={['/listings/classes']} />
+      )}
+      {isProvider && (
+        <NavItem href="/listings/classes" icon={<IconClasses />} label={t('classesShort')} badge={providerWaitingCount} />
       )}
       <NavItem href="/settings" icon={<IconSettings />} label={t('settings')} exact />
       {isAdmin && (

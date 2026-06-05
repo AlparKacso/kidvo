@@ -11,6 +11,78 @@ import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
+// A confirmed trial request is treated as intent to attend, so the child
+// auto-enters the listing's roster (source 'trial'). Idempotent — guarded by
+// the unique trial_request_id index and a pre-check. Runs with the admin client
+// because it reads the parent's child record (cross-user under RLS).
+async function autoEnrolConfirmedTrial(trialId: string) {
+  const adminDb = createAdminClient()
+  const { data: trialRaw } = await adminDb
+    .from('trial_requests').select('id, listing_id, child_id, user_id, status').eq('id', trialId).single()
+  const trial = trialRaw as { id: string; listing_id: string; child_id: string | null; user_id: string; status: string } | null
+  if (!trial || trial.status !== 'confirmed') return
+
+  // Already on a roster? (unique index also enforces this at the DB level.)
+  const { data: existing } = await adminDb
+    .from('roster_members').select('id').eq('trial_request_id', trialId).maybeSingle()
+  if (existing) return
+
+  const { data: listingRaw } = await adminDb
+    .from('listings')
+    .select('id, provider_id, title, category_id, area_id, age_min, age_max, spots_total, language')
+    .eq('id', trial.listing_id).single()
+  const listing = listingRaw as any
+  if (!listing) return
+
+  // Find or create the "listed" class for this listing.
+  let classId: string | null = null
+  const { data: clsRaw } = await adminDb.from('classes').select('id').eq('listing_id', listing.id).maybeSingle()
+  classId = (clsRaw as { id: string } | null)?.id ?? null
+  if (!classId) {
+    const { data: schedRaw } = await adminDb
+      .from('listing_schedules').select('day_of_week, time_start, time_end').eq('listing_id', listing.id)
+    const sched = ((schedRaw ?? []) as any[]).sort((a, b) => a.day_of_week - b.day_of_week)
+    const { data: created } = await adminDb.from('classes').insert({
+      provider_id: listing.provider_id,
+      listing_id:  listing.id,
+      name:        listing.title,
+      category_id: listing.category_id,
+      area_id:     listing.area_id,
+      age_min:     listing.age_min,
+      age_max:     listing.age_max,
+      capacity:    listing.spots_total,
+      days:        [...new Set(sched.map(s => s.day_of_week))],
+      time_start:  sched[0]?.time_start ?? null,
+      time_end:    sched[0]?.time_end ?? null,
+      language:    listing.language,
+    }).select('id').single()
+    classId = (created as { id: string } | null)?.id ?? null
+  }
+  if (!classId) return
+
+  // Resolve child name + age (fall back to the parent's name when no child set).
+  let childName = '', childAge: number | null = null
+  if (trial.child_id) {
+    const { data: kidRaw } = await adminDb.from('children').select('name, birth_year').eq('id', trial.child_id).single()
+    const kid = kidRaw as { name: string; birth_year: number } | null
+    if (kid) { childName = kid.name; childAge = Math.max(0, new Date().getFullYear() - kid.birth_year) }
+  }
+  if (!childName) {
+    const { data: parentRaw } = await adminDb.from('users').select('full_name').eq('id', trial.user_id).single()
+    childName = (parentRaw as { full_name: string | null } | null)?.full_name ?? 'Trial guest'
+  }
+
+  await adminDb.from('roster_members').insert({
+    class_id:         classId,
+    source:           'trial',
+    status:           'enrolled',
+    trial_request_id: trial.id,
+    child_id:         trial.child_id,
+    child_name:       childName,
+    child_age:        childAge,
+  })
+}
+
 const STATUS_STYLES: Record<string, string> = {
   active:    'bg-success-lt text-success',
   pending:   'bg-gold-lt text-gold-text',
@@ -161,6 +233,7 @@ export default async function ProviderListingsPage({
 
     await supabase.from('trial_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', id)
     await sendStatusEmail(id)
+    if (status === 'confirmed') await autoEnrolConfirmedTrial(id)
     revalidatePath('/listings')
   }
 
