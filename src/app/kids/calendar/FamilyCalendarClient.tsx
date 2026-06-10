@@ -14,12 +14,15 @@ interface Props {
 
 const ROW_H = 48 // px per hour
 
-// 'HH:MM' → decimal hours (16:30 → 16.5). null on bad input.
+// Decimal hours from a time string. Handles 'HH', 'HH:MM' and 'HH:MM:SS'
+// (e.g. '14' → 14, '16:30' → 16.5, '16:00:00' → 16). null on bad input.
 function parseTime(t: string | null): number | null {
   if (!t) return null
-  const [h, m] = t.split(':').map(Number)
-  if (Number.isNaN(h)) return null
-  return h + (Number.isNaN(m) ? 0 : m) / 60
+  const parts = t.split(':')
+  const h = Number(parts[0])
+  const m = parts.length > 1 ? Number(parts[1]) : 0
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null
+  return h + m / 60
 }
 const fmtHour = (h: number) => `${Math.floor(h)}:${String(Math.round((h - Math.floor(h)) * 60)).padStart(2, '0')}`
 
@@ -69,12 +72,14 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
     for (const e of filtered) {
       const s = parseTime(e.timeStart)
       const en = parseTime(e.timeEnd)
-      if (e.days.length === 0 || s == null || en == null || en <= s) {
+      // Number.isFinite also rejects null/NaN — a bad time must NEVER reach
+      // `placed`, or its NaN poisons the min/max below and blanks the grid.
+      if (e.days.length === 0 || !Number.isFinite(s) || !Number.isFinite(en) || (en as number) <= (s as number)) {
         unscheduled.push(e)
         continue
       }
       for (const d of e.days) {
-        placed.push({ ...e, day: d, instId: `${e.id}-${d}`, startH: s, endH: en })
+        placed.push({ ...e, day: d, instId: `${e.id}-${d}`, startH: s as number, endH: en as number })
       }
     }
     // Default window 8:00–20:00 (covers morning through evening activities),
@@ -87,6 +92,8 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
     }
     min = Math.max(6, min)
     max = Math.min(23, max)
+    // Defensive fallback — never render an empty grid even if the data is odd.
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) { min = 8; max = 20 }
     const hours: number[] = []
     for (let h = min; h < max; h++) hours.push(h)
     return { placed, unscheduled, hours }
