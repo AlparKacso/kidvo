@@ -114,19 +114,42 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
   }
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3200) }
 
-  // Per-day overlap set for the ⚠ marker.
+  // Per-day side-by-side layout: overlapping events share the column width
+  // (split into sub-columns) instead of stacking on top of each other.
+  const dayLayouts = useMemo(() => {
+    const layouts: Record<number, Record<string, { col: number; cols: number }>> = {}
+    for (let d = 0; d < 7; d++) {
+      const day = placed.filter(p => p.day === d).sort((a, b) => a.startH - b.startH || a.endH - b.endH)
+      const map: Record<string, { col: number; cols: number }> = {}
+      let cluster: typeof day = []
+      let clusterEnd = -Infinity
+      const flush = () => {
+        const colEnds: number[] = []
+        const colOf: Record<string, number> = {}
+        for (const ev of cluster) {
+          let c = colEnds.findIndex(end => end <= ev.startH)
+          if (c === -1) { c = colEnds.length; colEnds.push(ev.endH) } else { colEnds[c] = ev.endH }
+          colOf[ev.instId] = c
+        }
+        for (const ev of cluster) map[ev.instId] = { col: colOf[ev.instId], cols: colEnds.length }
+        cluster = []; clusterEnd = -Infinity
+      }
+      for (const ev of day) {
+        if (cluster.length && ev.startH >= clusterEnd) flush()
+        cluster.push(ev); clusterEnd = Math.max(clusterEnd, ev.endH)
+      }
+      flush()
+      layouts[d] = map
+    }
+    return layouts
+  }, [placed])
+  // ⚠ marker = the event shares its slot with another (more than one column).
   const overlapIds = useMemo(() => {
     const set = new Set<string>()
-    for (let d = 0; d < 7; d++) {
-      const day = placed.filter(p => p.day === d)
-      for (let a = 0; a < day.length; a++)
-        for (let b = a + 1; b < day.length; b++)
-          if (day[a].startH < day[b].endH && day[b].startH < day[a].endH) {
-            set.add(day[a].instId); set.add(day[b].instId)
-          }
-    }
+    for (const day of Object.values(dayLayouts))
+      for (const [id, l] of Object.entries(day)) if (l.cols > 1) set.add(id)
     return set
-  }, [placed])
+  }, [dayLayouts])
 
   const hasAny = entries.length > 0
 
@@ -233,11 +256,13 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
                     const top = (p.startH - hours[0]) * ROW_H
                     const height = Math.max(22, (p.endH - p.startH) * ROW_H - 3)
                     const conflict = overlapIds.has(p.instId)
+                    const lay = dayLayouts[di]?.[p.instId] ?? { col: 0, cols: 1 }
+                    const widthPct = 100 / lay.cols
                     return (
                       <button key={p.instId}
                         onClick={e => setOpen({ entry: p, rect: e.currentTarget.getBoundingClientRect() })}
-                        className="absolute left-0.5 right-0.5 rounded-[7px] px-1.5 py-1 text-left overflow-hidden transition-shadow hover:shadow-md"
-                        style={blockStyle(p.status, color, top, height)}>
+                        className="absolute rounded-[7px] px-1.5 py-1 text-left overflow-hidden transition-shadow hover:shadow-md"
+                        style={{ ...blockStyle(p.status, color, top, height), left: `calc(${lay.col * widthPct}% + 1px)`, width: `calc(${widthPct}% - 2px)` }}>
                         <div className="font-display text-[10.5px] font-semibold leading-tight truncate" style={{ color: textColor(p.status, color) }}>
                           {conflict && <span title="overlap">⚠ </span>}{p.title}
                         </div>
