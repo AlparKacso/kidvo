@@ -747,6 +747,81 @@ export async function sendWaitlistDeclineToParent(opts: {
   })
 }
 
+// ── 25. Parent — enroll request received (pending confirmation) ──────────────
+export async function sendEnrollRequestToParent(opts: {
+  parentEmail:  string
+  parentName:   string
+  childName:    string
+  listingTitle: string
+  providerName: string
+  locale:       Locale
+}) {
+  const t = emailT('enrollRequestParent', opts.locale)
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.parentEmail,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body,  { name: opts.parentName, child: opts.childName, listing: opts.listingTitle, provider: opts.providerName }))}
+      ${p(interp(t.body2, { provider: opts.providerName }))}
+      ${btn(t.cta, `${APP_URL}/kids`)}
+    `),
+  })
+}
+
+// ── 26. Provider — a parent requested to enroll ──────────────────────────────
+export async function sendNewEnrollRequestToProvider(opts: {
+  providerEmail: string
+  parentName:    string
+  childName:     string
+  childAge:      number | null
+  listingTitle:  string
+  locale:        Locale
+}) {
+  const t = emailT('newEnrollRequest', opts.locale)
+  const l = (k: keyof typeof import('./email-translations').labels) => label(k, opts.locale)
+  const rows = [
+    detailRow(l('activity'), opts.listingTitle),
+    detailRow(l('child'),    opts.childAge != null ? `${opts.childName} · ${opts.childAge}` : opts.childName),
+    detailRow(l('parent'),   opts.parentName),
+  ].join('')
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.providerEmail,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body, { parent: opts.parentName, child: opts.childName, listing: opts.listingTitle }))}
+      ${detailTable(rows)}
+      ${btn(t.cta, `${APP_URL}/listings/classes`)}
+    `),
+  })
+}
+
+// ── 27. Parent — enroll request declined by provider ─────────────────────────
+export async function sendEnrollDeclinedToParent(opts: {
+  parentEmail:  string
+  parentName:   string
+  childName:    string
+  providerName: string
+  listingTitle: string
+  locale:       Locale
+}) {
+  const t = emailT('enrollDeclinedParent', opts.locale)
+  return getResend().emails.send({
+    from:    FROM,
+    to:      opts.parentEmail,
+    subject: interp(t.subject, { listing: opts.listingTitle }),
+    html: layout(`
+      ${h1(t.heading)}
+      ${p(interp(t.body, { name: opts.parentName, child: opts.childName, provider: opts.providerName, listing: opts.listingTitle }))}
+      ${p(t.body2)}
+      ${btn(t.cta, `${APP_URL}/browse`)}
+    `),
+  })
+}
+
 // ── Provider feedback (always English, goes to hello@kidvo.eu) ───────────────
 export async function sendProviderFeedback(
   providerName:  string,

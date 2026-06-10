@@ -8,8 +8,9 @@ export type ReviewStatus  = 'pending' | 'approved' | 'rejected'
 export type EventDraftStatus = 'new' | 'approved' | 'rejected'
 export type WaitlistStatus   = 'waiting' | 'offered' | 'enrolled' | 'removed'
 export type RosterSource      = 'kidvo' | 'trial' | 'offline'
-export type RosterStatus      = 'offered' | 'enrolled'
+export type RosterStatus      = 'offered' | 'enrolled' | 'requested' | 'declined'
 export type OfferPhase        = 'pending' | 'accepted' | 'declined' | 'expired'
+export type NotificationType  = 'spot_offer' | 'enroll_confirmed' | 'enroll_declined'
 
 export interface Database {
   public: {
@@ -279,6 +280,25 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['offers']['Row'], 'id' | 'created_at'>
         Update: Partial<Database['public']['Tables']['offers']['Insert']>
       }
+      notifications: {
+        Row: {
+          id:         string
+          user_id:    string
+          type:       NotificationType
+          payload:    Record<string, unknown>
+          read_at:    string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at' | 'read_at'>
+                 & { read_at?: string | null }
+        Update: Partial<Database['public']['Tables']['notifications']['Insert']>
+      }
+    }
+    Functions: {
+      waitlist_position: {
+        Args: { p_entry_id: string }
+        Returns: number
+      }
     }
   }
 }
@@ -295,6 +315,7 @@ export type Class = Database['public']['Tables']['classes']['Row']
 export type WaitlistEntry = Database['public']['Tables']['waitlist_entries']['Row']
 export type RosterMember = Database['public']['Tables']['roster_members']['Row']
 export type Offer = Database['public']['Tables']['offers']['Row']
+export type Notification = Database['public']['Tables']['notifications']['Row']
 
 export type ListingWithRelations = Listing & {
   category:  Category

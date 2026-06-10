@@ -9,6 +9,19 @@ export interface CalendarEvent {
   description?: string | null
   organizer?:   string | null
   locale:       'ro' | 'en'
+  // For recurring weekly classes: ISO weekdays 0=Mon..6=Sun (kidvo's convention,
+  // matching classes.days / listing_schedules.day_of_week). When set, the event
+  // repeats weekly on these days and `start`/`end` should be its first occurrence.
+  weeklyDays?:  number[]
+}
+
+// kidvo weekday index (0=Mon..6=Sun) → iCalendar BYDAY code.
+const ICS_BYDAY = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']
+
+function byDayRule(days?: number[]): string | null {
+  if (!days || days.length === 0) return null
+  const codes = [...new Set(days)].filter(d => d >= 0 && d <= 6).map(d => ICS_BYDAY[d])
+  return codes.length ? `RRULE:FREQ=WEEKLY;BYDAY=${codes.join(',')}` : null
 }
 
 // YYYYMMDDTHHMMSSZ (UTC) per the iCalendar / Google Calendar format.
@@ -32,6 +45,8 @@ export function googleCalendarUrl(e: CalendarEvent): string {
     details: detailsBlock(e),
     location: e.venue ? `${e.venue}, Timișoara` : 'Timișoara',
   })
+  const recur = byDayRule(e.weeklyDays)
+  if (recur) params.set('recur', recur)
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
@@ -42,6 +57,7 @@ function ics(text: string): string {
 
 export function buildIcs(e: CalendarEvent): string {
   const uid = `${fmtUtc(e.start)}-${Math.random().toString(36).slice(2)}@kidvo.eu`
+  const recur = byDayRule(e.weeklyDays)
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -52,6 +68,7 @@ export function buildIcs(e: CalendarEvent): string {
     `DTSTAMP:${fmtUtc(new Date())}`,
     `DTSTART:${fmtUtc(e.start)}`,
     `DTEND:${fmtUtc(e.end)}`,
+    ...(recur ? [recur] : []),
     `SUMMARY:${ics(e.title)}`,
     `DESCRIPTION:${ics(detailsBlock(e))}`,
     e.venue ? `LOCATION:${ics(`${e.venue}, Timișoara`)}` : 'LOCATION:Timișoara',

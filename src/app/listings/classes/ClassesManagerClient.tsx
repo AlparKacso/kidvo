@@ -13,7 +13,8 @@ interface ClassRow {
   category?: { slug: string; accent_color: string } | null
 }
 interface MemberRow {
-  id: string; class_id: string; source: 'kidvo' | 'trial' | 'offline'; status: 'offered' | 'enrolled'
+  id: string; class_id: string; source: 'kidvo' | 'trial' | 'offline'
+  status: 'offered' | 'enrolled' | 'requested'
   waitlist_entry_id: string | null; child_name: string; child_age: number | null
   contact_name: string | null; contact_phone: string | null; contact_email: string | null
   note: string | null; created_at: string
@@ -103,6 +104,22 @@ export function ClassesManagerClient({ classes, members, pool }: Props) {
     })
     if (!res.ok) { showToast(t('errorGeneric')); return }
     setDetail(null); showToast(msg); router.refresh()
+  }
+
+  async function doConfirmRequest(memberId: string) {
+    const res = await api(`/api/roster-members/${memberId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'confirm' }),
+    })
+    if (!res.ok) { showToast(t('errorGeneric')); return }
+    showToast(t('requestConfirmedToast')); router.refresh()
+  }
+
+  async function doDeclineRequest(memberId: string) {
+    const res = await api(`/api/roster-members/${memberId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'decline_request' }),
+    })
+    if (!res.ok) { showToast(t('errorGeneric')); return }
+    showToast(t('requestDeclinedToast')); router.refresh()
   }
 
   async function doRemove(memberId: string, decline: boolean, msg: string) {
@@ -238,7 +255,10 @@ export function ClassesManagerClient({ classes, members, pool }: Props) {
                 {roster.length === 0 ? (
                   <div className="text-center py-6 px-2 font-display text-[11.5px] text-ink-muted">{t('rosterEmpty')}</div>
                 ) : roster.map(m => (
-                  <KidCard key={m.id} member={m} t={t} onOpen={() => setDetail({ kind: 'member', row: m })} />
+                  <KidCard key={m.id} member={m} t={t}
+                    onOpen={() => setDetail({ kind: 'member', row: m })}
+                    onConfirm={() => doConfirmRequest(m.id)}
+                    onDecline={() => doDeclineRequest(m.id)} />
                 ))}
               </div>
 
@@ -347,10 +367,13 @@ function PoolCard({ row, t, onOpen, onOffer }: { row: PoolRow; t: T; onOpen: () 
   )
 }
 
-function KidCard({ member, t, onOpen }: { member: MemberRow; t: T; onOpen: () => void }) {
-  const offered  = member.status === 'offered'
-  const bg = offered ? '#fffdf5' : member.status === 'enrolled' ? '#f0faf4' : '#fff'
-  const border = offered ? 'border-gold/50' : member.status === 'enrolled' ? 'border-success/30' : 'border-border'
+function KidCard({ member, t, onOpen, onConfirm, onDecline }: {
+  member: MemberRow; t: T; onOpen: () => void; onConfirm: () => void; onDecline: () => void
+}) {
+  const offered   = member.status === 'offered'
+  const requested = member.status === 'requested'
+  const bg = offered ? '#fffdf5' : requested ? '#eef6ff' : member.status === 'enrolled' ? '#f0faf4' : '#fff'
+  const border = offered ? 'border-gold/50' : requested ? 'border-info/40' : member.status === 'enrolled' ? 'border-success/30' : 'border-border'
   return (
     <div className={cn('rounded-[12px] border bg-white p-2.5 cursor-pointer hover:shadow-sm transition-shadow', border)} style={{ background: bg }} onClick={onOpen}>
       <div className="flex items-center gap-2">
@@ -370,6 +393,24 @@ function KidCard({ member, t, onOpen }: { member: MemberRow; t: T; onOpen: () =>
         <div className="mt-1.5 flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-gold pulse-gold" />
           <span className="font-display text-[10.5px] font-semibold text-gold-text">{t('awaitingReply')}</span>
+        </div>
+      )}
+      {requested && (
+        <div className="mt-2">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-info" />
+            <span className="font-display text-[10.5px] font-semibold text-info">{t('requestPending')}</span>
+          </div>
+          <div className="flex gap-1.5">
+            <button onClick={e => { e.stopPropagation(); onConfirm() }}
+              className="flex-1 py-1.5 rounded-md font-display text-[11px] font-semibold bg-success text-white hover:opacity-90 transition-opacity">
+              {t('confirmRequest')}
+            </button>
+            <button onClick={e => { e.stopPropagation(); onDecline() }}
+              className="flex-1 py-1.5 rounded-md font-display text-[11px] font-semibold border border-border text-ink-mid hover:bg-white transition-colors">
+              {t('declineRequest')}
+            </button>
+          </div>
         </div>
       )}
     </div>

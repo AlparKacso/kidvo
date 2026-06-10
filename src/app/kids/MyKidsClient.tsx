@@ -655,9 +655,15 @@ export function MyKidsClient({ userId, initialKids, areas, saves: initialSaves, 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">{t('title')}</h1>
-        <p className="text-sm text-ink-muted">{t('subtitle')}</p>
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-xl font-bold tracking-tight text-ink mb-0.5">{t('title')}</h1>
+          <p className="text-sm text-ink-muted">{t('subtitle')}</p>
+        </div>
+        <a href="/kids/calendar" className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-white font-display text-[12.5px] font-semibold text-ink-mid hover:border-primary hover:text-primary transition-colors">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="3.5" width="13" height="12" rx="1.5"/><path d="M2.5 7h13M6 2v3M12 2v3"/></svg>
+          {t('viewCalendar')}
+        </a>
       </div>
 
       {kids.length === 0 ? FlatView : (

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendSpotOfferToParent } from '@/lib/email'
 import { computeOccupancy } from '@/lib/classes'
+import { createNotification } from '@/lib/notifications'
 
 // POST /api/offers — provider offers a waitlisted child a spot in a class.
 // Body: { waitlist_entry_id, class_id, over_capacity? }
@@ -82,8 +83,17 @@ export async function POST(req: Request) {
 
   await supabase.from('waitlist_entries').update({ status: 'offered' }).eq('id', entry.id)
 
-  // Email the parent with the tokenized Accept / Can't-make-it links.
+  // In-app notification — the bell offer. The email below stays as the fallback
+  // delivery channel; both carry the same Accept/Decline (token-backed).
   const adminDb = createAdminClient()
+  await createNotification(adminDb, entry.user_id, 'spot_offer', {
+    token,
+    childName:    entry.child_name,
+    listingTitle: entry.listing?.title ?? cls.name,
+    providerName: cls.provider?.display_name ?? '',
+  })
+
+  // Email the parent with the tokenized Accept / Can't-make-it links.
   const { data: parentRaw } = await adminDb
     .from('users').select('locale').eq('id', entry.user_id).single()
   const parentLocale = (parentRaw as { locale: string | null } | null)?.locale === 'en' ? 'en' : 'ro'

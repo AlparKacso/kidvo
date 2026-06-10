@@ -232,13 +232,155 @@ export async function createManualClass(providerId: string): Promise<{ id: strin
 }
 
 /**
+ * Seed a child for a parent. Needed so the enroll/calendar flows can link a
+ * roster member to a kidvo child (child_id → children.user_id), which is what
+ * the parent-read RLS + family-calendar read model key off. Cleaned up via the
+ * user delete cascade in cleanupUser.
+ */
+export async function createChild(
+  userId: string,
+  opts: { name?: string; birthYear?: number } = {},
+): Promise<{ id: string; name: string }> {
+  const db = adminClient()
+  const name = opts.name ?? 'E2E Kid'
+  const { data, error } = await db
+    .from('children')
+    .insert({
+      user_id:    userId,
+      name,
+      birth_year: opts.birthYear ?? new Date().getFullYear() - 7,
+      interests:  [],
+    })
+    .select('id, name')
+    .single()
+  if (error || !data) throw error ?? new Error('e2e: failed to insert child')
+  return data as { id: string; name: string }
+}
+
+/**
+ * Seed a "listed" class (linked to a listing) for a provider, with days + time
+ * so it renders as a placeable block on the family calendar. Cleaned up via the
+ * provider delete cascade in cleanupUser.
+ */
+export async function createListedClass(
+  providerId: string,
+  listingId: string,
+  opts: { name?: string; capacity?: number; days?: number[] } = {},
+): Promise<{ id: string }> {
+  const db = adminClient()
+  const { data: cat } = await db.from('categories').select('id').limit(1).single()
+  const { data: area } = await db.from('areas').select('id').limit(1).single()
+  const { data, error } = await db
+    .from('classes')
+    .insert({
+      provider_id: providerId,
+      listing_id:  listingId,
+      name:        opts.name ?? 'E2E Class',
+      category_id: (cat as { id: string } | null)?.id ?? null,
+      area_id:     (area as { id: string } | null)?.id ?? null,
+      age_min:     5,
+      age_max:     12,
+      capacity:    opts.capacity ?? 10,
+      days:        opts.days ?? [1],
+      time_start:  '16:00',
+      time_end:    '17:00',
+      language:    'Romanian',
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('e2e: failed to insert listed class')
+  return data as { id: string }
+}
+
+/**
+ * Seed a roster member on a class (any source/status). Cleaned up via the
+ * class delete cascade when the provider is removed.
+ */
+export async function createRosterMember(
+  classId: string,
+  opts: {
+    source?: 'kidvo' | 'trial' | 'offline'
+    status?: 'requested' | 'offered' | 'enrolled' | 'declined'
+    childId?: string | null
+    childName?: string
+    childAge?: number
+    contactEmail?: string | null
+    waitlistEntryId?: string | null
+  } = {},
+): Promise<{ id: string }> {
+  const db = adminClient()
+  const { data, error } = await db
+    .from('roster_members')
+    .insert({
+      class_id:          classId,
+      source:            opts.source ?? 'kidvo',
+      status:            opts.status ?? 'requested',
+      child_id:          opts.childId ?? null,
+      child_name:        opts.childName ?? 'E2E Child',
+      child_age:         opts.childAge ?? 7,
+      contact_name:      'E2E Parent',
+      contact_email:     opts.contactEmail ?? null,
+      waitlist_entry_id: opts.waitlistEntryId ?? null,
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('e2e: failed to insert roster member')
+  return data as { id: string }
+}
+
+/**
+ * Seed an offer (the token-backed Accept/Decline). Cleaned up via the
+ * class/waitlist-entry delete cascade.
+ */
+export async function createOffer(
+  waitlistEntryId: string,
+  classId: string,
+  rosterMemberId: string,
+  opts: { token?: string; phase?: 'pending' | 'accepted' | 'declined' | 'expired' } = {},
+): Promise<{ id: string; token: string }> {
+  const db = adminClient()
+  const token = opts.token ?? `e2e${Date.now()}${Math.floor(Math.random() * 1e6)}`
+  const { data, error } = await db
+    .from('offers')
+    .insert({
+      waitlist_entry_id: waitlistEntryId,
+      class_id:          classId,
+      roster_member_id:  rosterMemberId,
+      token,
+      phase:             opts.phase ?? 'pending',
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('e2e: failed to insert offer')
+  return { id: (data as { id: string }).id, token }
+}
+
+/**
+ * Seed an in-app notification for a user. Cleaned up via the user delete cascade.
+ */
+export async function createNotificationRow(
+  userId: string,
+  type: 'spot_offer' | 'enroll_confirmed' | 'enroll_declined',
+  payload: Record<string, unknown>,
+): Promise<{ id: string }> {
+  const db = adminClient()
+  const { data, error } = await db
+    .from('notifications')
+    .insert({ user_id: userId, type, payload })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('e2e: failed to insert notification')
+  return data as { id: string }
+}
+
+/**
  * Seed a waiting waitlist entry for a parent on a listing. Cleaned up via the
  * user/listing delete cascade in cleanupUser.
  */
 export async function createWaitlistEntry(
   listingId: string,
   userId: string,
-  opts: { childName?: string; childAge?: number; contactEmail?: string } = {},
+  opts: { childName?: string; childAge?: number; contactEmail?: string; childId?: string | null; status?: 'waiting' | 'offered' | 'enrolled' | 'removed' } = {},
 ): Promise<{ id: string }> {
   const db = adminClient()
   const { data, error } = await db
@@ -246,10 +388,11 @@ export async function createWaitlistEntry(
     .insert({
       listing_id:     listingId,
       user_id:        userId,
+      child_id:       opts.childId ?? null,
       child_name:     opts.childName ?? 'E2E Child',
       child_age:      opts.childAge ?? 7,
       preferred_days: [1],
-      status:         'waiting',
+      status:         opts.status ?? 'waiting',
       contact_name:   'E2E Parent',
       contact_email:  opts.contactEmail ?? null,
     })

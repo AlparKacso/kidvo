@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { LocaleToggle } from '@/components/ui/LocaleToggle'
+import { NotificationBell } from '@/components/layout/NotificationBell'
 
 const IconLocation = () => (
   <svg width="12" height="12" viewBox="0 0 15 15" fill="none">
@@ -172,7 +173,8 @@ export function Topbar({
         <LocaleToggle />
       </div>
 
-      {/* ── Avatar + dropdown — rendered ONCE, shared across breakpoints ── */}
+      {/* ── Bell + Avatar — rendered ONCE, shared across breakpoints ── */}
+      {!searchOpen && <NotificationBell />}
       {!searchOpen && avatarBtn}
 
     </header>

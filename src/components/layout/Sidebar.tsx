@@ -96,6 +96,7 @@ const IconBrowse    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill
 const IconSaved     = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9 14.5S2.5 10 2.5 6a4 4 0 0 1 6.5-3.1A4 4 0 0 1 15.5 6C15.5 10 9 14.5 9 14.5Z"/></svg>
 const IconEvents    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="3.5" width="13" height="12" rx="1.5"/><path d="M2.5 7h13M6 2v3M12 2v3"/><path d="M9 9.3l.7 1.5 1.6.2-1.2 1.1.3 1.6L9 13l-1.4.7.3-1.6-1.2-1.1 1.6-.2z"/></svg>
 const IconKids      = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="9" cy="5.5" r="3"/><path d="M2.5 16c0-3 2.9-5.5 6.5-5.5s6.5 2.5 6.5 5.5"/></svg>
+const IconCalendar  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="3.5" width="13" height="12" rx="1.5"/><path d="M2.5 7h13M6 2v3M12 2v3"/></svg>
 const IconTrials    = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2" y="3.5" width="14" height="11" rx="1.5"/><path d="M6 3.5V2M12 3.5V2M2 7.5h14"/></svg>
 const IconListings  = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2.5" y="2" width="13" height="14" rx="1.5"/><path d="M6 6h6M6 9h6M6 12h4"/></svg>
 const IconClasses   = () => <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="3" width="4.5" height="12" rx="1"/><rect x="11" y="3" width="4.5" height="8" rx="1"/></svg>
@@ -281,6 +282,7 @@ export function Sidebar({
         {!isProvider && (
           <NavSection label={t('myFamily')} collapsed={collapsed}>
             <NavItem href="/kids" icon={<IconKids />} label={t('kidsActivities')} badge={pendingBookings} badgeVariant="blue" exact collapsed={collapsed} />
+            <NavItem href="/kids/calendar" icon={<IconCalendar />} label={t('calendar')} collapsed={collapsed} />
           </NavSection>
         )}
 
