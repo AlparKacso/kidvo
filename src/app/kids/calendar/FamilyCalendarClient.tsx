@@ -77,13 +77,16 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
         placed.push({ ...e, day: d, instId: `${e.id}-${d}`, startH: s, endH: en })
       }
     }
-    let min = 9, max = 18
+    // Default window 8:00–20:00 (covers morning through evening activities),
+    // expanded to include anything earlier or later so a 7am or 20:00+ class is
+    // never cut off. Generous [6, 23] envelope.
+    let min = 8, max = 20
     if (placed.length) {
-      min = Math.min(...placed.map(p => Math.floor(p.startH)))
-      max = Math.max(...placed.map(p => Math.ceil(p.endH)))
+      min = Math.min(min, ...placed.map(p => Math.floor(p.startH)))
+      max = Math.max(max, ...placed.map(p => Math.ceil(p.endH)))
     }
-    min = Math.max(6, Math.min(min, 9))
-    max = Math.min(22, Math.max(max, 18))
+    min = Math.max(6, min)
+    max = Math.min(23, max)
     const hours: number[] = []
     for (let h = min; h < max; h++) hours.push(h)
     return { placed, unscheduled, hours }
@@ -223,9 +226,11 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
               </div>
             </div>
 
+            {/* Scrollable grid — sticky day headers stay aligned while the hours scroll */}
+            <div className="max-h-[64vh] overflow-y-auto">
             {/* Day headers */}
-            <div className="grid" style={{ gridTemplateColumns: '46px repeat(7,1fr)' }}>
-              <div className="border-b border-border" />
+            <div className="grid sticky top-0 z-10 bg-white" style={{ gridTemplateColumns: '46px repeat(7,1fr)' }}>
+              <div className="border-b border-border bg-white" />
               {dayDates.map((d, i) => {
                 const isToday = d.getTime() === today.getTime()
                 return (
@@ -277,6 +282,7 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
                   })}
                 </div>
               ))}
+            </div>
             </div>
           </div>
         </div>
