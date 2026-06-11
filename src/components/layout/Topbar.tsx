@@ -126,7 +126,7 @@ export function Topbar({
   )
 
   return (
-    <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-20">
+    <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-40">
 
       {/* ── Mobile content (logo + location + search) ── */}
       <div className="flex md:hidden items-center gap-2 flex-1 min-w-0">

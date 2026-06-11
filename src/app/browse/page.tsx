@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { AppShell }      from '@/components/layout/AppShell'
 import { ActivityCard }  from '@/components/ui/ActivityCard'
-import { ComingUpBand }  from '@/components/ui/ComingUpBand'
+import { BrowseEventsTeaser } from './BrowseEventsTeaser'
 import { CategoryPills } from '@/components/ui/CategoryPills'
 import { SearchBar }     from '@/components/ui/SearchBar'
 import { createClient }  from '@/lib/supabase/server'
@@ -183,8 +183,9 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           </div>
         </div>
 
-        {/* ── Coming up events band — a teaser; scrolls away above the filters ── */}
-        <ComingUpBand events={events} />
+        {/* ── Coming up events band — a one-time teaser; once scrolled past it
+             dismisses for the session so the sticky filters become the top ── */}
+        <BrowseEventsTeaser events={events} />
 
         {/* ── Activities focus: grouped header + filters.
              Desktop: sticky just under the 54px Topbar so filters stay reachable
