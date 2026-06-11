@@ -60,6 +60,12 @@ export async function LandingNav({ audience }: Props) {
         {/* Right — locale + sign in + CTA */}
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
           <LocaleToggle />
+          {/* Sign in — compact person icon on mobile (RO label is long), text on desktop */}
+          <Link href="/auth/login" aria-label={t('signIn')} className="sm:hidden inline-flex items-center justify-center w-8 h-8 rounded-full text-ink-mid hover:text-ink hover:bg-primary-lt transition-colors flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+            </svg>
+          </Link>
           <Link href="/auth/login" className="hidden sm:inline font-display font-semibold text-ink-mid hover:text-ink transition-colors whitespace-nowrap" style={{ fontSize: '13.5px' }}>
             {t('signIn')}
           </Link>

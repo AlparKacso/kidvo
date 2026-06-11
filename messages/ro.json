@@ -36,6 +36,7 @@
   },
   "topbar": {
     "location": "Timișoara · {count} activități",
+    "filters": "Filtre",
     "searchPlaceholder": "Caută activități…",
     "cancel": "Anulează",
     "settings": "Setări",
@@ -1040,6 +1041,7 @@
     "activitiesEyebrow": "Activități",
     "activitiesTitle": "Programe săptămânale",
     "activitiesSub": "{count} {count, plural, one {activitate disponibilă} other {activități disponibile}}",
+    "activitiesCount": "{count, plural, one {# activitate} other {# activități}}",
     "activitiesCountLabel": "Activități",
     "seeAll": "Vezi toate ({count}) →",
     "backToActivities": "← Înapoi la activități",

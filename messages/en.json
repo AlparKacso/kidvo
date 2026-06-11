@@ -36,6 +36,7 @@
   },
   "topbar": {
     "location": "Timișoara · {count} activities",
+    "filters": "Filters",
     "searchPlaceholder": "Search activities…",
     "cancel": "Cancel",
     "settings": "Settings",
@@ -1040,6 +1041,7 @@
     "activitiesEyebrow": "Activities",
     "activitiesTitle": "Weekly programs",
     "activitiesSub": "{count} available {count, plural, one {activity} other {activities}}",
+    "activitiesCount": "{count, plural, one {# activity} other {# activities}}",
     "activitiesCountLabel": "Activities",
     "seeAll": "See all ({count}) →",
     "backToActivities": "← Back to activities",
