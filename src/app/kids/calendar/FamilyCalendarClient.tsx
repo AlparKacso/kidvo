@@ -249,8 +249,9 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
               })}
             </div>
 
-            {/* Body */}
-            <div className="grid" style={{ gridTemplateColumns: '46px repeat(7,1fr)' }}>
+            {/* Body — pt-2 gives the first hour label room so it isn't clipped
+                under the sticky header (labels sit slightly above their row). */}
+            <div className="grid pt-2" style={{ gridTemplateColumns: '46px repeat(7,1fr)' }}>
               {/* time column */}
               <div className="relative">
                 {hours.map(h => (
