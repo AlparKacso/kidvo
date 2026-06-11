@@ -38,6 +38,10 @@ export async function LandingNav({ audience }: Props) {
           <span className="hidden sm:inline-flex font-display font-bold text-primary bg-primary-lt rounded-full" style={{ fontSize: '11px', padding: '3px 9px', letterSpacing: '0.04em' }}>
             {isProviders ? t('providersPill') : t('parentsPill')}
           </span>
+          {/* Audience switcher — mobile only (desktop has it in the center group) */}
+          <Link href={cross.href} className={`md:hidden font-display font-bold rounded-full border whitespace-nowrap inline-flex items-center gap-1 flex-shrink-0 hover:opacity-85 transition-opacity ${cross.cls}`} style={{ fontSize: '11.5px', padding: '5px 11px', borderColor: isProviders ? undefined : 'rgba(212,160,23,0.25)' }}>
+            {cross.label} <span aria-hidden style={{ fontSize: '10px' }}>→</span>
+          </Link>
         </div>
 
         {/* Center — desktop only */}
