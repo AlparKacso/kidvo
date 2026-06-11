@@ -44,6 +44,7 @@ export default async function ParentsLanding() {
       .from('listings')
       .select('id, title, cover_image_url, price_monthly, pricing_type, age_min, age_max, category:categories(slug, name, accent_color), area:areas(name)')
       .eq('status', 'active')
+      .eq('type', 'activity') // events carry NULL category/area — they must never enter the activities showcase
       .not('cover_image_url', 'is', null)
       .order('featured', { ascending: false })
       .limit(4),
@@ -162,8 +163,8 @@ export default async function ParentsLanding() {
           {/* Activity cards (real data) + browse fallback */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: 18 }}>
             {showcase.map(act => {
-              const accent = act.category.accent_color ?? '#7c3aed'
-              const emoji = CATEGORY_EMOJI[act.category.slug] ?? '✨'
+              const accent = act.category?.accent_color ?? '#7c3aed'
+              const emoji = (act.category && CATEGORY_EMOJI[act.category.slug]) ?? '✨'
               return (
                 <Link key={act.id} href={`/browse/${act.id}`} className="card-hover block overflow-hidden" style={{ background: '#fff', border: '1.5px solid #e8e4f0', borderRadius: 22, boxShadow: '0 2px 12px rgba(124,58,237,0.06)' }}>
                   {act.cover_image_url ? (
@@ -176,13 +177,13 @@ export default async function ParentsLanding() {
                   )}
                   <div style={{ padding: '14px 16px' }}>
                     <span className="inline-flex items-center gap-1" style={{ padding: '3px 9px', borderRadius: 9999, background: hexa(accent, 0.1), color: accent, fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-                      {emoji} {localizeCategoryName(tCat, act.category)}
+                      {emoji} {act.category ? localizeCategoryName(tCat, act.category) : ''}
                     </span>
                     <div className="flex gap-1.5 flex-wrap" style={{ marginBottom: 8 }}>
                       <span style={{ fontSize: 10.5, fontWeight: 600, color: '#55527a', padding: '2px 8px', background: '#f5f3fa', borderRadius: 9999, whiteSpace: 'nowrap' }}>{t('discAges')} {act.age_min}–{act.age_max}</span>
                     </div>
                     <div style={{ fontWeight: 800, fontSize: 15.5, lineHeight: 1.3, letterSpacing: '-0.3px', color: '#1c1c27' }}>{act.title}</div>
-                    <div style={{ fontSize: 12.5, color: '#55527a', marginTop: 4 }}>{act.area.name}</div>
+                    <div style={{ fontSize: 12.5, color: '#55527a', marginTop: 4 }}>{act.area?.name}</div>
                   </div>
                   <div className="flex justify-between items-center" style={{ padding: '11px 16px', borderTop: '1px solid #e8e4f0' }}>
                     <div style={{ fontWeight: 800, fontSize: 14.5, color: '#1c1c27' }}>
