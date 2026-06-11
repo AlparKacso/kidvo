@@ -36,7 +36,9 @@ export default async function ClassesPage() {
 
   const [membersRes, poolRes] = await Promise.all([
     classIds.length > 0
-      ? supabase.from('roster_members').select('*').in('class_id', classIds).order('created_at', { ascending: true })
+      ? supabase.from('roster_members').select('*').in('class_id', classIds)
+          .in('status', ['offered', 'enrolled', 'requested'])
+          .order('created_at', { ascending: true })
       : Promise.resolve({ data: [] as any[] }),
     listingIds.length > 0
       ? supabase.from('waitlist_entries')

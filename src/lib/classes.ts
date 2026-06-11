@@ -87,6 +87,59 @@ export async function syncListedClasses(db: Db, providerId: string): Promise<voi
 }
 
 /**
+ * Return the class id backing a listing's roster, creating the "listed" class
+ * lazily if the provider hasn't opened the manager yet (which is what normally
+ * triggers syncListedClasses). Pass a service-role client — parents can't write
+ * classes under RLS, but a parent enrolling must still resolve/create the class.
+ * Returns null if the listing doesn't exist.
+ */
+export async function ensureClassForListing(db: Db, listingId: string): Promise<string | null> {
+  const { data: existing } = await db
+    .from('classes').select('id').eq('listing_id', listingId).maybeSingle()
+  if (existing) return (existing as { id: string }).id
+
+  const { data: lRaw } = await db
+    .from('listings')
+    .select('id, provider_id, title, category_id, area_id, age_min, age_max, spots_total, language')
+    .eq('id', listingId).single()
+  const l = lRaw as {
+    id: string; provider_id: string; title: string; category_id: string | null
+    area_id: string | null; age_min: number | null; age_max: number | null
+    spots_total: number | null; language: string | null
+  } | null
+  if (!l) return null
+
+  const { data: schedRaw } = await db
+    .from('listing_schedules')
+    .select('day_of_week, time_start, time_end')
+    .eq('listing_id', listingId)
+  const sched = ((schedRaw ?? []) as Array<{ day_of_week: number; time_start: string; time_end: string }>)
+    .sort((a, b) => a.day_of_week - b.day_of_week)
+  const days = [...new Set(sched.map(s => s.day_of_week))]
+
+  const { data: created } = await db
+    .from('classes')
+    .insert({
+      provider_id: l.provider_id,
+      listing_id:  l.id,
+      name:        l.title,
+      category_id: l.category_id,
+      area_id:     l.area_id,
+      age_min:     l.age_min,
+      age_max:     l.age_max,
+      capacity:    l.spots_total,
+      days,
+      time_start:  sched[0]?.time_start ?? null,
+      time_end:    sched[0]?.time_end ?? null,
+      language:    l.language,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+    .select('id')
+    .single()
+  return (created as { id: string } | null)?.id ?? null
+}
+
+/**
  * 1-based position of a waitlist entry among the still-waiting families for the
  * same listing, ordered first-come-first-served (by created_at). Returns the
  * count of waiting families when the entry can't be located.

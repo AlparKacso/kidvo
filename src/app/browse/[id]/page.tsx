@@ -6,6 +6,7 @@ import { AppShell }              from '@/components/layout/AppShell'
 import { createClient }          from '@/lib/supabase/server'
 import { TrialRequestButton }    from '@/components/TrialRequestButton'
 import { WaitlistButton }         from '@/components/WaitlistButton'
+import { EnrollButton }           from '@/components/EnrollButton'
 import { isWaitlistOpen }         from '@/lib/classes'
 import { SaveButton }            from '@/components/ui/SaveButton'
 import { ShareButton }           from '@/components/ui/ShareButton'
@@ -470,6 +471,19 @@ export default async function ActivityDetailPage({ params }: Props) {
                   <span className="font-display text-xs font-bold text-ink">{t('spotsLeft', { count: spotsLeft })}</span>
                 )}
               </div>
+
+              {/* Enroll — primary action when the listing is open (request-to-confirm).
+                  Always visible; the trial below is the secondary path. */}
+              {!isOwner && !waitlistOpen && listing.type === 'activity' && (
+                <div className="mb-2">
+                  <EnrollButton
+                    listingId={listing.id}
+                    listingTitle={listing.title}
+                    isLoggedIn={!!user}
+                    schedules={schedules ?? []}
+                  />
+                </div>
+              )}
 
               {/* On mobile the sticky bottom-CTA covers booking, so hide the
                   duplicate in-card trial button when the sticky is present. */}

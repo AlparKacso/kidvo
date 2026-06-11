@@ -446,6 +446,58 @@ const translations = {
       cta:      'Explorează activitățile →',
     },
   },
+
+  // #25 — Parent: enroll request received (pending provider confirmation)
+  enrollRequestParent: {
+    en: {
+      subject:  'Enrollment request sent — {listing}',
+      heading:  'Request sent! ⏳',
+      body:     'Hi {name}, we sent your request to enroll {child} in <strong>{listing}</strong> with {provider}. It\'s now pending in your family calendar.',
+      body2:    'You\'ll be notified the moment {provider} confirms the spot — no payment now.',
+      cta:      'Open your calendar →',
+    },
+    ro: {
+      subject:  'Cerere de înscriere trimisă — {listing}',
+      heading:  'Cerere trimisă! ⏳',
+      body:     'Bună {name}, am trimis cererea de înscriere a lui {child} la <strong>{listing}</strong> cu {provider}. Apare acum ca în așteptare în calendarul familiei.',
+      body2:    'Te anunțăm imediat ce {provider} confirmă locul — fără plată acum.',
+      cta:      'Deschide calendarul →',
+    },
+  },
+
+  // #26 — Provider: a parent requested to enroll
+  newEnrollRequest: {
+    en: {
+      subject:  'New enrollment request — {listing}',
+      heading:  'A family wants to enroll',
+      body:     '{parent} requested to enroll {child} in <strong>{listing}</strong>. Confirm the spot in Classes & waitlist when you\'re ready.',
+      cta:      'Open Classes & waitlist →',
+    },
+    ro: {
+      subject:  'Cerere nouă de înscriere — {listing}',
+      heading:  'O familie vrea să se înscrie',
+      body:     '{parent} a cerut înscrierea lui {child} la <strong>{listing}</strong>. Confirmă locul în Grupe & listă de așteptare când ești gata.',
+      cta:      'Deschide Grupe & listă de așteptare →',
+    },
+  },
+
+  // #27 — Parent: enroll request declined by provider
+  enrollDeclinedParent: {
+    en: {
+      subject:  'Enrollment update — {listing}',
+      heading:  'About your enrollment request',
+      body:     'Hi {name}, unfortunately {provider} couldn\'t confirm a spot for {child} in <strong>{listing}</strong> this time.',
+      body2:    'There are plenty of other great activities in Timișoara — find the right fit for your child.',
+      cta:      'Browse activities →',
+    },
+    ro: {
+      subject:  'Actualizare înscriere — {listing}',
+      heading:  'Despre cererea ta de înscriere',
+      body:     'Bună {name}, din păcate {provider} nu a putut confirma un loc pentru {child} la <strong>{listing}</strong> de această dată.',
+      body2:    'Există o mulțime de alte activități minunate în Timișoara — găsește ce se potrivește copilului tău.',
+      cta:      'Explorează activitățile →',
+    },
+  },
 } as const
 
 export type EmailKey = keyof typeof translations

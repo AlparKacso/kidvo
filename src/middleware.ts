@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
   // home, /browse and every /browse/<id> detail page. Logged-in display state
   // is still resolved per-page by AppShell; token refresh still happens on the
   // protected routes below, which is the only place it can be persisted anyway.
-  const alwaysPublic = ['/', '/privacy', '/terms', '/teaser']
+  const alwaysPublic = ['/', '/providers', '/privacy', '/terms', '/teaser']
   if (alwaysPublic.includes(pathname)) return NextResponse.next()
   if (pathname === '/browse' || pathname.startsWith('/browse/')) return NextResponse.next()
   if (pathname === '/events' || pathname.startsWith('/events/')) return NextResponse.next()
