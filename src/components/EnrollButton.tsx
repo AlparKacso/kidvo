@@ -110,7 +110,7 @@ export function EnrollButton({ listingId, listingTitle, isLoggedIn, schedules = 
               <div className="flex items-center gap-2 text-[12.5px] text-ink-mid"><span className="text-success">✓</span>{t('emailToProvider')}</div>
             </div>
 
-            <a href="/kids" className="block w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
+            <a href="/kids/calendar" className="block w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">
               {t('viewCalendar')}
             </a>
             <button onClick={() => setState('idle')} className="mt-2 w-full py-2 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">

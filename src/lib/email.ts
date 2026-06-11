@@ -765,7 +765,7 @@ export async function sendEnrollRequestToParent(opts: {
       ${h1(t.heading)}
       ${p(interp(t.body,  { name: opts.parentName, child: opts.childName, listing: opts.listingTitle, provider: opts.providerName }))}
       ${p(interp(t.body2, { provider: opts.providerName }))}
-      ${btn(t.cta, `${APP_URL}/kids`)}
+      ${btn(t.cta, `${APP_URL}/kids/calendar`)}
     `),
   })
 }
