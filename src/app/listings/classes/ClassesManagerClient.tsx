@@ -163,14 +163,14 @@ export function ClassesManagerClient({ classes, members, pool }: Props) {
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4 mb-5">
         <div className="min-w-0">
           <div className="font-display text-[10.5px] font-bold tracking-[.12em] uppercase text-primary mb-1">{t('eyebrow')}</div>
-          <h1 className="font-display text-[24px] font-extrabold tracking-[-0.5px] text-ink">{t('title')}</h1>
+          <h1 className="font-display text-[20px] md:text-[24px] font-extrabold tracking-[-0.5px] text-ink">{t('title')}</h1>
           <div className="font-display text-[12.5px] text-ink-muted mt-1 whitespace-nowrap">
             {t('statLine', { waiting: pool.length, classes: classes.length, full: fullCount })}
           </div>
         </div>
         <button
           onClick={() => setNewGroup({ founding: null })}
-          className="self-start flex-shrink-0 inline-flex items-center gap-1.5 font-display text-sm font-bold px-4 py-2.5 rounded-full text-white hover:opacity-90 transition-opacity"
+          className="self-end md:self-start flex-shrink-0 inline-flex items-center gap-1.5 font-display text-sm font-bold px-4 py-2.5 rounded-full text-white hover:opacity-90 transition-opacity"
           style={{ background: '#1c1c27' }}
         >
           <span className="text-base leading-none">+</span> {t('startGroup')}
