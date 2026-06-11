@@ -158,18 +158,19 @@ export function ClassesManagerClient({ classes, members, pool }: Props) {
 
   return (
     <div className="pb-10">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-5">
-        <div>
+      {/* Header — stacks on mobile so the title + stat line get full width
+          (the new-group button no longer squeezes them onto extra rows). */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4 mb-5">
+        <div className="min-w-0">
           <div className="font-display text-[10.5px] font-bold tracking-[.12em] uppercase text-primary mb-1">{t('eyebrow')}</div>
           <h1 className="font-display text-[24px] font-extrabold tracking-[-0.5px] text-ink">{t('title')}</h1>
-          <div className="font-display text-[12.5px] text-ink-muted mt-1">
+          <div className="font-display text-[12.5px] text-ink-muted mt-1 whitespace-nowrap">
             {t('statLine', { waiting: pool.length, classes: classes.length, full: fullCount })}
           </div>
         </div>
         <button
           onClick={() => setNewGroup({ founding: null })}
-          className="flex-shrink-0 inline-flex items-center gap-1.5 font-display text-sm font-bold px-4 py-2.5 rounded-full text-white hover:opacity-90 transition-opacity"
+          className="self-start flex-shrink-0 inline-flex items-center gap-1.5 font-display text-sm font-bold px-4 py-2.5 rounded-full text-white hover:opacity-90 transition-opacity"
           style={{ background: '#1c1c27' }}
         >
           <span className="text-base leading-none">+</span> {t('startGroup')}
