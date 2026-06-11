@@ -244,15 +244,15 @@ export default async function ParentsLanding() {
         </div>
       </section>
 
-      {/* 7 — REASSURANCE STRIP (dark) */}
+      {/* 7 — REASSURANCE STRIP (dark) — single row, horizontally scrollable on mobile */}
       <section style={{ background: '#1c1c27' }} className="py-9">
-        <div className="max-w-[1180px] mx-auto px-5 md:px-10 flex items-center justify-center flex-wrap gap-x-3.5 gap-y-2">
+        <div className="max-w-[1180px] mx-auto px-5 md:px-10 flex items-center md:justify-center flex-nowrap overflow-x-auto [&::-webkit-scrollbar]:hidden gap-x-3.5" style={{ scrollbarWidth: 'none' }}>
           {reassurance.map((item, i) => (
             <span key={item} className="contents">
-              <span className="inline-flex items-center gap-2" style={{ fontSize: 13.5, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+              <span className="inline-flex items-center gap-2 shrink-0 whitespace-nowrap" style={{ fontSize: 13.5, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
                 <Check color="#f5c542" size={14} /> {item}
               </span>
-              {i < reassurance.length - 1 && <span aria-hidden style={{ color: 'rgba(255,255,255,0.18)' }}>·</span>}
+              {i < reassurance.length - 1 && <span aria-hidden className="shrink-0" style={{ color: 'rgba(255,255,255,0.18)' }}>·</span>}
             </span>
           ))}
         </div>
