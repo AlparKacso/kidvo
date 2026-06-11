@@ -233,11 +233,14 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
               </div>
             </div>
 
-            {/* Scrollable grid — sticky day headers stay aligned while the hours scroll */}
-            <div className="max-h-[64vh] overflow-y-auto">
+            {/* Scrollable grid. Day columns floor at 110px: they fill the width on
+                desktop (1fr wins) and overflow into a horizontal scroll on narrow
+                screens. The time column + corner are frozen (sticky left) and the
+                day headers frozen (sticky top) so both axes stay oriented. */}
+            <div className="max-h-[64vh] overflow-auto">
             {/* Day headers */}
-            <div className="grid sticky top-0 z-10 bg-white" style={{ gridTemplateColumns: '46px repeat(7,1fr)' }}>
-              <div className="border-b border-border bg-white" />
+            <div className="grid sticky top-0 z-20 bg-white" style={{ gridTemplateColumns: '46px repeat(7, minmax(110px,1fr))' }}>
+              <div className="sticky left-0 z-30 border-b border-r border-border bg-white" />
               {dayDates.map((d, i) => {
                 const isToday = d.getTime() === today.getTime()
                 return (
@@ -251,9 +254,9 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
 
             {/* Body — pt-2 gives the first hour label room so it isn't clipped
                 under the sticky header (labels sit slightly above their row). */}
-            <div className="grid pt-2" style={{ gridTemplateColumns: '46px repeat(7,1fr)' }}>
-              {/* time column */}
-              <div className="relative">
+            <div className="grid pt-2" style={{ gridTemplateColumns: '46px repeat(7, minmax(110px,1fr))' }}>
+              {/* time column — frozen on the left during horizontal scroll */}
+              <div className="relative sticky left-0 z-10 bg-white border-r border-border">
                 {hours.map(h => (
                   <div key={h} style={{ height: ROW_H }} className="relative">
                     <span className="absolute -top-1.5 right-1.5 font-display text-[10px] text-ink-muted">{h}:00</span>
