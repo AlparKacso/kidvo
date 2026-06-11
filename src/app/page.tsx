@@ -143,11 +143,11 @@ export default async function ParentsLanding() {
             <p style={{ margin: '8px 0 0', fontSize: 15, color: '#55527a', lineHeight: 1.55, maxWidth: 620 }}>{t('discSub')}</p>
           </div>
 
-          {/* Category pills */}
-          <div className="flex gap-2.5 flex-wrap" style={{ marginBottom: 22 }}>
-            <Link href="/browse" className="inline-flex items-center rounded-full font-display whitespace-nowrap" style={{ padding: '8px 14px', fontSize: 12.5, fontWeight: 600, background: '#f0e8ff', border: '1.5px solid #7c3aed', color: '#7c3aed' }}>{tCat('all')}</Link>
+          {/* Category pills — single horizontally-scrollable row (bleeds to screen edge on mobile) */}
+          <div className="flex gap-2.5 overflow-x-auto -mx-5 px-5 md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden" style={{ marginBottom: 22, scrollbarWidth: 'none' }}>
+            <Link href="/browse" className="shrink-0 inline-flex items-center rounded-full font-display whitespace-nowrap" style={{ padding: '8px 14px', fontSize: 12.5, fontWeight: 600, background: '#f0e8ff', border: '1.5px solid #7c3aed', color: '#7c3aed' }}>{tCat('all')}</Link>
             {categories.map(cat => (
-              <Link key={cat.slug} href={`/browse?category=${cat.slug}`} className="inline-flex items-center gap-1.5 rounded-full font-display whitespace-nowrap hover:border-primary/40 hover:text-primary transition-colors" style={{ padding: '8px 14px', fontSize: 12.5, fontWeight: 600, background: '#fff', border: '1.5px solid #e8e4f0', color: '#55527a' }}>
+              <Link key={cat.slug} href={`/browse?category=${cat.slug}`} className="shrink-0 inline-flex items-center gap-1.5 rounded-full font-display whitespace-nowrap hover:border-primary/40 hover:text-primary transition-colors" style={{ padding: '8px 14px', fontSize: 12.5, fontWeight: 600, background: '#fff', border: '1.5px solid #e8e4f0', color: '#55527a' }}>
                 {CATEGORY_EMOJI[cat.slug] && <span style={{ fontSize: 14, lineHeight: 1 }}>{CATEGORY_EMOJI[cat.slug]}</span>}
                 {localizeCategoryName(tCat, cat)}
               </Link>
