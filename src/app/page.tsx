@@ -9,7 +9,9 @@ import { LandingFooter } from '@/components/landing/LandingFooter'
 import { FamilyCalendarShowcase } from '@/components/landing/FamilyCalendarShowcase'
 import { OfferToast } from '@/components/landing/OfferToast'
 import { Icon, Check, type IconName } from '@/components/landing/LandingIcon'
+import { ActivityCard } from '@/components/ui/ActivityCard'
 import { JsonLd } from '@/components/ui/JsonLd'
+import type { ListingWithRelations } from '@/types/database'
 
 // ── Category emoji mapping (matches DB slugs) ──────────────────────────────
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -24,25 +26,17 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 type Category = { slug: string; name: string; accent_color: string }
-type ShowcaseListing = {
-  id: string; title: string; cover_image_url: string | null; price_monthly: number
-  pricing_type: 'monthly' | 'session' | null
-  age_min: number; age_max: number
-  category: { slug: string; name: string; accent_color: string }
-  area: { name: string }
-}
 
 export default async function ParentsLanding() {
   const supabase = await createClient()
   const t = await getTranslations('landingParents')
   const tCat = await getTranslations('categories')
-  const tCard = await getTranslations('card')
 
   const [{ data: categoriesRaw }, { data: showcaseRaw }] = await Promise.all([
     supabase.from('categories').select('slug, name, accent_color').order('sort_order'),
     supabase
       .from('listings')
-      .select('id, title, cover_image_url, price_monthly, pricing_type, age_min, age_max, category:categories(slug, name, accent_color), area:areas(name)')
+      .select('*, category:categories(*), area:areas(*), provider:providers(*), schedules:listing_schedules(*)')
       .eq('status', 'active')
       .eq('type', 'activity') // events carry NULL category/area — they must never enter the activities showcase
       .not('cover_image_url', 'is', null)
@@ -51,7 +45,7 @@ export default async function ParentsLanding() {
   ])
 
   const categories = (categoriesRaw ?? []).filter((c: Category) => c.slug !== 'babysitting') as Category[]
-  const showcase = (showcaseRaw ?? []) as unknown as ShowcaseListing[]
+  const showcase = (showcaseRaw ?? []) as unknown as ListingWithRelations[]
 
   const features: { ic: IconName; title: string; desc: string; tint: string }[] = [
     { ic: 'palette', title: t('fcF1Title'), desc: t('fcF1Desc'), tint: '#c38cfa' },
@@ -162,38 +156,9 @@ export default async function ParentsLanding() {
 
           {/* Activity cards (real data) + browse fallback */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: 18 }}>
-            {showcase.map(act => {
-              const accent = act.category?.accent_color ?? '#7c3aed'
-              const emoji = (act.category && CATEGORY_EMOJI[act.category.slug]) ?? '✨'
-              return (
-                <Link key={act.id} href={`/browse/${act.id}`} className="card-hover block overflow-hidden" style={{ background: '#fff', border: '1.5px solid #e8e4f0', borderRadius: 22, boxShadow: '0 2px 12px rgba(124,58,237,0.06)' }}>
-                  {act.cover_image_url ? (
-                    <div style={{ aspectRatio: '5 / 4', overflow: 'hidden' }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={act.cover_image_url} alt={act.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                  ) : (
-                    <div style={{ aspectRatio: '5 / 4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 56, background: `linear-gradient(135deg, ${hexa(accent, 0.15)}, ${hexa(accent, 0.42)})` }}>{emoji}</div>
-                  )}
-                  <div style={{ padding: '14px 16px' }}>
-                    <span className="inline-flex items-center gap-1" style={{ padding: '3px 9px', borderRadius: 9999, background: hexa(accent, 0.1), color: accent, fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-                      {emoji} {act.category ? localizeCategoryName(tCat, act.category) : ''}
-                    </span>
-                    <div className="flex gap-1.5 flex-wrap" style={{ marginBottom: 8 }}>
-                      <span style={{ fontSize: 10.5, fontWeight: 600, color: '#55527a', padding: '2px 8px', background: '#f5f3fa', borderRadius: 9999, whiteSpace: 'nowrap' }}>{t('discAges')} {act.age_min}–{act.age_max}</span>
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: 15.5, lineHeight: 1.3, letterSpacing: '-0.3px', color: '#1c1c27' }}>{act.title}</div>
-                    <div style={{ fontSize: 12.5, color: '#55527a', marginTop: 4 }}>{act.area?.name}</div>
-                  </div>
-                  <div className="flex justify-between items-center" style={{ padding: '11px 16px', borderTop: '1px solid #e8e4f0' }}>
-                    <div style={{ fontWeight: 800, fontSize: 14.5, color: '#1c1c27' }}>
-                      {act.price_monthly} RON <span style={{ fontWeight: 500, color: '#9590b3', fontSize: 11 }}>{act.pricing_type === 'session' ? tCard('perSession') : tCard('perMonth')}</span>
-                    </div>
-                    <span style={{ background: '#2aa7ff', color: '#fff', fontWeight: 700, fontSize: 11.5, padding: '7px 12px', borderRadius: 8 }}>{t('discBookTrial')}</span>
-                  </div>
-                </Link>
-              )
-            })}
+            {showcase.map(act => (
+              <ActivityCard key={act.id} listing={act} featured={act.featured} />
+            ))}
 
             {showcase.length < 4 && (
               <Link href="/browse" className="card-hover flex flex-col items-center justify-center text-center gap-3 p-8" style={{ background: '#fff', border: '1.5px dashed #e8e4f0', borderRadius: 22, boxShadow: '0 2px 12px rgba(124,58,237,0.06)' }}>
