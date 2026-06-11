@@ -63,7 +63,9 @@ export async function LandingNav({ audience }: Props) {
           <Link href="/auth/login" className="hidden sm:inline font-display font-semibold text-ink-mid hover:text-ink transition-colors whitespace-nowrap" style={{ fontSize: '13.5px' }}>
             {t('signIn')}
           </Link>
-          <Link href={cta.href} className={`font-display font-extrabold rounded-full whitespace-nowrap hover:opacity-90 transition-opacity ${cta.cls}`} style={{ fontSize: '13.5px', padding: '9px 16px' }}>
+          {/* CTA hidden on mobile — the mobile audience switcher takes its slot; the
+              hero "Browse activities" button is the primary mobile action. */}
+          <Link href={cta.href} className={`hidden md:inline font-display font-extrabold rounded-full whitespace-nowrap hover:opacity-90 transition-opacity ${cta.cls}`} style={{ fontSize: '13.5px', padding: '9px 16px' }}>
             {cta.label} <span aria-hidden>→</span>
           </Link>
         </div>
