@@ -183,35 +183,37 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           </div>
         </div>
 
-        {/* ── Coming up events band (renders only when there are upcoming events) ── */}
+        {/* ── Coming up events band — a persistent, distinct "what's on" teaser;
+             scrolls away above the sticky activity filters (never removed) ── */}
         <ComingUpBand events={events} />
 
-        {/* ── Activities landmark — only when an events band precedes it ── */}
-        {events.length > 0 && (
-        <div className="pt-2 border-t border-border flex items-end justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-[7px] font-display text-[10.5px] font-bold uppercase tracking-[0.16em] text-ink-muted">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {/* ── Activities focus: grouped header + filters.
+             Desktop: sticky just under the 54px Topbar so filters stay reachable
+             as the cards scroll. Mobile: static (the Topbar filter icon jumps back
+             here) so cards get the full screen. id = scroll target. ── */}
+        <div
+          id="browse-filters"
+          className="flex flex-col gap-2.5 scroll-mt-[60px] md:sticky md:top-[54px] md:z-10 md:-mx-[28px] md:px-[28px] md:py-3 md:bg-bg/85 md:backdrop-blur-md md:border-b md:border-border"
+        >
+          {/* Grouped activities header — title + count on one line (only when an events band precedes it) */}
+          {events.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border md:border-t-0 md:pt-0">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-muted shrink-0" aria-hidden="true">
                 <path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" />
                 <path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" />
               </svg>
-              {tEvents('activitiesEyebrow')}
+              <h2 className="font-display font-black text-ink leading-none m-0" style={{ fontSize: '20px', letterSpacing: '-0.7px' }}>
+                {tEvents('activitiesTitle')}
+              </h2>
+              <span className="font-display text-[13px] font-medium text-ink-mid">· {tEvents('activitiesCount', { count: total })}</span>
             </div>
-            <div className="font-display font-black text-ink leading-[1.1] mt-1.5" style={{ fontSize: '22px', letterSpacing: '-0.8px' }}>
-              {tEvents('activitiesTitle')}
-            </div>
-            <div className="text-[13px] text-ink-mid mt-0.5">{tEvents('activitiesSub', { count: total })}</div>
-          </div>
-        </div>
-        )}
+          )}
 
-        {/* ── Search + filters ── */}
-        <Suspense>
-          <div className="flex flex-col gap-2">
+          <Suspense>
             <SearchBar areas={areas ?? []} languages={languages} />
             <CategoryPills categories={categories ?? []} />
-          </div>
-        </Suspense>
+          </Suspense>
+        </div>
 
         {/* ── Empty state ── */}
         {total === 0 && (

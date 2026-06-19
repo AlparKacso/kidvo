@@ -21,6 +21,12 @@ const IconSearch = () => (
   </svg>
 )
 
+const IconFilter = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="6" x2="20" y2="6" /><line x1="7" y1="12" x2="17" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
+  </svg>
+)
+
 const IconSettings = () => (
   <svg width="13" height="13" viewBox="0 0 15 15" fill="none">
     <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" fill="none"/>
@@ -120,7 +126,7 @@ export function Topbar({
   )
 
   return (
-    <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-20">
+    <header className="bg-white border-b border-border h-topbar flex items-center gap-3 px-4 md:px-[28px] sticky top-0 z-40">
 
       {/* ── Mobile content (logo + location + search) ── */}
       <div className="flex md:hidden items-center gap-2 flex-1 min-w-0">
@@ -152,6 +158,17 @@ export function Topbar({
             <Link href={isProvider ? '/dashboard' : '/browse'} className="font-display font-black leading-none hover:opacity-80 transition-opacity" style={{ fontSize: '22px', letterSpacing: '-1px' }}>
               <span style={{ color: '#1c1c27' }}>kid</span><span style={{ color: '#7c3aed' }}>vo</span>
             </Link>
+            {/* Jump-to-filters — browse only; scrolls back to the (static, non-sticky) filter block */}
+            {isBrowse && (
+              <button
+                type="button"
+                aria-label={t('filters')}
+                onClick={() => document.getElementById('browse-filters')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="w-8 h-8 flex items-center justify-center rounded-full border border-border text-ink-muted hover:border-primary hover:text-primary transition-colors flex-shrink-0"
+              >
+                <IconFilter />
+              </button>
+            )}
             <div className="flex-1" />
             <LocaleToggle />
             {!isBrowse && (
