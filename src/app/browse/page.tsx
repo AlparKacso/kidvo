@@ -270,19 +270,15 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                   className="font-display font-extrabold text-ink"
                   style={{ fontSize: '17px', letterSpacing: '-0.3px' }}
                 >
-                  {featured.length > 0 ? t('allActivities') : t('allActivities')}
+                  {t('allActivities')}
                 </div>
                 <div className="font-display text-ink-muted mt-0.5" style={{ fontSize: '12.5px' }}>
                   {t('results', { count: rest.length })}
                   {params.category ? ` in ${categories?.find(c => c.slug === params.category)?.name ?? params.category}` : ''}
                 </div>
               </div>
-              <span
-                className="font-display text-[12.5px] font-semibold whitespace-nowrap mt-0.5"
-                style={{ color: '#2aa7ff' }}
-              >
-                {t('total', { count: total })}
-              </span>
+              {/* 'N total' badge removed — the sticky grouped header already shows
+                  "Weekly programs · N activities", so it was a duplicate count. */}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
