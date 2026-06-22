@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { listing_id, child_id, child_name, child_age, note } = await req.json()
+  const { listing_id, class_id, child_id, child_name, child_age, note } = await req.json()
   if (!listing_id || !child_name) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
@@ -30,9 +30,10 @@ export async function POST(req: Request) {
     profile = { id: user.id, full_name: fullName, email, phone: null, locale: 'ro' }
   }
 
-  // Resolve (or lazily create) the class backing this listing's roster.
-  const classId = await ensureClassForListing(adminDb, listing_id)
-  if (!classId) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+  // Resolve the class to enroll into. A listing may front many classes now; when
+  // it's ambiguous (many classes, no class_id) the parent must pick one (Phase 2).
+  const classId = await ensureClassForListing(adminDb, listing_id, class_id)
+  if (!classId) return NextResponse.json({ error: 'no_class' }, { status: 409 })
 
   // Don't double-book: one active relationship per child per class.
   if (child_id) {

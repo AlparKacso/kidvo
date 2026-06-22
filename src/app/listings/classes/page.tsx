@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
-import { syncListedClasses } from '@/lib/classes'
 import { ClassesManagerClient } from './ClassesManagerClient'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
@@ -18,9 +17,8 @@ export default async function ClassesPage() {
   const provider = providerRaw as { id: string; display_name: string } | null
   if (!provider) redirect('/browse')
 
-  // Lazy-sync: ensure every active listing has a "listed" class row.
-  await syncListedClasses(supabase, provider.id)
-
+  // Classes are now provider-managed (no auto-sync from listings). We just load
+  // what the provider has created — listed (linked to a listing) and manual.
   const { data: classesRaw } = await supabase
     .from('classes')
     .select('*, category:categories(slug, accent_color)')
