@@ -31,13 +31,14 @@ interface Props {
   classes: ClassRow[]
   members: MemberRow[]
   pool: PoolRow[]
+  listings: { id: string; title: string }[]
 }
 
 type DetailTarget =
   | { kind: 'pool'; row: PoolRow }
   | { kind: 'member'; row: MemberRow }
 
-export function ClassesManagerClient({ classes, members, pool }: Props) {
+export function ClassesManagerClient({ classes, members, pool, listings }: Props) {
   const t = useTranslations('classes')
   const router = useRouter()
 
@@ -96,6 +97,14 @@ export function ClassesManagerClient({ classes, members, pool }: Props) {
     } else {
       showToast(t('groupCreated')); router.refresh()
     }
+  }
+
+  async function doSetClassListing(classId: string, listingId: string | null) {
+    const res = await api(`/api/classes/${classId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ listing_id: listingId }),
+    })
+    if (!res.ok) { showToast(t('errorGeneric')); return }
+    showToast(listingId ? t('classPublished') : t('classUnpublished')); router.refresh()
   }
 
   async function doMember(memberId: string, body: Record<string, unknown>, msg: string) {
@@ -264,6 +273,18 @@ export function ClassesManagerClient({ classes, members, pool }: Props) {
               </div>
 
               <div className="mt-3 flex flex-col gap-1.5 pt-2 border-t border-border">
+                {/* Storefront — front this class under one of the provider's listings (or none) */}
+                {listings.length > 0 && (
+                  <label className="flex flex-col gap-0.5">
+                    <span className="font-display text-[9.5px] font-semibold uppercase tracking-[.06em] text-ink-muted px-0.5">{t('storefrontLabel')}</span>
+                    <select value={cls.listing_id ?? ''} onChange={e => doSetClassListing(cls.id, e.target.value || null)}
+                      className="font-display text-[12px] text-ink border border-border rounded-lg py-1.5 px-2 bg-white hover:border-primary focus:border-primary outline-none transition-colors">
+                      <option value="">{t('storefrontNone')}</option>
+                      {listings.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                    </select>
+                  </label>
+                )}
+                {/* Create a brand-new listing from a manual class */}
                 {!cls.listing_id && (
                   <button onClick={() => router.push(`/listings/classes/${cls.id}/quick-start`)}
                     className="font-display text-[12px] font-semibold text-primary hover:bg-primary-lt rounded-lg py-1.5 transition-colors">

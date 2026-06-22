@@ -107,6 +107,18 @@ export default async function ActivityDetailPage({ params }: Props) {
 
   const { category, area, provider, schedules } = listing as any
 
+  // Classes fronted by this listing (storefront model). Published classes are
+  // world-readable via RLS, so the regular client can show their schedule.
+  const { data: classesRaw } = await supabase
+    .from('classes')
+    .select('id, name, age_min, age_max, days, time_start, time_end')
+    .eq('listing_id', id)
+    .order('created_at', { ascending: true })
+  const linkedClasses = (classesRaw ?? []) as Array<{
+    id: string; name: string; age_min: number | null; age_max: number | null
+    days: number[]; time_start: string | null; time_end: string | null
+  }>
+
   const isFull    = (listing.spots_available ?? 1) === 0
   const spotsLeft = listing.spots_available ?? null
   const waitlistOpen = isWaitlistOpen(listing)
@@ -273,6 +285,32 @@ export default async function ActivityDetailPage({ params }: Props) {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Classes — when this listing fronts manually-managed classes */}
+            {linkedClasses.length > 0 && (
+              <div className="bg-white border border-border rounded-lg p-5">
+                <div className="font-display text-[10px] font-semibold tracking-label uppercase text-ink-muted mb-3">{t('classesTitle')}</div>
+                <div className="flex flex-col">
+                  {linkedClasses.map(c => {
+                    const dayLabel = c.days?.length ? [...new Set(c.days)].sort((a, b) => a - b).map(d => DAY_LABELS[d]).join(' & ') : ''
+                    const timeLabel = c.time_start ? `${c.time_start.slice(0, 5)}${c.time_end ? ` – ${c.time_end.slice(0, 5)}` : ''}` : ''
+                    return (
+                      <div key={c.id} className="flex items-center justify-between gap-3 py-2.5 border-b border-border last:border-0">
+                        <div className="min-w-0">
+                          <div className="font-display text-sm font-semibold text-ink truncate">{c.name}</div>
+                          <div className="text-xs text-ink-muted">
+                            {c.age_min != null && c.age_max != null ? `${t('ages')}${c.age_min}–${c.age_max}` : ''}
+                            {dayLabel ? `${c.age_min != null ? ' · ' : ''}${dayLabel}` : ''}
+                          </div>
+                        </div>
+                        {timeLabel && <div className="text-xs text-ink-mid whitespace-nowrap flex-shrink-0">{timeLabel}</div>}
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="text-[11px] text-ink-muted mt-3">{t('classesNote')}</div>
               </div>
             )}
 

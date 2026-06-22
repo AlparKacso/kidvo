@@ -507,6 +507,10 @@ CREATE POLICY "classes_all_own_provider" ON public.classes FOR ALL
     SELECT 1 FROM public.providers p WHERE p.id = classes.provider_id AND p.user_id = auth.uid()
   ));
 CREATE POLICY "classes_select_admin" ON public.classes FOR SELECT USING (public.is_admin());
+-- Published classes (fronted by a listing) are public — the listing detail shows
+-- their schedule. Simple column predicate → no RLS recursion. Rosters stay private.
+CREATE POLICY "classes_select_published" ON public.classes FOR SELECT
+  USING (listing_id IS NOT NULL);
 
 -- waitlist_entries — parent owns their entries; provider reads/updates entries for their listings.
 ALTER TABLE public.waitlist_entries ENABLE ROW LEVEL SECURITY;

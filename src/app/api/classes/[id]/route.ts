@@ -15,7 +15,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     .select('id, provider_id, provider:providers(user_id)')
     .eq('id', id)
     .single()
-  const cls = clsRaw as { id: string; provider: { user_id: string } | null } | null
+  const cls = clsRaw as { id: string; provider_id: string; provider: { user_id: string } | null } | null
   if (!cls || cls.provider?.user_id !== user.id) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
@@ -27,6 +27,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
   if (Array.isArray(body.days)) {
     patch.days = body.days.filter((d: unknown) => typeof d === 'number' && d >= 0 && d <= 6)
+  }
+  // Publishing a class under a listing: it must be the provider's OWN listing.
+  if (patch.listing_id) {
+    const { data: lst } = await supabase
+      .from('listings').select('id').eq('id', patch.listing_id as string).eq('provider_id', cls.provider_id).maybeSingle()
+    if (!lst) return NextResponse.json({ error: 'Invalid listing' }, { status: 400 })
   }
   patch.updated_at = new Date().toISOString()
 
