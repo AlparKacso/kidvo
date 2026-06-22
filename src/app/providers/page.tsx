@@ -53,7 +53,7 @@ export default async function ProvidersLanding() {
       <LandingNav audience="providers" />
 
       {/* 1 — HERO */}
-      <section style={{ background: '#ece8f5', position: 'relative', overflow: 'hidden' }} className="py-14 md:py-[72px]">
+      <section style={{ background: '#f6f4ff', position: 'relative', overflow: 'hidden' }} className="py-14 md:py-[72px]">
         <div style={{ position: 'absolute', top: -200, right: -140, width: 640, height: 640, background: 'radial-gradient(circle, rgba(124,58,237,0.20), transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -220, left: -160, width: 560, height: 560, background: 'radial-gradient(circle, rgba(245,197,66,0.14), transparent 65%)', pointerEvents: 'none' }} />
         <div className="relative max-w-[800px] mx-auto px-5 text-center">
