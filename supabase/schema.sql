@@ -245,8 +245,8 @@ CREATE TABLE IF NOT EXISTS public.tips (
   body  TEXT   NOT NULL
 );
 
--- classes (waitlist/roster manager — unified roster home;
--- listing_id set = "listed" auto-synced from a listing, NULL = "manual")
+-- classes (provider-managed roster unit; listing_id set = published under a
+-- listing storefront, NULL = manual / not yet public. A listing may front MANY.)
 CREATE TABLE IF NOT EXISTS public.classes (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   provider_id  UUID        NOT NULL REFERENCES public.providers(id)  ON DELETE CASCADE,
@@ -264,7 +264,7 @@ CREATE TABLE IF NOT EXISTS public.classes (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE UNIQUE INDEX IF NOT EXISTS classes_listing_id_uidx
+CREATE INDEX IF NOT EXISTS classes_listing_id_idx
   ON public.classes(listing_id) WHERE listing_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS classes_provider_id_idx ON public.classes(provider_id);
 
