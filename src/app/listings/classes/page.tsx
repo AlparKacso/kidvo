@@ -27,10 +27,13 @@ export default async function ClassesPage() {
   const classes = (classesRaw ?? []) as any[]
   const classIds = classes.map(c => c.id)
 
-  // Provider's listing ids → the waiting pool comes from waitlist_entries on them.
+  // Provider's listings → the waiting pool comes from waitlist_entries on them,
+  // and they populate the per-class "publish under listing" selector.
   const { data: listingsRaw } = await supabase
-    .from('listings').select('id').eq('provider_id', provider.id)
-  const listingIds = (listingsRaw ?? []).map((l: { id: string }) => l.id)
+    .from('listings').select('id, title').eq('provider_id', provider.id).eq('type', 'activity')
+    .order('title', { ascending: true })
+  const listings   = (listingsRaw ?? []) as { id: string; title: string }[]
+  const listingIds = listings.map(l => l.id)
 
   const [membersRes, poolRes] = await Promise.all([
     classIds.length > 0
@@ -55,6 +58,7 @@ export default async function ClassesPage() {
         classes={classes}
         members={members}
         pool={pool}
+        listings={listings}
       />
     </AppShell>
   )
