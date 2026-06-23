@@ -4,6 +4,7 @@ import {
   createProvider,
   createParent,
   createListing,
+  createListedClass,
   createManualClass,
   createWaitlistEntry,
   cleanupUser,
@@ -93,6 +94,10 @@ test.describe('waitlist: provider offers a spot', () => {
   test.beforeAll(async () => {
     const prov = await createProvider('E2E WL Provider 2')
     const listing = await createListing(prov.providerId, { full: true })
+    // Decoupled model: listings no longer auto-sync a class, so seed the listed
+    // class the provider offers the waiting family into (name matches the listing,
+    // capacity 10 → the offer modal's class button reads "E2E Listing … 0/10").
+    await createListedClass(prov.providerId, listing.id, { name: listing.title, capacity: 10 })
     const parent = await createParent('E2E WL Parent 2')
     await createWaitlistEntry(listing.id, parent.userId, { childName: 'Offerme', childAge: 8, contactEmail: parent.email })
     provEmail  = prov.email
@@ -116,8 +121,8 @@ test.describe('waitlist: provider offers a spot', () => {
     await page.locator('button[type="submit"]').click()
     await page.waitForURL(/\/(dashboard|listings)/, { timeout: 15_000 })
 
-    // Open the manager — the active listing auto-syncs as a class, and the
-    // seeded family appears in the waiting pool.
+    // Open the manager — the seeded listed class is there, and the seeded
+    // family appears in the waiting pool.
     await page.goto('/listings/classes')
     await expect(page.getByRole('heading', { name: /Classes & waitlist/i })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('Offerme', { exact: true })).toBeVisible({ timeout: 10_000 })
@@ -284,5 +289,43 @@ test.describe('waitlist: quick-start — turn a manual class into a listing', ()
 
     const { data: cls } = await db.from('classes').select('listing_id').eq('id', classId).single()
     expect((cls as { listing_id: string | null }).listing_id).toBe((listing as { id: string }).id)
+  })
+})
+
+/**
+ * Phase 2 (storefront): one listing fronts MANY published classes, and they show
+ * on the public listing page. Exercises the dropped 1-class-per-listing unique
+ * index + the public-read RLS on published classes.
+ */
+test.describe('classes: a listing fronts multiple published classes', () => {
+  let provEmail = ''
+  let listingId = ''
+  let nameA = ''
+  let nameB = ''
+
+  test.beforeAll(async () => {
+    const prov = await createProvider('E2E Storefront Provider')
+    const listing = await createListing(prov.providerId) // open
+    const stamp = Date.now()
+    nameA = `E2E Beginners ${stamp}`
+    nameB = `E2E Advanced ${stamp}`
+    // Two classes under ONE listing — only possible after the decouple migration
+    // dropped the 1-class-per-listing unique index.
+    await createListedClass(prov.providerId, listing.id, { name: nameA, days: [1] })
+    await createListedClass(prov.providerId, listing.id, { name: nameB, days: [3] })
+    provEmail = prov.email
+    listingId = listing.id
+  })
+
+  test.afterAll(async () => {
+    if (provEmail) await cleanupUser(provEmail)
+  })
+
+  test('both published classes show on the public listing page', async ({ page }) => {
+    test.setTimeout(60_000)
+    await dismissGates(page, `/browse/${listingId}`)
+    // The "Classes" section lists every class the listing fronts (public RLS).
+    await expect(page.getByText(nameA, { exact: false })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(nameB, { exact: false })).toBeVisible({ timeout: 15_000 })
   })
 })
