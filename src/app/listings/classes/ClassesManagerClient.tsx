@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { categoryEmoji } from '@/lib/eventDate'
 
 /* ── Types (mirror the server page selects) ── */
 interface ClassRow {
@@ -11,6 +12,20 @@ interface ClassRow {
   age_min: number | null; age_max: number | null; capacity: number | null
   days: number[]; time_start: string | null; time_end: string | null
   category?: { slug: string; accent_color: string } | null
+}
+interface ListingDetail {
+  id: string; title: string; status: string
+  price_monthly: number | null; pricing_type: 'month' | 'session'
+  age_min: number | null; age_max: number | null
+  spots_total: number | null; spots_available: number | null
+  cover_image_url: string | null
+  category?: { slug: string; name: string; accent_color: string } | null
+  area?: { name: string } | null
+  schedules?: { day_of_week: number; time_start: string; time_end: string }[]
+}
+interface TrialReq {
+  id: string; listing_id: string; child_name: string; child_age: number | null
+  parent_name: string | null; preferred_day: number | null; created_at: string
 }
 interface MemberRow {
   id: string; class_id: string; source: 'kidvo' | 'trial' | 'offline'
@@ -31,14 +46,15 @@ interface Props {
   classes: ClassRow[]
   members: MemberRow[]
   pool: PoolRow[]
-  listings: { id: string; title: string }[]
+  listings: ListingDetail[]
+  trialRequests: TrialReq[]
 }
 
 type DetailTarget =
   | { kind: 'pool'; row: PoolRow }
   | { kind: 'member'; row: MemberRow }
 
-export function ClassesManagerClient({ classes, members, pool, listings }: Props) {
+export function ClassesManagerClient({ classes, members, pool, listings, trialRequests }: Props) {
   const t = useTranslations('classes')
   const router = useRouter()
 
@@ -50,6 +66,23 @@ export function ClassesManagerClient({ classes, members, pool, listings }: Props
   const [newGroup, setNewGroup] = useState<{ founding: PoolRow | null } | null>(null)
   const [toast, setToast]       = useState<string | null>(null)
   const [busy, setBusy]         = useState(false)
+
+  // Docked panel state.
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(classes[0]?.id ?? null)
+  const [pickerOpen, setPickerOpen]     = useState(false)
+  const [detachConfirm, setDetachConfirm] = useState<string | null>(null)
+  // Session-only memory of where a class WAS listed before it was unlisted in
+  // this session, so "Re-list this group" can restore it with one click. (There
+  // is no DB column for the prior listing — a refresh just shows it as manual.)
+  const [detachedFrom, setDetachedFrom] = useState<Record<string, string>>({})
+
+  const selectedClass = classes.find(c => c.id === selectedClassId) ?? classes[0] ?? null
+
+  function selectClass(id: string) {
+    setSelectedClassId(id)
+    setPickerOpen(false)
+    setDetachConfirm(null)
+  }
 
   const occ = (classId: string) => members.filter(m => m.class_id === classId && (m.status === 'offered' || m.status === 'enrolled')).length
 
@@ -99,12 +132,55 @@ export function ClassesManagerClient({ classes, members, pool, listings }: Props
     }
   }
 
-  async function doSetClassListing(classId: string, listingId: string | null) {
+  async function patchClassListing(classId: string, listingId: string | null): Promise<boolean> {
     const res = await api(`/api/classes/${classId}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ listing_id: listingId }),
     })
+    return res.ok
+  }
+
+  // Unlist (detach) a live group from its public listing. Enrolled kids stay;
+  // remember where it was so "Re-list" can restore it this session.
+  async function doUnlist(cls: ClassRow) {
+    const prior = cls.listing_id
+    if (!(await patchClassListing(cls.id, null))) { showToast(t('errorGeneric')); return }
+    if (prior) setDetachedFrom(m => ({ ...m, [cls.id]: prior }))
+    setDetachConfirm(null); showToast(t('classUnpublished')); router.refresh()
+  }
+
+  // Restore an unlisted group to exactly the listing it came from (safe → no confirm).
+  async function doRelist(cls: ClassRow) {
+    const prior = detachedFrom[cls.id]
+    if (!prior) return
+    if (!(await patchClassListing(cls.id, prior))) { showToast(t('errorGeneric')); return }
+    setDetachedFrom(m => { const n = { ...m }; delete n[cls.id]; return n })
+    showToast(t('relistedToast', { class: cls.name })); router.refresh()
+  }
+
+  // Front a (manual / detached) group under one of the provider's other listings.
+  async function doAttach(cls: ClassRow, listing: ListingDetail) {
+    if (!(await patchClassListing(cls.id, listing.id))) { showToast(t('errorGeneric')); return }
+    setDetachedFrom(m => { const n = { ...m }; delete n[cls.id]; return n })
+    setPickerOpen(false); showToast(t('attachedToast', { class: cls.name, listing: listing.title })); router.refresh()
+  }
+
+  // Confirm a trial request from the docked panel → enrols the child into THIS class.
+  async function doConfirmTrial(trialId: string, cls: ClassRow, childName: string) {
+    const res = await api(`/api/trial-requests/${trialId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm', class_id: cls.id }),
+    })
     if (!res.ok) { showToast(t('errorGeneric')); return }
-    showToast(listingId ? t('classPublished') : t('classUnpublished')); router.refresh()
+    showToast(t('trialConfirmedToast', { child: childName, class: cls.name })); router.refresh()
+  }
+
+  async function doDeclineTrial(trialId: string) {
+    const res = await api(`/api/trial-requests/${trialId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'decline' }),
+    })
+    if (!res.ok) { showToast(t('errorGeneric')); return }
+    showToast(t('requestDeclinedToast')); router.refresh()
   }
 
   async function doMember(memberId: string, body: Record<string, unknown>, msg: string) {
@@ -238,9 +314,13 @@ export function ClassesManagerClient({ classes, members, pool, listings }: Props
           const state = cap == null ? 'none' : occupancy > cap ? 'over' : occupancy === cap ? 'full' : 'open'
           const barColor = state === 'over' ? '#f5c542' : state === 'full' ? '#C0392B' : '#1A7A4A'
           const accent = cls.category?.accent_color ?? '#7c3aed'
+          const isSelected = selectedClass?.id === cls.id
           return (
-            <section key={cls.id} className="flex-shrink-0 w-[260px] rounded-[18px] border border-border bg-white p-3 flex flex-col" style={{ boxShadow: '0 2px 12px rgba(124,58,237,.06)' }}>
-              <div className="px-1 mb-3">
+            <section key={cls.id}
+              className={cn('flex-shrink-0 w-[260px] rounded-[18px] bg-white p-3 flex flex-col transition-shadow',
+                isSelected ? 'border-[1.5px] border-primary' : 'border border-border')}
+              style={{ boxShadow: isSelected ? '0 0 0 3px rgba(124,58,237,.10)' : '0 2px 12px rgba(124,58,237,.06)' }}>
+              <button type="button" onClick={() => selectClass(cls.id)} className="px-1 mb-3 text-left w-full">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: accent }} />
                   <span className="font-display text-[13px] font-bold text-ink truncate flex-1">{cls.name}</span>
@@ -259,7 +339,7 @@ export function ClassesManagerClient({ classes, members, pool, listings }: Props
                     <div className="h-full rounded-full" style={{ width: `${Math.min(100, (occupancy / Math.max(cap, 1)) * 100)}%`, background: barColor }} />
                   </div>
                 )}
-              </div>
+              </button>
 
               <div className="flex-1 flex flex-col gap-2 min-h-[40px]">
                 {roster.length === 0 ? (
@@ -273,18 +353,8 @@ export function ClassesManagerClient({ classes, members, pool, listings }: Props
               </div>
 
               <div className="mt-3 flex flex-col gap-1.5 pt-2 border-t border-border">
-                {/* Storefront — front this class under one of the provider's listings (or none) */}
-                {listings.length > 0 && (
-                  <label className="flex flex-col gap-0.5">
-                    <span className="font-display text-[9.5px] font-semibold uppercase tracking-[.06em] text-ink-muted px-0.5">{t('storefrontLabel')}</span>
-                    <select value={cls.listing_id ?? ''} onChange={e => doSetClassListing(cls.id, e.target.value || null)}
-                      className="font-display text-[12px] text-ink border border-border rounded-lg py-1.5 px-2 bg-white hover:border-primary focus:border-primary outline-none transition-colors">
-                      <option value="">{t('storefrontNone')}</option>
-                      {listings.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
-                    </select>
-                  </label>
-                )}
-                {/* Create a brand-new listing from a manual class */}
+                {/* Manual groups can become a public listing straight from the column;
+                    the storefront link/unlist now lives in the docked panel below. */}
                 {!cls.listing_id && (
                   <button onClick={() => router.push(`/listings/classes/${cls.id}/quick-start`)}
                     className="font-display text-[12px] font-semibold text-primary hover:bg-primary-lt rounded-lg py-1.5 transition-colors">
@@ -307,6 +377,27 @@ export function ClassesManagerClient({ classes, members, pool, listings }: Props
           <span className="font-display text-[12.5px] font-semibold">{t('newGroup')}</span>
         </button>
       </div>
+
+      {/* ── Docked listing panel — the public listing for the selected group ── */}
+      {selectedClass && (
+        <DockedListingPanel
+          cls={selectedClass} t={t} busy={busy}
+          listing={selectedClass.listing_id ? listings.find(l => l.id === selectedClass.listing_id) ?? null : null}
+          detachedListing={detachedFrom[selectedClass.id] ? listings.find(l => l.id === detachedFrom[selectedClass.id]) ?? null : null}
+          otherListings={listings.filter(l => l.id !== selectedClass.listing_id && l.status === 'active')}
+          trials={trialRequests.filter(r => r.listing_id === selectedClass.listing_id)}
+          pickerOpen={pickerOpen} setPickerOpen={setPickerOpen}
+          detachConfirm={detachConfirm === selectedClass.id} setDetachConfirm={(on) => setDetachConfirm(on ? selectedClass.id : null)}
+          onConfirmTrial={(trialId, childName) => doConfirmTrial(trialId, selectedClass, childName)}
+          onDeclineTrial={doDeclineTrial}
+          onUnlist={() => doUnlist(selectedClass)}
+          onRelist={() => doRelist(selectedClass)}
+          onAttach={(listing) => doAttach(selectedClass, listing)}
+          onEdit={(listingId) => router.push(`/listings/${listingId}/edit`)}
+          onPreview={(listingId) => router.push(`/browse/${listingId}`)}
+          onPublishNew={() => router.push(`/listings/classes/${selectedClass.id}/quick-start`)}
+        />
+      )}
 
       {/* ── Detail modal ── */}
       {detail && (
@@ -435,6 +526,241 @@ function KidCard({ member, t, onOpen, onConfirm, onDecline }: {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/* ───────────────── Docked listing panel (Screen 1) ───────────────── */
+
+const trimT = (s: string | null | undefined) => (s ? s.slice(0, 5) : '')
+
+function DockedListingPanel({
+  cls, t, busy, listing, detachedListing, otherListings, trials,
+  pickerOpen, setPickerOpen, detachConfirm, setDetachConfirm,
+  onConfirmTrial, onDeclineTrial, onUnlist, onRelist, onAttach, onEdit, onPreview, onPublishNew,
+}: {
+  cls: ClassRow; t: T; busy: boolean
+  listing: ListingDetail | null
+  detachedListing: ListingDetail | null
+  otherListings: ListingDetail[]
+  trials: TrialReq[]
+  pickerOpen: boolean; setPickerOpen: (b: boolean) => void
+  detachConfirm: boolean; setDetachConfirm: (b: boolean) => void
+  onConfirmTrial: (trialId: string, childName: string) => void
+  onDeclineTrial: (trialId: string) => void
+  onUnlist: () => void; onRelist: () => void; onAttach: (l: ListingDetail) => void
+  onEdit: (id: string) => void; onPreview: (id: string) => void; onPublishNew: () => void
+}) {
+  const slug   = listing?.category?.slug ?? cls.category?.slug
+  const emoji  = categoryEmoji(slug)
+  const accent = listing?.category?.accent_color ?? cls.category?.accent_color ?? '#7c3aed'
+
+  return (
+    <aside className="mt-[18px] rounded-[18px] border-[1.5px] border-border bg-white overflow-hidden"
+      style={{ borderTop: '3px solid #7c3aed', boxShadow: '0 2px 12px rgba(124,58,237,.06)' }}>
+      {/* Header bar */}
+      <div className="flex items-center gap-1.5 px-[18px] py-3 border-b" style={{ background: '#faf7ff', borderColor: '#f0eef6' }}>
+        <span className="text-primary text-[11px] leading-none">▾</span>
+        <span className="font-display text-[13px] font-extrabold text-ink">{t('panelTitle')}</span>
+        <span className="font-display text-[12.5px] text-ink-muted truncate">— {cls.name}</span>
+      </div>
+
+      {listing ? (
+        /* ── LISTED state ── */
+        <div className="p-[18px]">
+          {/* Relationship banner */}
+          <div className="flex items-start gap-2.5 rounded-[10px] px-3.5 py-3 mb-[18px]" style={{ background: '#f0e8ff' }}>
+            <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: accent }} />
+            <div className="min-w-0">
+              <p className="font-display text-[12.5px] text-ink leading-snug">
+                <b className="font-bold">{cls.name}</b> {t('relBannerL1')}
+              </p>
+              <p className="font-display text-[12px] text-ink-mid leading-snug mt-1">
+                {trials.length > 0 ? t('relBannerL2Trials') : t('relBannerL2None')}
+              </p>
+            </div>
+          </div>
+
+          {/* 3-column grid */}
+          <div className="grid gap-6 lg:grid-cols-[208px_1fr_1.25fr] grid-cols-1">
+            {/* Cover + status pill */}
+            <div>
+              <div className="h-[128px] rounded-[12px] overflow-hidden flex items-center justify-center relative"
+                style={listing.cover_image_url ? undefined : { background: `linear-gradient(135deg, ${accent}2e, ${accent}73)` }}>
+                {listing.cover_image_url
+                  ? <img src={listing.cover_image_url} alt="" className="w-full h-full object-cover" />
+                  : <span style={{ fontSize: 46 }}>{emoji}</span>}
+              </div>
+              <div className="mt-2.5"><StatusPill status={listing.status} t={t} /></div>
+            </div>
+
+            {/* Details */}
+            <div>
+              <div className="font-display text-[10px] font-bold tracking-[.1em] uppercase text-ink-muted mb-2.5">{t('detailsEyebrow')}</div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <Detail label={t('panelPrice')}    value={`${listing.price_monthly ?? 0} RON${listing.pricing_type === 'session' ? t('perSession') : t('perMonth')}`} strong />
+                <Detail label={t('panelSchedule')} value={scheduleStr(listing, t)} />
+                <Detail label={t('panelAges')}     value={listing.age_min != null && listing.age_max != null ? `${listing.age_min}–${listing.age_max} ${t('years')}` : '—'} />
+                <Detail label={t('panelArea')}     value={listing.area?.name ?? '—'} />
+                <Detail label={t('panelSpots')}    value={listing.spots_total != null ? t('spotsOpen', { open: listing.spots_available ?? 0, total: listing.spots_total }) : '—'} />
+              </div>
+            </div>
+
+            {/* Trial requests */}
+            <div>
+              <div className="flex items-center gap-2 mb-2.5">
+                <span className="font-display text-[10px] font-bold tracking-[.1em] uppercase text-ink-muted">{t('trialReqEyebrow')}</span>
+                {trials.length > 0 && (
+                  <span className="font-display text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gold-lt text-gold-text">{t('trialReqNew', { n: trials.length })}</span>
+                )}
+              </div>
+              {trials.length === 0 ? (
+                <div className="font-display text-[12px] text-ink-muted py-2">{t('noTrialRequests')}</div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {trials.map(tr => <TrialCard key={tr.id} tr={tr} t={t} busy={busy}
+                    onConfirm={() => onConfirmTrial(tr.id, tr.child_name)} onDecline={() => onDeclineTrial(tr.id)} />)}
+                  <p className="font-display text-[10.5px] text-ink-muted mt-0.5">{t('trialFootnote')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Unlist speed-bump */}
+          {detachConfirm && (
+            <div className="mt-[18px] rounded-[12px] px-4 py-3.5" style={{ border: '1px solid #f6d9d4', background: '#fdf4f3' }}>
+              <div className="font-display text-[13px] font-bold text-ink mb-0.5">{t('unlistConfirmTitle', { class: cls.name })}</div>
+              <p className="font-display text-[12px] text-ink-mid mb-3 leading-snug">{t('unlistConfirmBody')}</p>
+              <div className="flex gap-2">
+                <button onClick={onUnlist} disabled={busy} className="px-3.5 py-2 rounded-md font-display text-[12.5px] font-semibold bg-danger text-white hover:opacity-90 disabled:opacity-50 transition-opacity">{t('unlistConfirmYes')}</button>
+                <button onClick={() => setDetachConfirm(false)} disabled={busy} className="px-3.5 py-2 rounded-md font-display text-[12.5px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">{t('unlistConfirmNo')}</button>
+              </div>
+            </div>
+          )}
+
+          {/* Actions row */}
+          <div className="flex items-center gap-2.5 mt-4 pt-4 border-t flex-wrap" style={{ borderColor: '#f0eef6' }}>
+            <button onClick={() => onEdit(listing.id)} className="px-4 py-2 rounded-md font-display text-[12.5px] font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">{t('editListing')}</button>
+            <button onClick={() => onPreview(listing.id)} className="px-4 py-2 rounded-md font-display text-[12.5px] font-semibold bg-white border-[1.5px] border-border-mid text-ink-mid hover:border-primary hover:text-primary transition-colors">{t('previewPublic')}</button>
+            {!detachConfirm && (
+              <button onClick={() => setDetachConfirm(true)} className="ml-auto font-display text-[12px] font-semibold text-ink-muted hover:text-ink transition-colors">{t('unlistGroup')}</button>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* ── MANUAL state ── */
+        <div className="p-[18px] grid gap-6 md:grid-cols-[208px_1fr] grid-cols-1">
+          {/* Hatched placeholder */}
+          <div className="h-[128px] rounded-[12px] flex items-center justify-center"
+            style={{ background: 'repeating-linear-gradient(45deg,#f3f1f9,#f3f1f9 10px,#ece8f5 10px,#ece8f5 20px)' }}>
+            <span style={{ fontSize: 46 }}>{emoji}</span>
+          </div>
+
+          <div className="min-w-0">
+            {/* Badge */}
+            <span className={cn('inline-flex font-display text-[10.5px] font-semibold px-2 py-0.5 rounded-full mb-2',
+              detachedListing ? 'bg-info-lt text-info' : 'bg-zinc-lt text-zinc')}>
+              {detachedListing ? t('manualBadgeDetached') : t('manualBadgeNative')}
+            </span>
+
+            {/* Detached → re-list banner */}
+            {detachedListing && (
+              <div className="rounded-[12px] px-3.5 py-3 mb-3" style={{ border: '1px solid #d6e4f5', background: '#eef5fb' }}>
+                <p className="font-display text-[12px] text-ink-mid leading-snug mb-2.5">
+                  {t('relistBannerL1')} {t('relistBannerL2')}
+                </p>
+                <button onClick={onRelist} disabled={busy} className="px-3.5 py-2 rounded-md font-display text-[12.5px] font-semibold bg-info text-white hover:opacity-90 disabled:opacity-50 transition-opacity">{t('relistGroup')}</button>
+              </div>
+            )}
+
+            <div className="font-display text-[14px] font-semibold text-ink mb-0.5">
+              {detachedListing ? t('manualHeadlineDetached') : t('manualHeadlineNative')}
+            </div>
+            <p className="font-display text-[12px] text-ink-muted mb-3.5 leading-snug">{t('manualSub')}</p>
+
+            {/* Controls row */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative">
+                <button onClick={() => setPickerOpen(!pickerOpen)}
+                  className="inline-flex items-center justify-between gap-2 min-w-[240px] px-3.5 py-2.5 rounded-[9px] border border-border bg-white font-display text-[12.5px] font-semibold text-ink hover:border-primary transition-colors">
+                  {t('chooseExisting')}<span className="text-ink-muted text-[10px]">▾</span>
+                </button>
+                {pickerOpen && (
+                  <div className="absolute left-0 top-full mt-1.5 z-30 min-w-[260px] rounded-[12px] border border-border bg-white shadow-xl p-1.5">
+                    {otherListings.length === 0 ? (
+                      <div className="font-display text-[12px] text-ink-muted px-2.5 py-2">{t('noOtherListings')}</div>
+                    ) : otherListings.map(l => (
+                      <button key={l.id} onClick={() => onAttach(l)} disabled={busy}
+                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-primary-lt disabled:opacity-50 transition-colors text-left">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: l.category?.accent_color ?? '#7c3aed' }} />
+                        <span className="font-display text-[12.5px] font-semibold text-ink truncate flex-1">{l.title}</span>
+                        {l.spots_total != null && (
+                          <span className="font-display text-[11px] text-success flex-shrink-0">{t('spotsOpen', { open: l.spots_available ?? 0, total: l.spots_total })}</span>
+                        )}
+                      </button>
+                    ))}
+                    <p className="font-display text-[10.5px] text-ink-muted px-2.5 pt-1.5 pb-1">{t('chooseExistingFootnote')}</p>
+                  </div>
+                )}
+              </div>
+              <span className="font-display text-[12px] text-ink-muted">{t('orWord')}</span>
+              <button onClick={onPublishNew} className="px-4 py-2.5 rounded-md font-display text-[12.5px] font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">{t('publishNew')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </aside>
+  )
+}
+
+function scheduleStr(listing: ListingDetail, t: T): string {
+  const scheds = [...(listing.schedules ?? [])].sort((a, b) => a.day_of_week - b.day_of_week)
+  if (scheds.length === 0) return '—'
+  const days = [...new Set(scheds.map(s => s.day_of_week))]
+  const dayStr = days.map(d => t(`days.${d}` as 'days.0')).join(' ')
+  const t0 = scheds[0]
+  return `${dayStr} ${trimT(t0.time_start)}–${trimT(t0.time_end)}`.trim()
+}
+
+function StatusPill({ status, t }: { status: string; t: T }) {
+  const map: Record<string, { cls: string; label: string }> = {
+    active:  { cls: 'bg-success-lt text-success', label: `● ${t('statusLive')}` },
+    paused:  { cls: 'bg-zinc-lt text-zinc',       label: t('statusPaused') },
+    pending: { cls: 'bg-gold-lt text-gold-text',  label: t('statusPendingReview') },
+    draft:   { cls: 'bg-surface text-ink-muted',  label: t('statusDraft') },
+  }
+  const m = map[status] ?? map.draft
+  return <span className={cn('inline-flex px-2.5 py-1 rounded-full font-display text-[11px] font-semibold', m.cls)}>{m.label}</span>
+}
+
+function Detail({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <div className="font-display text-[10px] font-semibold uppercase text-ink-muted tracking-[.04em] mb-0.5">{label}</div>
+      <div className={cn('font-display text-ink', strong ? 'text-[14px] font-extrabold' : 'text-[12.5px] font-medium')}>{value}</div>
+    </div>
+  )
+}
+
+function TrialCard({ tr, t, busy, onConfirm, onDecline }: {
+  tr: TrialReq; t: T; busy: boolean; onConfirm: () => void; onDecline: () => void
+}) {
+  const hoursAgo = Math.floor((Date.now() - new Date(tr.created_at).getTime()) / 3_600_000)
+  const ago = hoursAgo < 1 ? t('justNow') : hoursAgo < 24 ? t('hoursAgo', { h: hoursAgo }) : t('daysAgo', { d: Math.floor(hoursAgo / 24) })
+  const meta = [tr.parent_name, tr.preferred_day != null ? t('prefersDay', { day: t(`days.${tr.preferred_day}` as 'days.0') }) : null].filter(Boolean).join(' · ')
+  return (
+    <div className="rounded-[12px] px-3 py-2.5" style={{ border: '1px solid #f5e6b8', background: '#fffdf5' }}>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-display text-[12.5px] font-bold text-ink truncate">
+          {tr.child_name}{tr.child_age != null ? ` · ${t('ageShort', { n: tr.child_age })}` : ''}
+        </span>
+        <span className="font-display text-[10.5px] text-ink-muted flex-shrink-0">{ago}</span>
+      </div>
+      {meta && <div className="font-display text-[11px] text-ink-muted mt-0.5 truncate">{meta}</div>}
+      <div className="flex gap-1.5 mt-2">
+        <button onClick={onConfirm} disabled={busy} className="flex-1 py-1.5 rounded-md font-display text-[11.5px] font-semibold bg-success-lt text-success hover:bg-success hover:text-white disabled:opacity-50 transition-colors">{t('confirmEnrol')}</button>
+        <button onClick={onDecline} disabled={busy} className="flex-1 py-1.5 rounded-md font-display text-[11.5px] font-semibold bg-white border border-danger/30 text-danger hover:bg-danger-lt disabled:opacity-50 transition-colors">{t('declineRequest')}</button>
+      </div>
     </div>
   )
 }

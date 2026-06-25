@@ -5,11 +5,25 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { googleCalendarUrl, downloadIcs } from '@/lib/calendarLinks'
+import { categoryEmoji } from '@/lib/eventDate'
+import { localizeCategoryName } from '@/lib/categoryName'
 import type { CalendarEntry, FamilyCalendarChild, CalendarStatus } from '@/lib/familyCalendar'
 
+interface Area     { id: string; name: string }
+interface Category { id: string; name: string; slug: string; accent_color: string }
+interface SavedListing {
+  id: string; title: string; price_monthly: number | null; pricing_type: 'month' | 'session'
+  trial_available: boolean; spots_available: number | null
+  category: { name: string; slug: string; accent_color: string } | null
+}
+interface SavedItem { id: string; kid_id: string | null; listing: SavedListing }
+
 interface Props {
-  kids:    FamilyCalendarChild[]
-  entries: CalendarEntry[]
+  kids:       FamilyCalendarChild[]
+  entries:    CalendarEntry[]
+  areas:      Area[]
+  categories: Category[]
+  saves:      SavedItem[]
 }
 
 const ROW_H = 48 // px per hour
@@ -49,8 +63,9 @@ function weekStart(offset: number): Date {
 
 type Placed = CalendarEntry & { day: number; instId: string; startH: number; endH: number }
 
-export function FamilyCalendarClient({ kids, entries }: Props) {
+export function FamilyCalendarClient({ kids, entries, areas, categories, saves }: Props) {
   const t = useTranslations('calendar')
+  const tCat = useTranslations('categories')
   const locale = useLocale() as 'ro' | 'en'
   const router = useRouter()
 
@@ -59,9 +74,32 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
   const [open, setOpen] = useState<{ entry: CalendarEntry; rect: DOMRect } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [dragId, setDragId] = useState<string | null>(null)
 
   const colorOf = (childId: string | null) =>
     kids.find(k => k.id === childId)?.color ?? '#9590b3'
+
+  const selectedKid = selected === 'all' ? null : kids.find(k => k.id === selected) ?? null
+  const areaName = (id: string | null) => (id ? areas.find(a => a.id === id)?.name ?? null : null)
+  const pendingFor = (id: string) => entries.filter(e => e.childId === id && e.status === 'pending').length
+
+  // A saved chip shows "On waitlist" (instead of a Request-trial button) when
+  // that listing is already on the waitlist for the chip's kid — keyed by
+  // `${listingId}:${childId}` so a save for one kid isn't muted by a sibling's
+  // waitlist entry.
+  const waitlistedKeys = useMemo(
+    () => new Set(entries.filter(e => e.status === 'waitlisted' && e.listingId).map(e => `${e.listingId}:${e.childId ?? ''}`)),
+    [entries],
+  )
+  const isOnWaitlist = (s: SavedItem) =>
+    waitlistedKeys.has(`${s.listing.id}:${s.kid_id ?? ''}`) || waitlistedKeys.has(`${s.listing.id}:`)
+  // Saved tray, filtered to the selected kid (a specific kid sees their own
+  // saves; "All kids" sees everything that's been saved).
+  const visibleSaves = selected === 'all' ? saves : saves.filter(s => s.kid_id === selected)
+
+  function requestTrial(listingId: string, preferredDay?: number) {
+    router.push(`/browse/${listingId}?book=1${preferredDay != null ? `&day=${preferredDay}` : ''}`)
+  }
 
   const filtered = selected === 'all' ? entries : entries.filter(e => e.childId === selected)
 
@@ -181,31 +219,72 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
           <a href="/browse" className="inline-block px-4 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">{t('browseCta')}</a>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-[230px_1fr] gap-4">
-          {/* Left rail */}
+        <div className="grid grid-cols-1 md:grid-cols-[236px_1fr] gap-[18px] items-start">
+          {/* Left rail — kid filter + profile (folded-in Kids) + legend */}
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <button onClick={() => setSelected('all')}
                 className={`flex items-center gap-2.5 p-2.5 rounded-[12px] border text-left transition-colors ${selected === 'all' ? 'border-ink bg-ink/[0.04]' : 'border-border bg-white hover:border-ink/30'}`}>
-                <span className="w-8 h-8 rounded-full bg-bg flex items-center justify-center text-base flex-shrink-0">👨‍👧‍👦</span>
+                <span className="w-[30px] h-[30px] rounded-full bg-bg flex items-center justify-center text-base flex-shrink-0">👨‍👧‍👦</span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-display text-[12.5px] font-semibold text-ink">{t('allKids')}</div>
+                  <div className="font-display text-[12.5px] font-bold text-ink">{t('allKids')}</div>
                   <div className="font-display text-[10.5px] text-ink-muted">{t('combinedView')}</div>
                 </div>
                 <span className="font-display text-[11px] font-bold text-ink-mid">{countFor('all')}</span>
               </button>
-              {kids.map(k => (
-                <button key={k.id} onClick={() => setSelected(k.id)}
-                  className={`flex items-center gap-2.5 p-2.5 rounded-[12px] border text-left transition-colors ${selected === k.id ? 'border-ink bg-ink/[0.04]' : 'border-border bg-white hover:border-ink/30'}`}>
-                  <span className="w-8 h-8 rounded-full flex items-center justify-center font-display text-[12px] font-bold text-white flex-shrink-0" style={{ background: k.color }}>{k.name.slice(0, 1).toUpperCase()}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display text-[12.5px] font-semibold text-ink truncate">{k.name}</div>
-                    {k.age != null && <div className="font-display text-[10.5px] text-ink-muted">{t('ageYears', { n: k.age })}</div>}
-                  </div>
-                  <span className="font-display text-[11px] font-bold text-ink-mid">{countFor(k.id)}</span>
-                </button>
-              ))}
+              {kids.map(k => {
+                const pending = pendingFor(k.id)
+                return (
+                  <button key={k.id} onClick={() => setSelected(k.id)}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-[12px] border text-left transition-colors ${selected === k.id ? 'border-ink bg-ink/[0.04]' : 'border-border bg-white hover:border-ink/30'}`}>
+                    <span className="w-[30px] h-[30px] rounded-full flex items-center justify-center font-display text-[12px] font-bold text-white flex-shrink-0" style={{ background: k.color }}>{k.name.slice(0, 1).toUpperCase()}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-display text-[12.5px] font-bold text-ink truncate">{k.name}</div>
+                      {k.age != null && <div className="font-display text-[10.5px] text-ink-muted">{t('ageYears', { n: k.age })}</div>}
+                    </div>
+                    {pending > 0 && (
+                      <span className="font-display text-[10px] font-bold px-[6px] py-px rounded-full bg-gold-lt text-gold-text flex-shrink-0">{pending}</span>
+                    )}
+                    <span className="font-display text-[11px] font-bold text-ink-mid flex-shrink-0">{countFor(k.id)}</span>
+                  </button>
+                )
+              })}
+              {/* Add a kid — full kid management lives on the Kids page */}
+              <button onClick={() => router.push('/kids')}
+                className="flex items-center gap-2.5 p-2.5 rounded-[12px] border border-dashed border-border text-left text-ink-muted hover:border-primary/50 hover:text-ink-mid transition-colors">
+                <span className="w-[30px] h-[30px] rounded-full bg-surface flex items-center justify-center flex-shrink-0">
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                </span>
+                <span className="font-display text-[12.5px] font-semibold">{t('addKid')}</span>
+              </button>
             </div>
+
+            {/* Selected-kid profile card (the merged-in Kids profile) */}
+            {selectedKid && (
+              <div className="rounded-[14px] border border-border bg-white p-3.5">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-9 h-9 rounded-full flex items-center justify-center font-display text-sm font-bold text-white flex-shrink-0" style={{ background: selectedKid.color }}>{selectedKid.name.slice(0, 1).toUpperCase()}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display text-[14px] font-extrabold text-ink truncate">{selectedKid.name}</div>
+                    <div className="font-display text-[11px] text-ink-muted truncate">
+                      {[selectedKid.grade, areaName(selectedKid.areaId)].filter(Boolean).join(' · ') || t('noProfileYet')}
+                    </div>
+                  </div>
+                  <button onClick={() => router.push('/kids')} className="px-2.5 py-1 rounded-md font-display text-[11px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors flex-shrink-0">{t('editKid')}</button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {selectedKid.age != null && <span className="px-2 py-0.5 rounded-full font-display text-[10.5px] text-ink-mid" style={{ background: '#ece8f5' }}>{t('ageYears', { n: selectedKid.age })}</span>}
+                  {areaName(selectedKid.areaId) && <span className="px-2 py-0.5 rounded-full font-display text-[10.5px] text-ink-mid" style={{ background: '#ece8f5' }}>{areaName(selectedKid.areaId)}</span>}
+                  {selectedKid.grade && <span className="px-2 py-0.5 rounded-full font-display text-[10.5px] text-ink-mid" style={{ background: '#ece8f5' }}>{selectedKid.grade}</span>}
+                  {selectedKid.interests.map(slug => {
+                    const cat = categories.find(c => c.slug === slug)
+                    return cat ? (
+                      <span key={slug} className="px-2 py-0.5 rounded-full font-display text-[10.5px] font-semibold text-white" style={{ background: cat.accent_color }}>{localizeCategoryName(tCat, cat)}</span>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Legend */}
             <div className="rounded-[12px] border border-border bg-white p-3">
@@ -263,9 +342,12 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
                   </div>
                 ))}
               </div>
-              {/* day columns */}
+              {/* day columns — also drop targets for the saved tray (drag → trial) */}
               {dayDates.map((_, di) => (
-                <div key={di} className={`relative border-l border-border ${di >= 5 ? 'bg-bg/40' : ''}`}>
+                <div key={di}
+                  onDragOver={dragId ? (e) => e.preventDefault() : undefined}
+                  onDrop={dragId ? () => { const id = dragId; setDragId(null); if (id) requestTrial(id, di) } : undefined}
+                  className={`relative border-l border-border ${di >= 5 ? 'bg-bg/40' : ''} ${dragId ? 'outline-dashed outline-1 outline-primary/40 -outline-offset-1' : ''}`}>
                   {hours.map(h => <div key={h} style={{ height: ROW_H }} className="border-b border-border/60" />)}
                   {placed.filter(p => p.day === di).map(p => {
                     const color = colorOf(p.childId)
@@ -295,6 +377,48 @@ export function FamilyCalendarClient({ kids, entries }: Props) {
               ))}
             </div>
             </div>
+
+            {/* Saved tray — the wishlist's home on the calendar. Drag a chip onto
+                a day to file a trial request, or use the inline button. */}
+            {visibleSaves.length > 0 && (
+              <div className="border-t border-border px-4 py-3" style={{ background: '#fffdf5' }}>
+                <div className="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
+                  <span className="font-display text-[10px] font-bold uppercase tracking-[.1em] text-gold-text">💛 {t('savedNotBooked')}</span>
+                  <span className="font-display text-[10.5px] text-ink-muted">{t('dragHint')}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {visibleSaves.map(s => {
+                    const onWaitlist = isOnWaitlist(s)
+                    const kidName = kids.find(k => k.id === s.kid_id)?.name
+                    const cat = s.listing.category
+                    const price = `${s.listing.price_monthly ?? 0} RON${s.listing.pricing_type === 'session' ? t('perSession') : t('perMonth')}`
+                    const meta = [selected === 'all' ? kidName : null, cat ? localizeCategoryName(tCat, cat) : null, price].filter(Boolean).join(' · ')
+                    return (
+                      <div key={s.id}
+                        draggable={!onWaitlist}
+                        onDragStart={() => setDragId(s.listing.id)}
+                        onDragEnd={() => setDragId(null)}
+                        className={`flex items-center gap-2.5 bg-white rounded-[11px] px-2.5 py-2 max-w-full ${onWaitlist ? '' : 'cursor-grab active:cursor-grabbing'}`}
+                        style={{ border: '1px solid #f5e6b8' }}>
+                        <span className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center text-[14px] flex-shrink-0"
+                          style={{ background: `${cat?.accent_color ?? '#7c3aed'}22` }}>{categoryEmoji(cat?.slug)}</span>
+                        <div className="min-w-0">
+                          <div className="font-display text-[12.5px] font-bold text-ink truncate">{s.listing.title}</div>
+                          <div className="font-display text-[10.5px] text-ink-muted truncate">{meta}</div>
+                        </div>
+                        {onWaitlist ? (
+                          <span className="font-display text-[11px] font-semibold text-ink-muted flex-shrink-0 ml-1">{t('onWaitlist')}</span>
+                        ) : s.listing.trial_available ? (
+                          <button onClick={() => requestTrial(s.listing.id)}
+                            className="font-display text-[11px] font-semibold text-white rounded-md px-2.5 py-1.5 flex-shrink-0 ml-1 hover:opacity-90 transition-opacity"
+                            style={{ background: '#2aa7ff' }}>{t('requestTrial')}</button>
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

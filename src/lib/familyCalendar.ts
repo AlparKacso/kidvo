@@ -8,10 +8,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export type CalendarStatus = 'enrolled' | 'pending' | 'waitlisted'
 
 export interface FamilyCalendarChild {
-  id:    string
-  name:  string
-  age:   number | null
-  color: string
+  id:        string
+  name:      string
+  age:       number | null
+  color:     string
+  grade:     string | null   // school_grade — folded-in Kids profile
+  areaId:    string | null
+  interests: string[]        // category slugs
 }
 
 export interface CalendarEntry {
@@ -68,16 +71,22 @@ export async function getFamilyCalendar(userId: string): Promise<FamilyCalendar>
   const db = createAdminClient()
   const { data: kidsRaw } = await db
     .from('children')
-    .select('id, name, birth_year')
+    .select('id, name, birth_year, school_grade, area_id, interests')
     .eq('user_id', userId)
     .order('created_at', { ascending: true })
 
-  const kids = (kidsRaw ?? []) as Array<{ id: string; name: string; birth_year: number }>
+  const kids = (kidsRaw ?? []) as Array<{
+    id: string; name: string; birth_year: number
+    school_grade: string | null; area_id: string | null; interests: string[] | null
+  }>
   const children: FamilyCalendarChild[] = kids.map((k, i) => ({
-    id:    k.id,
-    name:  k.name,
-    age:   ageFromBirthYear(k.birth_year),
-    color: childColor(i),
+    id:        k.id,
+    name:      k.name,
+    age:       ageFromBirthYear(k.birth_year),
+    color:     childColor(i),
+    grade:     k.school_grade ?? null,
+    areaId:    k.area_id ?? null,
+    interests: k.interests ?? [],
   }))
   const childIds = kids.map(k => k.id)
 
