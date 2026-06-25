@@ -130,8 +130,10 @@ test.describe('waitlist: provider offers a spot', () => {
     // Offer a spot → pick the (only) class.
     await page.getByRole('button', { name: /Offer a spot/i }).first().click()
     await expect(page.getByText(/Offer Offerme a spot/i)).toBeVisible()
-    // The class option button shows the occupancy "0/10".
-    await page.getByRole('button', { name: /E2E Listing.*0\/10/i }).click()
+    // The class option button shows the occupancy "0/10". Scope to the offer
+    // dialog — the board's class-column header (now a clickable button that
+    // docks the listing panel) also carries the listing name + "0/10".
+    await page.getByRole('dialog').getByRole('button', { name: /E2E Listing.*0\/10/i }).click()
 
     // Toast confirms; the family leaves the pool.
     await expect(page.getByText(/Awaiting reply/i)).toBeVisible({ timeout: 15_000 })

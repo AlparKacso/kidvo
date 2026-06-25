@@ -769,7 +769,7 @@ function ModalShell({ children, onClose, wide }: { children: React.ReactNode; on
   return (
     <div className="fixed inset-0 z-[550] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className={cn('relative z-10 bg-white rounded-[18px] shadow-xl w-full p-6 max-h-[90vh] overflow-y-auto', wide ? 'max-w-[520px]' : 'max-w-[440px]')} onClick={e => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" className={cn('relative z-10 bg-white rounded-[18px] shadow-xl w-full p-6 max-h-[90vh] overflow-y-auto', wide ? 'max-w-[520px]' : 'max-w-[440px]')} onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-4 right-4 w-7 h-7 rounded flex items-center justify-center text-ink-muted hover:bg-surface transition-colors">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
