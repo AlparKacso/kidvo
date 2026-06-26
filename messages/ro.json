@@ -805,6 +805,7 @@
     "removedToast": "Eliminat de pe platformă",
     "panelTitle": "Detalii anunț",
     "relBannerL1": "este una dintre grupele din acest anunț — anunțul e pagina publică pe care o văd familiile pe kidvo, iar lista de aici sunt copiii din această grupă.",
+    "relBannerDefault": "este grupa principală din acest anunț.",
     "relBannerL2Trials": "Când confirmi una dintre cererile de probă de mai jos, copilul intră în această grupă.",
     "relBannerL2None": "Adaugă copii din lista de așteptare, iar familiile pot cere o probă din pagina publică.",
     "detailsEyebrow": "Detalii",

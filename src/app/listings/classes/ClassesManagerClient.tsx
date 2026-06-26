@@ -554,12 +554,17 @@ function DockedListingPanel({
   const slug   = listing?.category?.slug ?? cls.category?.slug
   const emoji  = categoryEmoji(slug)
   const accent = listing?.category?.accent_color ?? cls.category?.accent_color ?? '#7c3aed'
+  // The "default" group is the one that represents the listing itself (its name
+  // matches the listing title — e.g. the group auto-created with the listing).
+  // It gets a short banner instead of the "one of many cohorts" explainer.
+  const isDefaultGroup = !!listing && cls.name.trim() === listing.title.trim()
 
   return (
-    <aside className="mt-[18px] rounded-[18px] border-[1.5px] border-border bg-white overflow-hidden"
-      style={{ borderTop: '3px solid #7c3aed', boxShadow: '0 2px 12px rgba(124,58,237,.06)' }}>
+    // No overflow-hidden — it would clip the "choose a listing" dropdown popover.
+    <aside className="mt-[18px] rounded-[18px] border-[1.5px] border-border bg-white"
+      style={{ boxShadow: '0 2px 12px rgba(124,58,237,.06)' }}>
       {/* Header bar */}
-      <div className="flex items-center gap-1.5 px-[18px] py-3 border-b" style={{ background: '#faf7ff', borderColor: '#f0eef6' }}>
+      <div className="flex items-center gap-1.5 px-[18px] py-3 border-b rounded-t-[16px]" style={{ background: '#faf7ff', borderColor: '#f0eef6' }}>
         <span className="text-primary text-[11px] leading-none">▾</span>
         <span className="font-display text-[13px] font-extrabold text-ink">{t('panelTitle')}</span>
         <span className="font-display text-[12.5px] text-ink-muted truncate">— {cls.name}</span>
@@ -568,16 +573,25 @@ function DockedListingPanel({
       {listing ? (
         /* ── LISTED state ── */
         <div className="p-[18px]">
-          {/* Relationship banner */}
+          {/* Relationship banner — short for the default group, full explainer
+              for additional cohorts so "one of the groups" reads correctly. */}
           <div className="flex items-start gap-2.5 rounded-[10px] px-3.5 py-3 mb-[18px]" style={{ background: '#f0e8ff' }}>
             <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: accent }} />
             <div className="min-w-0">
-              <p className="font-display text-[12.5px] text-ink leading-snug">
-                <b className="font-bold">{cls.name}</b> {t('relBannerL1')}
-              </p>
-              <p className="font-display text-[12px] text-ink-mid leading-snug mt-1">
-                {trials.length > 0 ? t('relBannerL2Trials') : t('relBannerL2None')}
-              </p>
+              {isDefaultGroup ? (
+                <p className="font-display text-[12.5px] text-ink leading-snug">
+                  <b className="font-bold">{cls.name}</b> {t('relBannerDefault')}
+                </p>
+              ) : (
+                <>
+                  <p className="font-display text-[12.5px] text-ink leading-snug">
+                    <b className="font-bold">{cls.name}</b> {t('relBannerL1')}
+                  </p>
+                  <p className="font-display text-[12px] text-ink-mid leading-snug mt-1">
+                    {trials.length > 0 ? t('relBannerL2Trials') : t('relBannerL2None')}
+                  </p>
+                </>
+              )}
             </div>
           </div>
 

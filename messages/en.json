@@ -805,6 +805,7 @@
     "removedToast": "Removed from the platform",
     "panelTitle": "Listing details",
     "relBannerL1": "is one of the groups running under this listing — the listing is the public page families see on kidvo, this roster is who's actually in this group.",
+    "relBannerDefault": "is the default group under this listing.",
     "relBannerL2Trials": "When you confirm one of the trial requests below, that child joins this group.",
     "relBannerL2None": "Add students from the waiting pool, or families can request a trial from the public page.",
     "detailsEyebrow": "Details",
