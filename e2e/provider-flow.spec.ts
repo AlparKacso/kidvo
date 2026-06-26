@@ -121,6 +121,12 @@ test.describe('provider: login → list activity → submit', () => {
       'E2E generated activity. This text is only used by the automated Playwright suite and will be deleted after the test run.'
     )
 
+    // Step 3 also requires a valid contact phone when the provider has none on
+    // file (the E2E provider is seeded without one) — otherwise Next won't
+    // advance. Fill the tel field when it's present.
+    const phoneField = page.locator('input[type="tel"]')
+    if (await phoneField.count()) await phoneField.first().fill('0745369041')
+
     await page.getByRole('button', { name: /^Next|^Înainte/i }).click()
 
     // --- Step 4: review + publish ---
