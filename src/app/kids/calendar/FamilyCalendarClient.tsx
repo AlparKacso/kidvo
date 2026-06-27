@@ -4,9 +4,12 @@ import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
+import { createClient } from '@/lib/supabase/client'
 import { googleCalendarUrl, downloadIcs } from '@/lib/calendarLinks'
 import { categoryEmoji } from '@/lib/eventDate'
 import { localizeCategoryName } from '@/lib/categoryName'
+import { ChildForm } from '@/components/kids/ChildForm'
+import { RecommendedCard, pickRecommendation } from '@/components/ui/RecommendedCard'
 import type { CalendarEntry, FamilyCalendarChild, CalendarStatus } from '@/lib/familyCalendar'
 
 interface Area     { id: string; name: string }
@@ -17,13 +20,19 @@ interface SavedListing {
   category: { name: string; slug: string; accent_color: string } | null
 }
 interface SavedItem { id: string; kid_id: string | null; listing: SavedListing }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface Booking { id: string; status: string; preferred_day: number | null; created_at: string; child_id: string | null; message: string | null; listing: any }
 
 interface Props {
+  userId:     string
   kids:       FamilyCalendarChild[]
   entries:    CalendarEntry[]
   areas:      Area[]
   categories: Category[]
   saves:      SavedItem[]
+  bookings:   Booking[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  listings:   any[]
 }
 
 const ROW_H = 48 // px per hour
@@ -63,9 +72,10 @@ function weekStart(offset: number): Date {
 
 type Placed = CalendarEntry & { day: number; instId: string; startH: number; endH: number }
 
-export function FamilyCalendarClient({ kids, entries, areas, categories, saves }: Props) {
+export function FamilyCalendarClient({ userId, kids, entries, areas, categories, saves, bookings, listings }: Props) {
   const t = useTranslations('calendar')
   const tCat = useTranslations('categories')
+  const tKids = useTranslations('kids')
   const locale = useLocale() as 'ro' | 'en'
   const router = useRouter()
 
@@ -75,6 +85,11 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
   const [toast, setToast] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
+  // Folded-in Kids management state.
+  const [childForm, setChildForm] = useState<{ mode: 'add' } | { mode: 'edit'; kid: FamilyCalendarChild } | null>(null)
+  const [deleteKidId, setDeleteKidId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [assignFor, setAssignFor] = useState<{ kind: 'save' | 'booking'; id: string } | null>(null)
 
   const colorOf = (childId: string | null) =>
     kids.find(k => k.id === childId)?.color ?? '#9590b3'
@@ -82,6 +97,62 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
   const selectedKid = selected === 'all' ? null : kids.find(k => k.id === selected) ?? null
   const areaName = (id: string | null) => (id ? areas.find(a => a.id === id)?.name ?? null : null)
   const pendingFor = (id: string) => entries.filter(e => e.childId === id && e.status === 'pending').length
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3200) }
+
+  // ── Kid CRUD (RLS lets a parent write their own children) ──
+  async function saveChild(data: { name: string; birth_year: number; school_grade: string | null; area_id: string | null; interests: string[] }) {
+    setSaving(true)
+    const supabase = createClient()
+    if (childForm?.mode === 'edit') {
+      await supabase.from('children').update(data).eq('id', childForm.kid.id)
+    } else {
+      const { data: created } = await supabase.from('children').insert({ ...data, user_id: userId }).select('id').single()
+      if ((created as { id: string } | null)?.id) setSelected((created as { id: string }).id)
+    }
+    setSaving(false); setChildForm(null); router.refresh()
+  }
+  async function deleteChild(id: string) {
+    const supabase = createClient()
+    await supabase.from('children').delete().eq('id', id)
+    setDeleteKidId(null)
+    if (selected === id) setSelected('all')
+    router.refresh()
+  }
+
+  // ── Saved tray actions ──
+  async function unsave(listingId: string, kidId: string | null) {
+    setBusy(true)
+    await fetch('/api/saves', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ listing_id: listingId, kid_id: kidId }) })
+    setBusy(false); showToast(t('removedSaved')); router.refresh()
+  }
+  async function reassignSave(saveId: string, kidId: string) {
+    setBusy(true)
+    const supabase = createClient()
+    await supabase.from('saves').update({ kid_id: kidId }).eq('id', saveId)
+    setBusy(false); router.refresh()
+  }
+  async function reassignBooking(bookingId: string, kidId: string) {
+    setBusy(true)
+    const supabase = createClient()
+    await supabase.from('trial_requests').update({ child_id: kidId }).eq('id', bookingId)
+    setBusy(false); router.refresh()
+  }
+
+  // ── Per-kid recommendation (recomputes on kid switch) ──
+  const recommendation = useMemo(() => {
+    if (!selectedKid) return null
+    const savedIds  = new Set(saves.filter(s => s.kid_id === selectedKid.id).map(s => s.listing?.id).filter(Boolean))
+    const bookedIds = new Set(bookings.filter(b => b.child_id === selectedKid.id).map(b => b.listing?.id).filter(Boolean))
+    return pickRecommendation(
+      { birth_year: selectedKid.birthYear, interests: selectedKid.interests, area_id: selectedKid.areaId },
+      listings, new Set([...savedIds, ...bookedIds]),
+    )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, listings])
+
+  // Bookings (trial requests) for the current filter.
+  const visibleBookings = selected === 'all' ? bookings : bookings.filter(b => b.child_id === selected)
 
   // A saved chip shows "On waitlist" (instead of a Request-trial button) when
   // that listing is already on the waitlist for the chip's kid — keyed by
@@ -160,7 +231,6 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
     showToast(kind === 'withdraw' ? t('withdrawnToast') : t('leftListToast'))
     router.refresh()
   }
-  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(null), 3200) }
 
   // Per-day side-by-side layout: overlapping events share the column width
   // (split into sub-columns) instead of stacking on top of each other.
@@ -211,14 +281,9 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
         </div>
       </div>
 
-      {!hasAny ? (
-        <div className="rounded-[18px] border border-border bg-white p-10 text-center">
-          <div className="text-3xl mb-2">🗓️</div>
-          <h2 className="font-display text-base font-bold text-ink mb-1">{t('emptyTitle')}</h2>
-          <p className="text-sm text-ink-muted mb-4">{t('emptySub')}</p>
-          <a href="/browse" className="inline-block px-4 py-2 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">{t('browseCta')}</a>
-        </div>
-      ) : (
+      {/* Always render the rail + grid + tray + requests — the folded-in Kids
+          management must show even before the family has any scheduled classes. */}
+      {(
         <div className="grid grid-cols-1 md:grid-cols-[236px_1fr] gap-[18px] items-start">
           {/* Left rail — kid filter + profile (folded-in Kids) + legend */}
           <div className="flex flex-col gap-3">
@@ -249,8 +314,8 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
                   </button>
                 )
               })}
-              {/* Add a kid — full kid management lives on the Kids page */}
-              <button onClick={() => router.push('/kids')}
+              {/* Add a kid — opens the inline form (folded-in from Kids) */}
+              <button onClick={() => setChildForm({ mode: 'add' })}
                 className="flex items-center gap-2.5 p-2.5 rounded-[12px] border border-dashed border-border text-left text-ink-muted hover:border-primary/50 hover:text-ink-mid transition-colors">
                 <span className="w-[30px] h-[30px] rounded-full bg-surface flex items-center justify-center flex-shrink-0">
                   <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
@@ -270,7 +335,19 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
                       {[selectedKid.grade, areaName(selectedKid.areaId)].filter(Boolean).join(' · ') || t('noProfileYet')}
                     </div>
                   </div>
-                  <button onClick={() => router.push('/kids')} className="px-2.5 py-1 rounded-md font-display text-[11px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors flex-shrink-0">{t('editKid')}</button>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button onClick={() => setChildForm({ mode: 'edit', kid: selectedKid })} className="px-2.5 py-1 rounded-md font-display text-[11px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">{t('editKid')}</button>
+                    {deleteKidId === selectedKid.id ? (
+                      <>
+                        <button onClick={() => deleteChild(selectedKid.id)} className="px-2 py-1 rounded-md font-display text-[11px] font-semibold bg-danger text-white">{tKids('yes')}</button>
+                        <button onClick={() => setDeleteKidId(null)} className="px-2 py-1 rounded-md font-display text-[11px] font-semibold border border-border text-ink-mid">{tKids('no')}</button>
+                      </>
+                    ) : (
+                      <button onClick={() => setDeleteKidId(selectedKid.id)} aria-label={tKids('removeChild')} className="w-7 h-7 rounded-md flex items-center justify-center border border-border text-ink-muted hover:border-danger/50 hover:text-danger hover:bg-danger-lt transition-all">
+                        <svg width="11" height="11" viewBox="0 0 15 15" fill="none"><path d="M3 3l9 9M12 3l-9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
                   {selectedKid.age != null && <span className="px-2 py-0.5 rounded-full font-display text-[10.5px] text-ink-mid" style={{ background: '#ece8f5' }}>{t('ageYears', { n: selectedKid.age })}</span>}
@@ -284,6 +361,11 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
                   })}
                 </div>
               </div>
+            )}
+
+            {/* Per-kid recommendation (folded-in from Kids) */}
+            {selectedKid && recommendation && (
+              <RecommendedCard listing={recommendation} forKid={selectedKid.name} />
             )}
 
             {/* Legend */}
@@ -393,6 +475,7 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
                     const cat = s.listing.category
                     const price = `${s.listing.price_monthly ?? 0} RON${s.listing.pricing_type === 'session' ? t('perSession') : t('perMonth')}`
                     const meta = [selected === 'all' ? kidName : null, cat ? localizeCategoryName(tCat, cat) : null, price].filter(Boolean).join(' · ')
+                    const assigning = assignFor?.kind === 'save' && assignFor.id === s.id
                     return (
                       <div key={s.id}
                         draggable={!onWaitlist}
@@ -406,13 +489,68 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
                           <div className="font-display text-[12.5px] font-bold text-ink truncate">{s.listing.title}</div>
                           <div className="font-display text-[10.5px] text-ink-muted truncate">{meta}</div>
                         </div>
-                        {onWaitlist ? (
-                          <span className="font-display text-[11px] font-semibold text-ink-muted flex-shrink-0 ml-1">{t('onWaitlist')}</span>
-                        ) : s.listing.trial_available ? (
-                          <button onClick={() => requestTrial(s.listing.id)}
-                            className="font-display text-[11px] font-semibold text-white rounded-md px-2.5 py-1.5 flex-shrink-0 ml-1 hover:opacity-90 transition-opacity"
-                            style={{ background: '#2aa7ff' }}>{t('requestTrial')}</button>
-                        ) : null}
+                        {assigning ? (
+                          <AssignPicker kids={kids} busy={busy} onPick={kid => { reassignSave(s.id, kid); setAssignFor(null) }} onClose={() => setAssignFor(null)} t={tKids} />
+                        ) : (
+                          <>
+                            {s.kid_id === null && kids.length > 0 && (
+                              <button onClick={() => setAssignFor({ kind: 'save', id: s.id })}
+                                className="font-display text-[11px] font-semibold text-primary bg-primary-lt rounded-md px-2 py-1.5 flex-shrink-0 ml-1 hover:bg-primary hover:text-white transition-colors">{tKids('assignToChild')}</button>
+                            )}
+                            {onWaitlist ? (
+                              <span className="font-display text-[11px] font-semibold text-ink-muted flex-shrink-0 ml-1">{t('onWaitlist')}</span>
+                            ) : s.listing.trial_available ? (
+                              <button onClick={() => requestTrial(s.listing.id)}
+                                className="font-display text-[11px] font-semibold text-white rounded-md px-2.5 py-1.5 flex-shrink-0 ml-1 hover:opacity-90 transition-opacity"
+                                style={{ background: '#2aa7ff' }}>{t('requestTrial')}</button>
+                            ) : null}
+                            <button onClick={() => unsave(s.listing.id, s.kid_id)} disabled={busy} aria-label={t('removeSaved')}
+                              className="w-6 h-6 rounded flex items-center justify-center text-ink-muted hover:text-danger flex-shrink-0 disabled:opacity-50 transition-colors">
+                              <svg width="9" height="9" viewBox="0 0 15 15" fill="none"><path d="M3 3l9 9M12 3l-9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Trial requests (folded-in Kids bookings) — pending/confirmed/declined */}
+            {visibleBookings.length > 0 && (
+              <div className="border-t border-border px-4 py-3">
+                <div className="font-display text-[10px] font-bold uppercase tracking-[.1em] text-ink-muted mb-2.5">{t('requestsTitle')}</div>
+                <div className="flex flex-col gap-2">
+                  {visibleBookings.map(b => {
+                    const cat = b.listing?.category
+                    const prov = b.listing?.provider
+                    const assigning = assignFor?.kind === 'booking' && assignFor.id === b.id
+                    const pillCls = b.status === 'confirmed' ? 'bg-success-lt text-success'
+                                  : b.status === 'declined'  ? 'bg-danger-lt text-danger'
+                                  : b.status === 'cancelled' ? 'bg-surface text-ink-muted'
+                                  : 'bg-gold-lt text-gold-text'
+                    return (
+                      <div key={b.id} className="flex items-start gap-2.5 rounded-[11px] border border-border bg-white px-3 py-2.5">
+                        <span className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: cat?.accent_color ?? '#ccc' }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <span className={`inline-flex px-2 py-0.5 rounded font-display text-[10px] font-semibold capitalize ${pillCls}`}>{tKids(`status.${b.status}` as 'status.pending')}</span>
+                            <span className="font-display text-[10.5px] text-ink-muted">{new Date(b.created_at).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}</span>
+                          </div>
+                          <button onClick={() => router.push(`/browse/${b.listing?.id}`)} className="font-display text-[13px] font-bold text-ink hover:text-primary transition-colors text-left leading-snug">{b.listing?.title}</button>
+                          {b.status === 'confirmed' && prov && (
+                            <div className="font-display text-[11px] text-ink-muted mt-0.5">{prov.display_name}{prov.contact_phone ? ` · ${prov.contact_phone}` : ''}</div>
+                          )}
+                          {b.status === 'declined' && (
+                            <div className="font-display text-[11px] text-danger mt-0.5">{tKids('couldNotAccommodate')}</div>
+                          )}
+                          {selected === 'all' && b.child_id === null && (
+                            assigning
+                              ? <div className="mt-1.5"><AssignPicker kids={kids} busy={busy} onPick={kid => { reassignBooking(b.id, kid); setAssignFor(null) }} onClose={() => setAssignFor(null)} t={tKids} /></div>
+                              : <button onClick={() => setAssignFor({ kind: 'booking', id: b.id })} className="mt-1.5 font-display text-[11px] font-semibold text-primary bg-primary-lt rounded-md px-2 py-1 hover:bg-primary hover:text-white transition-colors">{tKids('assignToChild')}</button>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
@@ -454,6 +592,25 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
           </div>
         </>, document.body)}
 
+      {/* Child add/edit modal (folded-in from Kids) */}
+      {childForm && createPortal(
+        <div className="fixed inset-0 z-[550] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setChildForm(null)} />
+          <div className="relative z-10 w-full max-w-[440px]" onClick={e => e.stopPropagation()}>
+            <ChildForm
+              areas={areas}
+              categories={categories}
+              initial={childForm.mode === 'edit' ? {
+                name: childForm.kid.name, birth_year: childForm.kid.birthYear,
+                school_grade: childForm.kid.grade, area_id: childForm.kid.areaId, interests: childForm.kid.interests,
+              } : undefined}
+              onSave={saveChild}
+              onCancel={() => setChildForm(null)}
+              saving={saving}
+            />
+          </div>
+        </div>, document.body)}
+
       {/* Toast */}
       {toast && createPortal(
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[600] bg-ink text-white font-display text-[12.5px] font-semibold px-4 py-2.5 rounded-full shadow-xl">{toast}</div>,
@@ -464,6 +621,24 @@ export function FamilyCalendarClient({ kids, entries, areas, categories, saves }
 
 function LegendRow({ swatch, label }: { swatch: React.ReactNode; label: string }) {
   return <div className="flex items-center gap-2 font-display text-[11.5px] text-ink-mid">{swatch}{label}</div>
+}
+
+// Inline "assign to kid" picker for an unassigned save/booking.
+function AssignPicker({ kids, busy, onPick, onClose, t }: {
+  kids: FamilyCalendarChild[]; busy: boolean
+  onPick: (kidId: string) => void; onClose: () => void
+  t: ReturnType<typeof useTranslations>
+}) {
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      {kids.map(k => (
+        <button key={k.id} onClick={() => onPick(k.id)} disabled={busy}
+          className="px-2 py-1 rounded-full font-display text-[11px] font-semibold text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+          style={{ background: k.color }}>{k.name}</button>
+      ))}
+      <button onClick={onClose} className="px-1.5 py-1 font-display text-[11px] text-ink-muted hover:text-ink transition-colors">{t('cancel')}</button>
+    </div>
+  )
 }
 
 function blockStyle(status: CalendarStatus, color: string, top: number, height: number): React.CSSProperties {

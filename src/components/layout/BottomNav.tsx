@@ -11,6 +11,7 @@ const IconAdmin = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="no
 
 interface Props {
   isProvider?:            boolean
+  pendingBookings?:       number
   providerPendingTrials?: number
   providerWaitingCount?:  number
   userEmail?:             string
@@ -19,8 +20,7 @@ interface Props {
 
 const IconDashboard = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="currentColor"/></svg>
 const IconBrowse   = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M10.5 10.5L13.5 13.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-const IconKids     = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 13.5c0-2.5 2.4-4.5 5.5-4.5s5.5 2 5.5 4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none"/></svg>
-const IconSaved    = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M7.5 13S2 9 2 5.5a3.5 3.5 0 0 1 5.5-2.9A3.5 3.5 0 0 1 13 5.5C13 9 7.5 13 7.5 13Z" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
+const IconSaved    = () =><svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M7.5 13S2 9 2 5.5a3.5 3.5 0 0 1 5.5-2.9A3.5 3.5 0 0 1 13 5.5C13 9 7.5 13 7.5 13Z" stroke="currentColor" strokeWidth="1.3" fill="none"/></svg>
 const IconCalendar = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="3" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 6h11M5 1.5v3M10 1.5v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 const IconBookings = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="3" width="12" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 3V2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M5 7.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 const IconEvents   = () => <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="2" y="3" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/><path d="M2 6h11M5 1.5v3M10 1.5v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M7.5 8l.45 1 1.05.1-.8.7.25 1.05-.95-.55-.95.55.25-1.05-.8-.7 1.05-.1z" fill="currentColor"/></svg>
@@ -56,7 +56,7 @@ function NavItem({ href, icon, label, exact, excludes, badge }: { href: string; 
   )
 }
 
-export function BottomNav({ isProvider = false, providerPendingTrials = 0, providerWaitingCount = 0, userEmail = '', hasEvents = false }: Props) {
+export function BottomNav({ isProvider = false, pendingBookings = 0, providerPendingTrials = 0, providerWaitingCount = 0, userEmail = '', hasEvents = false }: Props) {
   const t       = useTranslations('nav')
   const isAdmin = userEmail === ADMIN_EMAIL
   return (
@@ -67,10 +67,7 @@ export function BottomNav({ isProvider = false, providerPendingTrials = 0, provi
         <NavItem href="/events"  icon={<IconEvents />}    label={t('events')} />
       )}
       {!isProvider && (
-        <NavItem href="/kids" icon={<IconKids />} label={t('activities')} exact />
-      )}
-      {!isProvider && (
-        <NavItem href="/kids/calendar" icon={<IconCalendar />} label={t('calendar')} />
+        <NavItem href="/kids/calendar" icon={<IconCalendar />} label={t('calendar')} badge={pendingBookings} />
       )}
       {isProvider && (
         <NavItem href="/listings" icon={<IconListings />} label={t('activities')} badge={providerPendingTrials} excludes={['/listings/classes']} />

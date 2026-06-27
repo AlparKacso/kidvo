@@ -11,6 +11,7 @@ export interface FamilyCalendarChild {
   id:        string
   name:      string
   age:       number | null
+  birthYear: number          // for accurate edit + recommendation scoring
   color:     string
   grade:     string | null   // school_grade — folded-in Kids profile
   areaId:    string | null
@@ -83,6 +84,7 @@ export async function getFamilyCalendar(userId: string): Promise<FamilyCalendar>
     id:        k.id,
     name:      k.name,
     age:       ageFromBirthYear(k.birth_year),
+    birthYear: k.birth_year,
     color:     childColor(i),
     grade:     k.school_grade ?? null,
     areaId:    k.area_id ?? null,

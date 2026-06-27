@@ -784,7 +784,7 @@ export default async function DashboardPage() {
 
   /* ── Onboarding widget ────────────────────────────────────── */
   const parentSteps: OnboardingStep[] = [
-    { label: tDash('onboardParentAddChild'),    done: childCount > 0,    href: '/kids'                              },
+    { label: tDash('onboardParentAddChild'),    done: childCount > 0,    href: '/kids/calendar'                           },
     { label: tDash('onboardParentBookTrial'),   done: bookingsCount > 0, href: '/browse'                            },
     { label: tDash('onboardParentLeaveReview'), done: parentReviews > 0, href: confirmedTrialsCount > 0 ? '/browse' : undefined },
   ]
@@ -979,7 +979,7 @@ export default async function DashboardPage() {
             <SectionCard
               title={children.length > 1 ? tDash('yourChildren') : tDash('yourChild')}
               linkText={tDash('editKids')}
-              linkHref="/kids"
+              linkHref="/kids/calendar"
             >
               <div className="flex flex-col gap-[9px]">
                 {(children as any[]).map((kid) => {
@@ -1010,7 +1010,7 @@ export default async function DashboardPage() {
             <div className="bg-white rounded-[22px] p-[22px] text-center" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
               <div className="font-display text-[15px] font-bold text-ink mb-1">{tDash('addYourKids')}</div>
               <p className="font-display text-[12.5px] text-ink-muted mb-4">{tDash('trackActivities')}</p>
-              <Link href="/kids" className="inline-block font-display text-sm font-semibold bg-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
+              <Link href="/kids/calendar" className="inline-block font-display text-sm font-semibold bg-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
                 {tDash('addChild')}
               </Link>
             </div>
