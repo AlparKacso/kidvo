@@ -240,7 +240,12 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
               </span>
             )}
             {providerActions ? (
-              <div className="pointer-events-auto flex items-center gap-1">{providerActions}</div>
+              // Permanent light pill so share + three-dot stay legible on any
+              // cover (light placeholder, photo, or dark scrim).
+              <div className="pointer-events-auto flex items-center gap-0.5 rounded-full backdrop-blur-md shadow-sm px-0.5"
+                style={{ background: 'rgba(255,255,255,0.95)' }}>
+                {providerActions}
+              </div>
             ) : !isFull ? (
               <div className="pointer-events-auto">
                 <SaveButton listingId={listing.id} initialSaved={isSaved} variant="poster" />
