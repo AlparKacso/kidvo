@@ -538,7 +538,9 @@
       "Fri",
       "Sat",
       "Sun"
-    ]
+    ],
+    "draft": "Draft",
+    "spotsCount": "{open}/{total} spots"
   },
   "cookie": {
     "text": "kidvo uses essential cookies for authentication and Google Analytics cookies to understand how the platform is used. No advertising cookies.",
@@ -917,7 +919,9 @@
     "preview": "Preview",
     "edit": "Edit",
     "delete": "Delete",
-    "deleteConfirm": "Are you sure you want to delete this activity? This action cannot be undone."
+    "deleteConfirm": "Are you sure you want to delete this activity? This action cannot be undone.",
+    "pause": "Pause",
+    "activate": "Activate"
   },
   "wizard": {
     "steps": [

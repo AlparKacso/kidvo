@@ -27,33 +27,32 @@ const occupied = (members: { status: string }[]) =>
 
 test.describe('Activity ↔ Group model (characterization)', () => {
 
-  // ── 1. Spots are tracked twice and never reconciled ──────────────────────
-  test('BUG: enrolling a child in a group does not change the activity\'s public spots', async () => {
+  // ── 1. An activity's public availability is DERIVED from its groups ───────
+  //     (FIXED — spots = Σ group.capacity − Σ occupancy, computed read-time.)
+  test('an activity\'s public availability is derived from its groups (capacity − occupancy)', async ({ page }) => {
     const prov = await createProvider('E2E Model Spots')
     try {
       const db = adminClient()
-      // Activity seeded with spots_total/available = 10.
+      // Activity seeded with spots_total/available = 10, fronted by one group cap 10.
       const listing = await createListing(prov.providerId)
       const cls = await createListedClass(prov.providerId, listing.id, { capacity: 10 })
-
-      // Enrol 3 children into the group.
+      // Enrol 3 children into the group → occupancy 3.
       for (let i = 0; i < 3; i++) {
         await createRosterMember(cls.id, { status: 'enrolled', childName: `Kid ${i}` })
       }
-
-      // Re-read the Activity's public availability + the group's real occupancy.
-      const { data: l } = await db.from('listings').select('spots_total, spots_available').eq('id', listing.id).single()
       const { data: members } = await db.from('roster_members').select('status').eq('class_id', cls.id)
-      const occ = occupied((members ?? []) as { status: string }[])
+      expect(occupied((members ?? []) as { status: string }[])).toBe(3)
 
-      expect(occ).toBe(3)
-      // BUG: the public number is still the seeded 10 — enrolment never touched it.
+      // The STORED row is intentionally unchanged — it is only a fallback for
+      // activities that have no groups. Availability is derived at read-time.
+      const { data: l } = await db.from('listings').select('spots_available').eq('id', listing.id).single()
       expect((l as { spots_available: number }).spots_available).toBe(10)
-      // The HONEST (derived) number would be capacity − occupancy = 7.
-      const derived = 10 - occ
-      expect(derived).toBe(7)
-      // BUG: stored ≠ derived → the storefront overstates availability by `occ`.
-      expect((l as { spots_available: number }).spots_available).not.toBe(derived)
+
+      // The PUBLIC page derives availability from the group: 10 cap − 3 = 7 left
+      // (locale-agnostic: EN "7 left" / RO "7 rămase"), and never the stored 10.
+      await dismissGates(page, `/browse/${listing.id}`)
+      await expect(page.getByText(/\b7\s+(left|rămase)\b/i)).toBeVisible({ timeout: 10_000 })
+      await expect(page.getByText(/\b10\s+(left|rămase)\b/i)).toHaveCount(0)
     } finally {
       await cleanupUser(prov.email)
     }

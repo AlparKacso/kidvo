@@ -5,7 +5,9 @@ import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
 import { ListingCardMenu } from './ListingCardMenu'
 import { ShareButton }     from '@/components/ui/ShareButton'
+import { ActivityCard }    from '@/components/ui/ActivityCard'
 import { autoEnrolConfirmedTrial, sendTrialStatusEmail } from '@/lib/trials'
+import { applyDerivedSpots } from '@/lib/availability'
 import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
@@ -41,11 +43,14 @@ export default async function ProviderListingsPage({
   // ── Shared: listings ─────────────────────────────────────────
   const { data: listingsRaw } = await supabase
     .from('listings')
-    .select('*, category:categories(*), area:areas(*)')
+    .select('*, category:categories(*), area:areas(*), schedules:listing_schedules(day_of_week, time_start, time_end)')
     .eq('provider_id', provider.id)
+    .eq('type', 'activity')
     .order('created_at', { ascending: false })
   const listings = (listingsRaw ?? []) as any[]
   const listingIds = listings.map(l => l.id)
+  // Show availability derived from each activity's groups, not the stored number.
+  await applyDerivedSpots(listings)
 
   const activeCount  = listings.filter(l => l.status === 'active').length
   const pendingCount = listings.filter(l => l.status === 'pending').length
@@ -197,30 +202,30 @@ export default async function ProviderListingsPage({
                 </Link>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {listings.map(listing => (
-                  <div key={listing.id} className="bg-white rounded-[22px] p-[22px] flex items-start justify-between gap-4" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: (listing.category as any)?.accent_color }} />
-                        <span className="font-display text-[11px] font-bold tracking-[.08em] uppercase text-ink-muted">{(listing.category as any)?.name}</span>
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full font-display text-[10.5px] font-semibold capitalize ${STATUS_STYLES[listing.status] ?? ''}`}>
-                          {listing.status}
+                  <ActivityCard
+                    key={listing.id}
+                    listing={listing}
+                    providerActions={
+                      <>
+                        <ShareButton listingId={listing.id} listingTitle={listing.title} variant="icon" />
+                        <ListingCardMenu listingId={listing.id} status={listing.status} />
+                      </>
+                    }
+                    statusBadge={
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full font-display text-[10px] font-bold tracking-[.04em] uppercase ${STATUS_STYLES[listing.status] ?? ''}`}>
+                          {t(listing.status as 'active')}
                         </span>
-                      </div>
-                      <div className="font-display text-sm font-semibold text-ink mb-0.5">{listing.title}</div>
-                      <div className="text-[11px] text-ink-muted">
-                        {(listing.area as any)?.name} · Ages {listing.age_min}–{listing.age_max} · {listing.price_monthly} RON/mo
                         {listing.spots_available !== null && listing.spots_total !== null && (
-                          <> · {listing.spots_available}/{listing.spots_total} spots</>
+                          <span className="font-display text-[11px] font-semibold text-ink-mid">
+                            {t('spotsCount', { open: listing.spots_available, total: listing.spots_total })}
+                          </span>
                         )}
                       </div>
-                    </div>
-                    <div className="flex items-start gap-1">
-                      <ShareButton listingId={listing.id} listingTitle={listing.title} variant="icon" />
-                      <ListingCardMenu listingId={listing.id} />
-                    </div>
-                  </div>
+                    }
+                  />
                 ))}
               </div>
             )}

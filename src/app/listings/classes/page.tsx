@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { applyDerivedSpots } from '@/lib/availability'
 import { ClassesManagerClient } from './ClassesManagerClient'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
@@ -44,6 +45,8 @@ export default async function ClassesPage() {
     .order('title', { ascending: true })
   const listings   = (listingsRaw ?? []) as any[]
   const listingIds = listings.map(l => l.id)
+  // The docked panel shows availability derived from the activity's groups.
+  await applyDerivedSpots(listings)
 
   const [membersRes, poolRes] = await Promise.all([
     classIds.length > 0

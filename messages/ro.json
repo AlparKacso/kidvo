@@ -538,7 +538,9 @@
       "Vin",
       "Sâm",
       "Dum"
-    ]
+    ],
+    "draft": "Ciornă",
+    "spotsCount": "{open}/{total} locuri"
   },
   "cookie": {
     "text": "kidvo folosește cookie-uri esențiale pentru autentificare și cookie-uri Google Analytics pentru a înțelege cum este utilizată platforma. Fără cookie-uri publicitare.",
@@ -917,7 +919,9 @@
     "preview": "Previzualizare",
     "edit": "Editează",
     "delete": "Șterge",
-    "deleteConfirm": "Ești sigur că vrei să ștergi această activitate? Acțiunea este ireversibilă."
+    "deleteConfirm": "Ești sigur că vrei să ștergi această activitate? Acțiunea este ireversibilă.",
+    "pause": "Pune pe pauză",
+    "activate": "Activează"
   },
   "wizard": {
     "steps": [
