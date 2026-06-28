@@ -45,6 +45,15 @@ export async function POST(req: Request) {
   } | null
   if (!entry) return NextResponse.json({ error: 'Waitlist entry not found' }, { status: 404 })
 
+  // A waitlister may only be offered a Group under the SAME Activity they're
+  // waiting on. Manual groups (no listing) are allowed — the provider may be
+  // spinning up a fresh cohort for this child — but a group listed under a
+  // DIFFERENT activity is not (that would silently move the family's public
+  // waitlist into an unrelated activity's roster).
+  if (cls.listing_id !== null && cls.listing_id !== entry.listing_id) {
+    return NextResponse.json({ error: 'listing_mismatch' }, { status: 400 })
+  }
+
   // Capacity check — enforced unless the provider confirmed over-capacity.
   if (!over_capacity && cls.capacity != null) {
     const { data: membersRaw } = await supabase

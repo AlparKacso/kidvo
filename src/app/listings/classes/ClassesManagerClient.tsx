@@ -885,13 +885,17 @@ function OfferPicker({ entry, classes, occ, t, busy, onClose, onPick, onNewGroup
   entry: PoolRow; classes: ClassRow[]; occ: (id: string) => number; t: T; busy: boolean
   onClose: () => void; onPick: (cls: ClassRow) => void; onNewGroup: () => void
 }) {
+  // Only groups under the SAME activity this family is waiting on — plus manual
+  // groups (no listing) — can take the offer. A group listed under a different
+  // activity must not appear (mirrors the /api/offers listing_mismatch guard).
+  const offerable = classes.filter(c => c.listing_id === null || c.listing_id === entry.listing_id)
   return (
     <ModalShell onClose={onClose}>
       <h2 className="font-display text-[17px] font-bold text-ink mb-0.5">{t('offerTitle', { child: entry.child_name })}</h2>
       <p className="font-display text-[12.5px] text-ink-muted mb-4">{t('offerSub')}</p>
       <div className="flex flex-col gap-1.5 mb-4">
-        {classes.length === 0 && <div className="font-display text-[12.5px] text-ink-muted py-4 text-center">{t('noClassesYet')}</div>}
-        {classes.map(c => {
+        {offerable.length === 0 && <div className="font-display text-[12.5px] text-ink-muted py-4 text-center">{t('noClassesYet')}</div>}
+        {offerable.map(c => {
           const o = occ(c.id); const full = c.capacity != null && o >= c.capacity
           return (
             <button key={c.id} onClick={() => onPick(c)} disabled={busy}

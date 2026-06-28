@@ -85,8 +85,9 @@ test.describe('Activity ↔ Group model (characterization)', () => {
     }
   })
 
-  // ── 3. Waitlist is per-Activity, but an offer can cross Activities ────────
-  test('BUG: a waitlister for one activity can be offered a group under a different activity', async ({ page }) => {
+  // ── 3. A waitlister can only be offered a group under the SAME activity ───
+  //     (FIXED — the /api/offers listing_mismatch guard now rejects this.)
+  test('a waitlister for one activity cannot be offered a group under a different activity', async ({ page }) => {
     const prov   = await createProvider('E2E Model Offer')
     const parent = await createParent('E2E Model Parent')
     try {
@@ -98,7 +99,7 @@ test.describe('Activity ↔ Group model (characterization)', () => {
       // The parent is waiting on Activity A.
       const waitlistA = await createWaitlistEntry(listingA.id, parent.userId, { contactEmail: parent.email })
 
-      // Sign in as the provider and offer the A-waitlister a spot in B's group.
+      // Sign in as the provider and try to offer the A-waitlister a spot in B's group.
       await dismissGates(page, '/auth/login')
       await page.getByPlaceholder('you@example.com').fill(prov.email)
       await page.locator('input[type="password"]').fill(E2E_PASSWORD)
@@ -109,22 +110,17 @@ test.describe('Activity ↔ Group model (characterization)', () => {
         data: { waitlist_entry_id: waitlistA.id, class_id: classB.id },
       })
 
-      // BUG: the offer succeeds even though classB belongs to Activity B, not A.
-      expect(res.ok()).toBeTruthy()
+      // The offer is rejected — classB belongs to Activity B, not A.
+      expect(res.ok()).toBeFalsy()
+      expect(res.status()).toBe(400)
+      expect((await res.json()).error).toBe('listing_mismatch')
 
-      // The cross-activity roster member now exists: its class fronts listing B
-      // while the originating waitlist entry was for listing A.
-      const { data: m } = await db
+      // No roster member was created from the cross-activity offer.
+      const { count } = await db
         .from('roster_members')
-        .select('class_id, waitlist_entry_id, classes(listing_id)')
+        .select('*', { count: 'exact', head: true })
         .eq('waitlist_entry_id', waitlistA.id)
-        .single()
-      const member = m as { class_id: string; waitlist_entry_id: string; classes: { listing_id: string } | null } | null
-      expect(member).toBeTruthy()
-      expect(member!.class_id).toBe(classB.id)
-      // BUG: class's listing (B) ≠ the waitlist entry's listing (A).
-      expect(member!.classes?.listing_id).toBe(listingB.id)
-      expect(member!.classes?.listing_id).not.toBe(listingA.id)
+      expect(count ?? 0).toBe(0)
     } finally {
       await cleanupUser(parent.email)
       await cleanupUser(prov.email)
