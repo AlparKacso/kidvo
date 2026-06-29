@@ -879,7 +879,9 @@
     "groupDeletedToast": "{group} ștearsă",
     "renameGroup": "Redenumește",
     "save": "Salvează",
-    "groupRenamedToast": "Grupă redenumită"
+    "groupRenamedToast": "Grupă redenumită",
+    "groupActions": "Acțiuni grupă",
+    "renameGroupTitle": "Redenumește grupa"
   },
   "quickStart": {
     "bannerTitle": "Pre-completat din grupa ta",

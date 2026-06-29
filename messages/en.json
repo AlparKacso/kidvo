@@ -879,7 +879,9 @@
     "groupDeletedToast": "{group} deleted",
     "renameGroup": "Rename",
     "save": "Save",
-    "groupRenamedToast": "Group renamed"
+    "groupRenamedToast": "Group renamed",
+    "groupActions": "Group actions",
+    "renameGroupTitle": "Rename group"
   },
   "quickStart": {
     "bannerTitle": "Pre-filled from your class",

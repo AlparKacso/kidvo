@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
@@ -343,26 +343,35 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
               className={cn('flex-shrink-0 w-[260px] rounded-[18px] bg-white p-3 flex flex-col transition-shadow',
                 isSelected ? 'border-[1.5px] border-primary' : 'border border-border')}
               style={{ boxShadow: isSelected ? '0 0 0 3px rgba(124,58,237,.10)' : '0 2px 12px rgba(124,58,237,.06)' }}>
-              <button type="button" onClick={() => selectClass(cls.id)} className="px-1 mb-3 text-left w-full">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: accent }} />
-                  <span className="font-display text-[13px] font-bold text-ink truncate flex-1">{cls.name}</span>
-                  <span className={cn('font-display text-[9px] font-bold uppercase tracking-[.06em] px-1.5 py-0.5 rounded',
+              <div className="px-1 mb-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <button type="button" onClick={() => selectClass(cls.id)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: accent }} />
+                    <span className="font-display text-[13px] font-bold text-ink truncate">{cls.name}</span>
+                  </button>
+                  <span className={cn('font-display text-[9px] font-bold uppercase tracking-[.06em] px-1.5 py-0.5 rounded flex-shrink-0',
                     cls.listing_id ? 'bg-primary-lt text-primary' : 'bg-zinc-lt text-zinc')}>
                     {cls.listing_id ? t('tagListed') : t('tagManual')}
                   </span>
+                  <GroupMenu t={t} listed={!!cls.listing_id}
+                    onAddStudent={() => setAddTo(cls)}
+                    onRename={() => { setRenameValue(cls.name); setRenameFor(cls.id) }}
+                    onTurnIntoListing={() => router.push(`/listings/classes/${cls.id}/quick-start`)}
+                    onDelete={() => setDeleteGroup(cls)} />
                 </div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-display text-[11px] text-ink-muted">
-                    {cap != null ? `${occupancy}/${cap}` : occupancy} · {t('enrolledLabel')}
-                  </span>
-                </div>
-                {cap != null && (
-                  <div className="h-[6px] rounded-full overflow-hidden" style={{ background: '#ece8f5' }}>
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, (occupancy / Math.max(cap, 1)) * 100)}%`, background: barColor }} />
+                <button type="button" onClick={() => selectClass(cls.id)} className="block w-full text-left">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-display text-[11px] text-ink-muted">
+                      {cap != null ? `${occupancy}/${cap}` : occupancy} · {t('enrolledLabel')}
+                    </span>
                   </div>
-                )}
-              </button>
+                  {cap != null && (
+                    <div className="h-[6px] rounded-full overflow-hidden" style={{ background: '#ece8f5' }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, (occupancy / Math.max(cap, 1)) * 100)}%`, background: barColor }} />
+                    </div>
+                  )}
+                </button>
+              </div>
 
               <div className="flex-1 flex flex-col gap-2 min-h-[40px]">
                 {roster.length === 0 ? (
@@ -375,47 +384,6 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
                 ))}
               </div>
 
-              <div className="mt-3 flex flex-col gap-1.5 pt-2 border-t border-border">
-                {renameFor === cls.id ? (
-                  /* Inline rename */
-                  <div className="flex flex-col gap-1.5">
-                    <input autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') doRenameGroup(cls); if (e.key === 'Escape') setRenameFor(null) }}
-                      className="w-full px-2.5 py-1.5 border border-primary rounded-lg font-display text-[12.5px] text-ink bg-white outline-none" />
-                    <div className="flex gap-1.5">
-                      <button onClick={() => doRenameGroup(cls)} disabled={busy || !renameValue.trim()}
-                        className="flex-1 py-1.5 rounded-lg font-display text-[12px] font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors">{t('save')}</button>
-                      <button onClick={() => setRenameFor(null)}
-                        className="flex-1 py-1.5 rounded-lg font-display text-[12px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">{t('cancel')}</button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {/* Manual groups can become a public listing straight from the column;
-                        the storefront link/unlist now lives in the docked panel below. */}
-                    {!cls.listing_id && (
-                      <button onClick={() => router.push(`/listings/classes/${cls.id}/quick-start`)}
-                        className="font-display text-[12px] font-semibold text-primary hover:bg-primary-lt rounded-lg py-1.5 transition-colors">
-                        {t('turnIntoListing')}
-                      </button>
-                    )}
-                    <button onClick={() => setAddTo(cls)}
-                      className="font-display text-[12px] font-semibold text-ink-mid hover:bg-surface rounded-lg py-1.5 transition-colors">
-                      + {t('addStudent')}
-                    </button>
-                    <div className="flex gap-1.5">
-                      <button onClick={() => { setRenameFor(cls.id); setRenameValue(cls.name) }}
-                        className="flex-1 font-display text-[11.5px] font-semibold text-ink-muted hover:text-ink hover:bg-surface rounded-lg py-1.5 transition-colors">
-                        {t('renameGroup')}
-                      </button>
-                      <button onClick={() => setDeleteGroup(cls)}
-                        className="flex-1 font-display text-[11.5px] font-semibold text-ink-muted hover:text-danger hover:bg-danger-lt rounded-lg py-1.5 transition-colors">
-                        {t('deleteGroup')}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
             </section>
           )
         })}
@@ -485,6 +453,15 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
           onClose={() => setAddTo(null)}
           onSubmit={(fields) => doAddStudent(addTo, fields)} />
       )}
+
+      {/* ── Rename group ── */}
+      {renameFor && (() => {
+        const c = classes.find(x => x.id === renameFor)
+        return c ? (
+          <RenameGroupModal t={t} busy={busy} value={renameValue} setValue={setRenameValue}
+            onClose={() => setRenameFor(null)} onSave={() => doRenameGroup(c)} />
+        ) : null
+      })()}
 
       {/* ── Delete group confirm ── */}
       {deleteGroup && (
@@ -986,6 +963,56 @@ function FullConfirm({ entry, cls, t, busy, onClose, onOverCapacity, onNewGroup 
         <button onClick={onOverCapacity} disabled={busy} className="w-full py-2.5 rounded font-display text-sm font-semibold bg-gold text-ink hover:opacity-90 disabled:opacity-50 transition-opacity">{t('offerAnyway')}</button>
         <button onClick={onNewGroup} disabled={busy} className="w-full py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface disabled:opacity-50 transition-colors">{t('startNewGroupInstead')}</button>
         <button onClick={onClose} disabled={busy} className="w-full py-2 rounded font-display text-[13px] font-semibold text-ink-muted hover:bg-surface transition-colors">{t('cancel')}</button>
+      </div>
+    </ModalShell>
+  )
+}
+
+// Three-dot actions menu on a group column header (mirrors the activity card).
+function GroupMenu({ t, listed, onAddStudent, onRename, onTurnIntoListing, onDelete }: {
+  t: T; listed: boolean
+  onAddStudent: () => void; onRename: () => void; onTurnIntoListing: () => void; onDelete: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    function handle(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [])
+  const item = 'w-full flex items-center gap-2 px-3 py-2 font-display text-[12.5px] text-ink-mid hover:bg-surface transition-colors text-left'
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button type="button" onClick={(e) => { e.stopPropagation(); setOpen(o => !o) }} aria-label={t('groupActions')}
+        className="w-7 h-7 rounded flex items-center justify-center text-ink-muted hover:bg-surface transition-colors">
+        <svg width="13" height="13" viewBox="0 0 4 16" fill="currentColor"><circle cx="2" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/></svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-8 z-30 bg-white border border-border rounded-lg shadow-lg py-1 min-w-[180px]">
+          <button onClick={() => { setOpen(false); onAddStudent() }} className={item}>+ {t('addStudent')}</button>
+          <button onClick={() => { setOpen(false); onRename() }} className={item}>{t('renameGroup')}</button>
+          {!listed && (
+            <button onClick={() => { setOpen(false); onTurnIntoListing() }} className={cn(item, 'text-primary')}>{t('turnIntoListing')}</button>
+          )}
+          <div className="border-t border-border mx-1 my-1" />
+          <button onClick={() => { setOpen(false); onDelete() }} className={cn(item, 'text-danger')}>{t('deleteGroup')}</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RenameGroupModal({ t, busy, value, setValue, onClose, onSave }: {
+  t: T; busy: boolean; value: string; setValue: (v: string) => void; onClose: () => void; onSave: () => void
+}) {
+  return (
+    <ModalShell onClose={onClose}>
+      <h2 className="font-display text-[17px] font-bold text-ink mb-3">{t('renameGroupTitle')}</h2>
+      <input autoFocus value={value} onChange={e => setValue(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') onSave() }} className={inputCls} placeholder={t('groupNamePlaceholder')} />
+      <div className="flex gap-2 mt-4">
+        <button onClick={onClose} className="flex-1 py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">{t('cancel')}</button>
+        <button onClick={onSave} disabled={busy || !value.trim()} className="flex-1 py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors">{t('save')}</button>
       </div>
     </ModalShell>
   )
