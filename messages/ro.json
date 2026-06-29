@@ -876,7 +876,10 @@
     "deleteGroupWarnCount": "{n} copil(i) înscriși vor fi eliminați.",
     "deleteGroupListedNote": "Anunțul public nu se șterge — doar această grupă.",
     "deleteGroupYes": "Șterge grupa",
-    "groupDeletedToast": "{group} ștearsă"
+    "groupDeletedToast": "{group} ștearsă",
+    "renameGroup": "Redenumește",
+    "save": "Salvează",
+    "groupRenamedToast": "Grupă redenumită"
   },
   "quickStart": {
     "bannerTitle": "Pre-completat din grupa ta",

@@ -876,7 +876,10 @@
     "deleteGroupWarnCount": "{n} enrolled student(s) will be removed.",
     "deleteGroupListedNote": "The public listing isn't deleted — only this group.",
     "deleteGroupYes": "Delete group",
-    "groupDeletedToast": "{group} deleted"
+    "groupDeletedToast": "{group} deleted",
+    "renameGroup": "Rename",
+    "save": "Save",
+    "groupRenamedToast": "Group renamed"
   },
   "quickStart": {
     "bannerTitle": "Pre-filled from your class",

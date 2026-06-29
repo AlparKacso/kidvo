@@ -76,6 +76,8 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
   // is no DB column for the prior listing — a refresh just shows it as manual.)
   const [detachedFrom, setDetachedFrom] = useState<Record<string, string>>({})
   const [deleteGroup, setDeleteGroup] = useState<ClassRow | null>(null)
+  const [renameFor, setRenameFor] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
 
   const selectedClass = classes.find(c => c.id === selectedClassId) ?? classes[0] ?? null
 
@@ -182,6 +184,17 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
     })
     if (!res.ok) { showToast(t('errorGeneric')); return }
     showToast(t('requestDeclinedToast')); router.refresh()
+  }
+
+  // Rename a group (PATCH the class name).
+  async function doRenameGroup(cls: ClassRow) {
+    const name = renameValue.trim()
+    if (!name || name === cls.name) { setRenameFor(null); return }
+    const res = await api(`/api/classes/${cls.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
+    })
+    if (!res.ok) { showToast(t('errorGeneric')); return }
+    setRenameFor(null); showToast(t('groupRenamedToast')); router.refresh()
   }
 
   // Delete a whole group. Roster + offers cascade; the listing (if any) stays.
@@ -363,22 +376,45 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
               </div>
 
               <div className="mt-3 flex flex-col gap-1.5 pt-2 border-t border-border">
-                {/* Manual groups can become a public listing straight from the column;
-                    the storefront link/unlist now lives in the docked panel below. */}
-                {!cls.listing_id && (
-                  <button onClick={() => router.push(`/listings/classes/${cls.id}/quick-start`)}
-                    className="font-display text-[12px] font-semibold text-primary hover:bg-primary-lt rounded-lg py-1.5 transition-colors">
-                    {t('turnIntoListing')}
-                  </button>
+                {renameFor === cls.id ? (
+                  /* Inline rename */
+                  <div className="flex flex-col gap-1.5">
+                    <input autoFocus value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') doRenameGroup(cls); if (e.key === 'Escape') setRenameFor(null) }}
+                      className="w-full px-2.5 py-1.5 border border-primary rounded-lg font-display text-[12.5px] text-ink bg-white outline-none" />
+                    <div className="flex gap-1.5">
+                      <button onClick={() => doRenameGroup(cls)} disabled={busy || !renameValue.trim()}
+                        className="flex-1 py-1.5 rounded-lg font-display text-[12px] font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors">{t('save')}</button>
+                      <button onClick={() => setRenameFor(null)}
+                        className="flex-1 py-1.5 rounded-lg font-display text-[12px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">{t('cancel')}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Manual groups can become a public listing straight from the column;
+                        the storefront link/unlist now lives in the docked panel below. */}
+                    {!cls.listing_id && (
+                      <button onClick={() => router.push(`/listings/classes/${cls.id}/quick-start`)}
+                        className="font-display text-[12px] font-semibold text-primary hover:bg-primary-lt rounded-lg py-1.5 transition-colors">
+                        {t('turnIntoListing')}
+                      </button>
+                    )}
+                    <button onClick={() => setAddTo(cls)}
+                      className="font-display text-[12px] font-semibold text-ink-mid hover:bg-surface rounded-lg py-1.5 transition-colors">
+                      + {t('addStudent')}
+                    </button>
+                    <div className="flex gap-1.5">
+                      <button onClick={() => { setRenameFor(cls.id); setRenameValue(cls.name) }}
+                        className="flex-1 font-display text-[11.5px] font-semibold text-ink-muted hover:text-ink hover:bg-surface rounded-lg py-1.5 transition-colors">
+                        {t('renameGroup')}
+                      </button>
+                      <button onClick={() => setDeleteGroup(cls)}
+                        className="flex-1 font-display text-[11.5px] font-semibold text-ink-muted hover:text-danger hover:bg-danger-lt rounded-lg py-1.5 transition-colors">
+                        {t('deleteGroup')}
+                      </button>
+                    </div>
+                  </>
                 )}
-                <button onClick={() => setAddTo(cls)}
-                  className="font-display text-[12px] font-semibold text-ink-mid hover:bg-surface rounded-lg py-1.5 transition-colors">
-                  + {t('addStudent')}
-                </button>
-                <button onClick={() => setDeleteGroup(cls)}
-                  className="font-display text-[11.5px] font-semibold text-ink-muted hover:text-danger hover:bg-danger-lt rounded-lg py-1.5 transition-colors">
-                  {t('deleteGroup')}
-                </button>
               </div>
             </section>
           )
