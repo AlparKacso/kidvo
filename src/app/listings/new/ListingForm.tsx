@@ -671,6 +671,30 @@ export function ListingForm({ categories, areas, providerId, providerName, provi
         )
         if (schedErr) throw schedErr
       }
+      // Auto-create the default Group behind a brand-new Activity, so the
+      // storefront always has one cohort with a roster/waitlist behind it and
+      // the Groups tab is never mysteriously empty. Skipped for events, edits,
+      // and the quick-start path (which links an existing group instead).
+      if (!isEdit && !eventMode && !linkClassId && finalListingId) {
+        const groupDays = [...new Set(data.schedules.map(s => s.day_of_week))]
+        await fetch('/api/classes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name:        data.title,
+            listing_id:  finalListingId,
+            category_id: data.category_id || null,
+            area_id:     data.area_id || null,
+            age_min:     Number.isFinite(payload.age_min) ? payload.age_min : null,
+            age_max:     Number.isFinite(payload.age_max) ? payload.age_max : null,
+            capacity:    payload.spots_total ?? null,
+            days:        groupDays,
+            time_start:  data.schedules[0]?.time_start || null,
+            time_end:    data.schedules[0]?.time_end || null,
+            language:    data.language.join(', ') || null,
+          }),
+        }).catch(() => {})
+      }
       // Notify admin (fire-and-forget — don't block the redirect)
       if (!isEdit && finalListingId) {
         fetch('/api/listings/notify', {

@@ -351,9 +351,11 @@
     "cancelTrial": "Cancel",
     "cancelTrialConfirm": "Are you sure you want to cancel this trial request?",
     "onboardingGetStarted": "Get started",
-    "onboardProvCreateListing": "Create your first listing",
+    "onboardProvCreateListing": "Create your first activity",
     "onboardProvFirstBooking": "Receive your first booking",
     "onboardProvFirstReview": "Get your first review",
+    "onboardModelTitle": "Activities & Groups",
+    "onboardModelBody": "Your Activity is your public page on kidvo. Groups are the age or level cohorts inside it. List an Activity and we set up your first Group automatically — you can add more anytime.",
     "onboardParentAddChild": "Add your first child",
     "onboardParentBookTrial": "Book a trial",
     "onboardParentLeaveReview": "Leave a review"

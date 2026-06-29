@@ -20,11 +20,23 @@ export async function POST(req: Request) {
     ? body.days.filter((d: unknown) => typeof d === 'number' && d >= 0 && d <= 6)
     : []
 
+  // Optional: attach the group to a listing (Activity) so it's public + has a
+  // roster behind the storefront. Used by the auto-Group on activity creation.
+  // Validate the listing belongs to this provider before linking.
+  let listingId: string | null = null
+  if (typeof body.listing_id === 'string' && body.listing_id) {
+    const { data: owned } = await supabase
+      .from('listings').select('id').eq('id', body.listing_id)
+      .eq('provider_id', provider.id).single()
+    if (!owned) return NextResponse.json({ error: 'Listing not found' }, { status: 403 })
+    listingId = body.listing_id
+  }
+
   const { data: cls, error } = await supabase
     .from('classes')
     .insert({
       provider_id: provider.id,
-      listing_id:  null,
+      listing_id:  listingId,
       name,
       category_id: body.category_id ?? null,
       area_id:     body.area_id ?? null,
