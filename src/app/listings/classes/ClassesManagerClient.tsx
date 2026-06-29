@@ -75,6 +75,7 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
   // this session, so "Re-list this group" can restore it with one click. (There
   // is no DB column for the prior listing — a refresh just shows it as manual.)
   const [detachedFrom, setDetachedFrom] = useState<Record<string, string>>({})
+  const [deleteGroup, setDeleteGroup] = useState<ClassRow | null>(null)
 
   const selectedClass = classes.find(c => c.id === selectedClassId) ?? classes[0] ?? null
 
@@ -181,6 +182,15 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
     })
     if (!res.ok) { showToast(t('errorGeneric')); return }
     showToast(t('requestDeclinedToast')); router.refresh()
+  }
+
+  // Delete a whole group. Roster + offers cascade; the listing (if any) stays.
+  async function doDeleteGroup(cls: ClassRow) {
+    const res = await api(`/api/classes/${cls.id}`, { method: 'DELETE' })
+    if (!res.ok) { showToast(t('errorGeneric')); return }
+    setDeleteGroup(null)
+    if (selectedClassId === cls.id) setSelectedClassId(null)
+    showToast(t('groupDeletedToast', { group: cls.name })); router.refresh()
   }
 
   async function doMember(memberId: string, body: Record<string, unknown>, msg: string) {
@@ -365,6 +375,10 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
                   className="font-display text-[12px] font-semibold text-ink-mid hover:bg-surface rounded-lg py-1.5 transition-colors">
                   + {t('addStudent')}
                 </button>
+                <button onClick={() => setDeleteGroup(cls)}
+                  className="font-display text-[11.5px] font-semibold text-ink-muted hover:text-danger hover:bg-danger-lt rounded-lg py-1.5 transition-colors">
+                  {t('deleteGroup')}
+                </button>
               </div>
             </section>
           )
@@ -434,6 +448,13 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
         <AddStudentModal cls={addTo} t={t} busy={busy}
           onClose={() => setAddTo(null)}
           onSubmit={(fields) => doAddStudent(addTo, fields)} />
+      )}
+
+      {/* ── Delete group confirm ── */}
+      {deleteGroup && (
+        <DeleteGroupConfirm cls={deleteGroup} enrolled={occ(deleteGroup.id)} listed={!!deleteGroup.listing_id} t={t} busy={busy}
+          onClose={() => setDeleteGroup(null)}
+          onConfirm={() => doDeleteGroup(deleteGroup)} />
       )}
 
       {/* ── New group ── */}
@@ -929,6 +950,29 @@ function FullConfirm({ entry, cls, t, busy, onClose, onOverCapacity, onNewGroup 
         <button onClick={onOverCapacity} disabled={busy} className="w-full py-2.5 rounded font-display text-sm font-semibold bg-gold text-ink hover:opacity-90 disabled:opacity-50 transition-opacity">{t('offerAnyway')}</button>
         <button onClick={onNewGroup} disabled={busy} className="w-full py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface disabled:opacity-50 transition-colors">{t('startNewGroupInstead')}</button>
         <button onClick={onClose} disabled={busy} className="w-full py-2 rounded font-display text-[13px] font-semibold text-ink-muted hover:bg-surface transition-colors">{t('cancel')}</button>
+      </div>
+    </ModalShell>
+  )
+}
+
+function DeleteGroupConfirm({ cls, enrolled, listed, t, busy, onClose, onConfirm }: {
+  cls: ClassRow; enrolled: number; listed: boolean; t: T; busy: boolean
+  onClose: () => void; onConfirm: () => void
+}) {
+  return (
+    <ModalShell onClose={onClose}>
+      <div className="text-2xl mb-2">🗑️</div>
+      <h2 className="font-display text-[17px] font-bold text-ink mb-1">{t('deleteGroupTitle', { group: cls.name })}</h2>
+      <p className="font-display text-[13px] text-ink-mid mb-2 leading-snug">{t('deleteGroupBody')}</p>
+      {enrolled > 0 && (
+        <div className="rounded-[10px] px-3 py-2 mb-2 font-display text-[12.5px] text-danger" style={{ background: '#fdf4f3', border: '1px solid #f6d9d4' }}>
+          {t('deleteGroupWarnCount', { n: enrolled })}
+        </div>
+      )}
+      {listed && <p className="font-display text-[12px] text-ink-muted mb-4">{t('deleteGroupListedNote')}</p>}
+      <div className="flex gap-2 mt-3">
+        <button onClick={onClose} disabled={busy} className="flex-1 py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface disabled:opacity-50 transition-colors">{t('cancel')}</button>
+        <button onClick={onConfirm} disabled={busy} className="flex-1 py-2.5 rounded font-display text-sm font-semibold bg-danger text-white hover:opacity-90 disabled:opacity-50 transition-opacity">{t('deleteGroupYes')}</button>
       </div>
     </ModalShell>
   )

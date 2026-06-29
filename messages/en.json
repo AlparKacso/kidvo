@@ -869,7 +869,14 @@
       "4": "Fri",
       "5": "Sat",
       "6": "Sun"
-    }
+    },
+    "deleteGroup": "Delete group",
+    "deleteGroupTitle": "Delete {group}?",
+    "deleteGroupBody": "This permanently removes the group and everyone in its roster.",
+    "deleteGroupWarnCount": "{n} enrolled student(s) will be removed.",
+    "deleteGroupListedNote": "The public listing isn't deleted — only this group.",
+    "deleteGroupYes": "Delete group",
+    "groupDeletedToast": "{group} deleted"
   },
   "quickStart": {
     "bannerTitle": "Pre-filled from your class",

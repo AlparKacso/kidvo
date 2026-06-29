@@ -869,7 +869,14 @@
       "4": "Vin",
       "5": "Sâm",
       "6": "Dum"
-    }
+    },
+    "deleteGroup": "Șterge grupa",
+    "deleteGroupTitle": "Ștergi {group}?",
+    "deleteGroupBody": "Aceasta șterge definitiv grupa și pe toți copiii din ea.",
+    "deleteGroupWarnCount": "{n} copil(i) înscriși vor fi eliminați.",
+    "deleteGroupListedNote": "Anunțul public nu se șterge — doar această grupă.",
+    "deleteGroupYes": "Șterge grupa",
+    "groupDeletedToast": "{group} ștearsă"
   },
   "quickStart": {
     "bannerTitle": "Pre-completat din grupa ta",
