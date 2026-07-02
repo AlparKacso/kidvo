@@ -113,7 +113,7 @@ test.describe('enroll: provider confirms a request', () => {
     await login(page, provEmail, false)
 
     await page.goto('/listings/classes')
-    await expect(page.getByRole('heading', { name: /Classes & waitlist/i })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /Groups & waitlist/i })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('Confirmme', { exact: true })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText(/Enrollment request/i)).toBeVisible()
 
