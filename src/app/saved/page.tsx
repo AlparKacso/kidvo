@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
+import { applyDerivedSpots } from '@/lib/availability'
 
 export const metadata: Metadata = { robots: { index: false, follow: false } }
 import { SavedClient } from './SavedClient'
@@ -38,6 +39,8 @@ export default async function SavedPage() {
     seen.add(id)
     return true
   })
+  // Availability shown on saved cards is derived from each activity's groups.
+  await applyDerivedSpots(uniqueSaves.map(s => s.listing as { id: string; spots_total: number | null; spots_available: number | null }))
 
   return (
     <AppShell>

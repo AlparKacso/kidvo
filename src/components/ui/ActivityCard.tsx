@@ -55,9 +55,13 @@ interface ActivityCardProps {
   reviewCount?:  number
   /** Test override — normally auto-detected from image luminance. */
   forceContrast?: ContrastMode
+  /** Provider mode: actions shown top-right in place of the save heart (e.g. share + three-dot menu). */
+  providerActions?: React.ReactNode
+  /** Provider mode: replaces the footer-left provider/rating line (e.g. status + spots). */
+  statusBadge?:  React.ReactNode
 }
 
-export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount, forceContrast }: ActivityCardProps) {
+export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCount, forceContrast, providerActions, statusBadge }: ActivityCardProps) {
   const t = useTranslations('card')
   const tCat = useTranslations('categories')
 
@@ -235,11 +239,18 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
                 {t('featured')}
               </span>
             )}
-            {!isFull && (
+            {providerActions ? (
+              // Permanent light pill so share + three-dot stay legible on any
+              // cover (light placeholder, photo, or dark scrim).
+              <div className="pointer-events-auto flex items-center gap-0.5 rounded-full backdrop-blur-md shadow-sm px-0.5"
+                style={{ background: 'rgba(255,255,255,0.95)' }}>
+                {providerActions}
+              </div>
+            ) : !isFull ? (
               <div className="pointer-events-auto">
                 <SaveButton listingId={listing.id} initialSaved={isSaved} variant="poster" />
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -327,7 +338,8 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
         style={{ padding: '12px 14px', gap: 10 }}
       >
         <div className="flex flex-col min-w-0" style={{ gap: 2 }}>
-          {provider && (
+          {statusBadge && <div className="pointer-events-auto">{statusBadge}</div>}
+          {!statusBadge && provider && (
             <div
               className="font-display text-ink truncate"
               style={{ fontSize: 13, fontWeight: 700 }}
@@ -335,7 +347,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
               {provider}
             </div>
           )}
-          {hasRating && (
+          {!statusBadge && hasRating && (
             <div
               className="inline-flex items-center text-ink-mid"
               style={{ fontSize: 11.5, gap: 4 }}
@@ -347,7 +359,7 @@ export function ActivityCard({ listing, featured, savedIds, avgRating, reviewCou
               <span>· {reviewCount ?? 0}</span>
             </div>
           )}
-          {!provider && !hasRating && listing.area?.name && (
+          {!statusBadge && !provider && !hasRating && listing.area?.name && (
             <div className="text-ink-mid" style={{ fontSize: 11.5 }}>
               {listing.area.name}
             </div>

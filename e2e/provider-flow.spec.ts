@@ -121,6 +121,12 @@ test.describe('provider: login → list activity → submit', () => {
       'E2E generated activity. This text is only used by the automated Playwright suite and will be deleted after the test run.'
     )
 
+    // Step 3 also requires a valid contact phone when the provider has none on
+    // file (the E2E provider is seeded without one) — otherwise Next won't
+    // advance. Fill the tel field when it's present.
+    const phoneField = page.locator('input[type="tel"]')
+    if (await phoneField.count()) await phoneField.first().fill('0745369041')
+
     await page.getByRole('button', { name: /^Next|^Înainte/i }).click()
 
     // --- Step 4: review + publish ---
@@ -156,5 +162,17 @@ test.describe('provider: login → list activity → submit', () => {
     expect(schedules?.length).toBe(2)
     expect(schedules?.map(s => (s as { day_of_week: number }).day_of_week).sort())
       .toEqual([0, 2])
+
+    // Auto-Group: publishing a fresh activity spins up ONE default group linked
+    // to it, carrying the activity's name, capacity and schedule — so the Groups
+    // tab is never empty and confirmed trials have a roster to land on.
+    const { data: groups } = await db
+      .from('classes')
+      .select('name, capacity, days')
+      .eq('listing_id', (listing as { id: string }).id)
+    expect(groups?.length).toBe(1)
+    expect((groups![0] as { name: string }).name).toBe(title)
+    expect((groups![0] as { capacity: number }).capacity).toBe(10)
+    expect(((groups![0] as { days: number[] }).days).slice().sort()).toEqual([0, 2])
   })
 })

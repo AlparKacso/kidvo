@@ -8,6 +8,7 @@ import { TrialRequestButton }    from '@/components/TrialRequestButton'
 import { WaitlistButton }         from '@/components/WaitlistButton'
 import { EnrollButton }           from '@/components/EnrollButton'
 import { isWaitlistOpen }         from '@/lib/classes'
+import { applyDerivedSpots }       from '@/lib/availability'
 import { SaveButton }            from '@/components/ui/SaveButton'
 import { ShareButton }           from '@/components/ui/ShareButton'
 import { ContactProviderButton } from '@/components/ui/ContactProviderButton'
@@ -98,6 +99,11 @@ export default async function ActivityDetailPage({ params }: Props) {
   const listing = listingRaw as unknown as any | null
 
   if (!listing) notFound()
+
+  // Derive public availability from the activity's groups (spots = Σ capacity −
+  // Σ occupancy). Overwrites spots_total/available so the display + the trial/
+  // waitlist gates below all reflect real roster occupancy.
+  if (listing.type === 'activity') await applyDerivedSpots([listing])
 
   // Record a view — fire and forget (don't block page render)
   supabase.from('listing_views').insert({

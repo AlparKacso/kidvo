@@ -1,6 +1,28 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// DELETE /api/classes/[id] — delete a group. Roster members + offers cascade
+// (ON DELETE CASCADE); the per-listing waitlist pool is untouched, so waiting
+// families stay and can be offered into another group. The public listing (if
+// any) is NOT deleted — only this cohort.
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: clsRaw } = await supabase
+    .from('classes').select('id, provider:providers(user_id)').eq('id', id).single()
+  const cls = clsRaw as { id: string; provider: { user_id: string } | null } | null
+  if (!cls || cls.provider?.user_id !== user.id) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  const { error } = await supabase.from('classes').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 // PATCH /api/classes/[id] — edit a class, or link it to a listing (quick-start).
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

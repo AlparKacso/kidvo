@@ -3,85 +3,14 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { AppShell } from '@/components/layout/AppShell'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { ListingCardMenu } from './ListingCardMenu'
 import { ShareButton }     from '@/components/ui/ShareButton'
-import { sendTrialConfirmedToParent, sendTrialDeclinedToParent } from '@/lib/email'
+import { ActivityCard }    from '@/components/ui/ActivityCard'
+import { autoEnrolConfirmedTrial, sendTrialStatusEmail } from '@/lib/trials'
+import { applyDerivedSpots } from '@/lib/availability'
 import { getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
-
-// A confirmed trial request is treated as intent to attend, so the child
-// auto-enters the listing's roster (source 'trial'). Idempotent — guarded by
-// the unique trial_request_id index and a pre-check. Runs with the admin client
-// because it reads the parent's child record (cross-user under RLS).
-async function autoEnrolConfirmedTrial(trialId: string) {
-  const adminDb = createAdminClient()
-  const { data: trialRaw } = await adminDb
-    .from('trial_requests').select('id, listing_id, child_id, user_id, status').eq('id', trialId).single()
-  const trial = trialRaw as { id: string; listing_id: string; child_id: string | null; user_id: string; status: string } | null
-  if (!trial || trial.status !== 'confirmed') return
-
-  // Already on a roster? (unique index also enforces this at the DB level.)
-  const { data: existing } = await adminDb
-    .from('roster_members').select('id').eq('trial_request_id', trialId).maybeSingle()
-  if (existing) return
-
-  const { data: listingRaw } = await adminDb
-    .from('listings')
-    .select('id, provider_id, title, category_id, area_id, age_min, age_max, spots_total, language')
-    .eq('id', trial.listing_id).single()
-  const listing = listingRaw as any
-  if (!listing) return
-
-  // Find or create the "listed" class for this listing.
-  let classId: string | null = null
-  const { data: clsRaw } = await adminDb.from('classes').select('id').eq('listing_id', listing.id).maybeSingle()
-  classId = (clsRaw as { id: string } | null)?.id ?? null
-  if (!classId) {
-    const { data: schedRaw } = await adminDb
-      .from('listing_schedules').select('day_of_week, time_start, time_end').eq('listing_id', listing.id)
-    const sched = ((schedRaw ?? []) as any[]).sort((a, b) => a.day_of_week - b.day_of_week)
-    const { data: created } = await adminDb.from('classes').insert({
-      provider_id: listing.provider_id,
-      listing_id:  listing.id,
-      name:        listing.title,
-      category_id: listing.category_id,
-      area_id:     listing.area_id,
-      age_min:     listing.age_min,
-      age_max:     listing.age_max,
-      capacity:    listing.spots_total,
-      days:        [...new Set(sched.map(s => s.day_of_week))],
-      time_start:  sched[0]?.time_start ?? null,
-      time_end:    sched[0]?.time_end ?? null,
-      language:    listing.language,
-    }).select('id').single()
-    classId = (created as { id: string } | null)?.id ?? null
-  }
-  if (!classId) return
-
-  // Resolve child name + age (fall back to the parent's name when no child set).
-  let childName = '', childAge: number | null = null
-  if (trial.child_id) {
-    const { data: kidRaw } = await adminDb.from('children').select('name, birth_year').eq('id', trial.child_id).single()
-    const kid = kidRaw as { name: string; birth_year: number } | null
-    if (kid) { childName = kid.name; childAge = Math.max(0, new Date().getFullYear() - kid.birth_year) }
-  }
-  if (!childName) {
-    const { data: parentRaw } = await adminDb.from('users').select('full_name').eq('id', trial.user_id).single()
-    childName = (parentRaw as { full_name: string | null } | null)?.full_name ?? 'Trial guest'
-  }
-
-  await adminDb.from('roster_members').insert({
-    class_id:         classId,
-    source:           'trial',
-    status:           'enrolled',
-    trial_request_id: trial.id,
-    child_id:         trial.child_id,
-    child_name:       childName,
-    child_age:        childAge,
-  })
-}
 
 const STATUS_STYLES: Record<string, string> = {
   active:    'bg-success-lt text-success',
@@ -114,11 +43,14 @@ export default async function ProviderListingsPage({
   // ── Shared: listings ─────────────────────────────────────────
   const { data: listingsRaw } = await supabase
     .from('listings')
-    .select('*, category:categories(*), area:areas(*)')
+    .select('*, category:categories(*), area:areas(*), schedules:listing_schedules(day_of_week, time_start, time_end)')
     .eq('provider_id', provider.id)
+    .eq('type', 'activity')
     .order('created_at', { ascending: false })
   const listings = (listingsRaw ?? []) as any[]
   const listingIds = listings.map(l => l.id)
+  // Show availability derived from each activity's groups, not the stored number.
+  await applyDerivedSpots(listings)
 
   const activeCount  = listings.filter(l => l.status === 'active').length
   const pendingCount = listings.filter(l => l.status === 'pending').length
@@ -158,72 +90,6 @@ export default async function ProviderListingsPage({
     totalReqs = requests.length
   }
 
-  // ── Helper: send the parent-facing email for a confirmed/declined trial.
-  //          Updates trial_requests.email_status to 'sent' or 'failed'.
-  //          Used by both updateStatus (initial send) and resendEmail (retry).
-  async function sendStatusEmail(trialId: string) {
-    'use server'
-    const adminDb = createAdminClient()
-
-    const { data: trialRaw } = await adminDb
-      .from('trial_requests')
-      .select('user_id, listing_id, status')
-      .eq('id', trialId).single()
-    const trial = trialRaw as any
-    if (!trial || (trial.status !== 'confirmed' && trial.status !== 'declined')) return
-
-    const [{ data: listingRaw }, { data: parentRaw }] = await Promise.all([
-      adminDb.from('listings').select('id, title, provider_id').eq('id', trial.listing_id).single(),
-      adminDb.from('users').select('full_name, email, locale').eq('id', trial.user_id).single(),
-    ])
-
-    const listing = listingRaw as any
-    const parent  = parentRaw  as any
-    if (!listing || !parent?.email) {
-      await adminDb.from('trial_requests').update({
-        email_status: 'failed',
-        email_error:  'missing listing or parent email',
-      }).eq('id', trialId)
-      return
-    }
-
-    const parentLocale = parent.locale === 'en' ? 'en' as const : 'ro' as const
-
-    try {
-      if (trial.status === 'confirmed') {
-        const { data: provRaw } = await adminDb
-          .from('providers')
-          .select('display_name, contact_email, contact_phone, user:users(email, full_name)')
-          .eq('id', listing.provider_id).single()
-        const p = provRaw as any
-        await sendTrialConfirmedToParent({
-          parentEmail:   parent.email,
-          parentName:    parent.full_name ?? 'there',
-          listingTitle:  listing.title,
-          listingId:     listing.id,
-          providerName:  p?.display_name  || p?.user?.full_name || '',
-          providerEmail: p?.contact_email || p?.user?.email     || '',
-          providerPhone: p?.contact_phone ?? null,
-          locale:        parentLocale,
-        })
-      } else {
-        await sendTrialDeclinedToParent({
-          parentEmail:  parent.email,
-          parentName:   parent.full_name ?? 'there',
-          listingTitle: listing.title,
-          locale:       parentLocale,
-        })
-      }
-      await adminDb.from('trial_requests').update({ email_status: 'sent', email_error: null }).eq('id', trialId)
-    } catch (err) {
-      console.error('[trial email] send failed:', err)
-      await adminDb.from('trial_requests').update({
-        email_status: 'failed',
-        email_error:  err instanceof Error ? err.message : String(err),
-      }).eq('id', trialId)
-    }
-  }
-
   // ── Server action: update booking status ──────────────────────
   async function updateStatus(formData: FormData) {
     'use server'
@@ -232,7 +98,7 @@ export default async function ProviderListingsPage({
     const supabase = await createClient()
 
     await supabase.from('trial_requests').update({ status, responded_at: new Date().toISOString() }).eq('id', id)
-    await sendStatusEmail(id)
+    await sendTrialStatusEmail(id)
     if (status === 'confirmed') await autoEnrolConfirmedTrial(id)
     revalidatePath('/listings')
   }
@@ -241,7 +107,7 @@ export default async function ProviderListingsPage({
   async function resendEmail(formData: FormData) {
     'use server'
     const id = formData.get('id') as string
-    await sendStatusEmail(id)
+    await sendTrialStatusEmail(id)
     revalidatePath('/listings')
   }
 
@@ -336,30 +202,30 @@ export default async function ProviderListingsPage({
                 </Link>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {listings.map(listing => (
-                  <div key={listing.id} className="bg-white rounded-[22px] p-[22px] flex items-start justify-between gap-4" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: (listing.category as any)?.accent_color }} />
-                        <span className="font-display text-[11px] font-bold tracking-[.08em] uppercase text-ink-muted">{(listing.category as any)?.name}</span>
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full font-display text-[10.5px] font-semibold capitalize ${STATUS_STYLES[listing.status] ?? ''}`}>
-                          {listing.status}
+                  <ActivityCard
+                    key={listing.id}
+                    listing={listing}
+                    providerActions={
+                      <>
+                        <ShareButton listingId={listing.id} listingTitle={listing.title} variant="icon" />
+                        <ListingCardMenu listingId={listing.id} status={listing.status} />
+                      </>
+                    }
+                    statusBadge={
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full font-display text-[10px] font-bold tracking-[.04em] uppercase ${STATUS_STYLES[listing.status] ?? ''}`}>
+                          {t(listing.status as 'active')}
                         </span>
-                      </div>
-                      <div className="font-display text-sm font-semibold text-ink mb-0.5">{listing.title}</div>
-                      <div className="text-[11px] text-ink-muted">
-                        {(listing.area as any)?.name} · Ages {listing.age_min}–{listing.age_max} · {listing.price_monthly} RON/mo
                         {listing.spots_available !== null && listing.spots_total !== null && (
-                          <> · {listing.spots_available}/{listing.spots_total} spots</>
+                          <span className="font-display text-[11px] font-semibold text-ink-mid">
+                            {t('spotsCount', { open: listing.spots_available, total: listing.spots_total })}
+                          </span>
                         )}
                       </div>
-                    </div>
-                    <div className="flex items-start gap-1">
-                      <ShareButton listingId={listing.id} listingTitle={listing.title} variant="icon" />
-                      <ListingCardMenu listingId={listing.id} />
-                    </div>
-                  </div>
+                    }
+                  />
                 ))}
               </div>
             )}

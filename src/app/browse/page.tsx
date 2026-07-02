@@ -6,6 +6,7 @@ import { CategoryPills } from '@/components/ui/CategoryPills'
 import { SearchBar }     from '@/components/ui/SearchBar'
 import { createClient }  from '@/lib/supabase/server'
 import { getCategories, getAreas } from '@/lib/referenceData'
+import { applyDerivedSpots } from '@/lib/availability'
 import { eventsEnabled } from '@/lib/eventsEnabled'
 import { getTranslations } from 'next-intl/server'
 import type { ListingWithRelations } from '@/types/database'
@@ -131,6 +132,11 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         normalize((l.provider as any)?.display_name ?? '').includes(qNorm)
       )
     : allListings
+
+  // Public availability is derived from each activity's groups (spots = Σ
+  // capacity − Σ occupancy), so cards show real availability + the right
+  // full/open state.
+  await applyDerivedSpots((listings ?? []) as { id: string; spots_total: number | null; spots_available: number | null }[])
 
   // Fetch aggregate ratings for all visible listings (must come before featured split)
   const listingIds = (listings ?? []).map((l: any) => l.id as string)

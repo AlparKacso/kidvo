@@ -124,14 +124,16 @@ test.describe('waitlist: provider offers a spot', () => {
     // Open the manager — the seeded listed class is there, and the seeded
     // family appears in the waiting pool.
     await page.goto('/listings/classes')
-    await expect(page.getByRole('heading', { name: /Classes & waitlist/i })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /Groups & waitlist/i })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('Offerme', { exact: true })).toBeVisible({ timeout: 10_000 })
 
     // Offer a spot → pick the (only) class.
     await page.getByRole('button', { name: /Offer a spot/i }).first().click()
     await expect(page.getByText(/Offer Offerme a spot/i)).toBeVisible()
-    // The class option button shows the occupancy "0/10".
-    await page.getByRole('button', { name: /E2E Listing.*0\/10/i }).click()
+    // The class option button shows the occupancy "0/10". Scope to the offer
+    // dialog — the board's class-column header (now a clickable button that
+    // docks the listing panel) also carries the listing name + "0/10".
+    await page.getByRole('dialog').getByRole('button', { name: /E2E Listing.*0\/10/i }).click()
 
     // Toast confirms; the family leaves the pool.
     await expect(page.getByText(/Awaiting reply/i)).toBeVisible({ timeout: 15_000 })
@@ -180,7 +182,7 @@ test.describe('waitlist: manager — new group + offline student', () => {
     await page.waitForURL(/\/(dashboard|listings)/, { timeout: 15_000 })
 
     await page.goto('/listings/classes')
-    await expect(page.getByRole('heading', { name: /Classes & waitlist/i })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /Groups & waitlist/i })).toBeVisible({ timeout: 10_000 })
 
     // --- Start a new group (only the name is required) ---
     const groupName = `E2E Group ${Date.now()}`
@@ -201,7 +203,10 @@ test.describe('waitlist: manager — new group + offline student', () => {
     const classId = (cls as { id: string }).id
 
     // --- Add an offline student (only the child name is required) ---
+    // "Add a student manually" now lives inside the group's three-dot menu.
     const childName = `E2E Walkin ${Date.now()}`
+    const groupCard = page.locator('section').filter({ hasText: groupName }).first()
+    await groupCard.getByRole('button', { name: /Group actions/i }).click()
     await page.getByRole('button', { name: /Add a student manually/i }).first().click()
     await expect(page.getByText(/Add a student/i).first()).toBeVisible()
     await page.getByPlaceholder(/e\.g\. Maria/i).fill(childName)
@@ -274,7 +279,7 @@ test.describe('waitlist: quick-start — turn a manual class into a listing', ()
     // race the post-insert class link).
     await page.getByRole('button', { name: /^Publish|^Publică/i }).click()
     await page.waitForURL('**/listings/classes', { timeout: 25_000 })
-    await expect(page.getByRole('heading', { name: /Classes & waitlist/i })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /Groups & waitlist/i })).toBeVisible({ timeout: 10_000 })
 
     // DB: a new pending listing exists and the class now points at it.
     const db = adminClient()
