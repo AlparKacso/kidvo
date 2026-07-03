@@ -883,7 +883,17 @@
     "save": "Save",
     "groupRenamedToast": "Group renamed",
     "groupActions": "Group actions",
-    "renameGroupTitle": "Rename group"
+    "renameGroupTitle": "Rename group",
+    "groupCreatedUnder": "Group created — it shows under “{listing}”",
+    "privateLane": "Private groups",
+    "privateLaneSub": "Only you can see these. Show one on a listing when it's ready for families.",
+    "newPrivateGroup": "New private group",
+    "newGroupUnder": "This group will show publicly under “{listing}”.",
+    "confirmTrialTitle": "Confirm {child} — pick a group",
+    "confirmTrialSub": "The child joins the group you pick. You can move them to another group later.",
+    "showOnListing": "Show on a listing…",
+    "showOnListingTitle": "Show “{group}” on a listing",
+    "makePrivate": "Unlist — make private"
   },
   "quickStart": {
     "bannerTitle": "Pre-filled from your class",
