@@ -358,7 +358,11 @@
     "onboardModelBody": "Activitatea e pagina ta publică pe kidvo. Grupele sunt cohortele de vârstă sau nivel din interiorul ei. Listezi o Activitate și îți creăm automat prima Grupă — poți adăuga oricâte mai târziu.",
     "onboardParentAddChild": "Adaugă primul copil",
     "onboardParentBookTrial": "Rezervă o probă",
-    "onboardParentLeaveReview": "Lasă o recenzie"
+    "onboardParentLeaveReview": "Lasă o recenzie",
+    "heroFirstRunTitle": "Publică prima ta activitate",
+    "heroInReviewEyebrow": "În verificare",
+    "heroInReviewTitle": "Activitatea ta este în verificare",
+    "heroInReviewBody": "Verificăm fiecare anunț nou înainte să apară public — de obicei în 24 de ore. Nu mai ai nimic de făcut: primești un email imediat ce e live."
   },
   "kids": {
     "title": "Copii & Activități",
@@ -883,7 +887,17 @@
     "save": "Salvează",
     "groupRenamedToast": "Grupă redenumită",
     "groupActions": "Acțiuni grupă",
-    "renameGroupTitle": "Redenumește grupa"
+    "renameGroupTitle": "Redenumește grupa",
+    "groupCreatedUnder": "Grup creat — apare sub „{listing}”",
+    "privateLane": "Grupuri private",
+    "privateLaneSub": "Doar tu le vezi. Afișează unul pe un anunț când e gata pentru familii.",
+    "newPrivateGroup": "Grup privat nou",
+    "newGroupUnder": "Acest grup va apărea public sub „{listing}”.",
+    "confirmTrialTitle": "Confirmă {child} — alege grupul",
+    "confirmTrialSub": "Copilul intră în grupul ales. Îl poți muta ulterior în alt grup.",
+    "showOnListing": "Afișează pe un anunț…",
+    "showOnListingTitle": "Afișează „{group}” pe un anunț",
+    "makePrivate": "Retrage — fă-l privat"
   },
   "quickStart": {
     "bannerTitle": "Pre-completat din grupa ta",

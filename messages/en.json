@@ -358,7 +358,11 @@
     "onboardModelBody": "Your Activity is your public page on kidvo. Groups are the age or level cohorts inside it. List an Activity and we set up your first Group automatically — you can add more anytime.",
     "onboardParentAddChild": "Add your first child",
     "onboardParentBookTrial": "Book a trial",
-    "onboardParentLeaveReview": "Leave a review"
+    "onboardParentLeaveReview": "Leave a review",
+    "heroFirstRunTitle": "List your first activity",
+    "heroInReviewEyebrow": "In review",
+    "heroInReviewTitle": "Your activity is being reviewed",
+    "heroInReviewBody": "We check every new listing before it goes live — usually within 24 hours. Nothing else to do: you'll get an email the moment it's public."
   },
   "kids": {
     "title": "Kids & Activities",
@@ -883,7 +887,17 @@
     "save": "Save",
     "groupRenamedToast": "Group renamed",
     "groupActions": "Group actions",
-    "renameGroupTitle": "Rename group"
+    "renameGroupTitle": "Rename group",
+    "groupCreatedUnder": "Group created — it shows under “{listing}”",
+    "privateLane": "Private groups",
+    "privateLaneSub": "Only you can see these. Show one on a listing when it's ready for families.",
+    "newPrivateGroup": "New private group",
+    "newGroupUnder": "This group will show publicly under “{listing}”.",
+    "confirmTrialTitle": "Confirm {child} — pick a group",
+    "confirmTrialSub": "The child joins the group you pick. You can move them to another group later.",
+    "showOnListing": "Show on a listing…",
+    "showOnListingTitle": "Show “{group}” on a listing",
+    "makePrivate": "Unlist — make private"
   },
   "quickStart": {
     "bannerTitle": "Pre-filled from your class",

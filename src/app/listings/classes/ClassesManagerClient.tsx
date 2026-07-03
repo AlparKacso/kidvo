@@ -58,34 +58,20 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
   const t = useTranslations('classes')
   const router = useRouter()
 
-  const [groupBy, setGroupBy]   = useState<'age' | 'day' | 'none'>('age')
   const [detail,  setDetail]    = useState<DetailTarget | null>(null)
   const [offerFor, setOfferFor] = useState<PoolRow | null>(null)
   const [fullConfirm, setFullConfirm] = useState<{ entry: PoolRow; cls: ClassRow } | null>(null)
   const [addTo, setAddTo]       = useState<ClassRow | null>(null)
-  const [newGroup, setNewGroup] = useState<{ founding: PoolRow | null } | null>(null)
+  const [newGroup, setNewGroup] = useState<{ founding: PoolRow | null; listing: ListingDetail | null } | null>(null)
   const [toast, setToast]       = useState<string | null>(null)
   const [busy, setBusy]         = useState(false)
 
-  // Docked panel state.
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(classes[0]?.id ?? null)
-  const [pickerOpen, setPickerOpen]     = useState(false)
-  const [detachConfirm, setDetachConfirm] = useState<string | null>(null)
-  // Session-only memory of where a class WAS listed before it was unlisted in
-  // this session, so "Re-list this group" can restore it with one click. (There
-  // is no DB column for the prior listing — a refresh just shows it as manual.)
-  const [detachedFrom, setDetachedFrom] = useState<Record<string, string>>({})
+  const [unlistFor, setUnlistFor]   = useState<ClassRow | null>(null)
+  const [attachFor, setAttachFor]   = useState<ClassRow | null>(null)
+  const [confirmTrial, setConfirmTrial] = useState<{ trial: TrialReq; groups: ClassRow[] } | null>(null)
   const [deleteGroup, setDeleteGroup] = useState<ClassRow | null>(null)
   const [renameFor, setRenameFor] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
-
-  const selectedClass = classes.find(c => c.id === selectedClassId) ?? classes[0] ?? null
-
-  function selectClass(id: string) {
-    setSelectedClassId(id)
-    setPickerOpen(false)
-    setDetachConfirm(null)
-  }
 
   const occ = (classId: string) => members.filter(m => m.class_id === classId && (m.status === 'offered' || m.status === 'enrolled')).length
 
@@ -121,9 +107,12 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
     setAddTo(null); showToast(t('studentAdded')); router.refresh()
   }
 
-  async function doNewGroup(fields: Record<string, unknown>, founding: PoolRow | null) {
+  // A group created inside a listing's lane is linked to that listing on
+  // creation — no separate "publish" step.
+  async function doNewGroup(fields: Record<string, unknown>, founding: PoolRow | null, listing: ListingDetail | null) {
     const res = await api('/api/classes', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(listing ? { ...fields, listing_id: listing.id } : fields),
     })
     if (!res.ok) { showToast(t('errorGeneric')); return }
     const data = await res.json()
@@ -131,7 +120,8 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
     if (founding && data.class?.id) {
       await doOffer(founding, data.class as ClassRow, true)
     } else {
-      showToast(t('groupCreated')); router.refresh()
+      showToast(listing ? t('groupCreatedUnder', { listing: listing.title }) : t('groupCreated'))
+      router.refresh()
     }
   }
 
@@ -142,39 +132,35 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
     return res.ok
   }
 
-  // Unlist (detach) a live group from its public listing. Enrolled kids stay;
-  // remember where it was so "Re-list" can restore it this session.
+  // Unlist (make private) — enrolled kids stay; the group simply moves to the
+  // private section and stops taking public trial requests.
   async function doUnlist(cls: ClassRow) {
-    const prior = cls.listing_id
     if (!(await patchClassListing(cls.id, null))) { showToast(t('errorGeneric')); return }
-    if (prior) setDetachedFrom(m => ({ ...m, [cls.id]: prior }))
-    setDetachConfirm(null); showToast(t('classUnpublished')); router.refresh()
+    setUnlistFor(null); showToast(t('classUnpublished')); router.refresh()
   }
 
-  // Restore an unlisted group to exactly the listing it came from (safe → no confirm).
-  async function doRelist(cls: ClassRow) {
-    const prior = detachedFrom[cls.id]
-    if (!prior) return
-    if (!(await patchClassListing(cls.id, prior))) { showToast(t('errorGeneric')); return }
-    setDetachedFrom(m => { const n = { ...m }; delete n[cls.id]; return n })
-    showToast(t('relistedToast', { class: cls.name })); router.refresh()
-  }
-
-  // Front a (manual / detached) group under one of the provider's other listings.
+  // Show a private group under one of the provider's listings.
   async function doAttach(cls: ClassRow, listing: ListingDetail) {
     if (!(await patchClassListing(cls.id, listing.id))) { showToast(t('errorGeneric')); return }
-    setDetachedFrom(m => { const n = { ...m }; delete n[cls.id]; return n })
-    setPickerOpen(false); showToast(t('attachedToast', { class: cls.name, listing: listing.title })); router.refresh()
+    setAttachFor(null); showToast(t('attachedToast', { class: cls.name, listing: listing.title })); router.refresh()
   }
 
-  // Confirm a trial request from the docked panel → enrols the child into THIS class.
+  // Confirm a trial request → enrols the child into the picked group.
   async function doConfirmTrial(trialId: string, cls: ClassRow, childName: string) {
     const res = await api(`/api/trial-requests/${trialId}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'confirm', class_id: cls.id }),
     })
     if (!res.ok) { showToast(t('errorGeneric')); return }
+    setConfirmTrial(null)
     showToast(t('trialConfirmedToast', { child: childName, class: cls.name })); router.refresh()
+  }
+
+  // Confirming from a lane: one group → straight in; several → the provider
+  // picks the destination group explicitly (never decided by click location).
+  function handleConfirmTrial(trial: TrialReq, laneGroups: ClassRow[]) {
+    if (laneGroups.length === 1) { doConfirmTrial(trial.id, laneGroups[0], trial.child_name); return }
+    setConfirmTrial({ trial, groups: laneGroups })
   }
 
   async function doDeclineTrial(trialId: string) {
@@ -202,7 +188,6 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
     const res = await api(`/api/classes/${cls.id}`, { method: 'DELETE' })
     if (!res.ok) { showToast(t('errorGeneric')); return }
     setDeleteGroup(null)
-    if (selectedClassId === cls.id) setSelectedClassId(null)
     showToast(t('groupDeletedToast', { group: cls.name })); router.refresh()
   }
 
@@ -242,27 +227,21 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
     setDetail(null); showToast(t('removedToast')); router.refresh()
   }
 
-  /* ── Pool grouping ── */
-  function ageBand(age: number | null): string {
-    if (age == null) return t('anyAge')
-    if (age <= 5)  return '3–5'
-    if (age <= 8)  return '6–8'
-    if (age <= 11) return '9–11'
-    return '12+'
-  }
-  const poolGroups: { label: string; rows: PoolRow[] }[] = (() => {
-    if (groupBy === 'none') return [{ label: '', rows: pool }]
-    const map = new Map<string, PoolRow[]>()
-    for (const row of pool) {
-      const keys = groupBy === 'age'
-        ? [ageBand(row.child_age)]
-        : (row.preferred_days.length ? row.preferred_days.map(d => t(`days.${d}` as 'days.0')) : [t('anyDay')])
-      for (const k of keys) { if (!map.has(k)) map.set(k, []); map.get(k)!.push(row) }
-    }
-    return [...map.entries()].map(([label, rows]) => ({ label, rows }))
-  })()
-
   const fullCount = classes.filter(c => c.capacity != null && occ(c.id) >= c.capacity).length
+  const privateGroups = classes.filter(c => c.listing_id === null)
+  const activeListings = listings.filter(l => l.status === 'active')
+
+  const groupColumnProps = {
+    t, busy, members, occ,
+    onOpenMember: (m: MemberRow) => setDetail({ kind: 'member', row: m }),
+    onConfirmMember: doConfirmRequest,
+    onDeclineMember: doDeclineRequest,
+    onAddStudent: (c: ClassRow) => setAddTo(c),
+    onRename: (c: ClassRow) => { setRenameValue(c.name); setRenameFor(c.id) },
+    onUnlist: (c: ClassRow) => setUnlistFor(c),
+    onAttach: (c: ClassRow) => setAttachFor(c),
+    onDelete: (c: ClassRow) => setDeleteGroup(c),
+  }
 
   return (
     <div className="pb-10">
@@ -277,7 +256,7 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
           </div>
         </div>
         <button
-          onClick={() => setNewGroup({ founding: null })}
+          onClick={() => setNewGroup({ founding: null, listing: null })}
           className="self-end md:self-start flex-shrink-0 inline-flex items-center gap-1.5 font-display text-sm font-bold px-4 py-2.5 rounded-full text-white hover:opacity-90 transition-opacity"
           style={{ background: '#1c1c27' }}
         >
@@ -285,137 +264,100 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-        <div className="inline-flex items-center gap-1 p-0.5 rounded-full border border-border bg-white">
-          {(['age', 'day', 'none'] as const).map(g => (
-            <button key={g} onClick={() => setGroupBy(g)}
-              className={cn('font-display text-[12px] font-semibold px-3 py-1.5 rounded-full transition-colors',
-                groupBy === g ? 'bg-ink text-white' : 'text-ink-mid hover:text-ink')}>
-              {t(`groupBy_${g}` as 'groupBy_age')}
-            </button>
-          ))}
-        </div>
-        <span className="font-display text-[11.5px] text-ink-muted">{t('hint')}</span>
-      </div>
+      {/* ── One lane per public listing: its waiting families, its pending trial
+             requests, and the groups that run under it. Which group belongs to
+             which listing is carried by the structure — no badges needed. ── */}
+      {listings.map(listing => {
+        const laneGroups = classes.filter(c => c.listing_id === listing.id)
+        const lanePool   = pool.filter(p => p.listing_id === listing.id)
+        const laneTrials = trialRequests.filter(r => r.listing_id === listing.id)
+        const accent = listing.category?.accent_color ?? '#7c3aed'
+        return (
+          <section key={listing.id} className="mb-5 rounded-[18px] border-[1.5px] border-border bg-white/60 p-4"
+            style={{ boxShadow: '0 2px 12px rgba(124,58,237,.05)' }}>
+            {/* Lane header — the listing this lane fronts */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: accent }} />
+              <span className="font-display text-[15px] font-extrabold text-ink truncate">{listing.title}</span>
+              <StatusPill status={listing.status} t={t} />
+              <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+                <button onClick={() => router.push(`/browse/${listing.id}`)}
+                  className="font-display text-[12px] font-semibold text-ink-muted hover:text-primary transition-colors">{t('previewPublic')}</button>
+                <button onClick={() => router.push(`/listings/${listing.id}/edit`)}
+                  className="font-display text-[12px] font-semibold text-primary hover:text-primary-deep transition-colors">{t('editListing')} →</button>
+              </div>
+            </div>
 
-      {/* Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
-        {/* Waiting pool */}
-        <section className="flex-shrink-0 w-[260px] rounded-[18px] border-[1.5px] border-border bg-white/60 p-3">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <span className="font-display text-[13px] font-bold text-ink">{t('waitingPool')}</span>
-            <span className="font-display text-[11px] font-bold px-2 py-0.5 rounded-full bg-gold-lt text-gold-text">{pool.length}</span>
-          </div>
-          {pool.length === 0 ? (
-            <div className="text-center py-8 px-3 font-display text-[12px] text-ink-muted">{t('poolEmpty')}</div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {poolGroups.map(group => (
-                <div key={group.label || 'all'}>
-                  {group.label && (
-                    <div className="font-display text-[10px] font-bold tracking-[.08em] uppercase text-ink-muted px-1 mb-1.5">{group.label}</div>
-                  )}
+            {/* Pending trial requests for this listing — confirmed into a group
+                the provider picks explicitly (never implied by click location). */}
+            {laneTrials.length > 0 && (
+              <div className="mt-3.5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-display text-[10px] font-bold tracking-[.1em] uppercase text-ink-muted">{t('trialReqEyebrow')}</span>
+                  <span className="font-display text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gold-lt text-gold-text">{t('trialReqNew', { n: laneTrials.length })}</span>
+                </div>
+                <div className="flex gap-2.5 overflow-x-auto pb-1">
+                  {laneTrials.map(tr => (
+                    <div key={tr.id} className="flex-shrink-0 w-[250px]">
+                      <TrialCard tr={tr} t={t} busy={busy}
+                        onConfirm={() => handleConfirmTrial(tr, laneGroups)}
+                        onDecline={() => doDeclineTrial(tr.id)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Group columns (+ this listing's waiting families, when any) */}
+            <div className="flex gap-4 overflow-x-auto pt-3.5 pb-1 items-start">
+              {lanePool.length > 0 && (
+                <section className="flex-shrink-0 w-[260px] rounded-[18px] border-[1.5px] border-border bg-white/70 p-3">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <span className="font-display text-[13px] font-bold text-ink">{t('waitingPool')}</span>
+                    <span className="font-display text-[11px] font-bold px-2 py-0.5 rounded-full bg-gold-lt text-gold-text">{lanePool.length}</span>
+                  </div>
                   <div className="flex flex-col gap-2">
-                    {group.rows.map(row => (
+                    {lanePool.map(row => (
                       <PoolCard key={row.id} row={row} t={t}
                         onOpen={() => setDetail({ kind: 'pool', row })}
                         onOffer={() => setOfferFor(row)} />
                     ))}
                   </div>
-                </div>
+                </section>
+              )}
+
+              {laneGroups.map(cls => (
+                <GroupColumn key={cls.id} cls={cls} {...groupColumnProps} />
               ))}
+
+              {/* New group here → linked to this listing automatically */}
+              <button onClick={() => setNewGroup({ founding: null, listing })}
+                className="flex-shrink-0 w-[200px] self-stretch min-h-[120px] rounded-[18px] border-2 border-dashed border-border-mid text-ink-muted hover:border-primary hover:text-primary transition-colors flex flex-col items-center justify-center gap-2 py-8">
+                <span className="text-2xl leading-none">+</span>
+                <span className="font-display text-[12.5px] font-semibold">{t('newGroup')}</span>
+              </button>
             </div>
-          )}
-        </section>
+          </section>
+        )
+      })}
 
-        {/* Class columns */}
-        {classes.map(cls => {
-          const roster = members.filter(m => m.class_id === cls.id)
-          const occupancy = occ(cls.id)
-          const cap = cls.capacity
-          const state = cap == null ? 'none' : occupancy > cap ? 'over' : occupancy === cap ? 'full' : 'open'
-          const barColor = state === 'over' ? '#f5c542' : state === 'full' ? '#C0392B' : '#1A7A4A'
-          const accent = cls.category?.accent_color ?? '#7c3aed'
-          const isSelected = selectedClass?.id === cls.id
-          return (
-            <section key={cls.id}
-              className={cn('flex-shrink-0 w-[260px] rounded-[18px] bg-white p-3 flex flex-col transition-shadow',
-                isSelected ? 'border-[1.5px] border-primary' : 'border border-border')}
-              style={{ boxShadow: isSelected ? '0 0 0 3px rgba(124,58,237,.10)' : '0 2px 12px rgba(124,58,237,.06)' }}>
-              <div className="px-1 mb-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <button type="button" onClick={() => selectClass(cls.id)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: accent }} />
-                    <span className="font-display text-[13px] font-bold text-ink truncate">{cls.name}</span>
-                  </button>
-                  <span className={cn('font-display text-[9px] font-bold uppercase tracking-[.06em] px-1.5 py-0.5 rounded flex-shrink-0',
-                    cls.listing_id ? 'bg-primary-lt text-primary' : 'bg-zinc-lt text-zinc')}>
-                    {cls.listing_id ? t('tagListed') : t('tagManual')}
-                  </span>
-                  <GroupMenu t={t} listed={!!cls.listing_id}
-                    onAddStudent={() => setAddTo(cls)}
-                    onRename={() => { setRenameValue(cls.name); setRenameFor(cls.id) }}
-                    onTurnIntoListing={() => router.push(`/listings/classes/${cls.id}/quick-start`)}
-                    onDelete={() => setDeleteGroup(cls)} />
-                </div>
-                <button type="button" onClick={() => selectClass(cls.id)} className="block w-full text-left">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-display text-[11px] text-ink-muted">
-                      {cap != null ? `${occupancy}/${cap}` : occupancy} · {t('enrolledLabel')}
-                    </span>
-                  </div>
-                  {cap != null && (
-                    <div className="h-[6px] rounded-full overflow-hidden" style={{ background: '#ece8f5' }}>
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, (occupancy / Math.max(cap, 1)) * 100)}%`, background: barColor }} />
-                    </div>
-                  )}
-                </button>
-              </div>
-
-              <div className="flex-1 flex flex-col gap-2 min-h-[40px]">
-                {roster.length === 0 ? (
-                  <div className="text-center py-6 px-2 font-display text-[11.5px] text-ink-muted">{t('rosterEmpty')}</div>
-                ) : roster.map(m => (
-                  <KidCard key={m.id} member={m} t={t}
-                    onOpen={() => setDetail({ kind: 'member', row: m })}
-                    onConfirm={() => doConfirmRequest(m.id)}
-                    onDecline={() => doDeclineRequest(m.id)} />
-                ))}
-              </div>
-
-            </section>
-          )
-        })}
-
-        {/* New group column */}
-        <button onClick={() => setNewGroup({ founding: null })}
-          className="flex-shrink-0 w-[200px] rounded-[18px] border-2 border-dashed border-border-mid text-ink-muted hover:border-primary hover:text-primary transition-colors flex flex-col items-center justify-center gap-2 py-10">
-          <span className="text-2xl leading-none">+</span>
-          <span className="font-display text-[12.5px] font-semibold">{t('newGroup')}</span>
-        </button>
-      </div>
-
-      {/* ── Docked listing panel — the public listing for the selected group ── */}
-      {selectedClass && (
-        <DockedListingPanel
-          cls={selectedClass} t={t} busy={busy}
-          listing={selectedClass.listing_id ? listings.find(l => l.id === selectedClass.listing_id) ?? null : null}
-          detachedListing={detachedFrom[selectedClass.id] ? listings.find(l => l.id === detachedFrom[selectedClass.id]) ?? null : null}
-          otherListings={listings.filter(l => l.id !== selectedClass.listing_id && l.status === 'active')}
-          trials={trialRequests.filter(r => r.listing_id === selectedClass.listing_id)}
-          pickerOpen={pickerOpen} setPickerOpen={setPickerOpen}
-          detachConfirm={detachConfirm === selectedClass.id} setDetachConfirm={(on) => setDetachConfirm(on ? selectedClass.id : null)}
-          onConfirmTrial={(trialId, childName) => doConfirmTrial(trialId, selectedClass, childName)}
-          onDeclineTrial={doDeclineTrial}
-          onUnlist={() => doUnlist(selectedClass)}
-          onRelist={() => doRelist(selectedClass)}
-          onAttach={(listing) => doAttach(selectedClass, listing)}
-          onEdit={(listingId) => router.push(`/listings/${listingId}/edit`)}
-          onPreview={(listingId) => router.push(`/browse/${listingId}`)}
-          onPublishNew={() => router.push(`/listings/classes/${selectedClass.id}/quick-start`)}
-        />
-      )}
+      {/* ── Private groups — rosters only the provider sees ── */}
+      <section className="mb-5 rounded-[18px] border-[1.5px] border-dashed border-border-mid bg-white/40 p-4">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="font-display text-[15px] font-extrabold text-ink">{t('privateLane')}</span>
+          <span className="font-display text-[12px] text-ink-muted">{t('privateLaneSub')}</span>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pt-3.5 pb-1 items-start">
+          {privateGroups.map(cls => (
+            <GroupColumn key={cls.id} cls={cls} {...groupColumnProps} />
+          ))}
+          <button onClick={() => setNewGroup({ founding: null, listing: null })}
+            className="flex-shrink-0 w-[200px] self-stretch min-h-[120px] rounded-[18px] border-2 border-dashed border-border-mid text-ink-muted hover:border-primary hover:text-primary transition-colors flex flex-col items-center justify-center gap-2 py-8">
+            <span className="text-2xl leading-none">+</span>
+            <span className="font-display text-[12.5px] font-semibold">{t('newPrivateGroup')}</span>
+          </button>
+        </div>
+      </section>
 
       {/* ── Detail modal ── */}
       {detail && (
@@ -436,7 +378,7 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
         <OfferPicker entry={offerFor} classes={classes} occ={occ} t={t} busy={busy}
           onClose={() => setOfferFor(null)}
           onPick={(cls) => doOffer(offerFor, cls)}
-          onNewGroup={() => { const f = offerFor; setOfferFor(null); setNewGroup({ founding: f }) }} />
+          onNewGroup={() => { const f = offerFor; setOfferFor(null); setNewGroup({ founding: f, listing: null }) }} />
       )}
 
       {/* ── Full-class confirm ── */}
@@ -444,7 +386,14 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
         <FullConfirm entry={fullConfirm.entry} cls={fullConfirm.cls} t={t} busy={busy}
           onClose={() => setFullConfirm(null)}
           onOverCapacity={() => doOffer(fullConfirm.entry, fullConfirm.cls, true)}
-          onNewGroup={() => { const f = fullConfirm.entry; setFullConfirm(null); setNewGroup({ founding: f }) }} />
+          onNewGroup={() => { const f = fullConfirm.entry; setFullConfirm(null); setNewGroup({ founding: f, listing: null }) }} />
+      )}
+
+      {/* ── Trial confirm — pick the destination group ── */}
+      {confirmTrial && (
+        <TrialConfirmPicker trial={confirmTrial.trial} groups={confirmTrial.groups} occ={occ} t={t} busy={busy}
+          onClose={() => setConfirmTrial(null)}
+          onPick={(cls) => doConfirmTrial(confirmTrial.trial.id, cls, confirmTrial.trial.child_name)} />
       )}
 
       {/* ── Add student ── */}
@@ -463,6 +412,21 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
         ) : null
       })()}
 
+      {/* ── Unlist (make private) confirm ── */}
+      {unlistFor && (
+        <UnlistGroupConfirm cls={unlistFor} t={t} busy={busy}
+          onClose={() => setUnlistFor(null)}
+          onConfirm={() => doUnlist(unlistFor)} />
+      )}
+
+      {/* ── Show a private group on a listing ── */}
+      {attachFor && (
+        <AttachModal cls={attachFor} listings={activeListings} t={t} busy={busy}
+          onClose={() => setAttachFor(null)}
+          onPick={(l) => doAttach(attachFor, l)}
+          onPublishNew={() => router.push(`/listings/classes/${attachFor.id}/quick-start`)} />
+      )}
+
       {/* ── Delete group confirm ── */}
       {deleteGroup && (
         <DeleteGroupConfirm cls={deleteGroup} enrolled={occ(deleteGroup.id)} listed={!!deleteGroup.listing_id} t={t} busy={busy}
@@ -472,9 +436,9 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
 
       {/* ── New group ── */}
       {newGroup && (
-        <NewGroupModal founding={newGroup.founding} t={t} busy={busy}
+        <NewGroupModal founding={newGroup.founding} listing={newGroup.listing} t={t} busy={busy}
           onClose={() => setNewGroup(null)}
-          onSubmit={(fields) => doNewGroup(fields, newGroup.founding)} />
+          onSubmit={(fields) => doNewGroup(fields, newGroup.founding, newGroup.listing)} />
       )}
 
       {/* Toast */}
@@ -490,6 +454,61 @@ export function ClassesManagerClient({ classes, members, pool, listings, trialRe
 /* ───────────────────────── sub-components ───────────────────────── */
 
 type T = ReturnType<typeof useTranslations>
+
+// One group column — a roster. Lives inside a listing lane (public) or the
+// private section; the lane it sits in says which listing it belongs to.
+function GroupColumn({ cls, t, busy, members, occ, onOpenMember, onConfirmMember, onDeclineMember, onAddStudent, onRename, onUnlist, onAttach, onDelete }: {
+  cls: ClassRow; t: T; busy: boolean; members: MemberRow[]; occ: (id: string) => number
+  onOpenMember: (m: MemberRow) => void; onConfirmMember: (id: string) => void; onDeclineMember: (id: string) => void
+  onAddStudent: (c: ClassRow) => void; onRename: (c: ClassRow) => void
+  onUnlist: (c: ClassRow) => void; onAttach: (c: ClassRow) => void; onDelete: (c: ClassRow) => void
+}) {
+  void busy
+  const roster = members.filter(m => m.class_id === cls.id)
+  const occupancy = occ(cls.id)
+  const cap = cls.capacity
+  const state = cap == null ? 'none' : occupancy > cap ? 'over' : occupancy === cap ? 'full' : 'open'
+  const barColor = state === 'over' ? '#f5c542' : state === 'full' ? '#C0392B' : '#1A7A4A'
+  const accent = cls.category?.accent_color ?? '#7c3aed'
+  return (
+    <section className="flex-shrink-0 w-[260px] rounded-[18px] bg-white p-3 flex flex-col border border-border"
+      style={{ boxShadow: '0 2px 12px rgba(124,58,237,.06)' }}>
+      <div className="px-1 mb-3">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: accent }} />
+          <span className="font-display text-[13px] font-bold text-ink truncate flex-1 min-w-0">{cls.name}</span>
+          <GroupMenu t={t} listed={!!cls.listing_id}
+            onAddStudent={() => onAddStudent(cls)}
+            onRename={() => onRename(cls)}
+            onUnlist={() => onUnlist(cls)}
+            onAttach={() => onAttach(cls)}
+            onDelete={() => onDelete(cls)} />
+        </div>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="font-display text-[11px] text-ink-muted">
+            {cap != null ? `${occupancy}/${cap}` : occupancy} · {t('enrolledLabel')}
+          </span>
+        </div>
+        {cap != null && (
+          <div className="h-[6px] rounded-full overflow-hidden" style={{ background: '#ece8f5' }}>
+            <div className="h-full rounded-full" style={{ width: `${Math.min(100, (occupancy / Math.max(cap, 1)) * 100)}%`, background: barColor }} />
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 flex flex-col gap-2 min-h-[40px]">
+        {roster.length === 0 ? (
+          <div className="text-center py-6 px-2 font-display text-[11.5px] text-ink-muted">{t('rosterEmpty')}</div>
+        ) : roster.map(m => (
+          <KidCard key={m.id} member={m} t={t}
+            onOpen={() => onOpenMember(m)}
+            onConfirm={() => onConfirmMember(m.id)}
+            onDecline={() => onDeclineMember(m.id)} />
+        ))}
+      </div>
+    </section>
+  )
+}
 
 function PoolCard({ row, t, onOpen, onOffer }: { row: PoolRow; t: T; onOpen: () => void; onOffer: () => void }) {
   return (
@@ -564,212 +583,6 @@ function KidCard({ member, t, onOpen, onConfirm, onDecline }: {
   )
 }
 
-/* ───────────────── Docked listing panel (Screen 1) ───────────────── */
-
-const trimT = (s: string | null | undefined) => (s ? s.slice(0, 5) : '')
-
-function DockedListingPanel({
-  cls, t, busy, listing, detachedListing, otherListings, trials,
-  pickerOpen, setPickerOpen, detachConfirm, setDetachConfirm,
-  onConfirmTrial, onDeclineTrial, onUnlist, onRelist, onAttach, onEdit, onPreview, onPublishNew,
-}: {
-  cls: ClassRow; t: T; busy: boolean
-  listing: ListingDetail | null
-  detachedListing: ListingDetail | null
-  otherListings: ListingDetail[]
-  trials: TrialReq[]
-  pickerOpen: boolean; setPickerOpen: (b: boolean) => void
-  detachConfirm: boolean; setDetachConfirm: (b: boolean) => void
-  onConfirmTrial: (trialId: string, childName: string) => void
-  onDeclineTrial: (trialId: string) => void
-  onUnlist: () => void; onRelist: () => void; onAttach: (l: ListingDetail) => void
-  onEdit: (id: string) => void; onPreview: (id: string) => void; onPublishNew: () => void
-}) {
-  const slug   = listing?.category?.slug ?? cls.category?.slug
-  const emoji  = categoryEmoji(slug)
-  const accent = listing?.category?.accent_color ?? cls.category?.accent_color ?? '#7c3aed'
-  // The "default" group is the one that represents the listing itself (its name
-  // matches the listing title — e.g. the group auto-created with the listing).
-  // It gets a short banner instead of the "one of many cohorts" explainer.
-  const isDefaultGroup = !!listing && cls.name.trim() === listing.title.trim()
-
-  return (
-    // No overflow-hidden — it would clip the "choose a listing" dropdown popover.
-    <aside className="mt-[18px] rounded-[18px] border-[1.5px] border-border bg-white"
-      style={{ boxShadow: '0 2px 12px rgba(124,58,237,.06)' }}>
-      {/* Header bar */}
-      <div className="flex items-center gap-1.5 px-[18px] py-3 border-b rounded-t-[16px]" style={{ background: '#faf7ff', borderColor: '#f0eef6' }}>
-        <span className="text-primary text-[11px] leading-none">▾</span>
-        <span className="font-display text-[13px] font-extrabold text-ink">{t('panelTitle')}</span>
-        <span className="font-display text-[12.5px] text-ink-muted truncate">— {cls.name}</span>
-      </div>
-
-      {listing ? (
-        /* ── LISTED state ── */
-        <div className="p-[18px]">
-          {/* Relationship banner — short for the default group, full explainer
-              for additional cohorts so "one of the groups" reads correctly. */}
-          <div className="flex items-start gap-2.5 rounded-[10px] px-3.5 py-3 mb-[18px]" style={{ background: '#f0e8ff' }}>
-            <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: accent }} />
-            <div className="min-w-0">
-              {isDefaultGroup ? (
-                <p className="font-display text-[12.5px] text-ink leading-snug">
-                  <b className="font-bold">{cls.name}</b> {t('relBannerDefault')}
-                </p>
-              ) : (
-                <>
-                  <p className="font-display text-[12.5px] text-ink leading-snug">
-                    <b className="font-bold">{cls.name}</b> {t('relBannerL1')}
-                  </p>
-                  <p className="font-display text-[12px] text-ink-mid leading-snug mt-1">
-                    {trials.length > 0 ? t('relBannerL2Trials') : t('relBannerL2None')}
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* 3-column grid */}
-          <div className="grid gap-6 lg:grid-cols-[208px_1fr_1.25fr] grid-cols-1">
-            {/* Cover + status pill */}
-            <div>
-              <div className="h-[128px] rounded-[12px] overflow-hidden flex items-center justify-center relative"
-                style={listing.cover_image_url ? undefined : { background: `linear-gradient(135deg, ${accent}2e, ${accent}73)` }}>
-                {listing.cover_image_url
-                  ? <img src={listing.cover_image_url} alt="" className="w-full h-full object-cover" />
-                  : <span style={{ fontSize: 46 }}>{emoji}</span>}
-              </div>
-              <div className="mt-2.5"><StatusPill status={listing.status} t={t} /></div>
-            </div>
-
-            {/* Details */}
-            <div>
-              <div className="font-display text-[10px] font-bold tracking-[.1em] uppercase text-ink-muted mb-2.5">{t('detailsEyebrow')}</div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                <Detail label={t('panelPrice')}    value={`${listing.price_monthly ?? 0} RON${listing.pricing_type === 'session' ? t('perSession') : t('perMonth')}`} strong />
-                <Detail label={t('panelSchedule')} value={scheduleStr(listing, t)} />
-                <Detail label={t('panelAges')}     value={listing.age_min != null && listing.age_max != null ? `${listing.age_min}–${listing.age_max} ${t('years')}` : '—'} />
-                <Detail label={t('panelArea')}     value={listing.area?.name ?? '—'} />
-                <Detail label={t('panelSpots')}    value={listing.spots_total != null ? t('spotsOpen', { open: listing.spots_available ?? 0, total: listing.spots_total }) : '—'} />
-              </div>
-            </div>
-
-            {/* Trial requests */}
-            <div>
-              <div className="flex items-center gap-2 mb-2.5">
-                <span className="font-display text-[10px] font-bold tracking-[.1em] uppercase text-ink-muted">{t('trialReqEyebrow')}</span>
-                {trials.length > 0 && (
-                  <span className="font-display text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gold-lt text-gold-text">{t('trialReqNew', { n: trials.length })}</span>
-                )}
-              </div>
-              {trials.length === 0 ? (
-                <div className="font-display text-[12px] text-ink-muted py-2">{t('noTrialRequests')}</div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {trials.map(tr => <TrialCard key={tr.id} tr={tr} t={t} busy={busy}
-                    onConfirm={() => onConfirmTrial(tr.id, tr.child_name)} onDecline={() => onDeclineTrial(tr.id)} />)}
-                  <p className="font-display text-[10.5px] text-ink-muted mt-0.5">{t('trialFootnote')}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Unlist speed-bump */}
-          {detachConfirm && (
-            <div className="mt-[18px] rounded-[12px] px-4 py-3.5" style={{ border: '1px solid #f6d9d4', background: '#fdf4f3' }}>
-              <div className="font-display text-[13px] font-bold text-ink mb-0.5">{t('unlistConfirmTitle', { class: cls.name })}</div>
-              <p className="font-display text-[12px] text-ink-mid mb-3 leading-snug">{t('unlistConfirmBody')}</p>
-              <div className="flex gap-2">
-                <button onClick={onUnlist} disabled={busy} className="px-3.5 py-2 rounded-md font-display text-[12.5px] font-semibold bg-danger text-white hover:opacity-90 disabled:opacity-50 transition-opacity">{t('unlistConfirmYes')}</button>
-                <button onClick={() => setDetachConfirm(false)} disabled={busy} className="px-3.5 py-2 rounded-md font-display text-[12.5px] font-semibold border border-border text-ink-mid hover:bg-surface transition-colors">{t('unlistConfirmNo')}</button>
-              </div>
-            </div>
-          )}
-
-          {/* Actions row */}
-          <div className="flex items-center gap-2.5 mt-4 pt-4 border-t flex-wrap" style={{ borderColor: '#f0eef6' }}>
-            <button onClick={() => onEdit(listing.id)} className="px-4 py-2 rounded-md font-display text-[12.5px] font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">{t('editListing')}</button>
-            <button onClick={() => onPreview(listing.id)} className="px-4 py-2 rounded-md font-display text-[12.5px] font-semibold bg-white border-[1.5px] border-border-mid text-ink-mid hover:border-primary hover:text-primary transition-colors">{t('previewPublic')}</button>
-            {!detachConfirm && (
-              <button onClick={() => setDetachConfirm(true)} className="ml-auto font-display text-[12px] font-semibold text-ink-muted hover:text-ink transition-colors">{t('unlistGroup')}</button>
-            )}
-          </div>
-        </div>
-      ) : (
-        /* ── MANUAL state ── */
-        <div className="p-[18px] grid gap-6 md:grid-cols-[208px_1fr] grid-cols-1">
-          {/* Hatched placeholder */}
-          <div className="h-[128px] rounded-[12px] flex items-center justify-center"
-            style={{ background: 'repeating-linear-gradient(45deg,#f3f1f9,#f3f1f9 10px,#ece8f5 10px,#ece8f5 20px)' }}>
-            <span style={{ fontSize: 46 }}>{emoji}</span>
-          </div>
-
-          <div className="min-w-0">
-            {/* Badge */}
-            <span className={cn('inline-flex font-display text-[10.5px] font-semibold px-2 py-0.5 rounded-full mb-2',
-              detachedListing ? 'bg-info-lt text-info' : 'bg-zinc-lt text-zinc')}>
-              {detachedListing ? t('manualBadgeDetached') : t('manualBadgeNative')}
-            </span>
-
-            {/* Detached → re-list banner */}
-            {detachedListing && (
-              <div className="rounded-[12px] px-3.5 py-3 mb-3" style={{ border: '1px solid #d6e4f5', background: '#eef5fb' }}>
-                <p className="font-display text-[12px] text-ink-mid leading-snug mb-2.5">
-                  {t('relistBannerL1')} {t('relistBannerL2')}
-                </p>
-                <button onClick={onRelist} disabled={busy} className="px-3.5 py-2 rounded-md font-display text-[12.5px] font-semibold bg-info text-white hover:opacity-90 disabled:opacity-50 transition-opacity">{t('relistGroup')}</button>
-              </div>
-            )}
-
-            <div className="font-display text-[14px] font-semibold text-ink mb-0.5">
-              {detachedListing ? t('manualHeadlineDetached') : t('manualHeadlineNative')}
-            </div>
-            <p className="font-display text-[12px] text-ink-muted mb-3.5 leading-snug">{t('manualSub')}</p>
-
-            {/* Controls row */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="relative">
-                <button onClick={() => setPickerOpen(!pickerOpen)}
-                  className="inline-flex items-center justify-between gap-2 min-w-[240px] px-3.5 py-2.5 rounded-[9px] border border-border bg-white font-display text-[12.5px] font-semibold text-ink hover:border-primary transition-colors">
-                  {t('chooseExisting')}<span className="text-ink-muted text-[10px]">▾</span>
-                </button>
-                {pickerOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 z-30 min-w-[260px] rounded-[12px] border border-border bg-white shadow-xl p-1.5">
-                    {otherListings.length === 0 ? (
-                      <div className="font-display text-[12px] text-ink-muted px-2.5 py-2">{t('noOtherListings')}</div>
-                    ) : otherListings.map(l => (
-                      <button key={l.id} onClick={() => onAttach(l)} disabled={busy}
-                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-primary-lt disabled:opacity-50 transition-colors text-left">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: l.category?.accent_color ?? '#7c3aed' }} />
-                        <span className="font-display text-[12.5px] font-semibold text-ink truncate flex-1">{l.title}</span>
-                        {l.spots_total != null && (
-                          <span className="font-display text-[11px] text-success flex-shrink-0">{t('spotsOpen', { open: l.spots_available ?? 0, total: l.spots_total })}</span>
-                        )}
-                      </button>
-                    ))}
-                    <p className="font-display text-[10.5px] text-ink-muted px-2.5 pt-1.5 pb-1">{t('chooseExistingFootnote')}</p>
-                  </div>
-                )}
-              </div>
-              <span className="font-display text-[12px] text-ink-muted">{t('orWord')}</span>
-              <button onClick={onPublishNew} className="px-4 py-2.5 rounded-md font-display text-[12.5px] font-semibold bg-primary text-white hover:bg-primary-deep transition-colors">{t('publishNew')}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </aside>
-  )
-}
-
-function scheduleStr(listing: ListingDetail, t: T): string {
-  const scheds = [...(listing.schedules ?? [])].sort((a, b) => a.day_of_week - b.day_of_week)
-  if (scheds.length === 0) return '—'
-  const days = [...new Set(scheds.map(s => s.day_of_week))]
-  const dayStr = days.map(d => t(`days.${d}` as 'days.0')).join(' ')
-  const t0 = scheds[0]
-  return `${dayStr} ${trimT(t0.time_start)}–${trimT(t0.time_end)}`.trim()
-}
-
 function StatusPill({ status, t }: { status: string; t: T }) {
   const map: Record<string, { cls: string; label: string }> = {
     active:  { cls: 'bg-success-lt text-success', label: `● ${t('statusLive')}` },
@@ -779,15 +592,6 @@ function StatusPill({ status, t }: { status: string; t: T }) {
   }
   const m = map[status] ?? map.draft
   return <span className={cn('inline-flex px-2.5 py-1 rounded-full font-display text-[11px] font-semibold', m.cls)}>{m.label}</span>
-}
-
-function Detail({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="min-w-0">
-      <div className="font-display text-[10px] font-semibold uppercase text-ink-muted tracking-[.04em] mb-0.5">{label}</div>
-      <div className={cn('font-display text-ink', strong ? 'text-[14px] font-extrabold' : 'text-[12.5px] font-medium')}>{value}</div>
-    </div>
-  )
 }
 
 function TrialCard({ tr, t, busy, onConfirm, onDecline }: {
@@ -919,7 +723,7 @@ function OfferPicker({ entry, classes, occ, t, busy, onClose, onPick, onNewGroup
   entry: PoolRow; classes: ClassRow[]; occ: (id: string) => number; t: T; busy: boolean
   onClose: () => void; onPick: (cls: ClassRow) => void; onNewGroup: () => void
 }) {
-  // Only groups under the SAME activity this family is waiting on — plus manual
+  // Only groups under the SAME activity this family is waiting on — plus private
   // groups (no listing) — can take the offer. A group listed under a different
   // activity must not appear (mirrors the /api/offers listing_mismatch guard).
   const offerable = classes.filter(c => c.listing_id === null || c.listing_id === entry.listing_id)
@@ -950,6 +754,87 @@ function OfferPicker({ entry, classes, occ, t, busy, onClose, onPick, onNewGroup
   )
 }
 
+// Trial confirm with several groups under the listing: the provider picks the
+// destination explicitly. (With one group, confirm goes straight in.)
+function TrialConfirmPicker({ trial, groups, occ, t, busy, onClose, onPick }: {
+  trial: TrialReq; groups: ClassRow[]; occ: (id: string) => number; t: T; busy: boolean
+  onClose: () => void; onPick: (cls: ClassRow) => void
+}) {
+  return (
+    <ModalShell onClose={onClose}>
+      <h2 className="font-display text-[17px] font-bold text-ink mb-0.5">{t('confirmTrialTitle', { child: trial.child_name })}</h2>
+      <p className="font-display text-[12.5px] text-ink-muted mb-4">{t('confirmTrialSub')}</p>
+      <div className="flex flex-col gap-1.5">
+        {groups.map(c => {
+          const o = occ(c.id); const full = c.capacity != null && o >= c.capacity
+          return (
+            <button key={c.id} onClick={() => onPick(c)} disabled={busy}
+              className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[12px] border border-border hover:border-primary hover:bg-primary-lt disabled:opacity-50 transition-colors">
+              <span className="font-display text-[13px] font-semibold text-ink truncate">{c.name}</span>
+              <span className={cn('font-display text-[11px] font-bold flex-shrink-0', full ? 'text-danger' : 'text-success')}>
+                {c.capacity != null ? `${o}/${c.capacity}` : o}{full ? ` · ${t('full')}` : ''}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </ModalShell>
+  )
+}
+
+// Show a private group under one of the provider's public listings — or turn
+// it into a brand-new listing via quick-start.
+function AttachModal({ cls, listings, t, busy, onClose, onPick, onPublishNew }: {
+  cls: ClassRow; listings: ListingDetail[]; t: T; busy: boolean
+  onClose: () => void; onPick: (l: ListingDetail) => void; onPublishNew: () => void
+}) {
+  return (
+    <ModalShell onClose={onClose}>
+      <h2 className="font-display text-[17px] font-bold text-ink mb-0.5">{t('showOnListingTitle', { group: cls.name })}</h2>
+      <p className="font-display text-[12.5px] text-ink-muted mb-4">{t('manualSub')}</p>
+      <div className="flex flex-col gap-1.5">
+        {listings.length === 0 ? (
+          <div className="font-display text-[12.5px] text-ink-muted py-3 text-center">{t('noOtherListings')}</div>
+        ) : listings.map(l => (
+          <button key={l.id} onClick={() => onPick(l)} disabled={busy}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-[12px] border border-border hover:border-primary hover:bg-primary-lt disabled:opacity-50 transition-colors text-left">
+            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: l.category?.accent_color ?? '#7c3aed' }} />
+            <span className="font-display text-[13px] font-semibold text-ink truncate flex-1">{l.title}</span>
+            {l.spots_total != null && (
+              <span className="font-display text-[11px] text-success flex-shrink-0">{t('spotsOpen', { open: l.spots_available ?? 0, total: l.spots_total })}</span>
+            )}
+          </button>
+        ))}
+      </div>
+      <p className="font-display text-[10.5px] text-ink-muted mt-2">{t('chooseExistingFootnote')}</p>
+      <div className="flex items-center gap-3 my-3">
+        <div className="flex-1 border-t border-border" />
+        <span className="font-display text-[11px] text-ink-muted">{t('orWord')}</span>
+        <div className="flex-1 border-t border-border" />
+      </div>
+      <button onClick={onPublishNew} disabled={busy}
+        className="w-full py-2.5 rounded font-display text-sm font-semibold bg-primary text-white hover:bg-primary-deep disabled:opacity-50 transition-colors">
+        {t('publishNew')}
+      </button>
+    </ModalShell>
+  )
+}
+
+function UnlistGroupConfirm({ cls, t, busy, onClose, onConfirm }: {
+  cls: ClassRow; t: T; busy: boolean; onClose: () => void; onConfirm: () => void
+}) {
+  return (
+    <ModalShell onClose={onClose}>
+      <h2 className="font-display text-[17px] font-bold text-ink mb-1">{t('unlistConfirmTitle', { class: cls.name })}</h2>
+      <p className="font-display text-[13px] text-ink-mid mb-5 leading-snug">{t('unlistConfirmBody')}</p>
+      <div className="flex gap-2">
+        <button onClick={onClose} disabled={busy} className="flex-1 py-2.5 rounded font-display text-sm font-semibold border border-border text-ink-mid hover:bg-surface disabled:opacity-50 transition-colors">{t('unlistConfirmNo')}</button>
+        <button onClick={onConfirm} disabled={busy} className="flex-1 py-2.5 rounded font-display text-sm font-semibold bg-danger text-white hover:opacity-90 disabled:opacity-50 transition-opacity">{t('unlistConfirmYes')}</button>
+      </div>
+    </ModalShell>
+  )
+}
+
 function FullConfirm({ entry, cls, t, busy, onClose, onOverCapacity, onNewGroup }: {
   entry: PoolRow; cls: ClassRow; t: T; busy: boolean
   onClose: () => void; onOverCapacity: () => void; onNewGroup: () => void
@@ -969,9 +854,9 @@ function FullConfirm({ entry, cls, t, busy, onClose, onOverCapacity, onNewGroup 
 }
 
 // Three-dot actions menu on a group column header (mirrors the activity card).
-function GroupMenu({ t, listed, onAddStudent, onRename, onTurnIntoListing, onDelete }: {
+function GroupMenu({ t, listed, onAddStudent, onRename, onUnlist, onAttach, onDelete }: {
   t: T; listed: boolean
-  onAddStudent: () => void; onRename: () => void; onTurnIntoListing: () => void; onDelete: () => void
+  onAddStudent: () => void; onRename: () => void; onUnlist: () => void; onAttach: () => void; onDelete: () => void
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -991,8 +876,10 @@ function GroupMenu({ t, listed, onAddStudent, onRename, onTurnIntoListing, onDel
         <div className="absolute right-0 top-8 z-30 bg-white border border-border rounded-lg shadow-lg py-1 min-w-[180px]">
           <button onClick={() => { setOpen(false); onAddStudent() }} className={item}>+ {t('addStudent')}</button>
           <button onClick={() => { setOpen(false); onRename() }} className={item}>{t('renameGroup')}</button>
-          {!listed && (
-            <button onClick={() => { setOpen(false); onTurnIntoListing() }} className={cn(item, 'text-primary')}>{t('turnIntoListing')}</button>
+          {listed ? (
+            <button onClick={() => { setOpen(false); onUnlist() }} className={item}>{t('makePrivate')}</button>
+          ) : (
+            <button onClick={() => { setOpen(false); onAttach() }} className={cn(item, 'text-primary')}>{t('showOnListing')}</button>
           )}
           <div className="border-t border-border mx-1 my-1" />
           <button onClick={() => { setOpen(false); onDelete() }} className={cn(item, 'text-danger')}>{t('deleteGroup')}</button>
@@ -1068,10 +955,11 @@ function AddStudentModal({ cls, t, busy, onClose, onSubmit }: {
   )
 }
 
-function NewGroupModal({ founding, t, busy, onClose, onSubmit }: {
-  founding: PoolRow | null; t: T; busy: boolean; onClose: () => void; onSubmit: (fields: Record<string, unknown>) => void
+function NewGroupModal({ founding, listing, t, busy, onClose, onSubmit }: {
+  founding: PoolRow | null; listing: ListingDetail | null; t: T; busy: boolean
+  onClose: () => void; onSubmit: (fields: Record<string, unknown>) => void
 }) {
-  const [name, setName] = useState(founding ? '' : '')
+  const [name, setName] = useState('')
   const [ageMin, setAgeMin] = useState(''); const [ageMax, setAgeMax] = useState('')
   const [days, setDays] = useState<number[]>([]); const [start, setStart] = useState(''); const [end, setEnd] = useState('')
   const [cap, setCap] = useState('')
@@ -1080,6 +968,7 @@ function NewGroupModal({ founding, t, busy, onClose, onSubmit }: {
     <ModalShell onClose={onClose}>
       <h2 className="font-display text-[17px] font-bold text-ink mb-0.5">{t('newGroupTitle')}</h2>
       {founding && <p className="font-display text-[12.5px] text-ink-muted mb-4">{t('foundingMember', { child: founding.child_name })}</p>}
+      {listing && !founding && <p className="font-display text-[12.5px] text-ink-muted mb-4">{t('newGroupUnder', { listing: listing.title })}</p>}
       <div className="flex flex-col gap-3 mt-1">
         <Field label={t('groupName')}><input value={name} onChange={e => setName(e.target.value)} className={inputCls} placeholder={t('groupNamePlaceholder')} /></Field>
         <div className="grid grid-cols-2 gap-3">
