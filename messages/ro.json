@@ -358,7 +358,11 @@
     "onboardModelBody": "Activitatea e pagina ta publică pe kidvo. Grupele sunt cohortele de vârstă sau nivel din interiorul ei. Listezi o Activitate și îți creăm automat prima Grupă — poți adăuga oricâte mai târziu.",
     "onboardParentAddChild": "Adaugă primul copil",
     "onboardParentBookTrial": "Rezervă o probă",
-    "onboardParentLeaveReview": "Lasă o recenzie"
+    "onboardParentLeaveReview": "Lasă o recenzie",
+    "heroFirstRunTitle": "Publică prima ta activitate",
+    "heroInReviewEyebrow": "În verificare",
+    "heroInReviewTitle": "Activitatea ta este în verificare",
+    "heroInReviewBody": "Verificăm fiecare anunț nou înainte să apară public — de obicei în 24 de ore. Nu mai ai nimic de făcut: primești un email imediat ce e live."
   },
   "kids": {
     "title": "Copii & Activități",

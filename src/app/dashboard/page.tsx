@@ -360,6 +360,55 @@ export default async function DashboardPage() {
     const provOnboardingDone = provSteps.every(s => s.done)
     const showProvOnboarding = !profile?.onboarding_dismissed && !provOnboardingDone
 
+    // First run — no listings at all. Analytics (zero tiles, funnel, "no views")
+    // mean nothing yet and read as an empty platform; lead with the one thing to
+    // do instead: the model explainer + checklist + the list-an-activity CTA.
+    if (allListings.length === 0) {
+      return (
+        <AppShell>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-[18px]">
+            <div className="rounded-[22px] px-7 py-7 relative overflow-hidden self-start" style={{ background: '#1c1c27' }}>
+              <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
+              <p className="font-display text-[11px] font-bold uppercase tracking-[.08em] mb-2" style={{ color: '#f5c542' }}>{tDash('onboardingGetStarted')}</p>
+              <h2 className="font-display text-2xl font-bold text-white mb-2">{tDash('heroFirstRunTitle')}</h2>
+              <p className="text-sm mb-6 max-w-[560px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>{tDash('onboardModelBody')}</p>
+              <div className="flex flex-col gap-2.5 mb-7">
+                {provSteps.map((s, i) => (
+                  <div key={s.label} className="flex items-center gap-2.5">
+                    <span className="w-5 h-5 rounded-full border flex items-center justify-center font-display text-[10px] font-bold flex-shrink-0"
+                      style={s.done ? { background: '#22c55e', borderColor: '#22c55e', color: '#fff' } : { borderColor: 'rgba(255,255,255,0.28)', color: 'rgba(255,255,255,0.5)' }}>
+                      {s.done ? '✓' : i + 1}
+                    </span>
+                    <span className="font-display text-[13px] font-semibold" style={{ color: s.done ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.9)' }}>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+              <Link href="/listings/new" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                {tDash('listActivity')}
+              </Link>
+            </div>
+            <div className="flex flex-col gap-[18px]">
+              {tipBody && (
+                <div className="flex items-start gap-3 bg-white rounded-[22px] px-5 py-4" style={{ boxShadow: '0 2px 16px rgba(90,70,140,.06)' }}>
+                  <span className="w-8 h-8 rounded-lg bg-gold-lt flex items-center justify-center flex-shrink-0 text-gold-text">
+                    <IconBulb />
+                  </span>
+                  <div>
+                    <div className="font-display text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1">{tDash('tipOfMonth')}</div>
+                    <p className="text-sm text-ink">{tipBody}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </AppShell>
+      )
+    }
+
+    // Listings exist but none is live yet (fresh submission in review): the hero
+    // must say "submitted, all good" or the provider concludes it's broken.
+    const awaitingReview = activeCount === 0 && pendingListings > 0
+
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
     const perfRows: PerformanceRow[] = allListings.map(l => ({
@@ -410,9 +459,11 @@ export default async function DashboardPage() {
               <span className="font-display text-[11.5px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
                 {waitingNewToday > 0 ? tDash('waitlistNewToday', { n: waitingNewToday }) : tDash('waitlistFamilies')}
               </span>
-              <span className="font-display text-[11px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: '#f5c542', color: '#1c1c27' }}>
-                {tDash('waitlistManage')}
-              </span>
+              {waitingCount > 0 && (
+                <span className="font-display text-[11px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                  {tDash('waitlistManage')}
+                </span>
+              )}
             </div>
           </Link>
         </div>
@@ -425,43 +476,64 @@ export default async function DashboardPage() {
             {/* Hero card */}
             <div className="rounded-[22px] px-7 py-7 relative overflow-hidden" style={{ background: '#1c1c27' }}>
               <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
-              <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>
-                {weekReach > 0 ? tDash('heroReachedPre') : tDash('heroThisWeek')}
-              </p>
-              <div className="flex items-baseline gap-2 mb-3">
-                {weekReach > 0 ? (
-                  <>
-                    <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>{weekReach}</span>
-                    <span className="font-display text-2xl font-bold text-white">{tDash('heroParentsWeek')}</span>
-                  </>
-                ) : (
-                  <span className="font-display text-2xl font-bold text-white">{tDash('heroNoViews')}</span>
-                )}
-              </div>
-              <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
-                {pendingTrials > 0
-                  ? tDash.rich('heroPendingTrials', { n: pendingTrials, b: (c) => <span className="text-white font-semibold">{c}</span> })
-                  : activeCount > 0
-                    ? tDash('heroKeepListings')
-                    : tDash('heroListFirst')
-                }
-              </p>
-              <div className="flex items-center gap-3 flex-wrap">
-                {pendingTrials > 0 && (
-                  <Link href="/listings?tab=bookings" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
-                    {tDash('viewTrialRequests')}
-                  </Link>
-                )}
-                {activeCount === 0 ? (
-                  <Link href="/listings/new" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
-                    {tDash('listActivity')}
-                  </Link>
-                ) : (
-                  <Link href="/listings" className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-full border transition-colors" style={{ color: 'rgba(255,255,255,0.65)', borderColor: 'rgba(255,255,255,0.18)' }}>
-                    {tDash('myActivities')}
-                  </Link>
-                )}
-              </div>
+              {awaitingReview ? (
+                <>
+                  <p className="font-display text-[11px] font-bold uppercase tracking-[.08em] mb-2" style={{ color: '#f5c542' }}>
+                    {tDash('heroInReviewEyebrow')}
+                  </p>
+                  <div className="mb-3">
+                    <span className="font-display text-2xl font-bold text-white">{tDash('heroInReviewTitle')}</span>
+                  </div>
+                  <p className="text-sm mb-6 max-w-[560px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                    {tDash('heroInReviewBody')}
+                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Link href="/listings" className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-full border transition-colors" style={{ color: 'rgba(255,255,255,0.65)', borderColor: 'rgba(255,255,255,0.18)' }}>
+                      {tDash('myActivities')}
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="font-display text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>
+                    {weekReach > 0 ? tDash('heroReachedPre') : tDash('heroThisWeek')}
+                  </p>
+                  <div className="flex items-baseline gap-2 mb-3">
+                    {weekReach > 0 ? (
+                      <>
+                        <span className="font-display text-5xl font-bold leading-none" style={{ color: '#f5c542' }}>{weekReach}</span>
+                        <span className="font-display text-2xl font-bold text-white">{tDash('heroParentsWeek')}</span>
+                      </>
+                    ) : (
+                      <span className="font-display text-2xl font-bold text-white">{tDash('heroNoViews')}</span>
+                    )}
+                  </div>
+                  <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.50)' }}>
+                    {pendingTrials > 0
+                      ? tDash.rich('heroPendingTrials', { n: pendingTrials, b: (c) => <span className="text-white font-semibold">{c}</span> })
+                      : activeCount > 0
+                        ? tDash('heroKeepListings')
+                        : tDash('heroListFirst')
+                    }
+                  </p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {pendingTrials > 0 && (
+                      <Link href="/listings?tab=bookings" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                        {tDash('viewTrialRequests')}
+                      </Link>
+                    )}
+                    {activeCount === 0 ? (
+                      <Link href="/listings/new" className="inline-flex items-center font-display text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity" style={{ background: '#f5c542', color: '#1c1c27' }}>
+                        {tDash('listActivity')}
+                      </Link>
+                    ) : (
+                      <Link href="/listings" className="inline-flex items-center font-display text-sm font-semibold px-5 py-2.5 rounded-full border transition-colors" style={{ color: 'rgba(255,255,255,0.65)', borderColor: 'rgba(255,255,255,0.18)' }}>
+                        {tDash('myActivities')}
+                      </Link>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Pending trial requests */}
