@@ -34,7 +34,7 @@ export async function EventsStrip() {
   const top = groups.slice(0, 3)
 
   return (
-    <section style={{ background: 'linear-gradient(140deg, rgba(124,58,237,0.06) 0%, rgba(245,197,66,0.12) 100%)' }} className="py-12 md:py-14">
+    <section style={{ background: 'linear-gradient(140deg, rgba(124,58,237,0.10) 0%, rgba(245,197,66,0.22) 100%)', borderTop: '1px solid rgba(212,160,23,0.30)' }} className="py-12 md:py-14">
       <div className="max-w-[1180px] mx-auto px-5 md:px-10">
         <div className="flex items-baseline justify-between gap-4 flex-wrap" style={{ marginBottom: 18 }}>
           <div>
