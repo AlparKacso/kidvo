@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { CookieBanner } from '@/components/ui/CookieBanner'
 import { AuthHashRedirect } from '@/components/ui/AuthHashRedirect'
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
           <CookieBanner />
         </NextIntlClientProvider>
+        <Analytics />
       </body>
     </html>
   )
