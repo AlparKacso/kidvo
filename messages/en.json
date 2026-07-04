@@ -1315,7 +1315,8 @@
     "footerAbout": "About",
     "footerForProviders": "For providers",
     "footerContact": "Contact",
-    "footerCopyright": "© 2026 kidvo · Timișoara, Romania"
+    "footerCopyright": "© 2026 kidvo · Timișoara, Romania",
+    "events": "Events"
   },
   "landingProviders": {
     "metaTitle": "List your activity free — kidvo for providers",
@@ -1365,7 +1366,7 @@
     "heroEyebrow": "New · Family Calendar for parents",
     "heroH1a": "Find the perfect activity",
     "heroH1b": "for your little one.",
-    "heroSub": "Discover local activities, request free trials, and keep every child’s classes, trials and waitlists in a single weekly view — color-coded per child.",
+    "heroSub": "Discover local activities, request free trials, and keep every child’s groups, trials and waitlists in a single weekly view — color-coded per child.",
     "cta": "Browse activities",
     "ctaSub": "Free to use · request a trial, pay nothing now",
     "fcEyebrow": "Family Calendar",
@@ -1416,7 +1417,7 @@
     "r5": "RO & EN",
     "finalH2a": "One calendar for",
     "finalH2b": "everything they love.",
-    "finalSub": "Discover classes, book trials, and keep the whole family’s week in order — free, in Romanian or English.",
+    "finalSub": "Discover activities, book trials, and keep the whole family’s week in order — free, in Romanian or English.",
     "bandStrong": "Run activities for kids?",
     "bandText": "List your class free and fill it with local families.",
     "bandLink": "List your activity",

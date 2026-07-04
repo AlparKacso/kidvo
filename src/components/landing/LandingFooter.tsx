@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { FooterLegalLinks } from '@/components/ui/FooterLegalLinks'
+import { eventsEnabled } from '@/lib/eventsEnabled'
 
 interface Props {
   /** Page audience — drives the cross-audience footer link. */
@@ -41,6 +42,9 @@ export async function LandingFooter({ audience, tone = 'light' }: Props) {
         <div className="flex items-center flex-wrap justify-center gap-x-5 gap-y-2">
           <Link href={cross.href} className={linkCls}>{cross.label}</Link>
           <Link href={second.href} className={linkCls}>{second.label}</Link>
+          {!isProviders && eventsEnabled() && (
+            <Link href="/events" className={linkCls}>{t('events')}</Link>
+          )}
           <FooterLegalLinks tone={tone} />
         </div>
 

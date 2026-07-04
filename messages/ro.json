@@ -1315,7 +1315,8 @@
     "footerAbout": "Despre",
     "footerForProviders": "Pentru furnizori",
     "footerContact": "Contact",
-    "footerCopyright": "© 2026 kidvo · Timișoara, România"
+    "footerCopyright": "© 2026 kidvo · Timișoara, România",
+    "events": "Evenimente"
   },
   "landingProviders": {
     "metaTitle": "Listează-ți activitatea gratuit — kidvo pentru furnizori",
@@ -1365,7 +1366,7 @@
     "heroEyebrow": "Nou · Calendar de familie pentru părinți",
     "heroH1a": "Găsește activitatea perfectă",
     "heroH1b": "pentru cel mic.",
-    "heroSub": "Descoperă activități locale, cere probe gratuite și ține clasele, probele și listele de așteptare ale fiecărui copil într-o singură vedere săptămânală — colorate pentru fiecare copil.",
+    "heroSub": "Descoperă activități locale, cere probe gratuite și ține grupele, probele și listele de așteptare ale fiecărui copil într-o singură vedere săptămânală — colorate pentru fiecare copil.",
     "cta": "Vezi activitățile",
     "ctaSub": "Gratuit · cere o probă, nu plătești nimic acum",
     "fcEyebrow": "Calendar de familie",
@@ -1416,7 +1417,7 @@
     "r5": "RO & EN",
     "finalH2a": "Un singur calendar pentru",
     "finalH2b": "tot ce iubesc.",
-    "finalSub": "Descoperă clase, rezervă probe și ține în ordine săptămâna întregii familii — gratuit, în română sau engleză.",
+    "finalSub": "Descoperă activități, rezervă probe și ține în ordine săptămâna întregii familii — gratuit, în română sau engleză.",
     "bandStrong": "Organizezi activități pentru copii?",
     "bandText": "Listează-ți clasa gratuit și umple-o cu familii locale.",
     "bandLink": "Listează-ți activitatea",

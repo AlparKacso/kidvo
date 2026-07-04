@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
 import { LocaleToggle } from '@/components/ui/LocaleToggle'
+import { eventsEnabled } from '@/lib/eventsEnabled'
 
 interface Props {
   audience: 'parents' | 'providers'
@@ -49,6 +50,11 @@ export async function LandingNav({ audience }: Props) {
           <Link href={firstLink.href} className="font-display font-semibold text-ink-mid rounded-lg hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px', padding: '8px 12px' }}>
             {firstLink.label}
           </Link>
+          {!isProviders && eventsEnabled() && (
+            <Link href="/events" className="font-display font-semibold text-ink-mid rounded-lg hover:bg-primary-lt hover:text-ink transition-all whitespace-nowrap" style={{ fontSize: '13.5px', padding: '8px 12px' }}>
+              {t('events')}
+            </Link>
+          )}
           <Link href={cross.href} className={`font-display font-bold rounded-full border whitespace-nowrap inline-flex items-center gap-1.5 hover:opacity-85 transition-opacity ${cross.cls}`} style={{ fontSize: '13.5px', padding: '7px 14px', borderColor: isProviders ? undefined : 'rgba(212,160,23,0.25)' }}>
             {cross.label} <span style={{ fontSize: '12px' }}>→</span>
           </Link>
