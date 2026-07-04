@@ -7,6 +7,7 @@ import { hexa } from '@/lib/hexa'
 import { LandingNav } from '@/components/landing/LandingNav'
 import { LandingFooter } from '@/components/landing/LandingFooter'
 import { FamilyCalendarShowcase } from '@/components/landing/FamilyCalendarShowcase'
+import { EventsStrip } from '@/components/landing/EventsStrip'
 import { OfferToast } from '@/components/landing/OfferToast'
 import { Icon, Check, type IconName } from '@/components/landing/LandingIcon'
 import { ActivityCard } from '@/components/ui/ActivityCard'
@@ -169,6 +170,9 @@ export default async function ParentsLanding() {
           </div>
         </div>
       </section>
+
+      {/* 3.5 — EVENTS STRIP (self-collapsing: gone when events are off or <2 upcoming) */}
+      <EventsStrip />
 
       {/* 4 — REQUEST-TO-CONFIRM */}
       <section style={{ background: '#fff' }} className="py-16 md:py-[88px]">

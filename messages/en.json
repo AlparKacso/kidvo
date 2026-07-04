@@ -1422,7 +1422,10 @@
     "bandText": "List your activity free and fill it with local families.",
     "bandLink": "List your activity",
     "discBookTrial": "Book trial",
-    "discAges": "Ages"
+    "discAges": "Ages",
+    "evEyebrow": "This week in Timișoara",
+    "evH2": "What are you doing with the kids this weekend?",
+    "evSeeAll": "See all events"
   },
   "landingMock": {
     "cmProvider": "Provider · Studio Iulius",
