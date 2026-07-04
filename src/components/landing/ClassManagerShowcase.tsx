@@ -1,9 +1,10 @@
 import { getTranslations } from 'next-intl/server'
 
 /**
- * Static, presentational reproduction of the real provider Class Manager board
+ * Static, presentational reproduction of the provider "Groups & waitlist" board
  * (src/app/listings/classes/ClassesManagerClient.tsx) for the providers landing.
- * Sample data only — structure, tokens and labels mirror production.
+ * Sample data only — a simplified flat-column take on the board (the real one
+ * is swimlanes per listing); labels and tokens mirror production copy.
  */
 
 const TK = {
