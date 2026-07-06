@@ -41,7 +41,12 @@ export async function generateMetadata(
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { title: `${title} · kidvo`, description, url },
+    openGraph: {
+      title: `${title} · kidvo`,
+      description,
+      url,
+      images: [{ url: 'https://kidvo.eu/kidvo-og-image.png', width: 1200, height: 630, alt: `${title} · kidvo` }],
+    },
   }
 }
 
