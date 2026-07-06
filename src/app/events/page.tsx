@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     siteName: 'kidvo',
     title: 'Evenimente pentru copii în Timișoara · kidvo',
     description: 'Ce faci cu copiii săptămâna asta? Evenimentele pentru copii din Timișoara într-un singur loc — cu date, locații și adăugare în calendar.',
-    images: [{ url: 'https://kidvo.eu/og-image.png', width: 1200, height: 630, alt: 'kidvo — Evenimente pentru copii în Timișoara' }],
+    images: [{ url: 'https://kidvo.eu/kidvo-og-image.png', width: 1200, height: 630, alt: 'kidvo — Evenimente pentru copii în Timișoara' }],
   },
 }
 
