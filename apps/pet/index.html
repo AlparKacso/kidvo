@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vo</title>
+<script src="../../shell/sdk.js"></script>
+<script src="lang/en.js"></script>
+<script src="lang/hu.js"></script>
+<script src="lang/ro.js"></script>
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #bubble {
+    position: absolute; transform: translate(-50%, -100%);
+    max-width: 200px; padding: 6px 9px;
+    background: #fff; color: #191833; border: 2px solid #191833; box-shadow: 2px 2px 0 #191833;
+    font: 700 12px/1.3 ui-monospace, Menlo, Consolas, monospace; white-space: nowrap;
+  }
+  #bubble::after { content: ""; position: absolute; left: 50%; bottom: -8px; margin-left: -5px; border: 5px solid transparent; border-top-color: #191833; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bubble" hidden></div>
+<script>
+(() => {
+  const S = 3; // pixel scale
+  const ROWS = [
+    '.........KR.....',
+    '.........K......',
+    '.........K......',
+    '....KKKKKKKK....',
+    '...KYYYYYYYYK...',
+    '..KYYYYYYYYYYK..',
+    '..KYYYYYYYYYYK..',
+    '..KYYKYYYYKYYK..',
+    '..KYYKYYYYKYYK..',
+    '..KYYYYYKYYYYK..',
+    '..KYYYYYYYYYYK..',
+    '...KKKKKKKKKK...',
+    '...KK......KK...'
+  ];
+  const FEET_B = '....KK....KK....';
+  const EYES_SHUT = '..KYYYYYYYYYYK..';
+  const SMILE = '..KYYYYKKYYYYK..';
+  const MOUTH_OPEN = ['..KYYYKKKKYYYK..', '..KYYYKRRKYYYK..'];
+  const SNACK_COLORS = ['#ff6b5b', '#7be0c3', '#ffd23f', '#9ec5ff', '#ff8fab', '#6f7bd6'];
+  const COLORS = { K: '#191833', Y: '#ffd23f', R: '#ff6b5b' };
+  const SW = 16 * S, SH = ROWS.length * S;
+
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const bubble = document.getElementById('bubble');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W = 0, H = 0;
+  function size() {
+    const dpr = window.devicePixelRatio || 1;
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+  }
+  addEventListener('resize', size);
+  size();
+
+  let wins = [];
+  const lastX = new Map();
+  const pet = { x: W * 0.62, y: reduced ? H : 0, vx: 0, vy: 0, on: null, face: 1, mode: 'idle', until: 0, happy: 0, lastActive: performance.now(), chomp: 0, lastChomp: 0 };
+  // Snacks: little pixels that drop next to Vo when someone clicks on him.
+  let snacks = [];
+  let crumbs = [];
+  let eatenAt = [];
+  const G = 0.0022; // px per ms^2
+
+  kidvo.on('shell:windows', d => {
+    if (!d || !Array.isArray(d.windows)) return;
+    wins = d.windows.filter(w => w.w > 0 && w.h > 0);
+  });
+
+  const surfaces = () => [...wins.map(w => ({ id: w.id, x1: w.x, x2: w.x + w.w, y: w.y })), { id: 'floor', x1: -1e6, x2: 1e6, y: H }];
+
+  function say(text, ms = 2600) {
+    bubble.textContent = text;
+    bubble.hidden = false;
+    clearTimeout(say.t);
+    say.t = setTimeout(() => (bubble.hidden = true), ms);
+  }
+
+  function hop(power = 0.75) {
+    if (pet.on === null || reduced) return;
+    pet.on = null;
+    pet.vy = -power;
+  }
+
+  function jumpTo(target) {
+    const D = pet.y - target.y; // how far up
+    const vy0 = -Math.sqrt(2 * G * (D + 24 * 1.0));
+    const t = (-vy0 + Math.sqrt(vy0 * vy0 - 2 * G * D)) / G;
+    const tx = Math.max(target.x1 + 10, Math.min(target.x2 - 10, pet.x + (Math.random() - 0.5) * 80));
+    pet.on = null;
+    pet.vy = vy0;
+    pet.vx = (tx - pet.x) / t;
+    pet.face = pet.vx >= 0 ? 1 : -1;
+  }
+
+  function decide(now) {
+    if (now - pet.lastActive > 25000) { pet.mode = 'sleep'; pet.until = now + 1e9; return; }
+    const r = Math.random();
+    const here = pet.x;
+    const higher = surfaces().filter(s => s.id !== 'floor' && s.id !== pet.on && s.y < pet.y - 20 && pet.y - s.y < 260 &&
+      here > s.x1 - 160 && here < s.x2 + 160);
+    if (r < 0.22 && higher.length) { jumpTo(higher[Math.floor(Math.random() * higher.length)]); pet.mode = 'walk'; pet.until = now + 1200; return; }
+    if (r < 0.6) { pet.mode = 'walk'; pet.face = Math.random() < 0.5 ? -1 : 1; pet.until = now + 1500 + Math.random() * 3500; return; }
+    pet.mode = 'idle'; pet.until = now + 1200 + Math.random() * 2600;
+  }
+
+  function step(dt, now) {
+    const ss = surfaces();
+    if (pet.on !== null) {
+      const s = ss.find(s => s.id === pet.on);
+      if (!s) { pet.on = null; }
+      else {
+        if (s.id !== 'floor') {
+          const prev = lastX.get(s.id);
+          if (prev !== undefined) pet.x += s.x1 - prev;
+        }
+        pet.y = s.y;
+        if (pet.mode === 'walk' && !reduced) {
+          const nx = pet.x + pet.face * 0.05 * dt;
+          if (nx < s.x1 + 6 || nx > s.x2 - 6) {
+            if (s.id !== 'floor' && Math.random() < 0.35) { pet.on = null; pet.vx = pet.face * 0.06; pet.vy = -0.2; }
+            else pet.face *= -1;
+          } else pet.x = nx;
+          if (s.id === 'floor') pet.x = Math.max(SW / 2, Math.min(W - SW / 2, pet.x));
+        }
+        if (pet.x < s.x1 - 2 || pet.x > s.x2 + 2) pet.on = null;
+      }
+    }
+    if (pet.on === null) {
+      const prevY = pet.y;
+      pet.vy += G * dt;
+      pet.y += pet.vy * dt;
+      pet.x += pet.vx * dt;
+      pet.x = Math.max(SW / 2, Math.min(W - SW / 2, pet.x));
+      if (pet.vy > 0) {
+        const land = ss.filter(s => pet.x >= s.x1 && pet.x <= s.x2 && s.y >= prevY - 1 && s.y <= pet.y)
+          .sort((a, b) => a.y - b.y)[0];
+        if (land) { pet.on = land.id; pet.y = land.y; pet.vy = 0; pet.vx = 0; }
+      }
+      if (pet.y > H) { pet.on = 'floor'; pet.y = H; pet.vy = 0; pet.vx = 0; }
+    }
+    for (const w of wins) lastX.set(w.id, w.x);
+    stepSnacks(dt, now);
+    if (now > pet.until && pet.on !== null && pet.mode !== 'sleep' && pet.mode !== 'eat') decide(now);
+  }
+
+  function feed(now) {
+    eatenAt = eatenAt.filter(t0 => now - t0 < 30000);
+    if (eatenAt.length >= 15) { say(t('full')); hop(0.45); return; }
+    const surf = surfaces().find(s => s.id === pet.on) || { x1: -1e6, x2: 1e6 };
+    const n = 4 + Math.floor(Math.random() * 3);
+    for (let k = 0; k < n; k++) {
+      const side = k % 2 ? 1 : -1;
+      const dx = reduced ? side * (4 + k) : side * (18 + Math.random() * 60);
+      const x = Math.max(surf.x1 + 8, Math.min(surf.x2 - 8, Math.max(8, Math.min(W - 8, pet.x + dx))));
+      snacks.push({ x, y: pet.y - SH - 30 - Math.random() * 40, vy: 0, ground: pet.y, color: SNACK_COLORS[Math.floor(Math.random() * SNACK_COLORS.length)], landed: false });
+    }
+    pet.mode = 'eat';
+    pet.until = now + 12000;
+    say(t('snack'), 1600);
+  }
+
+  function stepSnacks(dt, now) {
+    for (const s of snacks) {
+      if (s.landed) continue;
+      s.vy += G * dt; s.y += s.vy * dt;
+      if (s.y >= s.ground) { s.y = s.ground; s.landed = true; }
+    }
+    for (const c of crumbs) { c.vy += G * dt; c.x += c.vx * dt; c.y += c.vy * dt; c.life -= dt; }
+    crumbs = crumbs.filter(c => c.life > 0);
+    if (pet.mode !== 'eat' || pet.on === null) return;
+    if (!snacks.length || now > pet.until) {
+      const ate = !snacks.length;
+      snacks = [];
+      pet.mode = 'idle'; pet.until = now + 1500;
+      if (ate) { pet.happy = now + 1800; say(t('nom')); hop(0.6); }
+      return;
+    }
+    const target = snacks.filter(s => s.landed).sort((a, b) => Math.abs(a.x - pet.x) - Math.abs(b.x - pet.x))[0];
+    if (!target) return;
+    const dx = target.x - pet.x;
+    if (Math.abs(dx) > 7 && !reduced) {
+      pet.face = dx > 0 ? 1 : -1;
+      pet.x += Math.sign(dx) * Math.min(Math.abs(dx), 0.09 * dt);
+    } else if (now - pet.lastChomp > 260) {
+      // Chomp!
+      pet.lastChomp = now;
+      pet.chomp = now + 200;
+      snacks.splice(snacks.indexOf(target), 1);
+      eatenAt.push(now);
+      for (let k = 0; k < 4; k++) crumbs.push({ x: target.x, y: target.y - 4, vx: (Math.random() - 0.5) * 0.15, vy: -0.25 - Math.random() * 0.2, life: 420, color: target.color });
+    }
+  }
+
+  // Tell the desktop where Vo is, so clicks on him reach us (overlays are click-through otherwise).
+  let lastSpot = '';
+  setInterval(() => {
+    const rect = { x: pet.x - SW / 2 - 8, y: pet.y - SH - 8, w: SW + 16, h: SH + 12 };
+    const key = [rect.x, rect.y].map(Math.round).join(',');
+    if (key !== lastSpot) { lastSpot = key; kidvo.setHotspot(rect); }
+  }, 100);
+
+  function draw(now) {
+    ctx.clearRect(0, 0, W, H);
+    const left = Math.round(pet.x - SW / 2), top = Math.round(pet.y - SH);
+    const walking = pet.mode === 'walk' && pet.on !== null && !reduced;
+    const blink = pet.mode === 'sleep' || (now % 4200) < 140;
+    for (let r = 0; r < ROWS.length; r++) {
+      let row = ROWS[r];
+      if (r === ROWS.length - 1 && walking && Math.floor(now / 160) % 2) row = FEET_B;
+      if (r === 7 && blink) row = EYES_SHUT;
+      if (r === 9 && (now < pet.happy)) row = SMILE;
+      if ((r === 9 || r === 10) && now < pet.chomp) row = MOUTH_OPEN[r - 9];
+      for (let c = 0; c < 16; c++) {
+        const ch = row[pet.face === 1 ? c : 15 - c];
+        if (ch === '.') continue;
+        ctx.fillStyle = COLORS[ch];
+        ctx.fillRect(left + c * S, top + r * S, S, S);
+      }
+    }
+    for (const s of snacks) {
+      ctx.fillStyle = '#191833'; ctx.fillRect(Math.round(s.x) - 4, Math.round(s.y) - 8, 8, 8);
+      ctx.fillStyle = s.color; ctx.fillRect(Math.round(s.x) - 3, Math.round(s.y) - 7, 6, 6);
+    }
+    for (const c of crumbs) { ctx.fillStyle = c.color; ctx.fillRect(Math.round(c.x), Math.round(c.y), 3, 3); }
+    if (pet.mode === 'sleep') {
+      ctx.fillStyle = '#191833';
+      ctx.font = '700 12px ui-monospace, Menlo, Consolas, monospace';
+      const z = Math.floor(now / 600) % 3;
+      ctx.fillText('z'.repeat(z + 1), left + SW - 6, top - 4);
+    }
+    const half = bubble.hidden ? 0 : bubble.offsetWidth / 2;
+    bubble.style.left = Math.max(half + 4, Math.min(W - half - 4, pet.x)) + 'px';
+    bubble.style.top = (top - 8) + 'px';
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(48, now - last);
+    last = now;
+    step(dt, now);
+    draw(now);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function wake() { pet.lastActive = performance.now(); if (pet.mode === 'sleep') { pet.mode = 'idle'; pet.until = 0; } }
+
+  // React to the rest of the desktop. Unknown events still get a reaction.
+  const t = (k, v) => kidvo.t(k, v);
+  const REACT = {
+    'maze:solved': d => { pet.happy = performance.now() + 1800; hop(0.8); return d && d.asked === 0 ? t('allByYourself') : t('levelCleared', { n: d && d.level || '?' }); },
+    'shell:opened': d => (d && d.appId && d.appId !== 'pet' ? t('ooh') : null),
+    'shell:closed': () => t('bye')
+  };
+  kidvo.on('*', (data, meta) => {
+    if (meta.topic === 'shell:windows' || meta.from === 'pet') return;
+    if (meta.topic === 'shell:poke') { wake(); feed(performance.now()); return; }
+    if (meta.topic.endsWith(':ai-asked')) return;
+    wake();
+    if (meta.topic.endsWith(':ai-flagged')) {
+      if (data && data.wasWrong) { pet.happy = performance.now() + 1500; hop(0.7); }
+      say(t(data && data.wasWrong ? 'niceCatch' : 'goodChecking'));
+      return;
+    }
+    const suffix = meta.topic.split(':')[1];
+    const GENERIC = { caught: 'niceCatch', checked: 'goodChecking', kept: 'secretSafe', shared: 'hmm', done: 'wellDone' };
+    if (suffix === 'judged') return;
+    const f = REACT[meta.topic];
+    const text = f ? f(data) : (GENERIC[suffix] ? t(GENERIC[suffix]) : '?!');
+    if (suffix === 'caught' || suffix === 'done') { pet.happy = performance.now() + 1500; hop(0.7); }
+    if (text) say(text);
+  });
+
+  setTimeout(() => say(t('hi')), 900);
+})();
+</script>
+</body>
+</html>

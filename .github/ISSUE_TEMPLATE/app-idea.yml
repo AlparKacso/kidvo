@@ -1,0 +1,11 @@
+name: Game idea
+description: Suggest a game that helps kids use AI wisely while thinking for themselves.
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What does the child do? Which skill does it practise? Which age band?
+    validations:
+      required: true

@@ -1,0 +1,17 @@
+# kidvo
+
+> kidvo.eu is a free, open-source collection of short browser games that help children aged 7 to 13 learn to use AI responsibly without losing their critical thinking. Games use a clearly labelled practice AI with pre-written answers, some wrong on purpose. No real AI, no network calls, no data collection. Available in English, Hungarian and Romanian.
+
+## For contributors
+
+- [CONTRIBUTING.md](https://github.com/AlparKacso/kidvo/blob/main/CONTRIBUTING.md): the charter, merge rules, skills, age bands, languages
+- [AGENTS.md](https://github.com/AlparKacso/kidvo/blob/main/AGENTS.md): instructions for AI coding agents
+- [Game template](https://github.com/AlparKacso/kidvo/tree/main/templates/app)
+- [Practice-AI panel](https://github.com/AlparKacso/kidvo/blob/main/shell/ask-ai.js) and [SDK](https://github.com/AlparKacso/kidvo/blob/main/shell/sdk.js)
+
+## Games
+
+- [Robot Maze](https://github.com/AlparKacso/kidvo/tree/main/apps/maze): reach the star in the fewest steps; a practice AI helps but is sometimes wrong
+- [Secret Keeper](https://github.com/AlparKacso/kidvo/tree/main/apps/secret-keeper): a friendly practice AI asks for personal information; keep it private
+- [Train the Sorter](https://github.com/AlparKacso/kidvo/tree/main/apps/sorter): teach a tiny classifier with examples and discover bias
+- [Confident Nonsense](https://github.com/AlparKacso/kidvo/tree/main/apps/nonsense): catch the made-up answers of an always-confident quiz AI

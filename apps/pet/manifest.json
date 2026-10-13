@@ -1,0 +1,31 @@
+{
+  "id": "pet",
+  "name": "Vo",
+  "description": "The desktop's resident creature. Walks on your windows and cheers when you catch the AI making a mistake.",
+  "author": {
+    "name": "Alpár"
+  },
+  "type": "overlay",
+  "autostart": true,
+  "color": "#ffd23f",
+  "icon": "icon.svg",
+  "tags": [
+    "pet"
+  ],
+  "added": "2026-10-03",
+  "languages": [
+    "en",
+    "hu",
+    "ro"
+  ],
+  "translations": {
+    "hu": {
+      "name": "Vo",
+      "description": "Az asztal lakója. Sétál az ablakaidon, és ujjong, ha rajtakapod az MI-t egy hibán."
+    },
+    "ro": {
+      "name": "Vo",
+      "description": "Locuitorul desktopului. Se plimbă pe ferestrele tale și se bucură când prinzi IA greșind."
+    }
+  }
+}

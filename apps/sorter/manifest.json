@@ -1,0 +1,19 @@
+{
+  "id": "sorter",
+  "name": "Train the Sorter",
+  "description": "Teach a tiny AI to recognise apples by showing it examples, then find out what it learned wrong, and why.",
+  "author": { "name": "Alpár" },
+  "type": "window",
+  "window": { "width": 720, "height": 580 },
+  "color": "#ffb86b",
+  "icon": "icon.svg",
+  "bands": ["explorers", "investigators"],
+  "skills": ["ai-learns-from-examples"],
+  "languages": ["en", "hu", "ro"],
+  "translations": {
+    "hu": { "name": "Tanítsd a Válogatót", "description": "Taníts meg egy kis MI-t példákkal felismerni az almát, aztán derítsd ki, mit tanult meg rosszul, és miért." },
+    "ro": { "name": "Antrenează Sortatorul", "description": "Învață o mică IA să recunoască merele arătându-i exemple, apoi descoperă ce a învățat greșit și de ce." }
+  },
+  "tags": ["game", "bias"],
+  "added": "2026-10-13"
+}

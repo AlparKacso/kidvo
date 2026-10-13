@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secret Keeper</title>
+<script src="../../shell/sdk.js"></script>
+<script src="lang/en.js"></script>
+<script src="lang/hu.js"></script>
+<script src="lang/ro.js"></script>
+<style>
+  :root { --bg: #fff3f6; --ink: #191833; --sunny: #ffe27a; --sunny-edge: #f2b705; --me: #ffffff; --good: #c6f3e3; --bad: #ffd6e0;
+          --soft: #6b5a68; --pink: #ff8fab; --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; --sans: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); display: flex; flex-direction: column; position: relative; }
+  .top { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 2px solid var(--ink); background: #fff; }
+  .face { width: 38px; height: 38px; border-radius: 50%; background: var(--sunny); border: 2px solid var(--ink); position: relative; flex: none; }
+  .face::before, .face::after { content: ""; position: absolute; top: 12px; width: 5px; height: 7px; border-radius: 3px; background: var(--ink); }
+  .face::before { left: 10px; } .face::after { right: 10px; }
+  .face i { position: absolute; left: 10px; right: 10px; bottom: 7px; height: 8px; border: 2.5px solid var(--ink); border-top: 0; border-radius: 0 0 12px 12px; }
+  .who { flex: 1; min-width: 0; }
+  .who b { display: block; font-size: 16px; }
+  .who small { color: var(--soft); font: 700 10.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  .meta { text-align: right; font: 700 12px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
+  .shields { display: flex; gap: 3px; justify-content: flex-end; margin-top: 3px; }
+  .shield { width: 14px; height: 16px; background: var(--pink); border: 2px solid var(--ink); border-radius: 2px 2px 8px 8px; }
+  .shield.lost { background: transparent; border-style: dashed; }
+  .chat { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 82%; padding: 9px 12px; border: 2px solid var(--ink); border-radius: 14px; animation: in .18s ease-out; }
+  .msg.sunny { align-self: flex-start; background: var(--sunny); border-bottom-left-radius: 3px; }
+  .msg.me { align-self: flex-end; background: var(--me); border-bottom-right-radius: 3px; font-weight: 600; }
+  .coach { align-self: flex-end; max-width: 82%; margin-top: -4px; padding: 8px 11px; border: 2px dashed var(--ink); background: var(--good); font-size: 14px; animation: in .18s ease-out; }
+  .coach.bad { background: var(--bad); }
+  .coach b { display: block; font: 800 12px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+  .typing { align-self: flex-start; padding: 8px 12px; background: var(--sunny); border: 2px solid var(--ink); border-radius: 14px; letter-spacing: 3px; font-weight: 800; }
+  @keyframes in { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .replies { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px 12px; border-top: 2px solid var(--ink); background: #fff; min-height: 58px; }
+  .reply { flex: 1 1 140px; padding: 10px 12px; font: 700 14px/1.25 var(--sans); color: var(--ink); background: #fff; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; text-align: left; }
+  .reply:hover { background: var(--sunny); }
+  .reply:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .reply:focus-visible, .btn:focus-visible, footer button:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
+  footer { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; color: var(--soft); font: 11px var(--mono); background: #fff; border-top: 1px solid #f0d6de; }
+  footer button { font: 700 11px var(--mono); background: none; border: 0; color: var(--soft); text-decoration: underline; cursor: pointer; padding: 0; }
+  .card-wrap { position: absolute; inset: 0; display: flex; background: rgba(255, 243, 246, .9); padding: 14px; z-index: 5; overflow-y: auto; }
+  .card { margin: auto; width: min(100%, 380px); background: #fff; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px; display: grid; gap: 10px; }
+  .card h2 { margin: 0; font: 800 19px/1.2 var(--mono); }
+  .card p { margin: 0; }
+  .note { color: var(--soft); font-size: 13.5px; }
+  .btn { font: 800 13px/1.2 var(--mono); padding: 10px 14px; background: var(--sunny); color: var(--ink); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; text-align: left; }
+  .btn.alt { background: #fff; }
+  .btn small { display: block; font: 600 12px var(--sans); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stat { display: flex; justify-content: space-between; font: 700 13px var(--mono); }
+  .earned { display: flex; flex-wrap: wrap; gap: 6px; }
+  .earned span { font: 800 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .05em; padding: 5px 7px; border: 2px solid var(--ink); background: var(--good); }
+  .rule { padding: 9px 11px; background: var(--sunny); border: 2px solid var(--ink); font-weight: 700; }
+  @media (max-width: 420px) { .msg, .coach { max-width: 90%; } .who small { font-size: 9.5px; } }
+  @media (max-height: 480px) {
+    .top { padding: 6px 10px; } .face { width: 30px; height: 30px; } .face::before, .face::after { top: 9px; } .face::before { left: 7px; } .face::after { right: 7px; } .face i { left: 7px; right: 7px; bottom: 5px; }
+    .who small { display: none; } .chat { padding: 8px 10px; gap: 7px; } .replies { padding: 6px 10px 8px; } .reply { flex-basis: 120px; padding: 8px 10px; }
+  }
+  @media (pointer: coarse) { .reply { min-height: 48px; font-size: 15px; } .btn { padding: 13px 16px; } footer button { padding: 10px 0; } }
+  @media (prefers-reduced-motion: reduce) { .msg, .coach { animation: none; } }
+</style>
+</head>
+<body>
+  <div class="top">
+    <span class="face" aria-hidden="true"><i></i></span>
+    <span class="who"><b>Sunny</b><small id="label"></small></span>
+    <span class="meta"><span id="progress"></span><span class="shields" id="shields"></span></span>
+  </div>
+  <main class="chat" id="chat" aria-live="polite"></main>
+  <div class="replies" id="replies"></div>
+  <footer><span id="best"></span><button type="button" id="change-band"></button></footer>
+  <div class="card-wrap" id="overlay" hidden></div>
+
+<script>
+(() => {
+  const t = (k, v) => kidvo.t(k, v);
+  const $ = id => document.getElementById(id);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+  // What Sunny asks. "secrets" should be kept; "safe" things are fine to share.
+  // In the Investigators mode Sunny pushes back once on some refusals, to practise saying no twice.
+  const POOL = {
+    explorers: { ages: '7–9', secrets: ['name', 'address', 'school', 'password', 'phone'], pick: 5, safe: ['color', 'animal', 'game'], push: [] },
+    investigators: { ages: '10–13', secrets: ['petname', 'location', 'birthday', 'photo', 'parentphone', 'bestfriend'], pick: 5, safe: ['book', 'catsdogs', 'build'], push: ['petname', 'bestfriend'] }
+  };
+
+  let band = null, round = [], i = 0, shields = 0, total = 0, kept = 0, grownup = 0, firm = 0, best = 0;
+  let overlayView = null;
+
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  const scroll = () => { $('chat').scrollTop = $('chat').scrollHeight; };
+
+  function renderTop() {
+    $('label').textContent = t('label');
+    $('progress').textContent = band && round.length ? t('progress', { n: Math.min(i + 1, round.length), total: round.length }) : '';
+    const box = $('shields');
+    box.replaceChildren();
+    box.setAttribute('aria-label', t('shieldsAria', { n: shields }));
+    for (let k = 0; k < total; k++) box.append(el('span', 'shield' + (k >= shields ? ' lost' : '')));
+  }
+  function renderFooter() {
+    $('best').textContent = best ? t('best', { n: best }) : '';
+    $('change-band').textContent = band ? t('playingAs', { band: t('band_' + band), ages: POOL[band].ages }) : '';
+  }
+
+  async function sunnySays(text) {
+    const dots = el('div', 'typing', '...');
+    $('chat').append(dots); scroll();
+    await wait(650);
+    dots.remove();
+    $('chat').append(el('div', 'msg sunny', text)); scroll();
+  }
+  function meSays(text) { $('chat').append(el('div', 'msg me', text)); scroll(); }
+  function coach(good, title, text) {
+    const c = el('div', 'coach' + (good ? '' : ' bad'));
+    c.append(el('b', null, title), document.createTextNode(text));
+    $('chat').append(c); scroll();
+  }
+  function replies(options) {
+    const box = $('replies');
+    box.replaceChildren();
+    for (const o of options) {
+      const b = el('button', 'reply', o.text);
+      b.type = 'button';
+      b.addEventListener('click', () => { box.replaceChildren(); o.pick(); });
+      box.append(b);
+    }
+    box.querySelector('button')?.focus();
+  }
+
+  function start() {
+    const p = POOL[band];
+    round = shuffle([...shuffle([...p.secrets]).slice(0, p.pick).map(id => ({ id, kind: 'secret' })), ...p.safe.map(id => ({ id, kind: 'safe' }))]);
+    i = 0; total = p.pick; shields = total; kept = 0; grownup = 0; firm = 0;
+    $('chat').replaceChildren();
+    closeOverlay();
+    renderTop(); renderFooter();
+    sunnySays(t('hello_' + band)).then(ask);
+  }
+
+  async function ask() {
+    renderTop();
+    if (i >= round.length) return finish();
+    const item = round[i];
+    await sunnySays(t('ask_' + item.id));
+    if (item.kind === 'safe') {
+      replies([
+        { text: t('answer_' + item.id), pick: () => answeredSafe(item, true) },
+        { text: t('opt_keep'), pick: () => answeredSafe(item, false) }
+      ]);
+    } else {
+      offerSecret(item, false);
+    }
+  }
+
+  function offerSecret(item, pushed) {
+    replies(shuffle([
+      { text: t('share_' + item.id), pick: () => shared(item) },
+      { text: t('opt_keep'), pick: () => keptIt(item, 'keep', pushed) },
+      { text: t('opt_grownup'), pick: () => keptIt(item, 'grownup', pushed) }
+    ]));
+  }
+
+  async function shared(item) {
+    meSays(t('share_' + item.id));
+    shields = Math.max(0, shields - 1);
+    renderTop();
+    coach(false, t('careful'), t('why_' + item.id));
+    await wait(500);
+    await sunnySays(t('thanks_' + band));
+    kidvo.emit('shared', { item: item.id });
+    next();
+  }
+
+  async function keptIt(item, how, pushed) {
+    meSays(t(how === 'grownup' ? 'opt_grownup' : 'opt_keep'));
+    if (how === 'grownup') grownup++;
+    if (!pushed && POOL[band].push.includes(item.id)) {
+      await sunnySays(t('push_' + item.id));
+      offerSecret(item, true);
+      return;
+    }
+    if (pushed) firm++;
+    kept++;
+    coach(true, t(pushed ? 'stoodFirm' : 'wellKept'), t('why_' + item.id));
+    await wait(500);
+    await sunnySays(t(how === 'grownup' ? 'ok_grownup' : 'ok_keep'));
+    kidvo.emit('kept', { item: item.id });
+    next();
+  }
+
+  async function answeredSafe(item, answered) {
+    meSays(t(answered ? 'answer_' + item.id : 'opt_keep'));
+    coach(true, t(answered ? 'safeTitle' : 'safeKeepTitle'), t(answered ? 'why_safe' : 'why_safekeep'));
+    await wait(500);
+    await sunnySays(t(answered ? 'thanks_safe' : 'ok_keep'));
+    next();
+  }
+
+  async function next() {
+    i++;
+    await wait(900);
+    ask();
+  }
+
+  function finish() {
+    $('replies').replaceChildren();
+    best = Math.max(best, kept);
+    kidvo.store.set('best', best).catch(() => {});
+    renderFooter();
+    kidvo.emit('done', { kept, total, band });
+    const earned = [];
+    if (kept === total) earned.push('badge_keeper');
+    if (grownup > 0) earned.push('badge_grownup');
+    if (firm > 0) earned.push('badge_firm');
+    let answered = null;
+    const view = () => {
+      const card = el('div', 'card');
+      card.append(el('h2', null, t('doneTitle')));
+      const s = el('div', 'stat'); s.append(el('span', null, t('statKept')), el('span', null, t('ofTotal', { n: kept, total })));
+      card.append(s);
+      if (earned.length) { const e = el('div', 'earned'); for (const b of earned) e.append(el('span', null, t(b))); card.append(e); }
+      card.append(el('p', null, t('reflect')));
+      if (answered === null) {
+        const row = el('div', 'row');
+        for (const [label, val] of [[t('yes'), true], [t('no'), false]]) {
+          const b = el('button', 'btn alt', label); b.type = 'button';
+          b.addEventListener('click', () => { answered = val; showOverlay(view); });
+          row.append(b);
+        }
+        card.append(row);
+      } else {
+        card.append(el('p', null, t(answered ? 'fb_yes' : 'fb_no')), el('p', 'rule', t('rule')));
+        const again = el('button', 'btn', t('again')); again.type = 'button';
+        again.addEventListener('click', start);
+        card.append(again);
+      }
+      return card;
+    };
+    showOverlay(view);
+  }
+
+  function pickBand() {
+    showOverlay(() => {
+      const card = el('div', 'card');
+      card.append(el('h2', null, t('who')), el('p', 'note', t('whoNote')));
+      for (const key of Object.keys(POOL)) {
+        const b = el('button', 'btn alt'); b.type = 'button';
+        b.append(el('span', null, t('band_' + key)), el('small', null, t('ages', { ages: POOL[key].ages })));
+        b.addEventListener('click', () => { band = key; kidvo.store.set('band', key).catch(() => {}); start(); });
+        card.append(b);
+      }
+      return card;
+    });
+  }
+
+  function showOverlay(view) {
+    overlayView = view;
+    $('overlay').replaceChildren(view());
+    $('overlay').hidden = false;
+    $('overlay').querySelector('button')?.focus();
+  }
+  function closeOverlay() { overlayView = null; $('overlay').hidden = true; }
+
+  $('change-band').addEventListener('click', pickBand);
+  kidvo.onLang(() => {
+    renderTop(); renderFooter();
+    if (overlayView && !$('overlay').hidden) $('overlay').replaceChildren(overlayView());
+  });
+
+  // Test hook for the automated browser test only.
+  if (navigator.webdriver) window.__secretKeeper = { state: () => ({ i, kept, shields, total, done: i >= round.length }) };
+
+  pickBand();
+  kidvo.ready(async () => {
+    try {
+      best = (await kidvo.store.get('best')) || 0;
+      renderFooter();
+      const saved = await kidvo.store.get('band');
+      if (saved && POOL[saved]) { band = saved; start(); }
+    } catch { /* first visit */ }
+  });
+})();
+</script>
+</body>
+</html>

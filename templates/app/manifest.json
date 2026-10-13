@@ -1,0 +1,15 @@
+{
+  "id": "your-game-id",
+  "name": "Your Game",
+  "description": "One sentence a parent would understand: what the child does and what it teaches.",
+  "author": { "name": "Your name or handle", "url": "https://github.com/your-handle" },
+  "type": "window",
+  "window": { "width": 640, "height": 460 },
+  "color": "#9ec5ff",
+  "icon": "icon.svg",
+  "bands": ["explorers"],
+  "skills": ["ai-can-be-wrong"],
+  "languages": ["en"],
+  "tags": ["game"],
+  "added": "2026-01-01"
+}

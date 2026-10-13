@@ -1,0 +1,19 @@
+{
+  "id": "secret-keeper",
+  "name": "Secret Keeper",
+  "description": "A friendly practice AI chats with you and asks for personal things. Keep your secrets safe and still have a nice chat.",
+  "author": { "name": "Alpár" },
+  "type": "window",
+  "window": { "width": 520, "height": 600 },
+  "color": "#ff8fab",
+  "icon": "icon.svg",
+  "bands": ["explorers", "investigators"],
+  "skills": ["keep-secrets"],
+  "languages": ["en", "hu", "ro"],
+  "translations": {
+    "hu": { "name": "Titoktartó", "description": "Egy barátságos gyakorló MI beszélget veled, és személyes dolgokat kérdez. Őrizd meg a titkaidat, és közben beszélgessetek jól." },
+    "ro": { "name": "Păstrătorul de secrete", "description": "O IA de exercițiu prietenoasă stă de vorbă cu tine și te întreabă lucruri personale. Păstrează-ți secretele și bucură-te totuși de discuție." }
+  },
+  "tags": ["game", "privacy"],
+  "added": "2026-10-13"
+}

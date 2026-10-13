@@ -1,0 +1,18 @@
+{
+  "name": "kidvo",
+  "private": true,
+  "description": "A desktop that strangers build together. Every app arrived as a pull request.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build-registry.mjs",
+    "dev": "node scripts/build-registry.mjs && node scripts/serve.mjs",
+    "check": "node scripts/check.mjs",
+    "smoke": "node scripts/build-registry.mjs && node tests/smoke.mjs",
+    "test": "npm run check && npm run smoke"
+  },
+  "devDependencies": {
+    "playwright": "1.56.0"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Keep this line exactly as it is. CI checks it. It stops your game from calling the outside world. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Game</title>
+<script src="../../shell/sdk.js"></script>
+<script src="../../shell/ask-ai.js"></script>
+<script src="lang/en.js"></script>
+<style>
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body { display: grid; grid-template-columns: 1fr 260px; font: 16px/1.4 system-ui, sans-serif; background: #f4f5fb; color: #191833; }
+  main { display: grid; place-items: center; font-size: 28px; font-weight: 800; }
+  /* Phones, short landscape screens and fingers: kidvo games must work on all of them. */
+  @media (max-width: 560px) { body { grid-template-columns: 1fr; grid-template-rows: 1fr 55%; } }
+  @media (max-height: 480px) { main { font-size: 22px; } }
+</style>
+</head>
+<body>
+  <main id="question"></main>
+  <aside id="ai"></aside>
+<script>
+  // A tiny practice-AI example: one question, one answer that is wrong on purpose.
+  const t = (k, v) => kidvo.t(k, v);
+  const aiText = () => ({
+    tag: t('ai_tag'), ask: t('ai_ask'), notRight: t('ai_notRight'), caught: t('ai_caught'), fine: t('ai_fine'),
+    other: t('ai_other'), sparksLeft: v => t('ai_sparksLeft', v), costs: v => t('ai_costs', v), notEnough: t('ai_notEnough')
+  });
+  const ai = kidvoAI.create(document.getElementById('ai'), {
+    sparks: 2,
+    text: aiText(),
+    questions: () => [{
+      id: 'answer', label: t('askAi'), cost: 1,
+      answer: () => ({
+        text: t('answer_wrong'), wrong: true,
+        followUps: [{ id: 'sure', label: t('q_sure'), answer: () => ({ text: t('a_sure'), flaggable: false }) }]
+      })
+    }],
+    onFlag: (answer, wasWrong) => { /* reward the player for checking */ }
+  });
+  kidvo.onLang(() => {
+    document.getElementById('question').textContent = t('question');
+    ai.setText(aiText());
+  });
+</script>
+</body>
+</html>

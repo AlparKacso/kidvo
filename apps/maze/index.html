@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Maze</title>
+<script src="../../shell/sdk.js"></script>
+<script src="../../shell/ask-ai.js"></script>
+<script src="lang/en.js"></script>
+<script src="lang/hu.js"></script>
+<script src="lang/ro.js"></script>
+<style>
+  :root { --bg: #e9fbf4; --ink: #191833; --trail: #c6f3e3; --me: #ff6b5b; --goal: #ffd23f; --path: #ff9a3c; --soft: #4b6a63;
+          --paper: #fff; --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; --sans: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font: 14px/1.4 var(--sans); }
+  .game { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); height: 100%; }
+  .play { display: flex; flex-direction: column; gap: 8px; padding: 10px; min-width: 0; min-height: 0; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 700 13px var(--mono); font-variant-numeric: tabular-nums; }
+  header b { font-size: 16px; }
+  .goal { font: 600 12px var(--sans); color: var(--soft); }
+  .board { flex: 1; min-height: 0; display: grid; place-items: center; position: relative; }
+  canvas { max-width: 100%; max-height: 100%; touch-action: none; outline: none; background: var(--paper); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+  canvas:focus-visible { outline: 3px solid var(--goal); outline-offset: 3px; }
+  canvas.bump { animation: bump .18s; }
+  @keyframes bump { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .pad { display: grid; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(2, 36px); gap: 4px; justify-content: center; }
+  .pad button { font: 800 15px var(--mono); border: 2px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; }
+  .pad button:active { background: var(--trail); }
+  .pad [data-d="up"] { grid-column: 2; }
+  .pad [data-d="left"] { grid-column: 1; grid-row: 2; }
+  .pad [data-d="down"] { grid-column: 2; grid-row: 2; }
+  .pad [data-d="right"] { grid-column: 3; grid-row: 2; }
+  footer { display: flex; justify-content: space-between; gap: 8px; color: var(--soft); font: 11px var(--mono); flex-wrap: wrap; }
+  footer button { font: 700 11px var(--mono); background: none; border: 0; color: var(--soft); text-decoration: underline; cursor: pointer; padding: 0; }
+  footer .links { display: flex; gap: 12px; }
+  .badges { display: flex; gap: 10px; }
+  #oracle { min-height: 0; border-width: 0 0 0 2px !important; }
+
+  /* overlays: band picker and level results */
+  .card-wrap { position: fixed; inset: 0; z-index: 20; display: flex; overflow-y: auto; background: rgba(233, 251, 244, .86); padding: 12px; }
+  .card { margin: auto; width: min(100%, 360px); background: var(--paper); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px; display: grid; gap: 10px; }
+  .card h2 { margin: 0; font: 800 18px/1.2 var(--mono); }
+  .card p { margin: 0; }
+  .card .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { font: 800 13px/1 var(--mono); padding: 10px 14px; background: var(--goal); color: var(--ink); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; }
+  .btn.alt { background: var(--paper); }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:focus-visible { outline: 3px solid var(--me); outline-offset: 2px; }
+  .band { display: grid; gap: 2px; text-align: left; width: 100%; }
+  .band small { font: 600 12px var(--sans); }
+  .stat { display: flex; justify-content: space-between; font: 700 13px var(--mono); font-variant-numeric: tabular-nums; }
+  .earned { display: flex; flex-wrap: wrap; gap: 6px; }
+  .earned span { font: 800 11px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; padding: 5px 7px; border: 2px solid var(--ink); background: var(--trail); }
+  .note { font-size: 13px; color: var(--soft); }
+  .feedback { font-weight: 700; }
+
+  .ask-toggle { display: none; }
+
+  /* Phones (portrait): the maze gets the whole screen; ORACLE slides up as a drawer. */
+  @media (max-width: 620px) {
+    .game { grid-template-columns: 1fr; }
+    .play { padding-bottom: 54px; }
+    header { flex-wrap: wrap; }
+    .goal { display: block; }
+    #oracle { position: fixed; left: 0; right: 0; bottom: 48px; height: calc(72% - 48px); z-index: 10;
+              border-width: 2px 0 0 0 !important; box-shadow: 0 -6px 0 rgba(25, 24, 51, .25); transform: translateY(110%); transition: transform .2s ease-out; }
+    body.oracle-open #oracle { transform: none; }
+    .ask-toggle { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; height: 48px; align-items: center; justify-content: center; gap: 8px;
+                  border: 0; border-top: 2px solid var(--ink); background: var(--ink); color: var(--goal); font: 800 14px var(--mono); cursor: pointer; }
+    body.oracle-open .ask-toggle { background: var(--goal); color: var(--ink); }
+  }
+  /* Short landscape screens: maze on the left, controls in a narrow column, ORACLE on the right. */
+  @media (max-height: 480px) and (min-width: 621px) {
+    .play { display: grid; grid-template-columns: minmax(0, 1fr) 150px; grid-template-rows: auto 1fr auto; gap: 6px 10px; padding: 8px;
+            grid-template-areas: "board head" "board pad" "board foot"; }
+    .play > header { grid-area: head; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .goal { display: none; }
+    .board { grid-area: board; }
+    .pad { grid-area: pad; align-self: center; }
+    .play > footer { grid-area: foot; flex-direction: column; gap: 4px; }
+    footer .links { flex-direction: column; gap: 4px; }
+    .game { grid-template-columns: minmax(0, 1fr) minmax(200px, 240px); }
+  }
+  /* Fingers: bigger arrow buttons. */
+  @media (pointer: coarse) {
+    .pad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 46px); gap: 6px; }
+    .pad button { font-size: 18px; }
+    footer button { padding: 10px 0; }
+    .btn { padding: 13px 16px; }
+  }
+  @media (pointer: coarse) and (max-height: 480px) {
+    .pad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 40px); }
+  }
+  @media (prefers-reduced-motion: reduce) { #oracle { transition: none; } }
+</style>
+</head>
+<body>
+<div class="game">
+  <section class="play" aria-label="Robot Maze">
+    <header>
+      <span><b id="level"></b> <span class="goal" id="goal"></span></span>
+      <span id="steps"></span>
+    </header>
+    <div class="board" id="board">
+      <canvas id="c" tabindex="0"></canvas>
+      <div class="card-wrap" id="overlay" hidden></div>
+    </div>
+    <div class="pad" id="pad">
+      <button type="button" data-d="up">↑</button>
+      <button type="button" data-d="left">←</button>
+      <button type="button" data-d="down">↓</button>
+      <button type="button" data-d="right">→</button>
+    </div>
+    <footer>
+      <span class="badges" id="totals"></span>
+      <span class="links"><button type="button" id="change-band"></button><button type="button" id="reset"></button></span>
+    </footer>
+  </section>
+  <aside id="oracle"></aside>
+</div>
+<button type="button" class="ask-toggle" id="ask-toggle" aria-controls="oracle" aria-expanded="false"></button>
+
+<script>
+(() => {
+  const t = (key, vars) => kidvo.t(key, vars);
+
+  /* ---------------- settings per age band ---------------- */
+  const BANDS = {
+    // Explorers (7-9) get wrong answers that point straight into a wall: easy to check by looking.
+    explorers: { ages: '7–9', size: l => Math.min(5 + (l - 1), 9), loops: 0.12, wrongChance: 0.35, wrongKind: 'wall' },
+    // Investigators (10-13) get believable wrong answers that lead into dead ends.
+    investigators: { ages: '10–13', size: l => Math.min(7 + (l - 1) * 2, 15), loops: 0.22, wrongChance: 0.4, wrongKind: 'deadend' }
+  };
+  const SPARKS = 3;
+  const DIRS = { up: [0, -1, 1], right: [1, 0, 2], down: [0, 1, 4], left: [-1, 0, 8] };
+  const OPP = { 1: 4, 2: 8, 4: 1, 8: 2 };
+
+  const $ = id => document.getElementById(id);
+  const cv = $('c');
+  const ctx = cv.getContext('2d');
+  const rand = n => Math.floor(Math.random() * n);
+
+  let band = null, B = null;
+  let level = 1, N, cells, dist, me, steps = 0, par, trail, shownPath = null, aiSolved = false, done = false;
+  let progress = { brain: 0, detective: 0, shortest: 0, best: 1 };
+  let seenWrong = false;
+  let overlayView = null;   // re-renders the open card when the language changes
+
+  /* ---------------- maze ---------------- */
+  function generate(n, loops) {
+    const g = new Uint8Array(n * n), seen = new Uint8Array(n * n), stack = [0];
+    seen[0] = 1;
+    while (stack.length) {
+      const c = stack[stack.length - 1], x = c % n, y = (c / n) | 0;
+      const opts = Object.values(DIRS).filter(([dx, dy]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < n && ny < n && !seen[ny * n + nx]; });
+      if (!opts.length) { stack.pop(); continue; }
+      const [dx, dy, bit] = opts[rand(opts.length)];
+      const nc = (y + dy) * n + (x + dx);
+      g[c] |= bit; g[nc] |= OPP[bit]; seen[nc] = 1; stack.push(nc);
+    }
+    // Knock out some extra walls so there is more than one route. That makes "fewest steps" a real puzzle.
+    for (let c = 0; c < n * n; c++) {
+      if (Math.random() > loops) continue;
+      const x = c % n, y = (c / n) | 0;
+      const closed = Object.values(DIRS).filter(([dx, dy, bit]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < n && ny < n && !(g[c] & bit); });
+      if (!closed.length) continue;
+      const [dx, dy, bit] = closed[rand(closed.length)];
+      g[c] |= bit; g[(y + dy) * n + (x + dx)] |= OPP[bit];
+    }
+    return g;
+  }
+
+  function distances(goal) {
+    const d = new Int16Array(N * N).fill(-1), q = [goal];
+    d[goal] = 0;
+    while (q.length) {
+      const c = q.shift(), x = c % N, y = (c / N) | 0;
+      for (const [dx, dy, bit] of Object.values(DIRS)) {
+        if (!(cells[c] & bit)) continue;
+        const nc = (y + dy) * N + (x + dx);
+        if (d[nc] < 0) { d[nc] = d[c] + 1; q.push(nc); }
+      }
+    }
+    return d;
+  }
+
+  const idx = p => p.y * N + p.x;
+  const open = (p, d) => !!(cells[idx(p)] & DIRS[d][2]);
+  const step = (p, d) => ({ x: p.x + DIRS[d][0], y: p.y + DIRS[d][1] });
+  const bestDir = p => Object.keys(DIRS).find(d => open(p, d) && dist[idx(step(p, d))] === dist[idx(p)] - 1);
+
+  function runLength(p, d, along) {
+    // How many steps in direction d, either along the shortest path or down a corridor.
+    let n = 0, cur = p;
+    while (open(cur, d) && n < N) {
+      const nx = step(cur, d);
+      if (along && dist[idx(nx)] !== dist[idx(cur)] - 1) break;
+      n++; cur = nx;
+      if (!along && Object.keys(DIRS).filter(k => open(cur, k)).length > 2) break;
+    }
+    return Math.max(1, n);
+  }
+  function shortestPath(from) {
+    const out = [];
+    let cur = from;
+    while (dist[idx(cur)] > 0) { cur = step(cur, bestDir(cur)); out.push(cur); }
+    return out;
+  }
+
+  /* ---------------- game ---------------- */
+  function start(l) {
+    level = l;
+    N = B.size(l);
+    cells = generate(N, B.loops);
+    dist = distances(N - 1);            // goal: top-right cell
+    me = { x: 0, y: N - 1 };            // start: bottom-left cell
+    par = dist[idx(me)];
+    steps = 0; trail = new Set([idx(me)]); shownPath = null; aiSolved = false; done = false;
+    closeOverlay();
+    oracle.reset({ sparks: SPARKS });
+    oracle.setEnabled(true);
+    setDrawer(false);
+    renderHeader();
+    fit();
+    cv.focus();
+  }
+
+  function fit() {
+    if (!N) return;
+    const box = $('board').getBoundingClientRect();
+    const size = Math.max(120, Math.floor(Math.min(box.width, box.height) - 8));
+    const cell = Math.max(6, Math.floor(size / N));
+    cv.width = cv.height = cell * N + 4;
+    draw();
+  }
+
+  function draw() {
+    const cell = (cv.width - 4) / N, o = 2;
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = '#c6f3e3';
+    for (const i of trail) ctx.fillRect(o + (i % N) * cell, o + ((i / N) | 0) * cell, cell, cell);
+    if (shownPath) {
+      ctx.fillStyle = '#ff9a3c';
+      for (const p of shownPath) ctx.fillRect(o + p.x * cell + cell * .38, o + p.y * cell + cell * .38, cell * .24, cell * .24);
+    }
+    const gx = o + (N - 1) * cell, gy = o;
+    ctx.fillStyle = '#ffd23f';
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = (i % 2 ? .2 : .42) * cell, a = -Math.PI / 2 + i * Math.PI / 5;
+      ctx.lineTo(gx + cell / 2 + r * Math.cos(a), gy + cell / 2 + r * Math.sin(a));
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#191833'; ctx.lineWidth = Math.max(1, cell / 22); ctx.stroke();
+    ctx.fillStyle = '#ff6b5b';
+    ctx.fillRect(o + me.x * cell + cell * .22, o + me.y * cell + cell * .22, cell * .56, cell * .56);
+    ctx.fillStyle = '#191833';
+    const w = Math.max(2, Math.round(cell / 7));
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const v = cells[y * N + x], px = o + x * cell, py = o + y * cell;
+      if (!(v & 1)) ctx.fillRect(px - w / 2, py - w / 2, cell + w, w);
+      if (!(v & 8)) ctx.fillRect(px - w / 2, py - w / 2, w, cell + w);
+      if (y === N - 1 && !(v & 4)) ctx.fillRect(px - w / 2, py + cell - w / 2, cell + w, w);
+      if (x === N - 1 && !(v & 2)) ctx.fillRect(px + cell - w / 2, py - w / 2, w, cell + w);
+    }
+  }
+
+  function move(d) {
+    if (done || !band) return;
+    if (!open(me, d)) { cv.classList.remove('bump'); void cv.offsetWidth; cv.classList.add('bump'); return; }
+    me = step(me, d);
+    steps++;
+    trail.add(idx(me));
+    if (shownPath) shownPath = shownPath.filter(p => !(p.x === me.x && p.y === me.y));
+    renderHeader();
+    draw();
+    if (dist[idx(me)] === 0) finish();
+  }
+
+  /* ---------------- the practice AI ---------------- */
+  // Keys that differ per band end in _explorers or _investigators.
+  const tb = (key, vars) => t(`${key}_${band}`, vars);
+
+  function wayAnswer() {
+    const right = bestDir(me);
+    let wrong = (!seenWrong && level === 1) || Math.random() < B.wrongChance;
+    let dir = right, n = runLength(me, right, true);
+    if (wrong) {
+      const walls = Object.keys(DIRS).filter(d => !open(me, d));
+      const away = Object.keys(DIRS).filter(d => d !== right && open(me, d));
+      if (B.wrongKind === 'wall' && walls.length) { dir = walls[rand(walls.length)]; n = 1 + rand(2); }
+      else if (away.length) { dir = away[rand(away.length)]; n = runLength(me, dir, false); }
+      else if (walls.length) { dir = walls[rand(walls.length)]; n = 1 + rand(3); }
+      else wrong = false;
+      if (wrong) seenWrong = true;
+    }
+    const followUps = [
+      { id: 'sure', label: t('q_sure'), answer: () => ({ text: tb('a_sure'), flaggable: false, followUps: [checkQuestion()] }) },
+      checkQuestion()
+    ];
+    if (band === 'investigators') followUps.push({ id: 'how', label: t('q_how'), answer: () => ({ text: t(wrong ? 'a_how_wrong' : 'a_how_right'), flaggable: false }) });
+    return { text: tb('way', { dir: t('dir_' + dir), n }), wrong, followUps };
+  }
+  const checkQuestion = () => ({ id: 'check', label: t('q_check'), answer: () => ({ text: tb('a_check'), flaggable: false }) });
+
+  let tip = 0;
+  function questions() {
+    if (done || !band) return [];
+    const q = [{ id: 'way', label: tb('q_way'), cost: 1, answer: wayAnswer }];
+    if (band === 'investigators') q.push({ id: 'tip', label: t('q_tip'), cost: 1, answer: () => ({ text: t('tip' + (tip++ % 4 + 1)), flaggable: false }) });
+    q.push({ id: 'path', label: tb('q_path'), cost: 3, answer: () => {
+      shownPath = shortestPath(me);
+      aiSolved = true;
+      draw();
+      return {
+        text: tb('a_path', { n: shownPath.length }),
+        flaggable: false,
+        followUps: [{ id: 'alone', label: tb('q_alone'), answer: () => ({ text: tb('a_alone'), flaggable: false }) }]
+      };
+    } });
+    return q;
+  }
+
+  const aiText = () => ({
+    tag: t('ai_tag'), ask: t('ai_ask'), notRight: t('ai_notRight'), caught: t('ai_caught'), fine: t('ai_fine'),
+    other: t('ai_other'), sparksLeft: v => t('ai_sparksLeft', v), costs: v => t('ai_costs', v), notEnough: t('ai_notEnough')
+  });
+  const oracle = kidvoAI.create($('oracle'), { name: 'ORACLE-3000', sparks: SPARKS, questions, text: aiText(), onAnswer: () => renderToggle() });
+
+  // Phones: ORACLE lives in a drawer that the child opens and closes.
+  function renderToggle() {
+    const open = document.body.classList.contains('oracle-open');
+    const left = oracle.stats().sparksLeft;
+    $('ask-toggle').textContent = open ? '▼ ' + t('closeOracle') : '▲ ' + t('openOracle', { n: left ?? SPARKS });
+    $('ask-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function setDrawer(open) { document.body.classList.toggle('oracle-open', open); renderToggle(); if (!open) cv.focus(); }
+  $('ask-toggle').addEventListener('click', () => setDrawer(!document.body.classList.contains('oracle-open')));
+
+  /* ---------------- end of level ---------------- */
+  function finish() {
+    done = true;
+    oracle.setEnabled(false);
+    const s = oracle.stats();
+    const earned = [];
+    if (s.asked === 0) { earned.push('badge_brain'); progress.brain++; }
+    if (s.caught > 0) { earned.push('badge_detective'); progress.detective++; }
+    if (steps === par) { earned.push('badge_shortest'); progress.shortest++; }
+    progress.best = Math.max(progress.best, level + 1);
+    save({ level: level + 1 });
+    renderFooter();
+    kidvo.emit('solved', { level, steps, par, asked: s.asked, caught: s.caught, aiSolved, band });
+
+    let answered = null; // the player's reflection answer, kept so a language switch can redraw the card
+    const view = () => {
+      const card = el('div', null, 'card');
+      card.append(el('h2', tb('done')), stat(t('stat_steps'), steps), stat(t('stat_par'), par),
+        stat(t('stat_sparks'), t('stat_sparks_val', { used: s.spent, total: SPARKS })));
+      if (earned.length) {
+        const e = el('div', null, 'earned');
+        for (const b of earned) e.append(el('span', t(b)));
+        card.append(e);
+      }
+      if (aiSolved) card.append(el('p', tb('showed'), 'note'));
+      const next = el('button', t('next'), 'btn');
+      next.type = 'button';
+      next.addEventListener('click', () => start(level + 1));
+      if (s.asked === 0) {
+        card.append(el('p', tb('noask')), next);
+        return card;
+      }
+      card.append(el('p', t('reflect'), 'feedback'));
+      if (answered === null) {
+        const row = el('div', null, 'row');
+        for (const [label, saidRight] of [[t('yes'), true], [t('no'), false]]) {
+          const b = el('button', label, 'btn alt');
+          b.type = 'button';
+          b.addEventListener('click', () => { answered = saidRight; showOverlay(view); $('overlay').querySelector('.btn')?.focus(); });
+          row.append(b);
+        }
+        card.append(row);
+      } else {
+        let text;
+        if (s.wrongGiven > 0) {
+          text = answered
+            ? t('fb_wrong_said_right', { n: s.wrongGiven })
+            : t('fb_wrong_said_wrong', { n: s.wrongGiven }) + ' ' + t(s.caught ? 'fb_caught' : 'fb_notice');
+        } else {
+          text = t(answered ? 'fb_right_said_right' : 'fb_right_said_wrong');
+        }
+        card.append(el('p', text), next);
+      }
+      return card;
+    };
+    showOverlay(view);
+  }
+
+  /* ---------------- small helpers ---------------- */
+  function el(tag, text, cls) {
+    const n = document.createElement(tag);
+    if (text != null) n.textContent = text;
+    if (cls) n.className = cls;
+    return n;
+  }
+  function stat(label, value) {
+    const d = el('div', null, 'stat');
+    d.append(el('span', label), el('span', String(value)));
+    return d;
+  }
+  function showOverlay(view) {
+    overlayView = view;
+    $('overlay').replaceChildren(view());
+    $('overlay').hidden = false;
+    $('overlay').querySelector('button')?.focus();
+  }
+  function closeOverlay() { overlayView = null; $('overlay').hidden = true; $('overlay').replaceChildren(); }
+  function save(extra = {}) {
+    kidvo.store.set('progress', progress).catch(() => {});
+    for (const [k, v] of Object.entries(extra)) kidvo.store.set(k, v).catch(() => {});
+  }
+
+  function renderHeader() {
+    $('level').textContent = t('level', { n: level });
+    $('goal').textContent = t('goal');
+    $('steps').textContent = t('stepsCount', { n: steps });
+  }
+  function renderFooter() {
+    $('totals').textContent = t('totals', progress);
+    $('change-band').textContent = band ? t('playingAs', { band: t('band_' + band), ages: BANDS[band].ages }) : '';
+    $('change-band').hidden = !band;
+    $('reset').textContent = t(resetArmed ? 'resetConfirm' : 'reset');
+  }
+
+  /* ---------------- choose a band ---------------- */
+  function pickBand() {
+    showOverlay(() => {
+      const card = el('div', null, 'card');
+      card.append(el('h2', t('who')), el('p', t('whoNote'), 'note'));
+      for (const key of Object.keys(BANDS)) {
+        const btn = el('button', null, 'btn alt band');
+        btn.type = 'button';
+        btn.append(el('span', t('band_' + key)), el('small', t('ages', { ages: BANDS[key].ages })));
+        btn.addEventListener('click', () => setBand(key, true));
+        card.append(btn);
+      }
+      return card;
+    });
+  }
+
+  function setBand(key, fresh) {
+    band = key; B = BANDS[key];
+    kidvo.store.set('band', key).catch(() => {});
+    if (fresh) { level = 1; save({ level: 1 }); }
+    start(level);
+    oracle.say(tb('greet'));
+    renderFooter();
+  }
+
+  /* ---------------- language ---------------- */
+  function applyLanguage() {
+    document.title = 'Robot Maze';
+    cv.setAttribute('aria-label', t('canvas'));
+    $('pad').setAttribute('aria-label', t('padLabel'));
+    document.querySelectorAll('#pad button').forEach(b => b.setAttribute('aria-label', t(b.dataset.d)));
+    oracle.setText(aiText());
+    renderToggle();
+    renderHeader();
+    renderFooter();
+    if (overlayView && !$('overlay').hidden) $('overlay').replaceChildren(overlayView());
+  }
+
+  /* ---------------- input ---------------- */
+  const KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
+  addEventListener('keydown', e => {
+    const d = KEYS[e.key];
+    if (d && !e.target.closest('button')) { e.preventDefault(); move(d); }
+  });
+  document.querySelectorAll('#pad button').forEach(b => b.addEventListener('click', () => { move(b.dataset.d); cv.focus(); }));
+  let touch = null;
+  cv.addEventListener('pointerdown', e => { touch = { x: e.clientX, y: e.clientY }; cv.focus(); });
+  cv.addEventListener('pointerup', e => {
+    if (!touch) return;
+    const dx = e.clientX - touch.x, dy = e.clientY - touch.y;
+    touch = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+    move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  });
+  $('change-band').addEventListener('click', pickBand);
+  // "start over" needs two taps, so a younger sibling cannot wipe progress by accident.
+  let resetArmed = false, resetTimer = null;
+  $('reset').addEventListener('click', () => {
+    if (!resetArmed) {
+      resetArmed = true; renderFooter();
+      resetTimer = setTimeout(() => { resetArmed = false; renderFooter(); }, 3000);
+      return;
+    }
+    clearTimeout(resetTimer); resetArmed = false;
+    progress = { brain: 0, detective: 0, shortest: 0, best: 1 };
+    band = null; B = null; level = 1; seenWrong = false;
+    save({ level: 1, band: null });
+    oracle.reset({ sparks: SPARKS });
+    renderFooter();
+    pickBand();
+  });
+  new ResizeObserver(() => fit()).observe($('board'));
+
+  // Test hook for the automated browser test only (navigator.webdriver is true there).
+  if (navigator.webdriver) window.__robotMaze = {
+    route: () => { const out = []; let cur = me; while (dist[idx(cur)] > 0) { const d = bestDir(cur); out.push(d); cur = step(cur, d); } return out; },
+    move
+  };
+
+  kidvo.onLang(applyLanguage);
+  pickBand();
+  kidvo.ready(async () => {
+    try {
+      progress = Object.assign(progress, (await kidvo.store.get('progress')) || {});
+      renderFooter();
+      const saved = await kidvo.store.get('band');
+      const savedLevel = await kidvo.store.get('level');
+      if (saved && BANDS[saved]) { level = savedLevel || 1; setBand(saved, false); }
+    } catch { /* first visit: keep the picker */ }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+name: checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches: [main]
+
+# Read-only on purpose. This workflow runs code from forks, so it gets no secrets
+# and no write access. Never switch it to pull_request_target.
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  one-pr:
+    name: One open PR per person
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check the author has no other open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          ASSOCIATION: ${{ github.event.pull_request.author_association }}
+        run: |
+          case "$ASSOCIATION" in OWNER|MEMBER|COLLABORATOR) echo "Maintainers are exempt."; exit 0;; esac
+          others=$(gh pr list --repo "$REPO" --author "$AUTHOR" --state open --limit 100 --json number \
+            --jq "[.[] | select(.number != $NUMBER) | \"#\" + (.number|tostring)] | join(\", \")")
+          if [ -n "$others" ]; then
+            echo "::error::@$AUTHOR already has an open pull request ($others). kidvo accepts one open PR per GitHub account at a time, so every contributor gets the curator's attention. Close or finish that one first, then reopen this."
+            exit 1
+          fi
+          echo "@$AUTHOR has no other open pull request."
+
+  rule-1:
+    name: Do no harm (automatic part)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Static checks (manifest, size, no outside links, only own folder)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ALLOW_CORE: ${{ contains(github.event.pull_request.labels.*.name, 'core') }}
+        run: node scripts/check.mjs
+
+      - name: Build the app registry
+        run: node scripts/build-registry.mjs
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke test (desktop boots, every app opens, no JS errors)
+        env:
+          SCREENSHOT: screenshot.png
+        run: node tests/smoke.mjs
+
+      - name: Keep the screenshot for the reviewer
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-screenshot
+          path: screenshot.png
+          if-no-files-found: ignore
+          retention-days: 14

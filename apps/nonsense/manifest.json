@@ -1,0 +1,19 @@
+{
+  "id": "nonsense",
+  "name": "Confident Nonsense",
+  "description": "A quiz AI answers every question with total confidence, but some answers are made up. Catch them, and check the library when you are not sure.",
+  "author": { "name": "Alpár" },
+  "type": "window",
+  "window": { "width": 620, "height": 580 },
+  "color": "#9ec5ff",
+  "icon": "icon.svg",
+  "bands": ["explorers", "investigators"],
+  "skills": ["ai-can-be-wrong"],
+  "languages": ["en", "hu", "ro"],
+  "translations": {
+    "hu": { "name": "Magabiztos kamu", "description": "Egy kvíz-MI minden kérdésre teljes magabiztossággal válaszol, de néhány válasza kitalált. Kapd el őket, és nézz utána a könyvtárban, ha nem vagy biztos." },
+    "ro": { "name": "Sigur, dar greșit", "description": "O IA de quiz răspunde la orice întrebare foarte sigură pe ea, dar unele răspunsuri sunt inventate. Prinde-le și verifică la bibliotecă atunci când nu ești sigur." }
+  },
+  "tags": ["game", "quiz"],
+  "added": "2026-10-13"
+}

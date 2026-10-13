@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Train the Sorter</title>
+<script src="../../shell/sdk.js"></script>
+<script src="lang/en.js"></script>
+<script src="lang/hu.js"></script>
+<script src="lang/ro.js"></script>
+<style>
+  :root { --bg: #fff6ea; --ink: #191833; --panel: #23263a; --panel-2: #2e3250; --text: #d9ffe6; --dim: #8f97c4; --led: #ff6b5b;
+          --sun: #ffd23f; --good: #c6f3e3; --bad: #ffd6e0; --soft: #6b5d4b; --card: #fff;
+          --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; --sans: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); display: flex; flex-direction: column; }
+  .bot { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--panel); color: var(--text); border-bottom: 2px solid var(--ink); font-family: var(--mono); }
+  .eye { width: 14px; height: 14px; margin-top: 3px; flex: none; background: var(--led); box-shadow: 0 0 0 3px #4a2030, 0 0 10px var(--led); }
+  .bot.thinking .eye { animation: blink .5s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .bot-name { font-weight: 800; letter-spacing: .06em; }
+  .bot-tag { color: var(--dim); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+  .bot-says { flex: 1; min-width: 0; font-size: 14px; }
+  .bot-says p { margin: 4px 0 0; }
+  .steps { display: flex; gap: 0; padding: 0 12px; background: #fff; border-bottom: 2px solid var(--ink); font: 700 11.5px/1 var(--mono); overflow-x: auto; }
+  .steps span { padding: 9px 10px; color: var(--soft); border-right: 1px dashed #e2d3bd; white-space: nowrap; }
+  .steps span.on { color: var(--ink); background: var(--sun); }
+  .steps span.done { color: var(--ink); text-decoration: line-through; text-decoration-thickness: 2px; }
+  main { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px 18px; display: flex; flex-direction: column; gap: 12px; }
+  h2 { margin: 0; font: 800 17px/1.25 var(--mono); text-wrap: balance; }
+  .hint { margin: 0; color: var(--soft); font-size: 13.5px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .fruit { background: var(--card); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); padding: 8px; display: grid; gap: 6px; justify-items: center; }
+  .fruit.apple { background: var(--good); }
+  .fruit.not { background: var(--bad); }
+  .fruit svg { width: 84px; height: 84px; }
+  .toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%; }
+  .toggle button { font: 700 12px/1.1 var(--mono); padding: 7px 4px; border: 2px solid var(--ink); background: #fff; color: var(--ink); cursor: pointer; }
+  .toggle button[aria-pressed="true"] { background: var(--ink); color: var(--sun); }
+  .btn { align-self: flex-start; font: 800 14px/1.2 var(--mono); padding: 11px 16px; background: var(--sun); color: var(--ink); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; text-align: left; }
+  .btn.alt { background: #fff; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:focus-visible, .toggle button:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+  .test { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+  .test .big { width: 150px; height: 150px; background: #fff; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); display: grid; place-items: center; }
+  .test .big svg { width: 120px; height: 120px; }
+  .verdict { padding: 10px 12px; border: 2px dashed var(--ink); background: var(--good); }
+  .verdict.bad { background: var(--bad); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .results { display: flex; flex-wrap: wrap; gap: 8px; }
+  .res { width: 74px; text-align: center; font: 800 11px/1.2 var(--mono); padding: 4px; border: 2px solid var(--ink); background: #fff; }
+  .res svg { width: 54px; height: 54px; display: block; margin: 0 auto 2px; }
+  .res.ok { background: var(--good); }
+  .res.no { background: var(--bad); }
+  .bars { display: grid; gap: 8px; max-width: 460px; }
+  .bar { display: grid; grid-template-columns: 7ch 1fr 6ch; gap: 8px; align-items: center; font: 700 13px var(--mono); font-variant-numeric: tabular-nums; }
+  .bar .track { height: 18px; border: 2px solid var(--ink); background: #fff; position: relative; }
+  .bar .fill { position: absolute; inset: 0 auto 0 0; background: var(--sun); }
+  .bar.after .fill { background: #7be0c3; }
+  .lesson { padding: 12px 14px; background: var(--sun); border: 2px solid var(--ink); font-weight: 600; }
+  .earned { display: flex; flex-wrap: wrap; gap: 6px; }
+  .earned span { font: 800 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .05em; padding: 5px 7px; border: 2px solid var(--ink); background: var(--good); }
+  .choices { display: grid; gap: 8px; max-width: 520px; }
+  @media (max-width: 520px) {
+    .test { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-height: 480px) {
+    .bot { padding: 6px 10px; } .bot-tag { display: none; } .bot-says p { margin-top: 2px; }
+    .steps span { padding: 6px 8px; } main { padding: 8px 10px 12px; gap: 8px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } .fruit svg { width: 60px; height: 60px; }
+    .test .big { width: 110px; height: 110px; } .test .big svg { width: 90px; height: 90px; }
+  }
+  @media (pointer: coarse) { .toggle button { min-height: 42px; font-size: 13px; } .btn { min-height: 48px; } .choices .btn { padding: 13px 14px; } }
+  @media (prefers-reduced-motion: reduce) { .bot.thinking .eye { animation: none; } }
+</style>
+</head>
+<body>
+  <div class="bot" id="bot">
+    <span class="eye" aria-hidden="true"></span>
+    <div class="bot-says"><div class="bot-name">SORT-1</div><div class="bot-tag" id="tag"></div><p id="says" aria-live="polite"></p></div>
+  </div>
+  <nav class="steps" id="steps" aria-label="Steps"></nav>
+  <main id="stage"></main>
+
+<script>
+(() => {
+  const t = (k, v) => kidvo.t(k, v);
+  const $ = id => document.getElementById(id);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+  /* ---------------- fruit: what SORT-1 can "see" ---------------- */
+  // h = colour (hue in degrees), r = how round (0-1), s = size (0-1). That is all SORT-1 knows about a fruit.
+  const KINDS = {
+    redapple:    { h: 355, r: .90, s: .55, apple: true },
+    greenapple:  { h: 95,  r: .90, s: .55, apple: true },
+    yellowapple: { h: 52,  r: .90, s: .55, apple: true },
+    banana:      { h: 52,  r: .10, s: .80 },
+    orange:      { h: 30,  r: .95, s: .60 },
+    lemon:       { h: 55,  r: .60, s: .45 },
+    lime:        { h: 95,  r: .80, s: .35 },
+    plum:        { h: 285, r: .85, s: .35 },
+    pear:        { h: 85,  r: .55, s: .60 },
+    cherry:      { h: 350, r: 1.0, s: .15 },
+    strawberry:  { h: 355, r: .50, s: .25 }
+  };
+  // The first examples are one-sided on purpose: every apple in them is red.
+  const TEACH1 = ['redapple', 'redapple', 'redapple', 'banana', 'orange', 'lemon', 'lime', 'plum'];
+  const TEST1 = ['redapple', 'greenapple', 'yellowapple', 'cherry', 'pear', 'orange'];
+  const TEACH2 = ['greenapple', 'greenapple', 'yellowapple', 'yellowapple', 'cherry', 'strawberry', 'pear', 'redapple'];
+  const TEST2 = ['greenapple', 'yellowapple', 'redapple', 'cherry', 'plum', 'banana'];
+  const JITTER = [[0, 0], [5, .03], [-4, -.03], [3, -.02], [-6, .02], [2, .04], [-2, -.04], [6, .01]];
+  const make = (kind, n) => { const k = KINDS[kind], [dh, ds] = JITTER[n % JITTER.length]; return { kind, h: (k.h + dh + 360) % 360, r: k.r, s: Math.max(.05, k.s + ds), apple: !!k.apple }; };
+
+  /* ---------------- SORT-1: a one-nearest-neighbour classifier ---------------- */
+  // It finds the example that looks most like the new fruit and copies its label. Colour counts most.
+  let memory = [];
+  function distance(a, b) {
+    const dh = Math.min(Math.abs(a.h - b.h), 360 - Math.abs(a.h - b.h)) / 180;
+    return 1.6 * dh + 1.0 * Math.abs(a.r - b.r) + 0.8 * Math.abs(a.s - b.s);
+  }
+  function classify(f) {
+    let best = null, bestD = Infinity;
+    for (const ex of memory) { const d = distance(f, ex); if (d < bestD) { bestD = d; best = ex; } }
+    // It always sounds sure, whether it is right or not.
+    const sure = Math.max(72, Math.min(99, Math.round(99 - bestD * 25)));
+    return { apple: best ? best.label : false, sure };
+  }
+
+  /* ---------------- drawings ---------------- */
+  const INK = '#191833';
+  const C = { redapple: '#e8343e', greenapple: '#8fd14f', yellowapple: '#ffd23f' };
+  function svg(kind) {
+    const s = (inner) => `<svg viewBox="0 0 100 100" role="img" aria-label="${t('fruit_' + kind)}">${inner}</svg>`;
+    const apple = col => s(`<path d="M50 30 C 30 14, 8 30, 14 58 C 20 84, 40 92, 50 86 C 60 92, 80 84, 86 58 C 92 30, 70 14, 50 30 Z" fill="${col}" stroke="${INK}" stroke-width="3"/>
+      <path d="M50 30 Q 52 18 58 11" fill="none" stroke="#6b4423" stroke-width="4" stroke-linecap="round"/>
+      <ellipse cx="66" cy="20" rx="10" ry="5" transform="rotate(-25 66 20)" fill="#5cb85c" stroke="${INK}" stroke-width="2"/>
+      <ellipse cx="32" cy="50" rx="5" ry="10" fill="#fff" opacity=".45"/>`);
+    switch (kind) {
+      case 'redapple': case 'greenapple': case 'yellowapple': return apple(C[kind]);
+      case 'banana': return s(`<path d="M16 28 C 18 70, 60 92, 90 70 C 84 64, 78 62, 72 66 C 52 76, 34 60, 28 30 Z" fill="#ffd84d" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M16 28 L 26 24 L 28 30" fill="#6b4423" stroke="${INK}" stroke-width="2"/>`);
+      case 'orange': return s(`<circle cx="50" cy="56" r="33" fill="#ff9a2e" stroke="${INK}" stroke-width="3"/>
+        <circle cx="38" cy="48" r="1.6" fill="#d9731a"/><circle cx="60" cy="66" r="1.6" fill="#d9731a"/><circle cx="64" cy="44" r="1.6" fill="#d9731a"/><circle cx="44" cy="72" r="1.6" fill="#d9731a"/>
+        <ellipse cx="58" cy="22" rx="9" ry="4" transform="rotate(-20 58 22)" fill="#5cb85c" stroke="${INK}" stroke-width="2"/>`);
+      case 'lemon': return s(`<path d="M10 55 L 18 50 C 26 28, 74 28, 82 50 L 90 55 L 82 60 C 74 82, 26 82, 18 60 Z" fill="#ffe14d" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>`);
+      case 'lime': return s(`<circle cx="50" cy="56" r="22" fill="#7fd14b" stroke="${INK}" stroke-width="3"/><circle cx="50" cy="56" r="13" fill="none" stroke="#b9ec8f" stroke-width="3"/>`);
+      case 'plum': return s(`<ellipse cx="50" cy="58" rx="22" ry="26" fill="#8a4fbf" stroke="${INK}" stroke-width="3"/><path d="M50 34 Q 44 58 50 82" fill="none" stroke="#5e2f8a" stroke-width="2"/>
+        <path d="M50 33 L 52 24" stroke="#6b4423" stroke-width="3"/>`);
+      case 'pear': return s(`<path d="M50 20 C 40 20, 38 34, 40 42 C 24 52, 20 86, 50 88 C 80 86, 76 52, 60 42 C 62 34, 60 20, 50 20 Z" fill="#b5d94a" stroke="${INK}" stroke-width="3"/>
+        <path d="M50 20 Q 52 12 56 8" fill="none" stroke="#6b4423" stroke-width="3" stroke-linecap="round"/>`);
+      case 'cherry': return s(`<path d="M36 64 Q 40 34 56 18 M62 68 Q 60 40 56 18" fill="none" stroke="#5a7d2a" stroke-width="3"/>
+        <circle cx="36" cy="72" r="12" fill="#d81e3a" stroke="${INK}" stroke-width="3"/><circle cx="62" cy="76" r="12" fill="#d81e3a" stroke="${INK}" stroke-width="3"/>
+        <ellipse cx="64" cy="22" rx="9" ry="4" transform="rotate(-20 64 22)" fill="#5cb85c" stroke="${INK}" stroke-width="2"/>`);
+      case 'strawberry': return s(`<path d="M50 88 C 26 72, 20 48, 28 38 C 38 30, 62 30, 72 38 C 80 48, 74 72, 50 88 Z" fill="#ef3b4f" stroke="${INK}" stroke-width="3"/>
+        <path d="M32 36 L 40 26 L 46 34 L 50 24 L 54 34 L 60 26 L 68 36 Z" fill="#5cb85c" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="42" cy="50" r="1.8" fill="#ffe14d"/><circle cx="58" cy="52" r="1.8" fill="#ffe14d"/><circle cx="50" cy="64" r="1.8" fill="#ffe14d"/><circle cx="40" cy="64" r="1.8" fill="#ffe14d"/><circle cx="60" cy="66" r="1.8" fill="#ffe14d"/>`);
+    }
+    return s('');
+  }
+
+  /* ---------------- game flow ---------------- */
+  const STEPS = ['step_teach', 'step_test', 'step_fix', 'step_retest'];
+  let phase = 0, view = null, scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null };
+
+  function steps() {
+    const nav = $('steps');
+    nav.replaceChildren(...STEPS.map((k, i) => el('span', i === phase ? 'on' : (i < phase ? 'done' : ''), `${i + 1} ${t(k)}`)));
+  }
+  let lastSay = null;
+  async function say(key, vars) {
+    lastSay = [key, vars];
+    $('bot').classList.add('thinking');
+    $('says').textContent = '...';
+    await wait(450);
+    $('bot').classList.remove('thinking');
+    $('says').textContent = t(key, vars);
+  }
+  function show(render) { view = render; repaint(); }
+  function repaint() {
+    $('tag').textContent = t('tag');
+    steps();
+    const stage = $('stage');
+    stage.replaceChildren(...[].concat(view()));
+    stage.scrollTop = 0;
+  }
+
+  function intro() {
+    phase = 0; memory = []; scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null };
+    say('hello');
+    show(() => {
+      const b = el('button', 'btn', t('start')); b.type = 'button';
+      b.addEventListener('click', () => teach(TEACH1, 1));
+      return [el('h2', null, t('introTitle')), el('p', 'hint', t('introHint')), b];
+    });
+  }
+
+  function teach(kinds, round) {
+    phase = round === 1 ? 0 : 2;
+    const items = shuffle(kinds.map((k, n) => ({ ...make(k, n), label: null })));
+    say(round === 1 ? 'teachSay1' : 'teachSay2');
+    show(() => {
+      const grid = el('div', 'grid');
+      for (const item of items) {
+        const card = el('div', 'fruit' + (item.label === true ? ' apple' : item.label === false ? ' not' : ''));
+        card.insertAdjacentHTML('beforeend', svg(item.kind));
+        const tog = el('div', 'toggle');
+        for (const [val, key] of [[true, 'label_apple'], [false, 'label_not']]) {
+          const b = el('button', null, t(key)); b.type = 'button';
+          b.setAttribute('aria-pressed', item.label === val ? 'true' : 'false');
+          b.addEventListener('click', () => { item.label = val; repaint(); });
+          tog.append(b);
+        }
+        card.append(tog);
+        grid.append(card);
+      }
+      const ready = items.every(i => i.label !== null);
+      const go = el('button', 'btn', t('teachBtn')); go.type = 'button'; go.disabled = !ready;
+      go.addEventListener('click', async () => {
+        memory = memory.concat(items);
+        go.disabled = true;
+        await say('learning', { n: memory.length });
+        await wait(700);
+        test(round === 1 ? TEST1 : TEST2, round);
+      });
+      return [el('h2', null, t(round === 1 ? 'teachTitle1' : 'teachTitle2')), el('p', 'hint', t(ready ? 'teachReady' : 'teachNeed')), grid, go];
+    });
+  }
+
+  function test(kinds, round) {
+    phase = round === 1 ? 1 : 3;
+    const items = kinds.map((k, n) => make(k, n + 3));
+    const results = [];
+    let idx = 0;
+    const one = () => {
+      const f = items[idx];
+      const guess = classify(f);
+      let judged = null;
+      say(guess.apple ? 'sayApple' : 'sayNot', { p: guess.sure });
+      show(() => {
+        const wrap = el('div', 'test');
+        const big = el('div', 'big'); big.insertAdjacentHTML('beforeend', svg(f.kind));
+        const side = el('div');
+        side.append(el('h2', null, t('testTitle', { n: idx + 1, total: items.length })), el('p', 'hint', t(guess.apple ? 'guessApple' : 'guessNot')));
+        if (judged === null) {
+          const row = el('div', 'row');
+          for (const [val, key] of [[true, 'judgeRight'], [false, 'judgeWrong']]) {
+            const b = el('button', 'btn alt', t(key)); b.type = 'button';
+            b.addEventListener('click', () => {
+              judged = val;
+              const sortRight = guess.apple === f.apple;
+              const childRight = val === sortRight;
+              results.push({ kind: f.kind, sortRight });
+              scores.judgedTotal++; if (childRight) scores.judged++;
+              kidvo.emit(childRight && !sortRight ? 'caught' : 'judged', { right: childRight });
+              repaint();
+            });
+            row.append(b);
+          }
+          side.append(row);
+        } else {
+          const sortRight = guess.apple === f.apple;
+          const childRight = judged === sortRight;
+          const key = childRight ? (sortRight ? 'fbRightRight' : 'fbWrongWrong') : (sortRight ? 'fbWrongRight' : 'fbRightWrong');
+          side.append(el('p', 'verdict' + (childRight ? '' : ' bad'), t(key, { fruit: t('fruit_' + f.kind) })));
+          const next = el('button', 'btn', t(idx + 1 < items.length ? 'next' : 'seeResults')); next.type = 'button';
+          next.addEventListener('click', () => { idx++; idx < items.length ? one() : summary(round, results); });
+          side.append(next);
+        }
+        wrap.append(big, side);
+        return wrap;
+      });
+    };
+    one();
+  }
+
+  function resultStrip(results) {
+    const strip = el('div', 'results');
+    for (const r of results) {
+      const d = el('div', 'res ' + (r.sortRight ? 'ok' : 'no'));
+      d.insertAdjacentHTML('beforeend', svg(r.kind));
+      d.append(t(r.sortRight ? 'resRight' : 'resWrong'));
+      strip.append(d);
+    }
+    return strip;
+  }
+
+  function summary(round, results) {
+    const right = results.filter(r => r.sortRight).length;
+    if (round === 1) scores.test1 = right; else scores.test2 = right;
+    if (round === 1) {
+      say(right === results.length ? 'sayProud' : 'saySure');
+      let picked = null;
+      show(() => {
+        const out = [el('h2', null, t('results', { n: right, total: results.length })), resultStrip(results)];
+        if (right === results.length) {
+          // The child's own labels already included variety (or got lucky). Still teach the idea.
+          out.push(el('p', 'hint', t('allRight1')));
+        }
+        out.push(el('h2', null, t('whyQ')));
+        const box = el('div', 'choices');
+        for (const k of ['whyA', 'whyB', 'whyC']) {
+          const b = el('button', 'btn alt', t(k)); b.type = 'button';
+          b.setAttribute('aria-pressed', picked === k ? 'true' : 'false');
+          b.addEventListener('click', () => { picked = k; if (scores.why === null) scores.why = k; repaint(); });
+          box.append(b);
+        }
+        out.push(box);
+        if (picked) {
+          out.push(el('p', 'verdict' + (picked === 'whyB' ? '' : ' bad'), t('fb_' + picked)));
+          if (picked === 'whyB') {
+            const fix = el('button', 'btn', t('fixBtn')); fix.type = 'button';
+            fix.addEventListener('click', () => teach(TEACH2, 2));
+            out.push(fix);
+          }
+        }
+        return out;
+      });
+    } else {
+      finish(results);
+    }
+  }
+
+  function finish(results) {
+    phase = 4;
+    const total = TEST1.length;
+    const earned = [];
+    if (scores.why === 'whyB') earned.push('badgeBias');
+    if (scores.test2 === total) earned.push('badgeTeacher');
+    if (scores.judged === scores.judgedTotal) earned.push('badgeEye');
+    kidvo.emit('done', { before: scores.test1, after: scores.test2 });
+    say(scores.test2 > scores.test1 ? 'sayThanks' : 'saySure');
+    show(() => {
+      const bars = el('div', 'bars');
+      for (const [key, n, cls] of [['before', scores.test1, ''], ['after', scores.test2, ' after']]) {
+        const row = el('div', 'bar' + cls);
+        const track = el('div', 'track'); const fill = el('div', 'fill'); fill.style.width = (100 * n / total) + '%'; track.append(fill);
+        row.append(el('span', null, t(key)), track, el('span', null, `${n}/${total}`));
+        bars.append(row);
+      }
+      const out = [el('h2', null, t('finalTitle')), resultStrip(results), bars,
+        el('p', null, t('judgedLine', { n: scores.judged, total: scores.judgedTotal })), el('p', 'lesson', t('lesson')), el('p', 'hint', t('think'))];
+      if (earned.length) { const e = el('div', 'earned'); for (const b of earned) e.append(el('span', null, t(b))); out.splice(1, 0, e); }
+      const again = el('button', 'btn', t('again')); again.type = 'button';
+      again.addEventListener('click', intro);
+      out.push(again);
+      return out;
+    });
+  }
+
+  kidvo.onLang(() => { if (view) repaint(); if (lastSay) $('says').textContent = t(...lastSay); });
+  // Test hook for the automated browser test only.
+  if (navigator.webdriver) window.__sorter = { classify: (kind, n = 0) => classify(make(kind, n)), memorySize: () => memory.length };
+  intro();
+})();
+</script>
+</body>
+</html>

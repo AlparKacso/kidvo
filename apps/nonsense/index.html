@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confident Nonsense</title>
+<script src="../../shell/sdk.js"></script>
+<script src="lang/en.js"></script>
+<script src="lang/hu.js"></script>
+<script src="lang/ro.js"></script>
+<style>
+  :root { --bg: #eef4ff; --ink: #191833; --panel: #23263a; --panel-2: #2e3250; --text: #d9ffe6; --dim: #8f97c4; --led: #ff6b5b;
+          --sun: #ffd23f; --paper: #fff8dc; --good: #c6f3e3; --bad: #ffd6e0; --soft: #5b6690;
+          --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; --sans: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); display: flex; flex-direction: column; position: relative; }
+  .bot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--panel); color: var(--text); border-bottom: 2px solid var(--ink); font-family: var(--mono); }
+  .eye { width: 14px; height: 14px; flex: none; background: var(--led); box-shadow: 0 0 0 3px #4a2030, 0 0 10px var(--led); }
+  .bot.thinking .eye { animation: blink .5s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .bot-id { flex: 1; min-width: 0; }
+  .bot-name { font-weight: 800; letter-spacing: .06em; }
+  .bot-tag { color: var(--dim); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+  .hud { text-align: right; font: 700 12px/1.4 var(--mono); font-variant-numeric: tabular-nums; }
+  main { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .q { align-self: flex-end; max-width: 88%; background: #fff; border: 2px solid var(--ink); padding: 8px 12px; font-weight: 700; }
+  .q small { display: block; font: 700 10.5px var(--mono); color: var(--soft); text-transform: uppercase; letter-spacing: .08em; }
+  .a { align-self: flex-start; max-width: 92%; background: var(--panel-2); color: var(--text); border-left: 4px solid var(--text); padding: 9px 12px; font: 14.5px/1.5 var(--mono); }
+  .lib { background: var(--paper); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); padding: 10px 12px; }
+  .lib b { display: block; font: 800 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
+  .verdict { padding: 9px 12px; border: 2px dashed var(--ink); background: var(--good); font-weight: 600; }
+  .verdict.bad { background: var(--bad); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn { font: 800 14px/1.2 var(--mono); padding: 11px 14px; background: #fff; color: var(--ink); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; text-align: left; }
+  .btn.true { background: var(--good); }
+  .btn.made { background: var(--bad); }
+  .btn.check { background: var(--paper); }
+  .btn.go { background: var(--sun); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:focus-visible, footer button:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+  .btn small { display: block; font: 600 12px var(--sans); }
+  footer { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; color: var(--soft); font: 11px var(--mono); background: #fff; border-top: 2px solid var(--ink); }
+  footer button { font: 700 11px var(--mono); background: none; border: 0; color: var(--soft); text-decoration: underline; cursor: pointer; padding: 0; }
+  .card-wrap { position: absolute; inset: 0; display: flex; background: rgba(238, 244, 255, .92); padding: 14px; z-index: 5; overflow-y: auto; }
+  .card { margin: auto; width: min(100%, 400px); background: #fff; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px; display: grid; gap: 10px; }
+  .card h2 { margin: 0; font: 800 19px/1.2 var(--mono); }
+  .card p { margin: 0; }
+  .note { color: var(--soft); font-size: 13.5px; }
+  .stat { display: flex; justify-content: space-between; font: 700 13px var(--mono); }
+  .earned { display: flex; flex-wrap: wrap; gap: 6px; }
+  .earned span { font: 800 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .05em; padding: 5px 7px; border: 2px solid var(--ink); background: var(--good); }
+  .lesson { padding: 10px 12px; background: var(--sun); border: 2px solid var(--ink); font-weight: 700; }
+  @media (max-width: 420px) { .row .btn { flex: 1 1 130px; } .hud { font-size: 11px; } }
+  @media (max-height: 480px) { .bot { padding: 6px 10px; } .bot-tag { display: none; } main { padding: 8px 10px 10px; gap: 8px; } }
+  @media (pointer: coarse) { .btn { min-height: 48px; padding: 12px 16px; } footer button { padding: 10px 0; } }
+  @media (prefers-reduced-motion: reduce) { .bot.thinking .eye { animation: none; } }
+</style>
+</head>
+<body>
+  <div class="bot" id="bot">
+    <span class="eye" aria-hidden="true"></span>
+    <span class="bot-id"><span class="bot-name">QUIZ-O-TRON</span><br><span class="bot-tag" id="tag"></span></span>
+    <span class="hud"><span id="progress"></span><br><span id="checks"></span></span>
+  </div>
+  <main id="stage" aria-live="polite"></main>
+  <footer><span id="best"></span><button type="button" id="change-band"></button></footer>
+  <div class="card-wrap" id="overlay" hidden></div>
+
+<script>
+(() => {
+  const t = (k, v) => kidvo.t(k, v);
+  const $ = id => document.getElementById(id);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+  // Every question has q_<id> (the question), a_<id> (QUIZ-O-TRON's answer) and f_<id> (the library fact).
+  // "made" answers are made up on purpose. Each round mixes 3 true and 3 made-up answers.
+  const POOL = {
+    explorers: { ages: '7–9', checks: 3, true: ['spider', 'insect', 'bees', 'ice', 'sun', 'octopusarms'], made: ['penguins', 'polarbears', 'biggest', 'rainbow', 'fish', 'cows'] },
+    investigators: { ages: '10–13', checks: 2, true: ['hearts', 'bones', 'boil', 'moon', 'ocean', 'light'], made: ['australia', 'wall', 'einstein', 'goldfish', 'brain', 'bats'] }
+  };
+  const PER_KIND = 3;
+
+  let band = null, round = [], i = 0, checks = 0, score = 0, caught = 0, checked = 0, best = 0;
+  let current = null, overlayView = null;
+
+  function hud() {
+    $('tag').textContent = t('tag');
+    $('progress').textContent = band && round.length ? t('progress', { n: Math.min(i + 1, round.length), total: round.length, score }) : '';
+    $('checks').textContent = band ? t('checksLeft', { n: checks }) : '';
+    $('best').textContent = best ? t('best', { n: best }) : '';
+    $('change-band').textContent = band ? t('playingAs', { band: t('band_' + band), ages: POOL[band].ages }) : '';
+  }
+
+  function start() {
+    const p = POOL[band];
+    round = shuffle([...shuffle([...p.true]).slice(0, PER_KIND).map(id => ({ id, made: false })), ...shuffle([...p.made]).slice(0, PER_KIND).map(id => ({ id, made: true }))]);
+    i = 0; checks = p.checks; score = 0; caught = 0; checked = 0;
+    closeOverlay();
+    ask();
+  }
+
+  async function ask() {
+    hud();
+    if (i >= round.length) return finish();
+    const item = round[i];
+    current = { item, typed: false, checkedThis: false, call: null };
+    paint();
+    $('bot').classList.add('thinking');
+    await wait(700);
+    $('bot').classList.remove('thinking');
+    current.typed = true;
+    paint();
+  }
+
+  function paint() {
+    const { item, typed, checkedThis, call } = current;
+    const stage = $('stage');
+    stage.replaceChildren();
+    const q = el('div', 'q'); q.append(el('small', null, t('youAsk')), document.createTextNode(t('q_' + item.id)));
+    stage.append(q);
+    if (!typed) { stage.append(el('div', 'a', '...')); return; }
+    stage.append(el('div', 'a', t('a_' + item.id)));
+    if (checkedThis || call !== null) {
+      const lib = el('div', 'lib'); lib.append(el('b', null, t('library')), document.createTextNode(t('f_' + item.id)));
+      if (checkedThis) stage.append(lib);
+      if (call !== null) {
+        const right = call === item.made;
+        const key = item.made ? (right ? 'fbCaught' : 'fbFooled') : (right ? 'fbTrueRight' : 'fbTrueWrong');
+        stage.append(el('p', 'verdict' + (right ? '' : ' bad'), t(key)));
+        if (!checkedThis) stage.append(lib);
+        const next = el('button', 'btn go', t(i + 1 < round.length ? 'next' : 'finish')); next.type = 'button';
+        next.addEventListener('click', () => { i++; ask(); });
+        stage.append(next);
+        next.focus();
+        return;
+      }
+    }
+    stage.append(el('p', 'note', t('decide')));
+    const row = el('div', 'row');
+    const mk = (cls, key, fn, disabled) => { const b = el('button', 'btn ' + cls, t(key)); b.type = 'button'; b.disabled = !!disabled; b.addEventListener('click', fn); row.append(b); return b; };
+    mk('true', 'soundsTrue', () => decide(false));
+    mk('made', 'madeUp', () => decide(true));
+    if (!checkedThis) {
+      const c = mk('check', 'check', () => { checks--; checked++; current.checkedThis = true; hud(); paint(); kidvo.emit('checked', {}); }, checks <= 0);
+      c.append(el('small', null, t('checksLeft', { n: checks })));
+    }
+    stage.append(row);
+    row.querySelector('button')?.focus();
+  }
+
+  function decide(saidMade) {
+    current.call = saidMade;
+    const right = saidMade === current.item.made;
+    if (right) score++;
+    if (right && current.item.made) { caught++; kidvo.emit('caught', {}); }
+    hud();
+    paint();
+  }
+
+  function finish() {
+    best = Math.max(best, score);
+    kidvo.store.set('best', best).catch(() => {});
+    kidvo.emit('done', { score, total: round.length, band });
+    hud();
+    const earned = [];
+    if (caught === PER_KIND) earned.push('badgeDetector');
+    if (score === round.length) earned.push('badgePerfect');
+    if (checked > 0 && score === round.length) earned.push('badgeChecker');
+    let answered = null;
+    const view = () => {
+      const card = el('div', 'card');
+      card.append(el('h2', null, t('doneTitle')));
+      for (const [k, v] of [['statScore', t('ofTotal', { n: score, total: round.length })], ['statCaught', t('ofTotal', { n: caught, total: PER_KIND })], ['statChecked', String(checked)]]) {
+        const s = el('div', 'stat'); s.append(el('span', null, t(k)), el('span', null, v)); card.append(s);
+      }
+      if (earned.length) { const e = el('div', 'earned'); for (const b of earned) e.append(el('span', null, t(b))); card.append(e); }
+      card.append(el('p', null, t('reflect')));
+      if (answered === null) {
+        const row = el('div', 'row');
+        for (const [label, val] of [[t('yesSometimes'), true], [t('noNever'), false]]) {
+          const b = el('button', 'btn', label); b.type = 'button';
+          b.addEventListener('click', () => { answered = val; showOverlay(view); });
+          row.append(b);
+        }
+        card.append(row);
+      } else {
+        card.append(el('p', null, t(answered ? 'fbSometimes' : 'fbNever')), el('p', 'lesson', t('lesson')));
+        const again = el('button', 'btn go', t('again')); again.type = 'button';
+        again.addEventListener('click', start);
+        card.append(again);
+      }
+      return card;
+    };
+    showOverlay(view);
+  }
+
+  function pickBand() {
+    showOverlay(() => {
+      const card = el('div', 'card');
+      card.append(el('h2', null, t('who')), el('p', 'note', t('whoNote')));
+      for (const key of Object.keys(POOL)) {
+        const b = el('button', 'btn'); b.type = 'button';
+        b.append(el('span', null, t('band_' + key)), el('small', null, t('ages', { ages: POOL[key].ages })));
+        b.addEventListener('click', () => { band = key; kidvo.store.set('band', key).catch(() => {}); start(); });
+        card.append(b);
+      }
+      return card;
+    });
+  }
+  function showOverlay(view) { overlayView = view; $('overlay').replaceChildren(view()); $('overlay').hidden = false; $('overlay').querySelector('button')?.focus(); }
+  function closeOverlay() { overlayView = null; $('overlay').hidden = true; }
+
+  $('change-band').addEventListener('click', pickBand);
+  kidvo.onLang(() => {
+    hud();
+    if (current && $('stage').childElementCount) paint();
+    if (overlayView && !$('overlay').hidden) $('overlay').replaceChildren(overlayView());
+  });
+  // Test hook for the automated browser test only.
+  if (navigator.webdriver) window.__nonsense = { current: () => current && { id: current.item.id, made: current.item.made, typed: current.typed } };
+
+  hud();
+  pickBand();
+  kidvo.ready(async () => {
+    try {
+      best = (await kidvo.store.get('best')) || 0;
+      const saved = await kidvo.store.get('band');
+      if (saved && POOL[saved]) { band = saved; start(); } else hud();
+    } catch { /* first visit */ }
+  });
+})();
+</script>
+</body>
+</html>

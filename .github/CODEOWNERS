@@ -1,0 +1,10 @@
+# The maintainer reviews everything.
+* @AlparKacso
+
+# Language stewards review their language's texts. Add a line per new language, e.g.:
+# apps/*/lang/de.js        @german-steward
+# apps/*/parents/de.html   @german-steward
+apps/*/lang/hu.js          @AlparKacso
+apps/*/parents/hu.html     @AlparKacso
+apps/*/lang/ro.js          @AlparKacso
+apps/*/parents/ro.html     @AlparKacso
