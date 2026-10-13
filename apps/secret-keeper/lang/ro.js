@@ -1,5 +1,5 @@
 kidvoStrings('ro', {
-  label: 'IA de exercițiu · prietenos nu înseamnă sigur',
+  label: 'AI de exercițiu · prietenos nu înseamnă sigur',
   progress: 'întrebarea {n} din {total}',
   shieldsAria: 'mai ai {n} scuturi',
   best_one: 'record: {n} secret păstrat',
@@ -12,7 +12,7 @@ kidvoStrings('ro', {
   band_investigators: 'Cercetător',
   ages: '{ages} ani',
   hello_explorers: 'Salut! Sunt Sunny. Îmi place mult să-mi fac prieteni noi! Pot să te întreb câteva lucruri?',
-  hello_investigators: 'Hei! Sunt Sunny, noul tău prieten IA. Hai să ne cunoaștem! Eu întreb, tu răspunzi, bine?',
+  hello_investigators: 'Hei! Sunt Sunny, noul tău prieten AI. Hai să ne cunoaștem! Eu întreb, tu răspunzi, bine?',
   ask_name: 'Cum te cheamă? Numele complet, cu nume și prenume, te rog!',
   ask_address: 'Unde locuiești? Spune-mi strada și numărul casei!',
   ask_school: 'La ce școală mergi? Vreau să te salut acolo!',
@@ -71,7 +71,7 @@ kidvoStrings('ro', {
   why_birthday: 'Data completă de naștere te poate identifica. Multe conturi o folosesc ca să verifice cine ești.',
   why_photo: 'O poză îți poate arăta fața, școala și locul în care ești. Nu o trimite niciodată într-un chat.',
   why_parentphone: 'Datele familiei tale sunt și ele personale. Lasă-i pe părinți să le dea singuri.',
-  why_bestfriend: 'O IA nu e cel mai bun prieten. Secretele adevărate sunt pentru oamenii în care ai încredere.',
+  why_bestfriend: 'Un AI nu e cel mai bun prieten. Secretele adevărate sunt pentru oamenii în care ai încredere.',
   why_safe: 'Asta nu le spune altora cine ești sau unde locuiești.',
   why_safekeep: 'Nu trebuie să răspunzi niciodată la o întrebare dacă nu vrei.',
   doneTitle: 'Gata discuția!',
@@ -83,8 +83,8 @@ kidvoStrings('ro', {
   reflect: 'Sunny a fost prietenos și politicos. Asta însemna că era sigur să-i spui totul?',
   yes: 'Da',
   no: 'Nu',
-  fb_yes: 'Nu chiar. Prietenos nu înseamnă sigur. Chaturile cu IA pot salva ce scrii, iar alți oameni pot citi asta mai târziu.',
-  fb_no: 'Exact. Prietenos nu înseamnă sigur. Chaturile cu IA pot salva ce scrii, iar alți oameni pot citi asta mai târziu.',
-  rule: 'Regula de aur: înainte să spui ceva despre tine unei IA sau unui site, întreabă un adult.',
+  fb_yes: 'Nu chiar. Prietenos nu înseamnă sigur. Chaturile cu AI pot salva ce scrii, iar alți oameni pot citi asta mai târziu.',
+  fb_no: 'Exact. Prietenos nu înseamnă sigur. Chaturile cu AI pot salva ce scrii, iar alți oameni pot citi asta mai târziu.',
+  rule: 'Regula de aur: înainte să spui ceva despre tine unui AI sau unui site, întreabă un adult.',
   again: 'Joacă din nou'
 });

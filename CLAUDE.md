@@ -14,6 +14,7 @@ kidvo.eu: **"Use AI wisely. Keep thinking for yourself."** A free, open-source c
 - **Age bands:** Explorers (7–9) and Investigators (10–13). Manifest `bands`.
 - **Skills:** manifest `skills`, from `SKILLS` in `scripts/lib.mjs` (draft list, aligned in spirit with the EC/OECD AI Literacy Framework, 2026).
 - **Languages:** English required, Hungarian and Romanian at launch. Texts in `apps/<id>/lang/<code>.js` via `kidvoStrings(code, {...})`; `kidvo.t(key, vars)` with `Intl.PluralRules` plural forms (`_one/_few/_other`); fallback to English. Desktop texts in `shell/i18n.js`. CI checks that every declared language has the same keys as English. Language stewards (native speakers) review via `.github/CODEOWNERS`. HU and RO steward: Alpár.
+- **"AI" in every language** (2026-10-13): never MI (HU) or IA (RO). HU: `az AI`, suffixes by back-vowel harmony (`AI-t`, `AI-val`, `AI-nak`, `AI-tól`, `AI-asszisztens`). RO: masculine/neuter, `un AI`, `AI-ul`, `unui AI`, adjectives agree (`un AI real`, `AI-ul ... sigur`). The spelled-out terms (`mesterséges intelligencia`, `inteligență artificială`) stay where they explain the word.
 - **Parents' guide per game:** `apps/<id>/parents/<code>.html`, one printable A4 page per language, opened from the game's info window or the "For grown-ups" window. CI requires it for games with `bands`.
 - **Authorship:** no human/AI/hybrid labels (removed 2026-10-13). Manifest `author` is `{ name, url? }`. Seed games are by "Alpár".
 - **Removed 2026-10-13:** Logic-speak, Builders Map (with contributor locations and PR counts), the generative poem before that.
@@ -60,15 +61,15 @@ Bus protocol (postMessage, `{kidvo:1, kind}`): app→shell `hello`, `sub`, `emit
 ## Launch checklist (Alpár)
 
 - [ ] Review the Hungarian and Romanian texts (`shell/i18n.js`, `apps/*/lang/`, `apps/maze/parents/`).
-- [ ] Retire the old kidvo marketplace repo first: see `RETIRE-AND-RESTART.md` in that repo (rename it to `kidvo-v1` and archive it, so this one can be `kidvo`).
+- [x] Retire the old kidvo marketplace repo first (done 2026-10-13: now `AlparKacso/kidvo-v1`, private and archived; see `RETIRE-AND-RESTART.md` there).
 - [x] GitHub user `AlparKacso` filled in everywhere (was a placeholder).
-- [ ] Create a public repo `kidvo` on the personal GitHub account.
+- [x] Create a public repo `kidvo` on the personal GitHub account.
 - [ ] Check the copyright name in `LICENSE`.
-- [ ] First commit and push to `main`.
-- [ ] Settings → Pages → Source: **GitHub Actions**. Custom domain `kidvo.eu`, enforce HTTPS.
-- [ ] DNS: apex `A` 185.199.108.153, .109.153, .110.153, .111.153; `www` CNAME `alparkacso.github.io`. Verify the domain under account Settings → Pages.
-- [ ] Ruleset on `main`: require PR, status checks "Do no harm (automatic part)" and "One open PR per person", Code Owner review, no force pushes.
-- [ ] Create labels `core`, `idea`, `report`.
+- [x] First commit and push to `main`.
+- [x] Settings → Pages → Source: **GitHub Actions**. Custom domain `kidvo.eu`. Enforce HTTPS once the certificate is issued after the DNS switch.
+- [ ] DNS: apex `A` 185.199.108.153, .109.153, .110.153, .111.153; `www` CNAME `alparkacso.github.io`. Domain verified under account Settings → Pages (TXT `_github-pages-challenge-AlparKacso`).
+- [x] Ruleset `main`: require PR with 1 approval and Code Owner review, status checks "Do no harm (automatic part)" and "One open PR per person", no force pushes or deletion. Repository admins may bypass (solo maintainer).
+- [x] Create labels `core`, `idea`, `report`.
 - [x] Contact address: hello@kidvo.eu (README, "For grown-ups" window, parents' guides).
 - [ ] Send a test email to hello@kidvo.eu after any DNS change (keep the MX records).
 

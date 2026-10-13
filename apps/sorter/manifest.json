@@ -11,8 +11,8 @@
   "skills": ["ai-learns-from-examples"],
   "languages": ["en", "hu", "ro"],
   "translations": {
-    "hu": { "name": "Tanítsd a Válogatót", "description": "Taníts meg egy kis MI-t példákkal felismerni az almát, aztán derítsd ki, mit tanult meg rosszul, és miért." },
-    "ro": { "name": "Antrenează Sortatorul", "description": "Învață o mică IA să recunoască merele arătându-i exemple, apoi descoperă ce a învățat greșit și de ce." }
+    "hu": { "name": "Tanítsd a Válogatót", "description": "Taníts meg egy kis AI-t példákkal felismerni az almát, aztán derítsd ki, mit tanult meg rosszul, és miért." },
+    "ro": { "name": "Antrenează Sortatorul", "description": "Învață un mic AI să recunoască merele arătându-i exemple, apoi descoperă ce a învățat greșit și de ce." }
   },
   "tags": ["game", "bias"],
   "added": "2026-10-13"

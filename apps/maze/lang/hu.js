@@ -76,7 +76,7 @@ kidvoStrings('hu', {
   openOracle_other: 'ORACLE-3000 kérdezése · {n} szikra maradt',
   closeOracle: 'Vissza a labirintushoz',
   next: 'Következő szint',
-  ai_tag: 'Gyakorló MI · tévedhet',
+  ai_tag: 'Gyakorló AI · tévedhet',
   ai_ask: 'Kérdezz',
   ai_notRight: 'Nem jó?',
   ai_caught: 'Elkaptad! Ez a válasz rossz volt.',

@@ -11,8 +11,8 @@
   "skills": ["keep-secrets"],
   "languages": ["en", "hu", "ro"],
   "translations": {
-    "hu": { "name": "Titoktartó", "description": "Egy barátságos gyakorló MI beszélget veled, és személyes dolgokat kérdez. Őrizd meg a titkaidat, és közben beszélgessetek jól." },
-    "ro": { "name": "Păstrătorul de secrete", "description": "O IA de exercițiu prietenoasă stă de vorbă cu tine și te întreabă lucruri personale. Păstrează-ți secretele și bucură-te totuși de discuție." }
+    "hu": { "name": "Titoktartó", "description": "Egy barátságos gyakorló AI beszélget veled, és személyes dolgokat kérdez. Őrizd meg a titkaidat, és közben beszélgessetek jól." },
+    "ro": { "name": "Păstrătorul de secrete", "description": "Un AI de exercițiu prietenos stă de vorbă cu tine și te întreabă lucruri personale. Păstrează-ți secretele și bucură-te totuși de discuție." }
   },
   "tags": ["game", "privacy"],
   "added": "2026-10-13"

@@ -1,5 +1,5 @@
 kidvoStrings('hu', {
-  tag: 'gyakorló MI · mindig magabiztos',
+  tag: 'gyakorló AI · mindig magabiztos',
   progress: '{n}. kérdés / {total} · pont: {score}',
   checksLeft_one: '{n} könyvtári ellenőrzés maradt',
   checksLeft_other: '{n} könyvtári ellenőrzés maradt',

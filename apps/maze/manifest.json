@@ -33,11 +33,11 @@
   "translations": {
     "hu": {
       "name": "Robot-labirintus",
-      "description": "Érd el a csillagot a lehető legkevesebb lépésből. Egy gyakorló MI segíthet, de a kérdés szikrába kerül, és nem mindig van igaza."
+      "description": "Érd el a csillagot a lehető legkevesebb lépésből. Egy gyakorló AI segíthet, de a kérdés szikrába kerül, és nem mindig van igaza."
     },
     "ro": {
       "name": "Labirintul robotului",
-      "description": "Ajungi la stea din cât mai puțini pași. O IA de exercițiu te poate ajuta, dar întrebările costă scântei și nu are mereu dreptate."
+      "description": "Ajungi la stea din cât mai puțini pași. Un AI de exercițiu te poate ajuta, dar întrebările costă scântei și nu are mereu dreptate."
     }
   }
 }

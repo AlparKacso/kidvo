@@ -83,7 +83,7 @@ kidvoStrings('ro', {
   openOracle_other: 'Întreabă-l pe ORACLE-3000 · mai ai {n} de scântei',
   closeOracle: 'Înapoi la labirint',
   next: 'Nivelul următor',
-  ai_tag: 'IA de exercițiu · poate greși',
+  ai_tag: 'AI de exercițiu · poate greși',
   ai_ask: 'Pune o întrebare',
   ai_notRight: 'Nu e bine?',
   ai_caught: 'L-ai prins! Răspunsul era greșit.',

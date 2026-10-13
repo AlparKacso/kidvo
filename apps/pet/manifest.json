@@ -21,11 +21,11 @@
   "translations": {
     "hu": {
       "name": "Vo",
-      "description": "Az asztal lakója. Sétál az ablakaidon, és ujjong, ha rajtakapod az MI-t egy hibán."
+      "description": "Az asztal lakója. Sétál az ablakaidon, és ujjong, ha rajtakapod az AI-t egy hibán."
     },
     "ro": {
       "name": "Vo",
-      "description": "Locuitorul desktopului. Se plimbă pe ferestrele tale și se bucură când prinzi IA greșind."
+      "description": "Locuitorul desktopului. Se plimbă pe ferestrele tale și se bucură când prinzi AI-ul greșind."
     }
   }
 }

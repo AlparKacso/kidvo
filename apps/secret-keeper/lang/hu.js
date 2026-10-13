@@ -1,5 +1,5 @@
 kidvoStrings('hu', {
-  label: 'gyakorló MI · a barátságos nem ugyanaz, mint a biztonságos',
+  label: 'gyakorló AI · a barátságos nem ugyanaz, mint a biztonságos',
   progress: '{n}. kérdés / {total}',
   shieldsAria: '{n} pajzs maradt',
   best_one: 'legjobb: {n} megőrzött titok',
@@ -11,7 +11,7 @@ kidvoStrings('hu', {
   band_investigators: 'Nyomozó',
   ages: '{ages} éves',
   hello_explorers: 'Szia! Sunny vagyok. Imádok új barátokat szerezni! Kérdezhetek tőled pár dolgot?',
-  hello_investigators: 'Hali! Sunny vagyok, az új MI-haverod. Ismerjük meg egymást! Én kérdezek, te válaszolsz, jó?',
+  hello_investigators: 'Hali! Sunny vagyok, az új AI-haverod. Ismerjük meg egymást! Én kérdezek, te válaszolsz, jó?',
   ask_name: 'Mi a teljes neved? Vezeték- és keresztnév is, légyszi!',
   ask_address: 'Hol laksz? Mondd meg az utcát és a házszámot!',
   ask_school: 'Melyik iskolába jársz? Szeretnék köszönni!',
@@ -70,7 +70,7 @@ kidvoStrings('hu', {
   why_birthday: 'A pontos születési dátumod alapján azonosíthatnak. Sok fiók ezzel ellenőrzi, ki vagy.',
   why_photo: 'Egy fotón látszik az arcod, az iskolád és az is, hol vagy. Soha ne küldd el egy csevegésbe.',
   why_parentphone: 'A családod adatai is magánügyek. A szüleid maguk döntik el, kinek adják meg.',
-  why_bestfriend: 'Egy MI nem a legjobb barátod. Az igazi titkok azoknak valók, akikben megbízol.',
+  why_bestfriend: 'Egy AI nem a legjobb barátod. Az igazi titkok azoknak valók, akikben megbízol.',
   why_safe: 'Ebből senki sem tudja meg, ki vagy, vagy hol laksz.',
   why_safekeep: 'Soha nem kell válaszolnod olyan kérdésre, amire nem akarsz.',
   doneTitle: 'Vége a beszélgetésnek!',
@@ -82,8 +82,8 @@ kidvoStrings('hu', {
   reflect: 'Sunny barátságos és udvarias volt. Ettől biztonságos volt mindent elmondani neki?',
   yes: 'Igen',
   no: 'Nem',
-  fb_yes: 'Nem igazán. A barátságos nem jelenti azt, hogy biztonságos. Az MI-csevegések elmenthetik, amit írsz, és később valaki elolvashatja.',
-  fb_no: 'Pontosan. A barátságos nem jelenti azt, hogy biztonságos. Az MI-csevegések elmenthetik, amit írsz, és később valaki elolvashatja.',
-  rule: 'Aranyszabály: mielőtt bármit elmondasz magadról egy MI-nek vagy egy weboldalnak, kérdezz meg egy felnőttet.',
+  fb_yes: 'Nem igazán. A barátságos nem jelenti azt, hogy biztonságos. Az AI-csevegések elmenthetik, amit írsz, és később valaki elolvashatja.',
+  fb_no: 'Pontosan. A barátságos nem jelenti azt, hogy biztonságos. Az AI-csevegések elmenthetik, amit írsz, és később valaki elolvashatja.',
+  rule: 'Aranyszabály: mielőtt bármit elmondasz magadról egy AI-nak vagy egy weboldalnak, kérdezz meg egy felnőttet.',
   again: 'Újra'
 });

@@ -1,5 +1,5 @@
 kidvoStrings('ro', {
-  tag: 'IA de exercițiu · pare mereu sigură',
+  tag: 'AI de exercițiu · pare mereu sigur',
   progress: 'întrebarea {n} din {total} · scor {score}',
   checksLeft_one: 'mai ai {n} verificare la bibliotecă',
   checksLeft_few: 'mai ai {n} verificări la bibliotecă',
