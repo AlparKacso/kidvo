@@ -70,7 +70,7 @@ window.KIDVO_I18N = {
     },
     hu: {
       motto: 'Használd okosan az AI-t, gondolkodj a saját fejeddel!',
-      tagline: 'játékok a gondolkodó AI-használathoz',
+      tagline: 'játékok AI-t használva',
       menuAbout: 'A kidvo-ról',
       menuGrownups: 'Felnőtteknek',
       language: 'Nyelv',
