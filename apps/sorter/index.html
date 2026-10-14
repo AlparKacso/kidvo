@@ -179,7 +179,7 @@
 
   /* ---------------- game flow ---------------- */
   const STEPS = ['step_teach', 'step_test', 'step_fix', 'step_retest'];
-  let phase = 0, view = null, scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null };
+  let phase = 0, view = null, scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null, mislabelled: 0 };
 
   function steps() {
     const nav = $('steps');
@@ -204,7 +204,7 @@
   }
 
   function intro() {
-    phase = 0; memory = []; scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null };
+    phase = 0; memory = []; scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null, mislabelled: 0 };
     say('hello');
     show(() => {
       const b = el('button', 'btn', t('start')); b.type = 'button';
@@ -213,10 +213,11 @@
     });
   }
 
-  function teach(kinds, round) {
+  // retry: lesson 1 again after the child's own labels were wrong (memory is empty by then, see relabel).
+  function teach(kinds, round, retry = false) {
     phase = round === 1 ? 0 : 2;
     const items = shuffle(kinds.map((k, n) => ({ ...make(k, n), label: null })));
-    say(round === 1 ? 'teachSay1' : 'teachSay2');
+    say(round === 1 ? (retry ? 'teachSayRetry' : 'teachSay1') : 'teachSay2');
     show(() => {
       const grid = el('div', 'grid');
       for (const item of items) {
@@ -236,12 +237,14 @@
       const go = el('button', 'btn', t('teachBtn')); go.type = 'button'; go.disabled = !ready;
       go.addEventListener('click', async () => {
         memory = memory.concat(items);
+        // The why step explains the first test from these labels, so count the wrong ones.
+        if (round === 1) scores.mislabelled = items.filter(i => i.label !== i.apple).length;
         go.disabled = true;
         await say('learning', { n: memory.length });
         await wait(700);
         test(round === 1 ? TEST1 : TEST2, round);
       });
-      return [el('h2', null, t(round === 1 ? 'teachTitle1' : 'teachTitle2')), el('p', 'hint', t(ready ? 'teachReady' : 'teachNeed')), grid, go];
+      return [el('h2', null, t(round === 1 ? (retry ? 'teachTitleRetry' : 'teachTitle1') : 'teachTitle2')), el('p', 'hint', t(ready ? 'teachReady' : 'teachNeed')), grid, go];
     });
   }
 
@@ -310,7 +313,11 @@
     const right = results.filter(r => r.sortRight).length;
     if (round === 1) scores.test1 = right; else scores.test2 = right;
     if (round === 1) {
-      say(right === results.length ? 'sayProud' : 'saySure');
+      // Two stories. Usually: SORT-1 only saw red apples (whyB). But when the child's own labels
+      // were wrong, SORT-1 learned those mistakes (whyD), and the fix is to label lesson 1 again.
+      const bad = scores.mislabelled > 0;
+      const correct = bad ? 'whyD' : 'whyB';
+      say(bad ? 'sayTaught' : right === results.length ? 'sayProud' : 'saySure');
       let picked = null;
       show(() => {
         const out = [el('h2', null, t('results', { n: right, total: results.length })), resultStrip(results)];
@@ -320,18 +327,23 @@
         }
         out.push(el('h2', null, t('whyQ')));
         const box = el('div', 'choices');
-        for (const k of ['whyA', 'whyB', 'whyC']) {
+        for (const k of ['whyA', 'whyB', 'whyC', 'whyD']) {
           const b = el('button', 'btn alt', t(k)); b.type = 'button';
           b.setAttribute('aria-pressed', picked === k ? 'true' : 'false');
-          b.addEventListener('click', () => { picked = k; if (scores.why === null) scores.why = k; repaint(); });
+          // The Bias spotter badge means the child found the red-apple bias, so only the usual story counts.
+          b.addEventListener('click', () => { picked = k; if (!bad && scores.why === null) scores.why = k; repaint(); });
           box.append(b);
         }
         out.push(box);
         if (picked) {
-          out.push(el('p', 'verdict' + (picked === 'whyB' ? '' : ' bad'), t('fb_' + picked)));
-          if (picked === 'whyB') {
-            const fix = el('button', 'btn', t('fixBtn')); fix.type = 'button';
-            fix.addEventListener('click', () => teach(TEACH2, 2));
+          let fb = 'fb_' + picked;
+          if (picked === correct) fb = bad ? 'fb_whyD' : 'fb_whyB';
+          else if (bad && (picked === 'whyA' || picked === 'whyB')) fb += '_mislabelled';
+          else if (picked === 'whyD') fb = 'fb_whyD_fine';
+          out.push(el('p', 'verdict' + (picked === correct ? '' : ' bad'), t(fb, { n: scores.mislabelled })));
+          if (picked === correct) {
+            const fix = el('button', 'btn', t(bad ? 'fixLabelsBtn' : 'fixBtn')); fix.type = 'button';
+            fix.addEventListener('click', bad ? relabel : () => teach(TEACH2, 2));
             out.push(fix);
           }
         }
@@ -340,6 +352,14 @@
     } else {
       finish(results);
     }
+  }
+
+  // The child's lesson-1 labels were wrong: SORT-1 forgets them all and lesson 1 runs again.
+  // The retried test overwrites test1, so the final before/after compares the corrected lesson with lesson 2.
+  function relabel() {
+    memory = [];
+    scores.mislabelled = 0;
+    teach(TEACH1, 1, true);
   }
 
   // The ending depends on whether the second lesson helped: the child's labels decide that, not the script.
