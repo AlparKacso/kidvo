@@ -349,7 +349,7 @@
     const earned = [];
     if (s.asked === 0) { earned.push('badge_brain'); progress.brain++; }
     if (s.caught > 0) { earned.push('badge_detective'); progress.detective++; }
-    if (steps === par) { earned.push('badge_shortest'); progress.shortest++; }
+    if (steps === par && !aiSolved) { earned.push('badge_shortest'); progress.shortest++; }
     progress.best = Math.max(progress.best, level + 1);
     save({ level: level + 1 });
     renderFooter();
@@ -454,7 +454,7 @@
   function setBand(key, fresh) {
     band = key; B = BANDS[key];
     kidvo.store.set('band', key).catch(() => {});
-    if (fresh) { level = 1; save({ level: 1 }); }
+    if (fresh) { level = 1; seenWrong = false; save({ level: 1 }); }
     start(level);
     oracle.say(tb('greet'));
     renderFooter();
