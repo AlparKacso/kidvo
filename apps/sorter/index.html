@@ -48,6 +48,15 @@
   .test { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
   .test .big { width: 150px; height: 150px; background: #fff; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); display: grid; place-items: center; }
   .test .big svg { width: 120px; height: 120px; }
+  .test .side { display: grid; gap: 12px; justify-items: start; min-width: 0; }
+  /* SORT-1's guess: a thought bubble in SORT-1's own colours, trailing back to its LED eye. */
+  .thought { display: flex; align-items: center; gap: 5px; max-width: 100%; margin: 0; }
+  .thought .eye { margin: 0; }
+  .puff { flex: none; border-radius: 50%; background: var(--panel); border: 2px solid var(--ink); }
+  .puff.s { width: 8px; height: 8px; }
+  .puff.m { width: 13px; height: 13px; }
+  .cloud { min-width: 0; padding: 10px 18px; background: var(--panel); color: var(--text); border: 2px solid var(--ink); border-radius: 22px;
+           box-shadow: 3px 3px 0 var(--ink); font: 800 18px/1.3 var(--mono); overflow-wrap: anywhere; }
   .verdict { padding: 10px 12px; border: 2px dashed var(--ink); background: var(--good); }
   .verdict.bad { background: var(--bad); }
   .row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -67,6 +76,7 @@
   .choices { display: grid; gap: 8px; max-width: 520px; }
   @media (max-width: 520px) {
     .test { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    .test .side { justify-items: center; } .test .row { justify-content: center; } .cloud { font-size: 16px; padding: 8px 14px; }
     .grid { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-height: 480px) {
@@ -74,6 +84,7 @@
     .steps span { padding: 6px 8px; } main { padding: 8px 10px 12px; gap: 8px; }
     .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } .fruit svg { width: 60px; height: 60px; }
     .test .big { width: 110px; height: 110px; } .test .big svg { width: 90px; height: 90px; }
+    .test .side { gap: 8px; } .cloud { font-size: 16px; padding: 6px 14px; }
   }
   @media (pointer: coarse) { .toggle button { min-height: 42px; font-size: 13px; } .btn { min-height: 48px; } .choices .btn { padding: 13px 14px; } }
   @media (prefers-reduced-motion: reduce) { .bot.thinking .eye { animation: none; } }
@@ -247,8 +258,11 @@
       show(() => {
         const wrap = el('div', 'test');
         const big = el('div', 'big'); big.insertAdjacentHTML('beforeend', svg(f.kind));
-        const side = el('div');
-        side.append(el('h2', null, t('testTitle', { n: idx + 1, total: items.length })), el('p', 'hint', t(guess.apple ? 'guessApple' : 'guessNot')));
+        const side = el('div', 'side');
+        const thought = el('p', 'thought');
+        thought.insertAdjacentHTML('beforeend', '<span class="eye" aria-hidden="true"></span><span class="puff s" aria-hidden="true"></span><span class="puff m" aria-hidden="true"></span>');
+        thought.append(el('span', 'cloud', t(guess.apple ? 'guessApple' : 'guessNot')));
+        side.append(el('h2', null, t('testTitle', { n: idx + 1, total: items.length })), thought);
         if (judged === null) {
           const row = el('div', 'row');
           for (const [val, key] of [[true, 'judgeRight'], [false, 'judgeWrong']]) {
