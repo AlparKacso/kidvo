@@ -172,10 +172,13 @@
     const left = Math.max(8, Math.min(rect.width - w - 8, 128 + step * 30));
     const top = Math.max(8, Math.min(rect.height - h - 8, 24 + step * 30));
 
+    // A game's maker is credited quietly next to its title (plain text; the info window links to them).
+    const author = appId ? apps.get(appId)?.author?.name : null;
     const btn = (act, label, text) => el('button', { type: 'button', 'data-act': act, 'aria-label': label, title: label }, text);
     const bar = el('header', { class: 'win-bar' },
       icon ? el('img', { class: 'win-icon', src: icon, alt: '' }) : null,
       el('span', { class: 'win-title' }, title),
+      author ? el('span', { class: 'win-by' }, T('byAuthor', { name: author })) : null,
       el('div', { class: 'win-btns' },
         appId ? btn('info', T('aboutApp'), 'i') : null,
         btn('min', T('minimize'), '_'),
@@ -745,6 +748,8 @@
       if (rec.appId) {
         const name = appText(apps.get(rec.appId), 'name');
         rec.node.querySelector('.win-title').textContent = name;
+        const by = rec.node.querySelector('.win-by');
+        if (by) by.textContent = T('byAuthor', { name: apps.get(rec.appId).author.name });
         rec.task.querySelector('span').textContent = name;
       } else if (rec.reopen) {
         // Built-in windows are simply rebuilt in the new language, in the same place.

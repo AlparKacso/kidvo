@@ -64,11 +64,13 @@ A game is one folder:
 ```
 apps/my-game/
   index.html        the game
-  manifest.json     name, bands, skills, languages, translations of name and description
+  manifest.json     name, author, bands, skills, languages, translations of name and description
   icon.svg          16x16 pixel art looks best
   lang/en.js        every text the child sees (plus lang/hu.js, lang/ro.js, ...)
   parents/en.html   one printable A4 page for parents and teachers (one per language)
 ```
+
+You get the credit: `author.name` appears on your game's window as "by <name>" (use your GitHub username or the name you want children to see), and `author.url` (for example your GitHub profile) is linked from the game's info window.
 
 Robot Maze (`apps/maze`) is the reference game. Copy its patterns.
 
