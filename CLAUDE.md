@@ -66,12 +66,12 @@ Bus protocol (postMessage, `{kidvo:1, kind}`): app→shell `hello`, `sub`, `emit
 - [x] Create a public repo `kidvo` on the personal GitHub account.
 - [ ] Check the copyright name in `LICENSE`.
 - [x] First commit and push to `main`.
-- [x] Settings → Pages → Source: **GitHub Actions**. Custom domain `kidvo.eu`. Enforce HTTPS once the certificate is issued after the DNS switch.
-- [ ] DNS: apex `A` 185.199.108.153, .109.153, .110.153, .111.153; `www` CNAME `alparkacso.github.io`. Domain verified under account Settings → Pages (TXT `_github-pages-challenge-AlparKacso`).
+- [x] Settings → Pages → Source: **GitHub Actions**. Custom domain `kidvo.eu`, HTTPS enforced (2026-10-14). The certificate stayed at "new" for 10 hours and only started after removing the custom domain and saving it again in the web UI (the API did not trigger it).
+- [x] DNS (2026-10-13, at GoDaddy): apex `A` 185.199.108.153, .109.153, .110.153, .111.153; `www` CNAME `alparkacso.github.io`. Domain verified under account Settings → Pages (TXT `_github-pages-challenge-AlparKacso`).
 - [x] Ruleset `main`: require PR with 1 approval and Code Owner review, status checks "Do no harm (automatic part)" and "One open PR per person", no force pushes or deletion. Repository admins may bypass (solo maintainer).
 - [x] Create labels `core`, `idea`, `report`.
 - [x] Contact address: hello@kidvo.eu (README, "For grown-ups" window, parents' guides).
-- [ ] Send a test email to hello@kidvo.eu after any DNS change (keep the MX records).
+- [x] Send a test email to hello@kidvo.eu after any DNS change (keep the MX records). Checked 2026-10-13.
 
 ## Backlog
 
