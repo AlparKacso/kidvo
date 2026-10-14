@@ -28,7 +28,7 @@ kidvo.eu: **"Use AI wisely. Keep thinking for yourself."** A free, open-source c
 - **CI:** `scripts/check.mjs` (manifest, CSP position and text, SVG content, outside links, forbidden APIs, size, language keys, parents' guides, PR file boundary), `tests/rules.mjs` and `tests/smoke.mjs` (Playwright, in Chromium and WebKit: opens every game and parents' guide, requires the SDK handshake, fails on any JS error and on any request that leaves the local server). PRs may touch only `apps/<id>/`; other files need the maintainer's `core` label. Workflows use `pull_request` with read-only permissions, never `pull_request_target`.
 - **One open PR per GitHub account**, enforced by the `one-pr` job in `checks.yml`; maintainers exempt.
 - **"Make a game" window** (2026-10-14): start-menu entry for grown-ups and teens 13+ (GitHub's minimum age), not aimed at children. Links CONTRIBUTING.md, the source, the idea form (`app-idea.yml`) and open ideas (issues labelled `idea`). Game ideas waiting for a builder live as issues labelled `idea` + `help wanted`. Repo social preview: `docs/social-preview.png` (Vo on a kidvo window), uploaded by hand in Settings.
-- **Old v1 links and sharing** (2026-10-14): `404.html` (deployed by `deploy.yml`) tells visitors from old kidvo v1 links, in EN/RO/HU, that kidvo changed, and returns to the desktop after 12 s. `index.html` has Open Graph tags with `shell/og-image.png` (1200x630, Vo). Facebook profile picture and cover: `docs/brand/`.
+- **Sharing** (2026-10-14): `index.html` has Open Graph tags with `shell/og-image.png` (1200x630, Vo). Facebook profile picture and cover: `docs/brand/`.
 - Licensing: MIT for code, CC BY 4.0 for content in `apps/`.
 
 ## Games

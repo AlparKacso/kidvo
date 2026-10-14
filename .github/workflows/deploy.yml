@@ -29,7 +29,7 @@ jobs:
       - name: Assemble the site
         run: |
           mkdir _site
-          cp -r index.html 404.html shell apps llms.txt AGENTS.md CONTRIBUTING.md _site/
+          cp -r index.html shell apps llms.txt AGENTS.md CONTRIBUTING.md _site/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
