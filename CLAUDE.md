@@ -25,6 +25,7 @@ kidvo.eu: **"Use AI wisely. Keep thinking for yourself."** A free, open-source c
 - **Isolation:** each game runs in `<iframe sandbox="allow-scripts">` with a mandatory CSP meta tag checked byte for byte. The CSP lists `https://kidvo.eu` next to `'self'` because Safari matches `'self'` against the sandboxed frame's opaque origin and then blocks every script and image (found 2026-10-14: no game ran in Safari 26.5); `scripts/serve.mjs` swaps in its own address locally. Moving the site to another domain means changing `SITE_ORIGIN` and `APP_CSP` in `scripts/lib.mjs` and every app page. Games talk to the desktop only via `shell/sdk.js`.
 - **CI:** `scripts/check.mjs` (manifest, CSP, outside links, forbidden APIs, size, language keys, parents' guides, PR file boundary) and `tests/smoke.mjs` (Playwright, in Chromium and WebKit: opens every game, requires the SDK handshake, fails on any JS error). PRs may touch only `apps/<id>/`; other files need the maintainer's `core` label. Workflows use `pull_request` with read-only permissions, never `pull_request_target`.
 - **One open PR per GitHub account**, enforced by the `one-pr` job in `checks.yml`; maintainers exempt.
+- **"Make a game" window** (2026-10-14): start-menu entry for grown-ups and teens 13+ (GitHub's minimum age), not aimed at children. Links CONTRIBUTING.md, the source, the idea form (`app-idea.yml`) and open ideas (issues labelled `idea`). Game ideas waiting for a builder live as issues labelled `idea` + `help wanted`. Repo social preview: `docs/social-preview.png` (Vo on a kidvo window), uploaded by hand in Settings.
 - Licensing: MIT for code, CC BY 4.0 for content in `apps/`.
 
 ## Games
@@ -75,7 +76,7 @@ Bus protocol (postMessage, `{kidvo:1, kind}`): app→shell `hello`, `sub`, `emit
 
 ## Backlog
 
-- More games for the skills not yet covered: `spot-ai-made` (Real or Robot?), `ask-better-questions` (Better Question), `your-idea-matters`.
+- More games for the skills not yet covered, open for contributors as issues #1 Real or Robot? (`spot-ai-made`), #2 Better Question (`ask-better-questions`), #3 Your idea matters (`your-idea-matters`).
 - Clear the practice-AI transcript (or re-greet) when the language changes mid-game; today old answers stay in the previous language.
 - Optional read-aloud for Explorers (check that browser voices work offline first).
 - An education co-curator and a written review checklist.

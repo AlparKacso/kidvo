@@ -159,7 +159,7 @@
     const which = e.target.closest('[data-shell]')?.dataset.shell;
     if (!which) return;
     closeStart();
-    which === 'about' ? openAbout() : openGrownups();
+    ({ about: openAbout, grownups: openGrownups, build: openBuild })[which]?.();
   });
 
   /* ---------------- windows ---------------- */
@@ -495,6 +495,31 @@
         <p>${t('contactP', { mail: '%MAIL%' }).replace('%MAIL%', `<a href="mailto:${esc(mail)}">${esc(mail)}</a>`)}</p>
         <p class="small">${t('madeByAlpar')}</p>
       </div>`, openGrownups);
+  }
+
+  // For grown-ups who want to contribute. Worded for adults: GitHub's minimum age is 13.
+  function openBuild() {
+    openBuiltin('build', T('buildWinTitle'), 480, 530, () => html`
+      <div class="doc">
+        <h2>${t('buildWinH')}</h2>
+        <p class="lede">${t('buildWinLede')}</p>
+        <h3>${t('lookH')}</h3>
+        <ul>
+          <li>${t('look1')}</li>
+          <li>${t('look2')}</li>
+          <li>${t('look3')}</li>
+        </ul>
+        <div class="btn-row">
+          <a class="btn" href="${esc(repo)}/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">${t('howTo')}</a>
+          <a class="btn alt" href="${esc(repo)}" target="_blank" rel="noopener">${t('source')}</a>
+        </div>
+        <p>${t('suggestP')}</p>
+        <div class="btn-row">
+          <a class="btn alt" href="${esc(repo)}/issues/new?template=app-idea.yml" target="_blank" rel="noopener">${t('suggest')}</a>
+          <a class="btn alt" href="${esc(repo)}/issues?q=is%3Aissue%20is%3Aopen%20label%3Aidea" target="_blank" rel="noopener">${t('openIdeas')}</a>
+        </div>
+        <p class="small">${t('buildAge')}</p>
+      </div>`, openBuild);
   }
 
   function openInfo(appId) {

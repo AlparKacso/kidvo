@@ -56,6 +56,16 @@ window.KIDVO_I18N = {
       buildH: 'Build a game',
       buildP: 'kidvo is open source. Anyone can propose a game, and each one is reviewed against a short charter. The guides are in English.',
       source: 'Source code', howTo: 'How to contribute',
+      menuBuild: 'Make a game', buildWinTitle: 'make-a-game.txt',
+      buildWinH: 'Make a game with us',
+      buildWinLede: 'kidvo is built by its community. Every game here arrived as a pull request and was reviewed against a short charter.',
+      lookH: 'What we look for',
+      look1: 'A short game that practises one AI skill, such as checking an answer or keeping a secret.',
+      look2: 'A clearly labelled practice AI whose answers you write yourself. Never a real AI, and nothing leaves the device.',
+      look3: 'English texts and a one-page guide for parents. We help with Hungarian and Romanian.',
+      suggestP: 'No code? Suggest a game idea. A good idea is a contribution too.',
+      suggest: 'Suggest a game', openIdeas: 'Open ideas',
+      buildAge: "For grown-ups and teens from 13 (GitHub's minimum age). The guides are in English.",
       madeByAlpar: 'Made by Alpár.'
     },
     hu: {
@@ -108,6 +118,16 @@ window.KIDVO_I18N = {
       buildH: 'Készíts játékot',
       buildP: 'A kidvo nyílt forráskódú. Bárki javasolhat játékot, és mindegyiket egy rövid alapelv-gyűjtemény alapján bíráljuk el. Az útmutatók angol nyelvűek.',
       source: 'Forráskód', howTo: 'Hogyan járulhatsz hozzá',
+      menuBuild: 'Készíts játékot', buildWinTitle: 'keszits-jatekot.txt',
+      buildWinH: 'Készíts velünk játékot',
+      buildWinLede: 'A kidvót a közössége építi. Minden itteni játék pull requestként érkezett, és egy rövid alapelv-gyűjtemény alapján bíráltuk el.',
+      lookH: 'Mit keresünk',
+      look1: 'Rövid játékot, amely egyetlen AI-készséget gyakoroltat, például egy válasz ellenőrzését vagy egy titok megőrzését.',
+      look2: 'Egyértelműen jelölt gyakorló AI-t, amelynek válaszait te írod meg. Soha nem valódi AI-t, és semmi sem hagyja el az eszközt.',
+      look3: 'Angol szövegeket és egy egyoldalas útmutatót a szülőknek. A magyar és a román változatban segítünk.',
+      suggestP: 'Nem programozol? Küldj be egy játékötletet. Egy jó ötlet is hozzájárulás.',
+      suggest: 'Játékötlet beküldése', openIdeas: 'Nyitott ötletek',
+      buildAge: 'Felnőtteknek és 13 éves kortól (ez a GitHub alsó korhatára). Az útmutatók angol nyelvűek.',
       madeByAlpar: 'Készítette: Alpár.'
     },
     ro: {
@@ -161,6 +181,16 @@ window.KIDVO_I18N = {
       buildH: 'Creează un joc',
       buildP: 'kidvo este open source. Oricine poate propune un joc, iar fiecare este evaluat după un set scurt de principii. Ghidurile sunt în engleză.',
       source: 'Cod sursă', howTo: 'Cum poți contribui',
+      menuBuild: 'Creează un joc', buildWinTitle: 'creeaza-un-joc.txt',
+      buildWinH: 'Creează un joc cu noi',
+      buildWinLede: 'kidvo este construit de comunitatea lui. Fiecare joc de aici a sosit ca pull request și a fost evaluat după un set scurt de principii.',
+      lookH: 'Ce căutăm',
+      look1: 'Un joc scurt care exersează o singură abilitate legată de AI, de exemplu verificarea unui răspuns sau păstrarea unui secret.',
+      look2: 'Un AI de exercițiu marcat clar, cu răspunsuri scrise de tine. Niciodată un AI real, și nimic nu pleacă de pe dispozitiv.',
+      look3: 'Texte în engleză și un ghid de o pagină pentru părinți. Te ajutăm cu versiunile în maghiară și română.',
+      suggestP: 'Nu scrii cod? Propune o idee de joc. O idee bună este și ea o contribuție.',
+      suggest: 'Propune un joc', openIdeas: 'Idei deschise',
+      buildAge: 'Pentru adulți și adolescenți de la 13 ani (vârsta minimă pe GitHub). Ghidurile sunt în engleză.',
       madeByAlpar: 'Creat de Alpár.'
     }
   }
