@@ -23,3 +23,5 @@ You may build a game for kidvo. Read `CONTRIBUTING.md` first: it is the charter,
 ## Sandbox facts
 
 Your game runs in `<iframe sandbox="allow-scripts">` with an opaque origin: no `localStorage` (use `kidvo.store`), no cookies, no popups, no forms that submit, no network beyond this repository's files. Canvas, SVG, CSS animation, Web Audio after a tap, and pointer or keyboard input all work.
+
+Keep the content-policy `<meta>` first in `<head>`. SVG files may only draw (inline `<svg>` inside your HTML may do more), and parents' guides run no scripts. `npm run check` enforces all three.

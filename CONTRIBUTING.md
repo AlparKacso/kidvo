@@ -94,15 +94,16 @@ kidvo.on('maze:solved', fn)     // listen to other games
 ## Hard limits (CI)
 
 - Only your folder: a pull request may change `apps/<your-id>/` and nothing else. Changes to the desktop are "core" and need a maintainer's label.
-- The content-policy `<meta>` line from the template in every HTML file. No outside links, CDNs, fonts or network calls.
-- No WebSockets, WebRTC, cookies, service workers or navigating the desktop.
+- The content-policy `<meta>` line from the template in every HTML file, as the first thing in `<head>`: only `<meta charset="utf-8">` and comments may come before it, because browsers ignore it anywhere else. Parents' guides use the line from `templates/app/parents/en.html`, which allows no scripts. No outside links, CDNs, fonts or network calls.
+- SVG files may only draw: shapes, text, gradients and filters, with `#id` references inside the same file. No scripts, links, embedded images, animation or `<foreignObject>`, because an SVG opened on its own has no content policy. Use PNG for pictures, and HTML or canvas for anything that moves.
+- No WebSockets, WebRTC, preconnect, cookies, service workers, symbolic links or navigating the desktop.
 - 300 KB per game, 60 files, common web file types only.
 - The desktop and every game must open without a single JavaScript error.
 - **Every game must work on phones**, portrait and landscape, and on tablets. On small or touch screens the desktop opens games full-screen; your game must fit a 360 px wide screen without sideways scrolling (CI checks this), use buttons at least 44 px tall for fingers (`@media (pointer: coarse)`), and stay playable in a short landscape screen (`@media (max-height: 480px)`). Robot Maze shows one way: on phones its practice AI slides up as a drawer.
 
 ## Review
 
-1. CI runs `npm run check` and the smoke test. It tells you exactly what to fix.
+1. CI runs `npm run check` and the smoke test. It tells you exactly what to fix. A pull request runs its own copy of these checks, so changes outside `apps/<id>/` are reviewed line by line whatever CI says.
 2. The maintainer reviews rules 2 to 4 and the texts, then merges, asks for one change, or closes with a written reason.
 3. Merged games go live automatically.
 
