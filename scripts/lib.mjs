@@ -1,5 +1,5 @@
 // Shared rules for kidvo apps. Used by check.mjs (CI) and build-registry.mjs.
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, lstat } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { join, extname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +18,11 @@ export const APP_CSP =
   "style-src 'self' https://kidvo.eu 'unsafe-inline'; img-src 'self' https://kidvo.eu data: blob:; " +
   "media-src 'self' https://kidvo.eu data: blob:; font-src 'self' https://kidvo.eu data:; " +
   "connect-src 'self' https://kidvo.eu; form-action 'none'; base-uri 'none'";
+// Parents' guides are opened in their own tab (to print them), where they run as kidvo.eu itself.
+// They are plain pages, so their policy allows no scripts at all.
+export const GUIDE_CSP =
+  "default-src 'none'; style-src 'self' https://kidvo.eu 'unsafe-inline'; img-src 'self' https://kidvo.eu data:; " +
+  "form-action 'none'; base-uri 'none'";
 
 export const LIMITS = {
   windowBytes: 300 * 1024,
@@ -58,7 +63,8 @@ export const FORBIDDEN = [
   [/\b(window\.)?top\.location\b|\bparent\.location\b/, 'Apps may not navigate the desktop.'],
   [/http-equiv=["']?refresh/i, 'Meta refresh redirects are not allowed.'],
   [/\bserviceWorker\b/, 'Service workers are not allowed.'],
-  [/\bRequestFileSystem\b|\bwebkitRequestFileSystem\b/, 'File system APIs are not allowed.']
+  [/\bRequestFileSystem\b|\bwebkitRequestFileSystem\b/, 'File system APIs are not allowed.'],
+  [/\b(preconnect|dns-prefetch)\b/i, 'preconnect and dns-prefetch are not allowed (Safari opens them despite the content policy).']
 ];
 // Soft warnings: allowed, but the reviewer looks twice.
 export const WARN = [
@@ -74,6 +80,94 @@ const URL_ALLOW = [/^https?:\/\/www\.w3\.org\//i];
 export function findUrls(text) {
   const found = [...(text.match(URL_RE) || []), ...(text.match(PROTO_REL_RE) || []).map(s => s.replace(/^["'`(=]\s*/, ''))];
   return found.filter(u => !URL_ALLOW.some(re => re.test(u)));
+}
+
+// Undoes the cheapest disguises before findUrls looks: character references, JS and CSS escapes,
+// "h" + "ttps". Still a heuristic: the guarantee comes from the content policy and the SVG rules.
+const char = n => (n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : '');
+export const unmask = s => s
+  .replace(/&#x([0-9a-f]+);?|&#(\d+);?/gi, (m, h, d) => char(h ? parseInt(h, 16) : Number(d)))
+  .replace(/&(colon|sol|period|tab|newline);/gi, (m, n) => ({ colon: ':', sol: '/', period: '.', tab: '\t', newline: '\n' })[n.toLowerCase()])
+  .replace(/\\u\{([0-9a-f]+)\}|\\u([0-9a-f]{4})|\\x([0-9a-f]{2})/gi, (m, a, b, c) => char(parseInt(a || b || c, 16)))
+  .replace(/\\([0-9a-f]{1,6}) ?/gi, (m, h) => char(parseInt(h, 16)))
+  .replace(/\\([^\n])/g, '$1')
+  .replace(/(["'`])\s*\+\s*(["'`])/g, '');
+
+// A policy <meta> only counts while the browser is still inside <head>. Anything before it that does
+// not belong there (an <img>, a stray letter, even a no-break space) silently closes <head>, and the
+// browser then ignores the policy. So it must come first: only <meta charset> and plain comments,
+// separated by HTML whitespace, may precede it.
+const WS = '[\\t\\n\\f\\r ]*';
+const HEAD_RE = new RegExp(
+  `^\\uFEFF?${WS}<!doctype html>${WS}<html(?: lang="[a-z]{2,3}(?:-[a-z0-9]{2,8})*")?>${WS}<head>${WS}` +
+  `(?:(?:<meta charset="utf-8"(?: ?/)?>|<!--[^<>!-]*-->)${WS})*` +
+  `<meta http-equiv="Content-Security-Policy" content="([^"]*)"(?: ?/)?>`, 'i');
+
+export function htmlProblems(rel, text) {
+  const guide = rel.startsWith('parents/');
+  const want = guide ? GUIDE_CSP : APP_CSP;
+  const from = guide ? 'templates/app/parents/en.html' : 'templates/app/index.html';
+  if (!/<meta\s+http-equiv=["']?Content-Security-Policy/i.test(text)) return [`missing the kidvo Content-Security-Policy <meta> tag (copy it from ${from}).`];
+  const head = HEAD_RE.exec(text);
+  if (!head) return ['the Content-Security-Policy <meta> must be the first thing inside <head>, right after <meta charset="utf-8"> (comments are fine). Browsers ignore it anywhere else.'];
+  if (head[1] !== want) return [`the Content-Security-Policy must be exactly the one in ${from}.`];
+  if (text.match(/http-equiv/gi).length > 1) return ['only the Content-Security-Policy <meta> may use http-equiv.'];
+  return [];
+}
+
+// An SVG opened as a page (in a game's frame, or in a tab) runs its scripts and loads outside files
+// with no content policy at all. So an SVG may only draw: shapes, text, gradients, patterns, masks
+// and filters, referring to nothing outside the file. Anything this reader does not understand is refused.
+const SVG_ELEMENTS = new Set((
+  'svg g defs title desc symbol use path rect circle ellipse line polyline polygon text tspan ' +
+  'linearGradient radialGradient stop pattern clipPath mask marker style filter feBlend feColorMatrix ' +
+  'feComponentTransfer feComposite feConvolveMatrix feDiffuseLighting feDisplacementMap feDistantLight ' +
+  'feDropShadow feFlood feFuncA feFuncB feFuncG feFuncR feGaussianBlur feMerge feMergeNode feMorphology ' +
+  'feOffset fePointLight feSpecularLighting feSpotLight feTile feTurbulence').split(' '));
+const SVG_PROLOG = /^﻿?(?:<\?xml\s[^<>?]*\?>)?\s*(?:<!DOCTYPE svg(?:\s+PUBLIC\s+"[^"<>[\]]*"\s+"[^"<>[\]]*")?\s*>)?/;
+const XML_TOKEN = /<!--(?:[^-]|-(?!-))*-->|<\/([A-Za-z][\w.-]*)\s*>|<([A-Za-z][\w.-]*)((?:\s+[A-Za-z][\w.:-]*\s*=\s*(?:"[^"<]*"|'[^'<]*'))*)\s*\/?>|[^<]+/y;
+const XML_ATTR = /([A-Za-z][\w.:-]*)\s*=\s*(?:"([^"<]*)"|'([^'<]*)')/g;
+const XML_ENTITY = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+const xmlDecode = s => (/&(?!(?:#[0-9]+|#x[0-9a-fA-F]+|amp|lt|gt|quot|apos);)/.test(s) ? null
+  : s.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|\w+);/g, (m, e) => (e[0] === '#' ? char(e[1] === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : XML_ENTITY[e])));
+// Styles and attribute values may use colours and sizes, and url(#id) for things inside the file.
+const cssOk = css => !/\\|@import|image-set|\bsrc\s*\(|url\s*\(/i.test(css.replace(/url\(\s*(["']?)#[\w.-]+\1\s*\)/gi, ''));
+
+export function svgProblems(text) {
+  let i = text.match(SVG_PROLOG)[0].length;
+  let style = null;
+  while (i < text.length) {
+    XML_TOKEN.lastIndex = i;
+    const t = XML_TOKEN.exec(text);
+    if (!t) return [`only plain drawing markup is allowed (no DOCTYPE with entities, CDATA or processing instructions; stuck at "${text.slice(i, i + 30)}").`];
+    i = XML_TOKEN.lastIndex;
+    const [tok, close, open, attrs] = t;
+    const chars = !tok.startsWith('<') && xmlDecode(tok);
+    if (chars === null) return ['text uses an unknown &entity;.'];
+    if (style !== null) {
+      // Only text inside <style>: a comment between "ur" and "l(" would otherwise hide a url( from cssOk.
+      if (close === 'style') { if (!cssOk(style)) return ['a <style> may only use colours, sizes and url(#id) references inside the file.']; style = null; }
+      else if (chars === false) return ['a <style> may only contain CSS.'];
+      else style += chars;
+      continue;
+    }
+    if (chars !== false || tok.startsWith('<!--')) continue;
+    const name = open || close;
+    if (!SVG_ELEMENTS.has(name)) return [`<${name}> is not allowed. SVG files may only draw (no scripts, links, images, animation or foreignObject).`];
+    if (close) continue;
+    for (const [, an, v1, v2] of attrs.matchAll(XML_ATTR)) {
+      const v = xmlDecode(v1 ?? v2);
+      if (v === null) return [`<${name} ${an}> uses an unknown &entity;.`];
+      if (/^on/i.test(an)) return [`<${name} ${an}>: event handlers are not allowed.`];
+      if (an.includes(':') && !['xmlns:xlink', 'xlink:href', 'xml:space'].includes(an)) return [`<${name} ${an}>: only the svg and xlink namespaces are allowed.`];
+      if (an === 'xmlns' && v !== 'http://www.w3.org/2000/svg') return [`<${name} xmlns> must be http://www.w3.org/2000/svg.`];
+      if (an === 'xmlns:xlink' && v !== 'http://www.w3.org/1999/xlink') return [`<${name} xmlns:xlink> must be http://www.w3.org/1999/xlink.`];
+      if ((an === 'href' || an === 'xlink:href') && !/^#[\w.-]+$/.test(v)) return [`<${name} ${an}> may only point inside the file (#id).`];
+      if (!cssOk(v)) return [`<${name} ${an}> may only use colours, sizes and url(#id) references inside the file.`];
+    }
+    if (name === 'style' && !tok.endsWith('/>')) style = '';
+  }
+  return style === null ? [] : ['<style> is never closed.'];
 }
 
 export async function listFiles(dir) {
@@ -157,7 +251,10 @@ export async function checkApp(id, allIds) {
   for (const f of files) {
     const rel = relative(dir, f);
     const ext = extname(f).toLowerCase();
-    bytes += (await stat(f)).size;
+    const info = await lstat(f);
+    // A link could point anywhere on the build machine, and the deploy would publish what it points to.
+    if (info.isSymbolicLink()) { errors.push(`${rel}: symbolic links are not allowed.`); continue; }
+    bytes += info.size;
     if (!ALLOWED_EXT.has(ext)) { errors.push(`${rel}: file type ${ext || '(none)'} is not allowed.`); continue; }
     if (rel.split('/').some(part => part.startsWith('.'))) errors.push(`${rel}: hidden files are not allowed.`);
     if (!TEXT_EXT.has(ext)) continue;
@@ -166,19 +263,16 @@ export async function checkApp(id, allIds) {
     if (rel === 'manifest.json') {
       try { const j = JSON.parse(text); if (j.author) delete j.author.url; text = JSON.stringify(j); } catch { /* reported above */ }
     }
-    // The required CSP names the site's own address; it is checked exactly below, so skip it here.
-    for (const u of findUrls(text.replaceAll(APP_CSP, ''))) errors.push(`${rel}: links to the outside world are not allowed (${u.slice(0, 60)}). Bundle what you need inside your folder.`);
+    // The required CSPs name the site's own address; they are checked exactly below, so skip them here.
+    const scan = text.replaceAll(APP_CSP, '').replaceAll(GUIDE_CSP, '');
+    for (const u of new Set([...findUrls(scan), ...findUrls(unmask(scan))])) errors.push(`${rel}: links to the outside world are not allowed (${u.slice(0, 60)}). Bundle what you need inside your folder.`);
     for (const [re, msg] of FORBIDDEN) if (re.test(text)) errors.push(`${rel}: ${msg}`);
     for (const [re, msg] of WARN) if (re.test(text)) warnings.push(`${rel}: ${msg}`);
     if (SHELL_FILES.reduce((t, f) => t.replaceAll(f, ''), text).includes('../')) {
       errors.push(`${rel}: only your own folder and ${SHELL_FILES.join(', ')} may be referenced.`);
     }
-    if (ext === '.html') {
-      const meta = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]*)"\s*\/?>/i.exec(text);
-      if (!meta) errors.push(`${rel}: missing the kidvo Content-Security-Policy <meta> tag (copy it from templates/app/index.html).`);
-      else if (meta[1].trim() !== APP_CSP) errors.push(`${rel}: the Content-Security-Policy must be exactly the one in templates/app/index.html.`);
-      else if (text.indexOf(meta[0]) > text.search(/<script|<link|<style/i)) errors.push(`${rel}: put the Content-Security-Policy <meta> before any script, style or link tag.`);
-    }
+    if (ext === '.html') for (const p of htmlProblems(rel, text)) errors.push(`${rel}: ${p}`);
+    if (ext === '.svg') for (const p of svgProblems(text)) errors.push(`${rel}: ${p}`);
   }
   // Texts: lang/<code>.js for every declared language, all with the same keys as English.
   const rels = files.map(f => relative(dir, f));

@@ -10,7 +10,7 @@ import { serve } from '../scripts/serve.mjs';
 const registry = JSON.parse(await readFile(new URL('../apps/registry.json', import.meta.url), 'utf8'));
 const windowApps = registry.filter(a => a.type === 'window');
 const server = await serve(0);
-const port = server.address().port;
+const SITE = `http://localhost:${server.address().port}`;
 const problems = [];
 const ENGINES = { chromium, webkit };
 const wanted = (process.env.SMOKE_BROWSERS || 'chromium,webkit').split(',').map(s => s.trim()).filter(Boolean);
@@ -25,6 +25,15 @@ const handshake = frame => frame.evaluate(() => new Promise((resolve, reject) =>
 }));
 const appFrame = (page, id) => page.frames().find(f => f.url().endsWith(`/apps/${id}/index.html`));
 
+// Nothing may leave this machine. Whatever way a game finds around the content policy shows up
+// here (and is blocked), as long as it happens while the test runs.
+const guard = (ctx, label) => ctx.route('**/*', route => {
+  const url = route.request().url();
+  if (url.startsWith(SITE + '/') || /^(data|blob):/.test(url)) return route.continue();
+  problems.push(`${label}: a request left the site: ${url.slice(0, 120)}`);
+  return route.abort();
+});
+
 async function run(name) {
   const engine = ENGINES[name];
   if (!engine) { problems.push(`unknown browser "${name}"`); return; }
@@ -35,7 +44,9 @@ async function run(name) {
     problems.push(`${name}: cannot start (${err.message.split('\n')[0]}). Run: npx playwright install ${name}`);
     return;
   }
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const desk = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  await guard(desk, name);
+  const page = await desk.newPage();
   page.on('pageerror', err => problems.push(`${name} page error: ${err.message}`));
   page.on('console', msg => {
     if (msg.type() === 'error' && !/favicon/i.test(msg.text())) problems.push(`${name} console error: ${msg.text()}`);
@@ -47,7 +58,7 @@ async function run(name) {
   };
 
   await step('desktop boots', async () => {
-    await page.goto(`http://localhost:${port}/`);
+    await page.goto(`${SITE}/`);
     await page.waitForFunction(() => window.kidvoShell && document.querySelectorAll('#icons .icon').length > 0, null, { timeout: 5000 });
   });
 
@@ -112,12 +123,33 @@ async function run(name) {
 
   if (process.env.SCREENSHOT) await page.screenshot({ path: process.env.SCREENSHOT.replace(/(\.\w+)?$/, `-${name}$1`) });
 
+  const other = await desk.newPage();
+  other.on('pageerror', err => problems.push(`${name} page error: ${err.message}`));
+  other.on('console', msg => {
+    if (msg.type() === 'error' && !/favicon/i.test(msg.text())) problems.push(`${name} console error: ${msg.text()}`);
+  });
+  await step('a broken deep link (#%) still boots', async () => {
+    await other.goto(`${SITE}/#%`);
+    await other.waitForFunction(() => window.kidvoShell, null, { timeout: 5000 });
+  });
+  // Guides open in their own tab to be printed, under a policy without scripts. Any blocked style shows as an error.
+  for (const app of registry.filter(a => a.bands)) {
+    await step(`${app.id} parents' guides open`, async () => {
+      for (const l of app.languages) {
+        await other.goto(`${SITE}/apps/${app.id}/parents/${l}.html`);
+        if ((await other.locator('body').innerText()).length < 200) throw new Error(`parents/${l}.html looks empty`);
+      }
+    });
+  }
+  await other.close();
+
   // Phones: every game must fit a 360 px wide screen without sideways scrolling.
   for (const [label, viewport] of [['phone', { width: 360, height: 640 }], ['phone landscape', { width: 740, height: 360 }]]) {
     const ctx = await browser.newContext({ viewport, isMobile: true, hasTouch: true });
+    await guard(ctx, `${name} ${label}`);
     const phone = await ctx.newPage();
     phone.on('pageerror', err => problems.push(`${name} ${label} page error: ${err.message}`));
-    await phone.goto(`http://localhost:${port}/`);
+    await phone.goto(`${SITE}/`);
     await phone.waitForFunction(() => window.kidvoShell, null, { timeout: 5000 });
     for (const app of windowApps) {
       await step(`${app.id} fits a ${label} screen`, async () => {

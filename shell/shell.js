@@ -346,7 +346,8 @@
     const frame = el('iframe', {
       src: appDir(app) + (app.entry || 'index.html'),
       sandbox: 'allow-scripts',
-      allow: 'clipboard-write; autoplay; fullscreen',
+      // No fullscreen (a game could paint a fake desktop or browser over everything) and no clipboard.
+      allow: 'autoplay',
       referrerpolicy: 'no-referrer',
       title: appText(app, 'name')
     });
@@ -656,7 +657,8 @@
         reply({ kind: 'init', appId: ctx.appId, winId: ctx.winId, lang });
         break;
       case 'sub':
-        if (typeof m.topic === 'string' && PATTERN.test(m.topic)) {
+        // Every broadcast walks every pattern, so one app may hold at most 32.
+        if (typeof m.topic === 'string' && PATTERN.test(m.topic) && (ctx.topics.size < 32 || ctx.topics.has(m.topic))) {
           ctx.topics.add(m.topic);
           if (matches(m.topic, 'shell:windows')) queueWindows();
         }
@@ -701,7 +703,9 @@
     try { history.replaceState(null, '', ids.length ? '#' + ids.join('.') : location.pathname + location.search); } catch { /* sandboxed */ }
   }
   function openFromHash() {
-    const ids = decodeURIComponent(location.hash.slice(1)).split('.').filter(id => apps.has(id));
+    let hash = '';
+    try { hash = decodeURIComponent(location.hash.slice(1)); } catch { /* malformed link like #%: open nothing */ }
+    const ids = hash.split('.').filter(id => apps.has(id));
     syncing = true;
     ids.forEach(openApp);
     syncing = false;

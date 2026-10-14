@@ -2,7 +2,9 @@
 //   npm run check                  checks every app
 //   BASE_SHA=<sha> npm run check   also checks which files a pull request touches
 // In CI, ALLOW_CORE=true (set when a maintainer adds the "core" label) permits
-// changes outside apps/.
+// changes outside an app folder.
+// A pull request runs its own copy of this file and of checks.yml, so a green result says nothing
+// about a PR that changes anything outside apps/<id>/: review those files line by line.
 import { execFileSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { ROOT, appIds, checkApp } from './lib.mjs';
@@ -23,18 +25,20 @@ for (const id of ids) {
 
 const base = process.env.BASE_SHA;
 if (base) {
-  const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-  const changed = git('diff', '--name-status', `${base}...HEAD`).split('\n').filter(Boolean).map(line => {
-    const [status, ...paths] = line.split('\t');
-    return { status: status[0], path: paths[paths.length - 1], from: paths[0] };
-  });
-  const core = changed.filter(c => !c.path.startsWith('apps/') && !c.from.startsWith('apps/'));
-  const touchedApps = new Set(changed.filter(c => c.path.startsWith('apps/')).map(c => c.path.split('/')[1]));
+  const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  // --no-renames: a rename is a deletion plus an addition, so both paths are judged. With renames on,
+  // apps/x/notes.txt -> .github/workflows/evil.yml looked like an app change.
+  const out = git('diff', '--name-status', '--no-renames', '-z', `${base}...HEAD`).split('\0');
+  const changed = [];
+  for (let i = 0; i + 1 < out.length; i += 2) changed.push({ status: out[i][0], path: out[i + 1] });
+  const inApp = /^apps\/([^/]+)\//;
+  const core = changed.filter(c => !inApp.test(c.path));
+  const touchedApps = new Set(changed.filter(c => inApp.test(c.path)).map(c => inApp.exec(c.path)[1]));
   const allowCore = process.env.ALLOW_CORE === 'true';
 
   if (core.length && !allowCore) {
     errors.push(
-      `This pull request changes files outside apps/: ${core.map(c => c.path).join(', ')}. ` +
+      `This pull request changes files outside an app folder (apps/<id>/): ${core.map(c => c.path).join(', ')}. ` +
       'App PRs may only touch their own folder. If this is a deliberate change to the desktop itself, ' +
       'say so in the PR and a maintainer will add the "core" label.'
     );

@@ -15,8 +15,20 @@ const TYPES = {
   '.md': 'text/markdown; charset=utf-8'
 };
 
-export function serve(port = 8080) {
+// The Host header is copied into each page's content policy, so it must look like a host and nothing more.
+// Only this machine's names are accepted, unless HOST opens the server to the network on purpose
+// (HOST=0.0.0.0 npm run dev, to try a game on a phone).
+const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d{1,5})?$/;
+const ANY_HOST = /^([a-z0-9-]+\.)*[a-z0-9-]+(:\d{1,5})?$|^\[[0-9a-f:.]+\](:\d{1,5})?$/i;
+
+export function serve(port = 8080, host = process.env.HOST || '127.0.0.1') {
+  const hostOk = ['127.0.0.1', '::1', 'localhost'].includes(host) ? LOCAL_HOST : ANY_HOST;
   const server = createServer(async (req, res) => {
+    if (!hostOk.test(req.headers.host || '')) {
+      res.writeHead(400, { 'content-type': 'text/plain' });
+      res.end('bad host');
+      return;
+    }
     try {
       let path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
       if (path.endsWith('/')) path += 'index.html';
@@ -38,7 +50,7 @@ export function serve(port = 8080) {
       res.end('not found');
     }
   });
-  return new Promise(resolve => server.listen(port, () => resolve(server)));
+  return new Promise(resolve => server.listen(port, host, () => resolve(server)));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

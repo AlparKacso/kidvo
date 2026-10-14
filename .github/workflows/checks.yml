@@ -64,6 +64,9 @@ jobs:
           ALLOW_CORE: ${{ contains(github.event.pull_request.labels.*.name, 'core') }}
         run: node scripts/check.mjs
 
+      - name: Safety rules still catch known tricks
+        run: node tests/rules.mjs
+
       - name: Build the app registry
         run: node scripts/build-registry.mjs
 

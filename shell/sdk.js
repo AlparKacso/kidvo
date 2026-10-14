@@ -4,7 +4,7 @@
  * It gives you window.kidvo:
  *   kidvo.ready(fn)            fn({ appId, winId }) once the desktop said hello
  *   kidvo.emit(topic, data)    tell everyone something happened (topic becomes "<your-app-id>:<topic>")
- *   kidvo.on(pattern, fn)      listen: "maze:solved", "maze:*", "shell:windows" or "*"
+ *   kidvo.on(pattern, fn)      listen: "maze:solved", "maze:*", "shell:windows" or "*" (up to 32 patterns per app)
  *   kidvo.open(appId)          open another app
  *   kidvo.notify(text)         show a small toast on the desktop
  *   kidvo.setTitle(text)       change your window title
