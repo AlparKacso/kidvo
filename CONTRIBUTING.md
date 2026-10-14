@@ -10,7 +10,7 @@ Thanks for wanting to build something for kids. This page is the charter (what g
 
 A pull request is merged when it meets all four:
 
-1. **Do no harm.** Safe and suitable for children, collects nothing, breaks nothing that is already there. CI checks the technical part.
+1. **Do no harm.** Safe and suitable for children (every text, picture and sound, and your author name and link), collects nothing, breaks nothing that is already there. CI checks the technical part.
 2. **Teaches one named skill.** The manifest lists 1 to 3 skills from the list below, and the game clearly practises them.
 3. **The child stays in charge.** Thinking comes first, asking the AI is optional and has a visible cost, and checking is rewarded.
 4. **It's fun.** A child would play it twice.
@@ -70,7 +70,7 @@ apps/my-game/
   parents/en.html   one printable A4 page for parents and teachers (one per language)
 ```
 
-You get the credit: `author.name` appears on your game's window as "by <name>" (use your GitHub username or the name you want children to see), and `author.url` (for example your GitHub profile) is linked from the game's info window.
+You get the credit: `author.name` appears on your game's window as "by <name>" (use your GitHub username or the name you want children to see), and `author.url` (for example your GitHub profile) is linked from the game's info window. Both must be suitable for children: the curator checks them, and a name may only use letters, digits, spaces and `. _ - '`.
 
 Robot Maze (`apps/maze`) is the reference game. Copy its patterns.
 

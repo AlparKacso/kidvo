@@ -109,6 +109,9 @@ export async function readManifest(id) {
   if (!isStr(m.name, 1, 32)) errors.push('name: 1 to 32 characters.');
   if (!isStr(m.description, 10, 160)) errors.push('description: 10 to 160 characters.');
   if (!m.author || !isStr(m.author.name, 1, 60)) errors.push('author.name: 1 to 60 characters.');
+  // The name is shown to children on the game window: a plain name, no links, emails or emoji.
+  else if (!/^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N} .'’_-]*$/u.test(m.author.name)) errors.push('author.name: letters, digits, spaces and . _ - \' only (no links, emails or emoji). Children see it on the game window.');
+  if (m.author?.url !== undefined && !(isStr(m.author.url, 12, 200) && /^https:\/\/[^\s"<>]+$/.test(m.author.url))) errors.push('author.url: an https:// link, e.g. your GitHub profile.');
   if (m.author) for (const k of Object.keys(m.author)) if (!['name', 'url'].includes(k)) errors.push(`Unknown author field "${k}".`);
   if (!['window', 'overlay'].includes(m.type)) errors.push('type must be "window" or "overlay".');
   if (m.type === 'window') {

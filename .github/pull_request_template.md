@@ -6,7 +6,7 @@
 
 ## Charter
 
-- [ ] **Do no harm.** Safe for ages 7–13, collects nothing, only touches `apps/<my-game-id>/`, and `npm test` passes.
+- [ ] **Do no harm.** Safe for ages 7–13 (texts, art, and my author name and link, which children see on the game window), collects nothing, only touches `apps/<my-game-id>/`, and `npm test` passes.
 - [ ] **Teaches one named skill**, listed in the manifest.
 - [ ] **The child stays in charge.** Asking the practice AI is optional and has a cost; checking is rewarded.
 - [ ] **It's fun.** A child would play it twice.

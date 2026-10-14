@@ -11,12 +11,14 @@ const errors = [];
 const warnings = [];
 const notes = [];
 const ids = await appIds();
+const manifests = new Map();
 
 for (const id of ids) {
   const r = await checkApp(id, ids);
+  manifests.set(id, r.manifest);
   for (const e of r.errors) errors.push(`apps/${id}: ${e}`);
   for (const w of r.warnings) warnings.push(`apps/${id}: ${w}`);
-  notes.push(`apps/${id}: ${(r.bytes / 1024).toFixed(1)} KB, languages: ${(r.manifest?.languages || []).join(', ')}`);
+  notes.push(`apps/${id}: ${(r.bytes / 1024).toFixed(1)} KB, languages: ${(r.manifest?.languages || []).join(', ')}, by "${r.manifest?.author?.name ?? '?'}"`);
 }
 
 const base = process.env.BASE_SHA;
@@ -47,6 +49,11 @@ if (base) {
     try { git('cat-file', '-e', `${base}:apps/${id}/manifest.json`); existed = true; } catch { existed = false; }
     if (existed) warnings.push(`apps/${id}: this PR changes an existing app. The curator checks that it extends rather than replaces, and credits the original author.`);
     else notes.push(`apps/${id}: new app`);
+  }
+  // Names are free text shown to children, so every touched app's credit is put in front of the reviewer.
+  for (const id of touchedApps) {
+    const a = manifests.get(id)?.author;
+    if (a) warnings.push(`apps/${id}: credited on the game window as "${a.name}"${a.url ? ` (links to ${a.url})` : ''}. Check that the name and link are suitable for children.`);
   }
   if (touchedApps.size > 1) warnings.push(`This PR touches ${touchedApps.size} apps (${[...touchedApps].join(', ')}). One app per PR is easier to review.`);
 }
