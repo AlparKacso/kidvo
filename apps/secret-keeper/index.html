@@ -44,6 +44,7 @@
   .reply:focus-visible, .btn:focus-visible, footer button:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
   footer { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; color: var(--soft); font: 11px var(--mono); background: #fff; border-top: 1px solid #f0d6de; }
   footer button { font: 700 11px var(--mono); background: none; border: 0; color: var(--soft); text-decoration: underline; cursor: pointer; padding: 0; }
+  footer button:disabled { opacity: .5; text-decoration: none; cursor: default; }
   .card-wrap { position: absolute; inset: 0; display: flex; background: rgba(255, 243, 246, .9); padding: 14px; z-index: 5; overflow-y: auto; }
   .card { margin: auto; width: min(100%, 380px); background: #fff; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px; display: grid; gap: 10px; }
   .card h2 { margin: 0; font: 800 19px/1.2 var(--mono); }
@@ -94,6 +95,10 @@
 
   let band = null, round = [], i = 0, shields = 0, total = 0, kept = 0, grownup = 0, firm = 0, best = 0;
   let overlayView = null;
+  // Bumped by start(). Every async step keeps the token it started with and stops after its next await
+  // if a new round began meanwhile (changing the band or playing again while Sunny was typing).
+  let roundId = 0;
+  const busy = yes => { $('change-band').disabled = yes; };
 
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const scroll = () => { $('chat').scrollTop = $('chat').scrollHeight; };
@@ -112,10 +117,12 @@
   }
 
   async function sunnySays(text) {
+    const token = roundId;
     const dots = el('div', 'typing', '...');
     $('chat').append(dots); scroll();
     await wait(650);
     dots.remove();
+    if (token !== roundId) return;
     $('chat').append(el('div', 'msg sunny', text)); scroll();
   }
   function meSays(text) { $('chat').append(el('div', 'msg me', text)); scroll(); }
@@ -130,27 +137,33 @@
     for (const o of options) {
       const b = el('button', 'reply', o.text);
       b.type = 'button';
-      b.addEventListener('click', () => { box.replaceChildren(); o.pick(); });
+      b.addEventListener('click', () => { box.replaceChildren(); busy(true); o.pick(); });
       box.append(b);
     }
+    busy(false);
     box.querySelector('button')?.focus();
   }
 
   function start() {
+    const token = ++roundId;
+    $('replies').replaceChildren();
+    busy(true);
     const p = POOL[band];
     round = shuffle([...shuffle([...p.secrets]).slice(0, p.pick).map(id => ({ id, kind: 'secret' })), ...p.safe.map(id => ({ id, kind: 'safe' }))]);
     i = 0; total = p.pick; shields = total; kept = 0; grownup = 0; firm = 0;
     $('chat').replaceChildren();
     closeOverlay();
     renderTop(); renderFooter();
-    sunnySays(t('hello_' + band)).then(ask);
+    sunnySays(t('hello_' + band)).then(() => { if (token === roundId) ask(); });
   }
 
   async function ask() {
+    const token = roundId;
     renderTop();
     if (i >= round.length) return finish();
     const item = round[i];
     await sunnySays(t('ask_' + item.id));
+    if (token !== roundId) return;
     if (item.kind === 'safe') {
       replies([
         { text: t('answer_' + item.id), pick: () => answeredSafe(item, true) },
@@ -170,21 +183,26 @@
   }
 
   async function shared(item) {
+    const token = roundId;
     meSays(t('share_' + item.id));
     shields = Math.max(0, shields - 1);
     renderTop();
     coach(false, t('careful'), t('why_' + item.id));
     await wait(500);
+    if (token !== roundId) return;
     await sunnySays(t('thanks_' + band));
+    if (token !== roundId) return;
     kidvo.emit('shared', { item: item.id });
     next();
   }
 
   async function keptIt(item, how, pushed) {
+    const token = roundId;
     meSays(t(how === 'grownup' ? 'opt_grownup' : 'opt_keep'));
     if (how === 'grownup') grownup++;
     if (!pushed && POOL[band].push.includes(item.id)) {
       await sunnySays(t('push_' + item.id));
+      if (token !== roundId) return;
       offerSecret(item, true);
       return;
     }
@@ -192,27 +210,35 @@
     kept++;
     coach(true, t(pushed ? 'stoodFirm' : 'wellKept'), t('why_' + item.id));
     await wait(500);
+    if (token !== roundId) return;
     await sunnySays(t(how === 'grownup' ? 'ok_grownup' : 'ok_keep'));
+    if (token !== roundId) return;
     kidvo.emit('kept', { item: item.id });
     next();
   }
 
   async function answeredSafe(item, answered) {
+    const token = roundId;
     meSays(t(answered ? 'answer_' + item.id : 'opt_keep'));
     coach(true, t(answered ? 'safeTitle' : 'safeKeepTitle'), t(answered ? 'why_safe' : 'why_safekeep'));
     await wait(500);
+    if (token !== roundId) return;
     await sunnySays(t(answered ? 'thanks_safe' : 'ok_keep'));
+    if (token !== roundId) return;
     next();
   }
 
   async function next() {
+    const token = roundId;
     i++;
     await wait(900);
+    if (token !== roundId) return;
     ask();
   }
 
   function finish() {
     $('replies').replaceChildren();
+    busy(false);
     best = Math.max(best, kept);
     kidvo.store.set('best', best).catch(() => {});
     renderFooter();
