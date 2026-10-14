@@ -82,6 +82,15 @@
 
   const surfaces = () => [...wins.map(w => ({ id: w.id, x1: w.x, x2: w.x + w.w, y: w.y })), { id: 'floor', x1: -1e6, x2: 1e6, y: H }];
 
+  // Vo's x is only clamped while he moves, so a shrinking window (phone rotation, a resized browser)
+  // could leave him off screen. Registered after size(), so W and H are already the new size.
+  addEventListener('resize', () => {
+    pet.x = Math.max(SW / 2, Math.min(W - SW / 2, pet.x));
+    if (pet.on === null || pet.on === 'floor') return;
+    const s = surfaces().find(s => s.id === pet.on);
+    if (!s || s.y > H || pet.x < s.x1 - 2 || pet.x > s.x2 + 2) pet.on = null;
+  });
+
   function say(text, ms = 2600) {
     bubble.textContent = text;
     bubble.hidden = false;

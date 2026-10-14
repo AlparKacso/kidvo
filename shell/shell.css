@@ -93,7 +93,10 @@ button { font: inherit; color: inherit; }
 .icon span {
   padding: 1px 4px;
   text-shadow: 1px 0 0 var(--ink), -1px 0 0 var(--ink), 0 1px 0 var(--ink), 0 -1px 0 var(--ink), 1px 1px 0 var(--ink);
-  overflow-wrap: anywhere;
+  /* Break at spaces or hyphens, never inside a word ("Păstrătoru / l de / secrete"). The label
+     shrinks to fit, so a long word widens it a little (up to the icon's edge) instead of breaking.
+     No hyphens: auto, it made "Păstrăto- / rul de / secrete" three lines, taller than the row. */
+  overflow-wrap: break-word;
 }
 .icon.selected span, .icon:focus-visible span {
   background: var(--ink); color: var(--sun); text-shadow: none;
@@ -348,6 +351,10 @@ button { font: inherit; color: inherit; }
 @media (max-width: 700px) {
   #motto { font-size: 11.5px; white-space: normal; line-height: 1.15; }
   .tb-brand { display: none; }
+}
+/* On phones the author credit would eat the title; it stays in the info window. */
+@media (max-width: 419px) {
+  .win-by { display: none; }
 }
 @media (max-height: 500px) {
   :root { --top-h: 28px; --bar-h: 40px; }
