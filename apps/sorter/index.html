@@ -342,15 +342,22 @@
     }
   }
 
+  // The ending depends on whether the second lesson helped: the child's labels decide that, not the script.
+  const FINAL = {
+    better: { title: 'finalTitleBetter', lesson: 'lessonBetter', say: 'sayThanks' },
+    same:   { title: 'finalTitleSame',   lesson: 'lessonSame',   say: 'saySure' },
+    worse:  { title: 'finalTitleWorse',  lesson: 'lessonWorse',  say: 'sayWorse' }
+  };
   function finish(results) {
     phase = 4;
     const total = TEST1.length;
+    const trend = scores.test2 > scores.test1 ? 'better' : scores.test2 === scores.test1 ? 'same' : 'worse';
     const earned = [];
     if (scores.why === 'whyB') earned.push('badgeBias');
     if (scores.test2 === total) earned.push('badgeTeacher');
     if (scores.judged === scores.judgedTotal) earned.push('badgeEye');
     kidvo.emit('done', { before: scores.test1, after: scores.test2 });
-    say(scores.test2 > scores.test1 ? 'sayThanks' : 'saySure');
+    say(FINAL[trend].say);
     show(() => {
       const bars = el('div', 'bars');
       for (const [key, n, cls] of [['before', scores.test1, ''], ['after', scores.test2, ' after']]) {
@@ -359,8 +366,8 @@
         row.append(el('span', null, t(key)), track, el('span', null, `${n}/${total}`));
         bars.append(row);
       }
-      const out = [el('h2', null, t('finalTitle')), resultStrip(results), bars,
-        el('p', null, t('judgedLine', { n: scores.judged, total: scores.judgedTotal })), el('p', 'lesson', t('lesson')), el('p', 'hint', t('think'))];
+      const out = [el('h2', null, t(FINAL[trend].title)), resultStrip(results), bars,
+        el('p', null, t('judgedLine', { n: scores.judged, total: scores.judgedTotal })), el('p', 'lesson', t(FINAL[trend].lesson)), el('p', 'hint', t('think'))];
       if (earned.length) { const e = el('div', 'earned'); for (const b of earned) e.append(el('span', null, t(b))); out.splice(1, 0, e); }
       const again = el('button', 'btn', t('again')); again.type = 'button';
       again.addEventListener('click', intro);
