@@ -53,6 +53,7 @@ Games never call a real AI. They use `shell/ask-ai.js`, a shared, clearly labell
 
 ```bash
 npm install
+npx playwright install chromium webkit   # browsers for the smoke test (Chromium and Safari's engine)
 cp -r templates/app apps/my-game     # a working mini game with a practice AI
 npm run dev                          # http://localhost:8080
 npm test                             # static checks + a real-browser smoke test

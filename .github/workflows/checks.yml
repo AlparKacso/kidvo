@@ -67,8 +67,8 @@ jobs:
       - name: Build the app registry
         run: node scripts/build-registry.mjs
 
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium and WebKit (Safari's engine)
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Smoke test (desktop boots, every app opens, no JS errors)
         env:

@@ -34,6 +34,7 @@ Anyone can propose a game. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the chart
 ```bash
 git clone https://github.com/AlparKacso/kidvo && cd kidvo
 npm install
+npx playwright install chromium webkit   # browsers for the smoke test
 cp -r templates/app apps/my-game
 npm run dev        # http://localhost:8080
 npm test           # the same checks CI runs

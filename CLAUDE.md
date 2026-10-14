@@ -22,8 +22,8 @@ kidvo.eu: **"Use AI wisely. Keep thinking for yourself."** A free, open-source c
 - **Progress** (badges, best level, band, current level) is stored per browser via `kidvo.store` (localStorage, 32 KB per game). No accounts, no leaderboards, nothing leaves the device. Robot Maze has a two-tap "start over" for shared family devices.
 - **Contact and privacy** (2026-10-13): hello@kidvo.eu (`contactEmail` in `shell/config.js`) is shown in the "For grown-ups" window and in the footer of every parents' guide. The same window has a three-line privacy note: no cookies, accounts or tracking; progress only in this browser; GitHub Pages keeps standard server logs.
 - **Stack:** static HTML/CSS/JS on GitHub Pages; cost is the domain only. No third-party requests at all (no fonts, analytics or CDNs).
-- **Isolation:** each game runs in `<iframe sandbox="allow-scripts">` with a mandatory CSP meta tag checked byte for byte. Games talk to the desktop only via `shell/sdk.js`.
-- **CI:** `scripts/check.mjs` (manifest, CSP, outside links, forbidden APIs, size, language keys, parents' guides, PR file boundary) and `tests/smoke.mjs` (Playwright opens every game, fails on any JS error). PRs may touch only `apps/<id>/`; other files need the maintainer's `core` label. Workflows use `pull_request` with read-only permissions, never `pull_request_target`.
+- **Isolation:** each game runs in `<iframe sandbox="allow-scripts">` with a mandatory CSP meta tag checked byte for byte. The CSP lists `https://kidvo.eu` next to `'self'` because Safari matches `'self'` against the sandboxed frame's opaque origin and then blocks every script and image (found 2026-10-14: no game ran in Safari 26.5); `scripts/serve.mjs` swaps in its own address locally. Moving the site to another domain means changing `SITE_ORIGIN` and `APP_CSP` in `scripts/lib.mjs` and every app page. Games talk to the desktop only via `shell/sdk.js`.
+- **CI:** `scripts/check.mjs` (manifest, CSP, outside links, forbidden APIs, size, language keys, parents' guides, PR file boundary) and `tests/smoke.mjs` (Playwright, in Chromium and WebKit: opens every game, requires the SDK handshake, fails on any JS error). PRs may touch only `apps/<id>/`; other files need the maintainer's `core` label. Workflows use `pull_request` with read-only permissions, never `pull_request_target`.
 - **One open PR per GitHub account**, enforced by the `one-pr` job in `checks.yml`; maintainers exempt.
 - Licensing: MIT for code, CC BY 4.0 for content in `apps/`.
 
@@ -56,7 +56,7 @@ Bus protocol (postMessage, `{kidvo:1, kind}`): app→shell `hello`, `sub`, `emit
 
 ## Commands
 
-`npm install` · `npm run dev` (localhost:8080) · `npm run check` · `npm run smoke` · `npm test`
+`npm install` · `npx playwright install chromium webkit` · `npm run dev` (localhost:8080) · `npm run check` · `npm run smoke` · `npm test`
 
 ## Launch checklist (Alpár)
 

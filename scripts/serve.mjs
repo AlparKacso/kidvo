@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SITE_ORIGIN } from './lib.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const TYPES = {
@@ -24,7 +25,14 @@ export function serve(port = 8080) {
       const info = await stat(file);
       if (!info.isFile()) throw new Error('not a file');
       res.writeHead(200, { 'content-type': TYPES[extname(file).toLowerCase()] || 'application/octet-stream', 'cache-control': 'no-store' });
-      res.end(await readFile(file));
+      let body = await readFile(file);
+      // App pages allow the live site's address next to 'self' (Safari needs it, see APP_CSP).
+      // Locally that address is this server, so swap it in or Safari blocks every game script.
+      if (extname(file) === '.html') {
+        body = body.toString('utf8').replace(/(<meta http-equiv="Content-Security-Policy" content=")([^"]*)/,
+          (m, head, policy) => head + policy.replaceAll(SITE_ORIGIN, `http://${req.headers.host}`));
+      }
+      res.end(body);
     } catch {
       res.writeHead(404, { 'content-type': 'text/plain' });
       res.end('not found');

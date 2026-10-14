@@ -9,10 +9,15 @@ export const APPS_DIR = join(ROOT, 'apps');
 
 // Every HTML file inside an app must carry this exact policy. It blocks calls to
 // other sites, trackers and form posts, so an app can only ever touch its own files.
+// The site's own address is listed next to 'self' because Safari matches 'self' against
+// a sandboxed frame's opaque origin, which matches nothing, so without it Safari blocks
+// every script and image in a game. scripts/serve.mjs swaps in its own address locally.
+export const SITE_ORIGIN = 'https://kidvo.eu';
 export const APP_CSP =
-  "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
-  "img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; " +
-  "form-action 'none'; base-uri 'none'";
+  "default-src 'self' https://kidvo.eu data: blob:; script-src 'self' https://kidvo.eu 'unsafe-inline'; " +
+  "style-src 'self' https://kidvo.eu 'unsafe-inline'; img-src 'self' https://kidvo.eu data: blob:; " +
+  "media-src 'self' https://kidvo.eu data: blob:; font-src 'self' https://kidvo.eu data:; " +
+  "connect-src 'self' https://kidvo.eu; form-action 'none'; base-uri 'none'";
 
 export const LIMITS = {
   windowBytes: 300 * 1024,
@@ -158,7 +163,8 @@ export async function checkApp(id, allIds) {
     if (rel === 'manifest.json') {
       try { const j = JSON.parse(text); if (j.author) delete j.author.url; text = JSON.stringify(j); } catch { /* reported above */ }
     }
-    for (const u of findUrls(text)) errors.push(`${rel}: links to the outside world are not allowed (${u.slice(0, 60)}). Bundle what you need inside your folder.`);
+    // The required CSP names the site's own address; it is checked exactly below, so skip it here.
+    for (const u of findUrls(text.replaceAll(APP_CSP, ''))) errors.push(`${rel}: links to the outside world are not allowed (${u.slice(0, 60)}). Bundle what you need inside your folder.`);
     for (const [re, msg] of FORBIDDEN) if (re.test(text)) errors.push(`${rel}: ${msg}`);
     for (const [re, msg] of WARN) if (re.test(text)) warnings.push(`${rel}: ${msg}`);
     if (SHELL_FILES.reduce((t, f) => t.replaceAll(f, ''), text).includes('../')) {
