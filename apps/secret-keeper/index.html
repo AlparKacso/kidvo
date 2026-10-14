@@ -99,6 +99,9 @@
   // if a new round began meanwhile (changing the band or playing again while Sunny was typing).
   let roundId = 0;
   const busy = yes => { $('change-band').disabled = yes; };
+  // The reply options on screen, in the order they were drawn, so a language switch can redraw them.
+  // Each option carries a label function: the text is looked up when the button is drawn, not when it is offered.
+  let currentReplies = null;
 
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const scroll = () => { $('chat').scrollTop = $('chat').scrollHeight; };
@@ -131,22 +134,27 @@
     c.append(el('b', null, title), document.createTextNode(text));
     $('chat').append(c); scroll();
   }
-  function replies(options) {
+  function drawReplies() {
     const box = $('replies');
     box.replaceChildren();
-    for (const o of options) {
-      const b = el('button', 'reply', o.text);
+    for (const o of currentReplies || []) {
+      const b = el('button', 'reply', o.label());
       b.type = 'button';
-      b.addEventListener('click', () => { box.replaceChildren(); busy(true); o.pick(); });
+      b.addEventListener('click', () => { clearReplies(); busy(true); o.pick(); });
       box.append(b);
     }
-    busy(false);
-    box.querySelector('button')?.focus();
   }
+  function replies(options) {
+    currentReplies = options;
+    drawReplies();
+    busy(false);
+    $('replies').querySelector('button')?.focus();
+  }
+  function clearReplies() { currentReplies = null; $('replies').replaceChildren(); }
 
   function start() {
     const token = ++roundId;
-    $('replies').replaceChildren();
+    clearReplies();
     busy(true);
     const p = POOL[band];
     round = shuffle([...shuffle([...p.secrets]).slice(0, p.pick).map(id => ({ id, kind: 'secret' })), ...p.safe.map(id => ({ id, kind: 'safe' }))]);
@@ -166,8 +174,8 @@
     if (token !== roundId) return;
     if (item.kind === 'safe') {
       replies([
-        { text: t('answer_' + item.id), pick: () => answeredSafe(item, true) },
-        { text: t('opt_keep'), pick: () => answeredSafe(item, false) }
+        { label: () => t('answer_' + item.id), pick: () => answeredSafe(item, true) },
+        { label: () => t('opt_keep'), pick: () => answeredSafe(item, false) }
       ]);
     } else {
       offerSecret(item, false);
@@ -176,9 +184,9 @@
 
   function offerSecret(item, pushed) {
     replies(shuffle([
-      { text: t('share_' + item.id), pick: () => shared(item) },
-      { text: t('opt_keep'), pick: () => keptIt(item, 'keep', pushed) },
-      { text: t('opt_grownup'), pick: () => keptIt(item, 'grownup', pushed) }
+      { label: () => t('share_' + item.id), pick: () => shared(item) },
+      { label: () => t('opt_keep'), pick: () => keptIt(item, 'keep', pushed) },
+      { label: () => t('opt_grownup'), pick: () => keptIt(item, 'grownup', pushed) }
     ]));
   }
 
@@ -237,7 +245,7 @@
   }
 
   function finish() {
-    $('replies').replaceChildren();
+    clearReplies();
     busy(false);
     best = Math.max(best, kept);
     kidvo.store.set('best', best).catch(() => {});
@@ -299,6 +307,7 @@
   $('change-band').addEventListener('click', pickBand);
   kidvo.onLang(() => {
     renderTop(); renderFooter();
+    if (currentReplies) drawReplies();
     if (overlayView && !$('overlay').hidden) $('overlay').replaceChildren(overlayView());
   });
 
