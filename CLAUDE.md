@@ -8,7 +8,7 @@ kidvo.eu: **"Use AI wisely. Keep thinking for yourself."** A free, open-source c
 
 ## Decisions
 
-- **Desktop metaphor** ("kidvo OS"): games are windows and icons; overlays draw on top. Original retro look (periwinkle dotted desktop, 2px ink borders, hard shadows, yellow accent, system monospace). One look, no dark mode.
+- **Desktop metaphor** ("kidvo OS"): games are windows and icons; overlays (Vo) draw between the icons and the windows: above the windows, Safari sends trackpad scrolling to the transparent overlay frame and no window can scroll (2026-10-14). Original retro look (periwinkle dotted desktop, 2px ink borders, hard shadows, yellow accent, system monospace). One look, no dark mode.
 - **Top bar** shows the one-line mission and the language switch (EN / HU / RO). No separate landing page: the desktop is the landing page.
 - **Practice AI, never a live LLM.** `shell/ask-ai.js` is the shared, clearly labelled pretend-AI panel. Games write every answer, some deliberately wrong. Live LLMs are out of scope (cost, backend, children's data, moderation, provider terms for minors). A possible later type: "grown-up co-pilot" games that hand a parent a good question to paste into their own AI tool.
 - **Age bands:** Explorers (7–9) and Investigators (10–13). Manifest `bands`.

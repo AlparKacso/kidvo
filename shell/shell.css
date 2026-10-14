@@ -155,8 +155,11 @@ button { font: inherit; color: inherit; }
 .win.max { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; box-shadow: none; }
 .win.max .win-resize { display: none; }
 
-/* ---------- overlays (apps that live on top of everything) ---------- */
-#overlays { position: absolute; inset: 0; pointer-events: none; z-index: 90000; }
+/* ---------- overlays (apps that live on the desktop, like Vo) ---------- */
+/* Overlays sit between the icons and the windows (windows start at z-index 11). Above the windows,
+   Safari sends wheel and trackpad scrolling to the transparent overlay frame despite
+   pointer-events: none, so no window could scroll. Vo still walks on window tops. */
+#overlays { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
 .hotspot {
   position: absolute; padding: 0; border: 0; background: transparent;
   pointer-events: auto; cursor: pointer; z-index: 1;

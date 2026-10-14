@@ -82,6 +82,22 @@ async function run(name) {
     });
   }
 
+  // With an overlay running (Vo), long text windows must still scroll with the wheel or trackpad.
+  // WebKit sent the scroll to the transparent overlay frame while it sat above the windows.
+  await step('a text window scrolls with the mouse wheel', async () => {
+    await page.click('#start-btn');
+    await page.click('#start-menu [data-shell="grownups"]');
+    const body = page.locator('.win .win-body').last();
+    await body.waitFor({ timeout: 2000 });
+    const box = await body.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 300);
+    await page.waitForTimeout(500);
+    const top = await body.evaluate(b => b.scrollTop);
+    if (top < 50) throw new Error(`the "For grown-ups" window did not scroll (scrollTop ${top})`);
+    await page.evaluate(() => [...document.querySelectorAll('.win')].pop().querySelector('[data-act="close"]').click());
+  });
+
   await step('bus delivers events between apps', async () => {
     // Every window app gets the same message; we only check that the desktop survives the traffic.
     const count = await page.evaluate(() => window.kidvoShell.windows().length);
