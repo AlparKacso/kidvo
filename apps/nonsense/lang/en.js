@@ -5,6 +5,8 @@ kidvoStrings('en', {
   checksLeft_other: '{n} library checks left',
   best: 'best score: {n}',
   playingAs: 'playing as {band} ({ages}) · change',
+  reset: 'start over',
+  resetConfirm: 'tap again to erase progress',
   who: 'Who is playing?',
   whoNote: 'QUIZ-O-TRON will ask you different questions.',
   band_explorers: 'Explorer',
