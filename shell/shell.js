@@ -450,7 +450,7 @@
   }
 
   function openAbout() {
-    const first = games()[0];
+    const first = games().find(a => a.id === CFG.startApp) || games()[0];
     openBuiltin('about', T('welcomeTitle'), 460, 470, () => html`
       <div class="doc">
         <h2>${t('welcomeH')}</h2>
