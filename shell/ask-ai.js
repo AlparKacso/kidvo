@@ -20,7 +20,8 @@
  *     onAnswer: (question, answer) => {},
  *     onFlag: (answer, wasWrong) => {}
  *   });
- *   ai.reset({ sparks: 3 });  ai.stats();  ai.say('text');  ai.refresh();  ai.setEnabled(false);
+ *   ai.reset({ sparks: 3 });  ai.stats();  ai.say('text');  ai.refresh();  ai.setEnabled(false);  ai.isBusy();
+ *   (reset() drops an answer that is still in its thinking pause, so it never lands in the next round.)
  *
  * Every answer gets a "Not right?" button. Flagging a wrong answer counts as a catch.
  *
@@ -121,6 +122,7 @@
     let budget = o.sparks;
     let spent = 0;
     let busy = false;
+    let generation = 0; // bumped by reset(): a pending answer from before the reset is dropped
     let enabled = true;
     let followUps = null;
     let records = [];
@@ -197,7 +199,9 @@
       log.append(wrap);
       scroll();
       root.classList.add('thinking');
+      const gen = generation;
       await new Promise(r => setTimeout(r, reduced() ? 0 : o.thinkMs));
+      if (gen !== generation) return;
       root.classList.remove('thinking');
 
       const ans = Object.assign({ text: '', wrong: false, followUps: null, flaggable: true }, q.answer ? q.answer() : {});
@@ -231,7 +235,8 @@
 
     const api = {
       reset({ sparks = o.sparks, clear = true } = {}) {
-        budget = sparks; spent = 0; records = []; followUps = null; busy = false;
+        generation++;
+        budget = sparks; spent = 0; records = []; followUps = null; busy = false; root.classList.remove('thinking');
         if (clear) log.replaceChildren();
         renderSparks();
         renderChips();
@@ -250,6 +255,7 @@
         };
       },
       say,
+      isBusy: () => busy,
       refresh: renderChips,
       setEnabled(on) { enabled = !!on; renderChips(); },
       setText(next) {

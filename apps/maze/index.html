@@ -270,7 +270,8 @@
   }
 
   function move(d) {
-    if (done || !band) return;
+    // While ORACLE thinks, the robot waits: finishing in that pause would beat the answer it already paid for.
+    if (done || !band || oracle.isBusy()) return;
     if (!open(me, d)) { cv.classList.remove('bump'); void cv.offsetWidth; cv.classList.add('bump'); return; }
     me = step(me, d);
     steps++;
