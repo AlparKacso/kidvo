@@ -43,10 +43,12 @@
   .reply:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
   .reply:focus-visible, .btn:focus-visible, footer button:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
   footer { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; color: var(--soft); font: 11px var(--mono); background: #fff; border-top: 1px solid #f0d6de; }
+  footer .links { display: flex; gap: 12px; }
   footer button { font: 700 11px var(--mono); background: none; border: 0; color: var(--soft); text-decoration: underline; cursor: pointer; padding: 0; }
   footer button:disabled { opacity: .5; text-decoration: none; cursor: default; }
   .card-wrap { position: absolute; inset: 0; display: flex; background: rgba(255, 243, 246, .9); padding: 14px; z-index: 5; overflow-y: auto; }
   .card { margin: auto; width: min(100%, 380px); background: #fff; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px; display: grid; gap: 10px; }
+  .card:focus, .replies:focus { outline: none; }
   .card h2 { margin: 0; font: 800 19px/1.2 var(--mono); }
   .card p { margin: 0; }
   .note { color: var(--soft); font-size: 13.5px; }
@@ -75,7 +77,7 @@
   </div>
   <main class="chat" id="chat" aria-live="polite"></main>
   <div class="replies" id="replies"></div>
-  <footer><span id="best"></span><button type="button" id="change-band"></button></footer>
+  <footer><span id="best"></span><span class="links"><button type="button" id="change-band"></button><button type="button" id="reset"></button></span></footer>
   <div class="card-wrap" id="overlay" hidden></div>
 
 <script>
@@ -102,6 +104,7 @@
   // The reply options on screen, in the order they were drawn, so a language switch can redraw them.
   // Each option carries a label function: the text is looked up when the button is drawn, not when it is offered.
   let currentReplies = null;
+  let resetArmed = false, resetTimer = null;
 
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const scroll = () => { $('chat').scrollTop = $('chat').scrollHeight; };
@@ -117,6 +120,7 @@
   function renderFooter() {
     $('best').textContent = best ? t('best', { n: best }) : '';
     $('change-band').textContent = band ? t('playingAs', { band: t('band_' + band), ages: POOL[band].ages }) : '';
+    $('reset').textContent = t(resetArmed ? 'resetConfirm' : 'reset');
   }
 
   async function sunnySays(text) {
@@ -148,7 +152,8 @@
     currentReplies = options;
     drawReplies();
     busy(false);
-    $('replies').querySelector('button')?.focus();
+    // Focus the reply box, not its first button: the order is shuffled and a highlighted answer nudges the child.
+    $('replies').tabIndex = -1; $('replies').focus({ preventScroll: true });
   }
   function clearReplies() { currentReplies = null; $('replies').replaceChildren(); }
 
@@ -300,11 +305,30 @@
     overlayView = view;
     $('overlay').replaceChildren(view());
     $('overlay').hidden = false;
-    $('overlay').querySelector('button')?.focus();
+    const card = $('overlay').querySelector('.card');
+    if (card) { card.tabIndex = -1; card.focus({ preventScroll: true }); }
   }
   function closeOverlay() { overlayView = null; $('overlay').hidden = true; }
 
   $('change-band').addEventListener('click', pickBand);
+  // "start over" needs two taps, so a younger sibling cannot wipe progress by accident (as in Robot Maze).
+  $('reset').addEventListener('click', () => {
+    if (!resetArmed) {
+      resetArmed = true; renderFooter();
+      resetTimer = setTimeout(() => { resetArmed = false; renderFooter(); }, 3000);
+      return;
+    }
+    clearTimeout(resetTimer); resetArmed = false;
+    roundId++; // stops a chat that is still typing
+    clearReplies();
+    best = 0; band = null; round = []; i = 0; total = 0; shields = 0;
+    kidvo.store.remove('best').catch(() => {});
+    kidvo.store.remove('band').catch(() => {});
+    $('chat').replaceChildren();
+    busy(false);
+    renderTop(); renderFooter();
+    pickBand();
+  });
   kidvo.onLang(() => {
     renderTop(); renderFooter();
     if (currentReplies) drawReplies();
