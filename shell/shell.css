@@ -353,7 +353,7 @@ button { font: inherit; color: inherit; }
   .tb-brand { display: none; }
 }
 /* On phones the author credit would eat the title; it stays in the info window. */
-@media (max-width: 419px) {
+@media (max-width: 459px) {
   .win-by { display: none; }
 }
 @media (max-height: 500px) {
