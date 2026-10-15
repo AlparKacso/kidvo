@@ -44,9 +44,11 @@
   .btn:focus-visible, footer button:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
   .btn small { display: block; font: 600 12px var(--sans); }
   footer { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; color: var(--soft); font: 11px var(--mono); background: #fff; border-top: 2px solid var(--ink); }
+  footer .links { display: flex; gap: 12px; }
   footer button { font: 700 11px var(--mono); background: none; border: 0; color: var(--soft); text-decoration: underline; cursor: pointer; padding: 0; }
   .card-wrap { position: absolute; inset: 0; display: flex; background: rgba(238, 244, 255, .92); padding: 14px; z-index: 5; overflow-y: auto; }
   .card { margin: auto; width: min(100%, 400px); background: #fff; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px; display: grid; gap: 10px; }
+  .card:focus, .row:focus { outline: none; }
   .card h2 { margin: 0; font: 800 19px/1.2 var(--mono); }
   .card p { margin: 0; }
   .note { color: var(--soft); font-size: 13.5px; }
@@ -64,10 +66,10 @@
   <div class="bot" id="bot">
     <span class="eye" aria-hidden="true"></span>
     <span class="bot-id"><span class="bot-name">QUIZ-O-TRON</span><br><span class="bot-tag" id="tag"></span></span>
-    <span class="hud"><span id="progress"></span><br><span id="checks"></span></span>
+    <span class="hud"><span id="progress"></span></span>
   </div>
   <main id="stage" aria-live="polite"></main>
-  <footer><span id="best"></span><button type="button" id="change-band"></button></footer>
+  <footer><span id="best"></span><span class="links"><button type="button" id="change-band"></button><button type="button" id="reset"></button></span></footer>
   <div class="card-wrap" id="overlay" hidden></div>
 
 <script>
@@ -87,21 +89,23 @@
   };
   const PER_KIND = 3;
 
-  let band = null, round = [], i = 0, checks = 0, score = 0, caught = 0, checked = 0, best = 0;
+  let band = null, round = [], i = 0, checks = 0, score = 0, caught = 0, checked = 0, best = 0, falseAlarms = 0;
   let current = null, overlayView = null;
+  let askToken = 0; // a question still "thinking" stops when a new round starts or progress is erased
+  let resetArmed = false, resetTimer = null;
 
   function hud() {
     $('tag').textContent = t('tag');
     $('progress').textContent = band && round.length ? t('progress', { n: Math.min(i + 1, round.length), total: round.length, score }) : '';
-    $('checks').textContent = band ? t('checksLeft', { n: checks }) : '';
     $('best').textContent = best ? t('best', { n: best }) : '';
     $('change-band').textContent = band ? t('playingAs', { band: t('band_' + band), ages: POOL[band].ages }) : '';
+    $('reset').textContent = t(resetArmed ? 'resetConfirm' : 'reset');
   }
 
   function start() {
     const p = POOL[band];
     round = shuffle([...shuffle([...p.true]).slice(0, PER_KIND).map(id => ({ id, made: false })), ...shuffle([...p.made]).slice(0, PER_KIND).map(id => ({ id, made: true }))]);
-    i = 0; checks = p.checks; score = 0; caught = 0; checked = 0;
+    i = 0; checks = p.checks; score = 0; caught = 0; checked = 0; falseAlarms = 0;
     closeOverlay();
     ask();
   }
@@ -111,9 +115,11 @@
     if (i >= round.length) return finish();
     const item = round[i];
     current = { item, typed: false, checkedThis: false, call: null };
+    const token = ++askToken;
     paint();
     $('bot').classList.add('thinking');
     await wait(700);
+    if (token !== askToken) return;
     $('bot').classList.remove('thinking');
     current.typed = true;
     paint();
@@ -152,7 +158,8 @@
       c.append(el('small', null, t('checksLeft', { n: checks })));
     }
     stage.append(row);
-    row.querySelector('button')?.focus();
+    // Focus the row, not "Sounds true": a highlighted answer nudges the child. Tab reaches the buttons.
+    row.tabIndex = -1; row.focus({ preventScroll: true });
   }
 
   function decide(saidMade) {
@@ -160,6 +167,7 @@
     const right = saidMade === current.item.made;
     if (right) score++;
     if (right && current.item.made) { caught++; kidvo.emit('caught', {}); }
+    if (saidMade && !current.item.made) falseAlarms++;
     hud();
     paint();
   }
@@ -170,7 +178,8 @@
     kidvo.emit('done', { score, total: round.length, band });
     hud();
     const earned = [];
-    if (caught === PER_KIND) earned.push('badgeDetector');
+    // Calling everything "made up" catches all of them too, so at most one true answer may be called made up.
+    if (caught === PER_KIND && falseAlarms <= 1) earned.push('badgeDetector');
     if (score === round.length) earned.push('badgePerfect');
     if (checked > 0 && score === round.length) earned.push('badgeChecker');
     let answered = null;
@@ -214,10 +223,28 @@
       return card;
     });
   }
-  function showOverlay(view) { overlayView = view; $('overlay').replaceChildren(view()); $('overlay').hidden = false; $('overlay').querySelector('button')?.focus(); }
+  function showOverlay(view) { overlayView = view; $('overlay').replaceChildren(view()); $('overlay').hidden = false; focusCard(); }
+  function focusCard() { const c = $('overlay').querySelector('.card'); if (c) { c.tabIndex = -1; c.focus({ preventScroll: true }); } }
   function closeOverlay() { overlayView = null; $('overlay').hidden = true; }
 
   $('change-band').addEventListener('click', pickBand);
+  // "start over" needs two taps, so a younger sibling cannot wipe progress by accident (as in Robot Maze).
+  $('reset').addEventListener('click', () => {
+    if (!resetArmed) {
+      resetArmed = true; hud();
+      resetTimer = setTimeout(() => { resetArmed = false; hud(); }, 3000);
+      return;
+    }
+    clearTimeout(resetTimer); resetArmed = false;
+    askToken++;
+    best = 0; band = null; round = []; current = null;
+    kidvo.store.remove('best').catch(() => {});
+    kidvo.store.remove('band').catch(() => {});
+    $('bot').classList.remove('thinking');
+    $('stage').replaceChildren();
+    hud();
+    pickBand();
+  });
   kidvo.onLang(() => {
     hud();
     if (current && $('stage').childElementCount) paint();

@@ -5,6 +5,8 @@ kidvoStrings('hu', {
   checksLeft_other: '{n} könyvtári ellenőrzés maradt',
   best: 'legjobb: {n} pont',
   playingAs: '{band} vagy ({ages}) · váltás',
+  reset: 'újrakezdés',
+  resetConfirm: 'koppints újra a törléshez',
   who: 'Ki játszik?',
   whoNote: 'QUIZ-O-TRON más kérdéseket fog feltenni neked.',
   band_explorers: 'Felfedező',

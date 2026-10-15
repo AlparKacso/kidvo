@@ -8,6 +8,8 @@ kidvoStrings('ro', {
   best_few: 'record: {n} puncte',
   best_other: 'record: {n} de puncte',
   playingAs: 'joci ca {band} ({ages}) · schimbă',
+  reset: 'ia-o de la capăt',
+  resetConfirm: 'apasă din nou ca să ștergi progresul',
   who: 'Cine se joacă?',
   whoNote: 'QUIZ-O-TRON îți va pune alte întrebări.',
   band_explorers: 'Explorator',
