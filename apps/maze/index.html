@@ -292,7 +292,8 @@
     let dir = right, n = runLength(me, right, true);
     if (wrong) {
       const walls = Object.keys(DIRS).filter(d => !open(me, d));
-      const away = Object.keys(DIRS).filter(d => d !== right && open(me, d));
+      // Never another shortest route: that "wrong" answer would be right.
+      const away = Object.keys(DIRS).filter(d => d !== right && open(me, d) && dist[idx(step(me, d))] !== dist[idx(me)] - 1);
       if (B.wrongKind === 'wall' && walls.length) { dir = walls[rand(walls.length)]; n = 1 + rand(2); }
       else if (away.length) { dir = away[rand(away.length)]; n = runLength(me, dir, false); }
       else if (walls.length) { dir = walls[rand(walls.length)]; n = 1 + rand(3); }
