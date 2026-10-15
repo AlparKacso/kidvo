@@ -43,6 +43,7 @@
   /* overlays: band picker and level results */
   .card-wrap { position: fixed; inset: 0; z-index: 20; display: flex; overflow-y: auto; background: rgba(233, 251, 244, .86); padding: 12px; }
   .card { margin: auto; width: min(100%, 360px); background: var(--paper); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px; display: grid; gap: 10px; }
+  .card:focus { outline: none; }
   .card h2 { margin: 0; font: 800 18px/1.2 var(--mono); }
   .card p { margin: 0; }
   .card .row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -146,7 +147,8 @@
 
   let band = null, B = null;
   let level = 1, N, cells, dist, me, steps = 0, par, trail, shownPath = null, aiSolved = false, done = false;
-  let progress = { brain: 0, detective: 0, shortest: 0, best: 1 };
+  // bests: best level per band. best is kept for progress saved before bands had their own.
+  let progress = { brain: 0, detective: 0, shortest: 0, best: 1, bests: {} };
   let seenWrong = false;
   let overlayView = null;   // re-renders the open card when the language changes
 
@@ -353,6 +355,7 @@
     if (s.caught > 0) { earned.push('badge_detective'); progress.detective++; }
     if (steps === par && !aiSolved) { earned.push('badge_shortest'); progress.shortest++; }
     progress.best = Math.max(progress.best, level + 1);
+    progress.bests[band] = Math.max(progress.bests[band] || 1, level + 1);
     save({ level: level + 1 });
     renderFooter();
     kidvo.emit('solved', { level, steps, par, asked: s.asked, caught: s.caught, aiSolved, band });
@@ -367,7 +370,7 @@
         for (const b of earned) e.append(el('span', t(b)));
         card.append(e);
       }
-      if (aiSolved) card.append(el('p', tb('showed'), 'note'));
+      if (aiSolved) card.append(el('p', tb(steps === par ? 'showed' : 'showedOnly'), 'note'));
       const next = el('button', t('next'), 'btn');
       next.type = 'button';
       next.addEventListener('click', () => start(level + 1));
@@ -390,7 +393,7 @@
         if (s.wrongGiven > 0) {
           text = answered
             ? t('fb_wrong_said_right', { n: s.wrongGiven })
-            : t('fb_wrong_said_wrong', { n: s.wrongGiven }) + ' ' + t(s.caught ? 'fb_caught' : 'fb_notice');
+            : t('fb_wrong_said_wrong', { n: s.wrongGiven }) + ' ' + caughtText(s);
         } else {
           text = t(answered ? 'fb_right_said_right' : 'fb_right_said_wrong');
         }
@@ -399,6 +402,13 @@
       return card;
     };
     showOverlay(view);
+  }
+
+  // How many of ORACLE's wrong answers the child flagged: none, one of one, all of several, or some.
+  function caughtText(s) {
+    if (!s.caught) return t('fb_notice');
+    if (s.wrongGiven === 1) return t('fb_caught');
+    return s.caught === s.wrongGiven ? t('fb_caught_all') : t('fb_caught_some', { n: s.caught });
   }
 
   /* ---------------- small helpers ---------------- */
@@ -417,8 +427,10 @@
     overlayView = view;
     $('overlay').replaceChildren(view());
     $('overlay').hidden = false;
-    $('overlay').querySelector('button')?.focus();
+    focusCard();
   }
+  // Focus the card itself, not its first button: a highlighted answer nudges the child. Tab reaches the buttons.
+  function focusCard() { const c = $('overlay').querySelector('.card'); if (c) { c.tabIndex = -1; c.focus({ preventScroll: true }); } }
   function closeOverlay() { overlayView = null; $('overlay').hidden = true; $('overlay').replaceChildren(); }
   function save(extra = {}) {
     kidvo.store.set('progress', progress).catch(() => {});
@@ -431,7 +443,7 @@
     $('steps').textContent = t('stepsCount', { n: steps });
   }
   function renderFooter() {
-    $('totals').textContent = t('totals', progress);
+    $('totals').textContent = t('totals', { ...progress, best: (band && progress.bests[band]) || 1 });
     $('change-band').textContent = band ? t('playingAs', { band: t('band_' + band), ages: BANDS[band].ages }) : '';
     $('change-band').hidden = !band;
     $('reset').textContent = t(resetArmed ? 'resetConfirm' : 'reset');
@@ -501,7 +513,7 @@
       return;
     }
     clearTimeout(resetTimer); resetArmed = false;
-    progress = { brain: 0, detective: 0, shortest: 0, best: 1 };
+    progress = { brain: 0, detective: 0, shortest: 0, best: 1, bests: {} };
     band = null; B = null; level = 1; seenWrong = false;
     save({ level: 1, band: null });
     oracle.reset({ sparks: SPARKS });
@@ -521,8 +533,11 @@
   kidvo.ready(async () => {
     try {
       progress = Object.assign(progress, (await kidvo.store.get('progress')) || {});
-      renderFooter();
       const saved = await kidvo.store.get('band');
+      if (!progress.bests || typeof progress.bests !== 'object') progress.bests = {};
+      // Progress from before bands had their own best level: give it to the band that was playing.
+      if (saved && BANDS[saved] && !progress.bests[saved] && progress.best > 1) progress.bests[saved] = progress.best;
+      renderFooter();
       const savedLevel = await kidvo.store.get('level');
       if (saved && BANDS[saved]) { level = savedLevel || 1; setBand(saved, false); }
     } catch { /* first visit: keep the picker */ }
