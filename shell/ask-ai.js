@@ -69,6 +69,7 @@
   .kai-chip:disabled { opacity: .45; cursor: not-allowed; background: var(--kai-chip); }
   .kai-chip .kai-cost { display: inline-flex; gap: 2px; }
   .kai-chip .kai-cost .kai-spark { width: 8px; height: 11px; background: var(--kai-ink); }
+  .kai-chip .kai-need { font-weight: 600; font-size: 10.5px; }
   .kai-chip.back { background: transparent; color: var(--kai-dim); border-color: var(--kai-dim); box-shadow: none; }
   .kai-chip:focus-visible, .kai-flag:focus-visible { outline: 3px solid var(--kai-spark); outline-offset: 2px; }
   @media (pointer: coarse) {
@@ -149,7 +150,8 @@
       }
       const left = budget == null ? Infinity : budget - spent;
       b.disabled = !enabled || busy || cost > left;
-      if (cost > left) b.title = tx.notEnough;
+      // Say why the chip is grey on the chip itself: touch screens never show a tooltip.
+      if (cost > left) { b.title = tx.notEnough; if (enabled) b.append(el('small', 'kai-need', tx.notEnough)); }
       b.addEventListener('click', onClick);
       return b;
     }
