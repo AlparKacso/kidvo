@@ -108,7 +108,7 @@
     const D = pet.y - target.y; // how far up
     const vy0 = -Math.sqrt(2 * G * (D + 24 * 1.0));
     const t = (-vy0 + Math.sqrt(vy0 * vy0 - 2 * G * D)) / G;
-    const tx = Math.max(target.x1 + 10, Math.min(target.x2 - 10, pet.x + (Math.random() - 0.5) * 80));
+    const tx = Math.max(target.x1 + 10, SW / 2, Math.min(target.x2 - 10, W - SW / 2, pet.x + (Math.random() - 0.5) * 80));
     pet.on = null;
     pet.vy = vy0;
     pet.vx = (tx - pet.x) / t;
@@ -120,7 +120,7 @@
     const r = Math.random();
     const here = pet.x;
     const higher = surfaces().filter(s => s.id !== 'floor' && s.id !== pet.on && s.y < pet.y - 20 && pet.y - s.y < 260 &&
-      here > s.x1 - 160 && here < s.x2 + 160);
+      here > s.x1 - 160 && here < s.x2 + 160 && Math.min(s.x2, W) - Math.max(s.x1, 0) > SW + 20);
     if (r < 0.22 && higher.length) { jumpTo(higher[Math.floor(Math.random() * higher.length)]); pet.mode = 'walk'; pet.until = now + 1200; return; }
     if (r < 0.6) { pet.mode = 'walk'; pet.face = Math.random() < 0.5 ? -1 : 1; pet.until = now + 1500 + Math.random() * 3500; return; }
     pet.mode = 'idle'; pet.until = now + 1200 + Math.random() * 2600;
@@ -139,8 +139,11 @@
         pet.y = s.y;
         if (pet.mode === 'walk' && !reduced) {
           const nx = pet.x + pet.face * 0.05 * dt;
-          if (nx < s.x1 + 6 || nx > s.x2 - 6) {
-            if (s.id !== 'floor' && Math.random() < 0.35) { pet.on = null; pet.vx = pet.face * 0.06; pet.vy = -0.2; }
+          // A window can overhang the screen edge (the desktop shrank): walk only on its visible part.
+          const lo = Math.max(s.x1 + 6, SW / 2), hi = Math.min(s.x2 - 6, W - SW / 2);
+          if (nx < lo || nx > hi) {
+            const screenEdge = nx < SW / 2 || nx > W - SW / 2;
+            if (s.id !== 'floor' && !screenEdge && Math.random() < 0.35) { pet.on = null; pet.vx = pet.face * 0.06; pet.vy = -0.2; }
             else pet.face *= -1;
           } else pet.x = nx;
           if (s.id === 'floor') pet.x = Math.max(SW / 2, Math.min(W - SW / 2, pet.x));
