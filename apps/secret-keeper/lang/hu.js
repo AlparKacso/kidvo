@@ -1,10 +1,12 @@
 kidvoStrings('hu', {
-  label: 'gyakorló AI · a barátságos nem ugyanaz, mint a biztonságos',
+  label: 'gyakorló AI · amit választasz, nem kerül sehova',
   progress: '{n}. kérdés / {total}',
   shieldsAria: '{n} pajzs maradt',
   best_one: 'legjobb: {n} megőrzött titok',
   best_other: 'legjobb: {n} megőrzött titok',
   playingAs: '{band} vagy ({ages}) · váltás',
+  reset: 'újrakezdés',
+  resetConfirm: 'koppints újra a törléshez',
   who: 'Ki játszik?',
   whoNote: 'Sunny kicsit másképp fog beszélgetni veled.',
   band_explorers: 'Felfedező',

@@ -1,10 +1,12 @@
 kidvoStrings('en', {
-  label: 'practice AI · friendly is not the same as safe',
+  label: 'practice AI · nothing you choose is sent anywhere',
   progress: 'question {n} of {total}',
   shieldsAria: '{n} shields left',
   best_one: 'best: {n} secret kept',
   best_other: 'best: {n} secrets kept',
   playingAs: 'playing as {band} ({ages}) · change',
+  reset: 'start over',
+  resetConfirm: 'tap again to erase progress',
   who: 'Who is playing?',
   whoNote: 'Sunny will chat with you a little differently.',
   band_explorers: 'Explorer',
