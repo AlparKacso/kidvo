@@ -317,14 +317,10 @@
       // were wrong, SORT-1 learned those mistakes (whyD), and the fix is to label lesson 1 again.
       const bad = scores.mislabelled > 0;
       const correct = bad ? 'whyD' : 'whyB';
-      say(bad ? 'sayTaught' : right === results.length ? 'sayProud' : 'saySure');
+      say(bad ? 'sayTaught' : 'saySure');
       let picked = null;
       show(() => {
         const out = [el('h2', null, t('results', { n: right, total: results.length })), resultStrip(results)];
-        if (right === results.length) {
-          // The child's own labels already included variety (or got lucky). Still teach the idea.
-          out.push(el('p', 'hint', t('allRight1')));
-        }
         out.push(el('h2', null, t('whyQ')));
         const box = el('div', 'choices');
         for (const k of ['whyA', 'whyB', 'whyC', 'whyD']) {
