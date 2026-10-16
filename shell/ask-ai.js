@@ -27,6 +27,9 @@
  *
  * Languages: pass `text` with your translations (see DEFAULT_TEXT for the keys), and call
  * ai.setText({...}) when the player switches language. Use {left} {total} {n} as placeholders.
+ * A question's `label`, an answer's `text` and say()'s text may also be functions that return the
+ * text in the current language: setText() then redraws the whole conversation in the new language
+ * (plain strings stay as they were written, and follow-up chips with string labels are dropped).
  */
 (() => {
   'use strict';
@@ -95,6 +98,7 @@
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const sparkIcons = (n, used = 0) => Array.from({ length: n }, (_, i) => el('span', 'kai-spark' + (i >= n - used ? ' used' : '')));
   const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const val = x => (typeof x === 'function' ? x() : x);
 
   function create(root, options) {
     if (!styled) { const s = document.createElement('style'); s.textContent = CSS; document.head.append(s); styled = true; }
@@ -127,6 +131,9 @@
     let enabled = true;
     let followUps = null;
     let records = [];
+    // Lines on screen whose text can be looked up again: setText() redraws them in the new language.
+    let live = [];
+    const track = (node, text) => { if (typeof text === 'function') live.push({ node, text }); };
 
     function renderSparks() {
       sparkBox.replaceChildren();
@@ -140,7 +147,7 @@
     function chip(q, onClick, extraClass = '') {
       const b = el('button', 'kai-chip' + extraClass);
       b.type = 'button';
-      b.append(document.createTextNode(q.label));
+      b.append(document.createTextNode(val(q.label)));
       const cost = q.cost || 0;
       if (cost) {
         const c = el('span', 'kai-cost');
@@ -180,7 +187,8 @@
 
     function say(text) {
       const wrap = el('div', 'kai-a sys');
-      const p = el('p', null, text);
+      const p = el('p', null, val(text));
+      track(p, text);
       wrap.append(p);
       log.append(wrap);
       scroll();
@@ -194,7 +202,9 @@
       renderSparks();
       busy = true;
       renderChips();
-      log.append(el('div', 'kai-q', q.label));
+      const qEl = el('div', 'kai-q', val(q.label));
+      track(qEl, q.label);
+      log.append(qEl);
       const wrap = el('div', 'kai-a');
       const p = el('p', null, '...');
       wrap.append(p);
@@ -207,19 +217,25 @@
       root.classList.remove('thinking');
 
       const ans = Object.assign({ text: '', wrong: false, followUps: null, flaggable: true }, q.answer ? q.answer() : {});
-      await typeInto(p, ans.text);
-      const rec = { question: q.id, text: ans.text, wrong: !!ans.wrong, flagged: false, cost };
+      const text = val(ans.text);
+      await typeInto(p, text);
+      // The language may have changed while it was typing: settle on the current one.
+      p.textContent = val(ans.text);
+      track(p, ans.text);
+      const rec = { question: q.id, text, wrong: !!ans.wrong, flagged: false, cost };
       records.push(rec);
 
       if (ans.flaggable) {
         const flag = el('button', 'kai-flag', tx.notRight);
         flag.type = 'button';
+        track(flag, () => tx.notRight);
         flag.addEventListener('click', () => {
           if (rec.flagged) return;
           rec.flagged = true;
           flag.remove();
           const v = el('div', 'kai-verdict ' + (rec.wrong ? 'caught' : 'fine'),
             rec.wrong ? tx.caught : tx.fine);
+          track(v, () => (rec.wrong ? tx.caught : tx.fine));
           wrap.append(v);
           scroll();
           o.onFlag && o.onFlag(rec, rec.wrong);
@@ -239,7 +255,7 @@
       reset({ sparks = o.sparks, clear = true } = {}) {
         generation++;
         budget = sparks; spent = 0; records = []; followUps = null; busy = false; root.classList.remove('thinking');
-        if (clear) log.replaceChildren();
+        if (clear) { log.replaceChildren(); live = []; }
         renderSparks();
         renderChips();
       },
@@ -264,7 +280,9 @@
         tx = Object.assign({}, DEFAULT_TEXT, next || {});
         tagEl.textContent = tx.tag;
         askLabel.textContent = tx.ask;
-        followUps = null;
+        for (const e of live) if (e.node.isConnected) e.node.textContent = e.text();
+        // Follow-ups whose labels can be looked up again stay; fixed strings would stay in the old language.
+        if (followUps && followUps.some(f => typeof f.label !== 'function')) followUps = null;
         renderSparks();
         renderChips();
       }
