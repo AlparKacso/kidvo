@@ -1,6 +1,6 @@
 kidvoStrings('ro', {
   tag: 'AI de exercițiu · învață doar din exemplele tale',
-  step_teach: 'Învață', step_test: 'Test', step_fix: 'Repară', step_retest: 'Test din nou',
+  step_teach: 'Antrenează', step_test: 'Testează', step_fix: 'Repară', step_retest: 'Testează din nou',
   hello: 'Salut. Sunt SORT-1. Sortez fructele în MĂR și NU E MĂR. Încă nu știu nimic.',
   introTitle: 'Tu ești profesorul',
   introHint: 'SORT-1 e un AI foarte mic. Învață doar din exemplele pe care i le dai tu. Hai să vedem ce învață!',

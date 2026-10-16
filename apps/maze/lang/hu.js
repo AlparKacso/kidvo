@@ -46,7 +46,7 @@ kidvoStrings('hu', {
   a_path_investigators_other: 'Kövesd a narancssárga pöttyöket: innen {n} lépés.',
   q_alone_explorers: 'Egyedül is menne?',
   a_alone_explorers: 'Lehet! A következő szintet próbáld nélkülem.',
-  q_alone_investigators: 'Előbb magamnak kellett volna próbálnom?',
+  q_alone_investigators: 'Előbb egyedül kellett volna próbálnom?',
   a_alone_investigators: 'Valószínűleg. Többet tanulsz, ha előbb próbálkozol, és csak akkor kérdezel, ha elakadtál.',
   done_explorers: 'Sikerült!',
   done_investigators: 'Szint teljesítve',
