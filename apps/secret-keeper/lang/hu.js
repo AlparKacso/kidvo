@@ -1,5 +1,5 @@
 kidvoStrings('hu', {
-  label: 'gyakorló AI · amit választasz, nem kerül sehova',
+  label: 'gyakorló AI · bármit választasz, nem kerül ki a rendszerből',
   progress: '{n}. kérdés / {total}',
   shieldsAria: '{n} pajzs maradt',
   best_one: 'legjobb: {n} megőrzött titok',

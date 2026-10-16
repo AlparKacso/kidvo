@@ -1,5 +1,5 @@
 kidvoStrings('ro', {
-  label: 'AI de exercițiu · nimic din ce alegi nu pleacă nicăieri',
+  label: 'AI de exercițiu · nimic din ce alegi nu părăsește sistemul',
   progress: 'întrebarea {n} din {total}',
   shieldsAria: 'mai ai {n} scuturi',
   best_one: 'record: {n} secret păstrat',

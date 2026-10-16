@@ -52,7 +52,7 @@ kidvoStrings('ro', {
   fb_whyA_mislabelled: 'Nu chiar. SORT-1 funcționează bine. A învățat exact ce l-ai învățat tu, cu greșeli cu tot.',
   fb_whyB_mislabelled: 'În parte. Dar uită-te mai întâi la etichetele tale: SORT-1 le-a crezut pe toate, și pe cele greșite.',
   fixBtn: 'Repară: arată-i lui SORT-1 mai multe feluri de mere',
-  fixLabelsBtn: 'Îmi repar etichetele',
+  fixLabelsBtn: 'Îmi corectez etichetele',
   finalTitleBetter: 'SORT-1 a învățat mai bine!',
   finalTitleSame: 'SORT-1 nu s-a descurcat mai bine.',
   finalTitleWorse: 'SORT-1 s-a descurcat mai prost.',
