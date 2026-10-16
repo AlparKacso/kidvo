@@ -147,6 +147,8 @@
       b.addEventListener('click', () => { clearReplies(); busy(true); o.pick(); });
       box.append(b);
     }
+    // The buttons make the reply bar taller and the chat shorter, so the last message would hide under them.
+    scroll();
   }
   function replies(options) {
     currentReplies = options;
