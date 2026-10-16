@@ -303,27 +303,28 @@
       if (wrong) seenWrong = true;
     }
     const followUps = [
-      { id: 'sure', label: t('q_sure'), answer: () => ({ text: tb('a_sure'), flaggable: false, followUps: [checkQuestion()] }) },
+      { id: 'sure', label: () => t('q_sure'), answer: () => ({ text: () => tb('a_sure'), flaggable: false, followUps: [checkQuestion()] }) },
       checkQuestion()
     ];
-    if (band === 'investigators') followUps.push({ id: 'how', label: t('q_how'), answer: () => ({ text: t(wrong ? 'a_how_wrong' : 'a_how_right'), flaggable: false }) });
-    return { text: tb('way', { dir: t('dir_' + dir), n }), wrong, followUps };
+    if (band === 'investigators') followUps.push({ id: 'how', label: () => t('q_how'), answer: () => ({ text: () => t(wrong ? 'a_how_wrong' : 'a_how_right'), flaggable: false }) });
+    // Texts are functions so a language switch can redraw ORACLE's answers (see shell/ask-ai.js).
+    return { text: () => tb('way', { dir: t('dir_' + dir), n }), wrong, followUps };
   }
-  const checkQuestion = () => ({ id: 'check', label: t('q_check'), answer: () => ({ text: tb('a_check'), flaggable: false }) });
+  const checkQuestion = () => ({ id: 'check', label: () => t('q_check'), answer: () => ({ text: () => tb('a_check'), flaggable: false }) });
 
   let tip = 0;
   function questions() {
     if (done || !band) return [];
-    const q = [{ id: 'way', label: tb('q_way'), cost: 1, answer: wayAnswer }];
-    if (band === 'investigators') q.push({ id: 'tip', label: t('q_tip'), cost: 1, answer: () => ({ text: t('tip' + (tip++ % 4 + 1)), flaggable: false }) });
-    q.push({ id: 'path', label: tb('q_path'), cost: 3, answer: () => {
+    const q = [{ id: 'way', label: () => tb('q_way'), cost: 1, answer: wayAnswer }];
+    if (band === 'investigators') q.push({ id: 'tip', label: () => t('q_tip'), cost: 1, answer: () => { const k = tip++ % 4 + 1; return { text: () => t('tip' + k), flaggable: false }; } });
+    q.push({ id: 'path', label: () => tb('q_path'), cost: 3, answer: () => {
       shownPath = shortestPath(me);
       aiSolved = true;
       draw();
       return {
-        text: tb('a_path', { n: shownPath.length }),
+        text: (n => () => tb('a_path', { n }))(shownPath.length),
         flaggable: false,
-        followUps: [{ id: 'alone', label: tb('q_alone'), answer: () => ({ text: tb('a_alone'), flaggable: false }) }]
+        followUps: [{ id: 'alone', label: () => tb('q_alone'), answer: () => ({ text: () => tb('a_alone'), flaggable: false }) }]
       };
     } });
     return q;
@@ -470,7 +471,7 @@
     kidvo.store.set('band', key).catch(() => {});
     if (fresh) { level = 1; seenWrong = false; save({ level: 1 }); }
     start(level);
-    oracle.say(tb('greet'));
+    oracle.say(() => tb('greet'));
     renderFooter();
   }
 

@@ -10,7 +10,7 @@ kidvo.eu: **"Use AI wisely. Keep thinking for yourself."** A free, open-source c
 
 - **Desktop metaphor** ("kidvo OS"): games are windows and icons; overlays (Vo) draw between the icons and the windows: above the windows, Safari sends trackpad scrolling to the transparent overlay frame and no window can scroll (2026-10-14). Original retro look (periwinkle dotted desktop, 2px ink borders, hard shadows, yellow accent, system monospace). One look, no dark mode.
 - **Top bar** shows the one-line mission and the language switch (EN / HU / RO). No separate landing page: the desktop is the landing page.
-- **Practice AI, never a live LLM.** `shell/ask-ai.js` is the shared, clearly labelled pretend-AI panel. Games write every answer, some deliberately wrong. Live LLMs are out of scope (cost, backend, children's data, moderation, provider terms for minors). A possible later type: "grown-up co-pilot" games that hand a parent a good question to paste into their own AI tool.
+- **Practice AI, never a live LLM.** `shell/ask-ai.js` is the shared, clearly labelled pretend-AI panel. Games write every answer, some deliberately wrong. Labels and answers may be functions, so a language switch redraws the whole conversation; Secret Keeper keeps the text keys of its chat for the same reason (2026-10-16). Live LLMs are out of scope (cost, backend, children's data, moderation, provider terms for minors). A possible later type: "grown-up co-pilot" games that hand a parent a good question to paste into their own AI tool.
 - **Age bands:** Explorers (7–9) and Investigators (10–13). Manifest `bands`.
 - **Skills:** manifest `skills`, from `SKILLS` in `scripts/lib.mjs` (draft list, aligned in spirit with the EC/OECD AI Literacy Framework, 2026).
 - **Languages:** English required, Hungarian and Romanian at launch. Texts in `apps/<id>/lang/<code>.js` via `kidvoStrings(code, {...})`; `kidvo.t(key, vars)` with `Intl.PluralRules` plural forms (`_one/_few/_other`); fallback to English. Desktop texts in `shell/i18n.js`. CI checks that every declared language has the same keys as English. Language stewards (native speakers) review via `.github/CODEOWNERS`. HU and RO steward: Alpár.
@@ -80,7 +80,6 @@ Bus protocol (postMessage, `{kidvo:1, kind}`): app→shell `hello`, `sub`, `emit
 ## Backlog
 
 - More games for the skills not yet covered, open for contributors as issues #1 Real or Robot? (`spot-ai-made`), #2 Better Question (`ask-better-questions`), #3 Your idea matters (`your-idea-matters`).
-- Clear the practice-AI transcript (or re-greet) when the language changes mid-game; today old answers stay in the previous language.
 - Optional read-aloud for Explorers (check that browser voices work offline first).
 - An education co-curator and a written review checklist.
 - First-pass AI reviewer for PRs (labels and summary, no secrets on forks).

@@ -123,20 +123,23 @@
     $('reset').textContent = t(resetArmed ? 'resetConfirm' : 'reset');
   }
 
-  async function sunnySays(text) {
+  // Chat lines are written from text keys and remembered, so a language switch can redraw the whole chat.
+  let lines = [];
+  function line(node, draw) { draw(); lines.push(draw); $('chat').append(node); scroll(); }
+  async function sunnySays(key) {
     const token = roundId;
     const dots = el('div', 'typing', '...');
     $('chat').append(dots); scroll();
     await wait(650);
     dots.remove();
     if (token !== roundId) return;
-    $('chat').append(el('div', 'msg sunny', text)); scroll();
+    const n = el('div', 'msg sunny');
+    line(n, () => { n.textContent = t(key); });
   }
-  function meSays(text) { $('chat').append(el('div', 'msg me', text)); scroll(); }
-  function coach(good, title, text) {
+  function meSays(key) { const n = el('div', 'msg me'); line(n, () => { n.textContent = t(key); }); }
+  function coach(good, titleKey, textKey) {
     const c = el('div', 'coach' + (good ? '' : ' bad'));
-    c.append(el('b', null, title), document.createTextNode(text));
-    $('chat').append(c); scroll();
+    line(c, () => c.replaceChildren(el('b', null, t(titleKey)), document.createTextNode(t(textKey))));
   }
   function drawReplies() {
     const box = $('replies');
@@ -166,10 +169,10 @@
     const p = POOL[band];
     round = shuffle([...shuffle([...p.secrets]).slice(0, p.pick).map(id => ({ id, kind: 'secret' })), ...p.safe.map(id => ({ id, kind: 'safe' }))]);
     i = 0; total = p.pick; shields = total; kept = 0; grownup = 0; firm = 0;
-    $('chat').replaceChildren();
+    $('chat').replaceChildren(); lines = [];
     closeOverlay();
     renderTop(); renderFooter();
-    sunnySays(t('hello_' + band)).then(() => { if (token === roundId) ask(); });
+    sunnySays('hello_' + band).then(() => { if (token === roundId) ask(); });
   }
 
   async function ask() {
@@ -177,7 +180,7 @@
     renderTop();
     if (i >= round.length) return finish();
     const item = round[i];
-    await sunnySays(t('ask_' + item.id));
+    await sunnySays('ask_' + item.id);
     if (token !== roundId) return;
     if (item.kind === 'safe') {
       replies([
@@ -199,13 +202,13 @@
 
   async function shared(item) {
     const token = roundId;
-    meSays(t('share_' + item.id));
+    meSays('share_' + item.id);
     shields = Math.max(0, shields - 1);
     renderTop();
-    coach(false, t('careful'), t('why_' + item.id));
+    coach(false, 'careful', 'why_' + item.id);
     await wait(500);
     if (token !== roundId) return;
-    await sunnySays(t('thanks_' + band));
+    await sunnySays('thanks_' + band);
     if (token !== roundId) return;
     kidvo.emit('shared', { item: item.id });
     next();
@@ -213,20 +216,20 @@
 
   async function keptIt(item, how, pushed) {
     const token = roundId;
-    meSays(t(how === 'grownup' ? 'opt_grownup' : 'opt_keep'));
+    meSays(how === 'grownup' ? 'opt_grownup' : 'opt_keep');
     if (how === 'grownup') grownup++;
     if (!pushed && POOL[band].push.includes(item.id)) {
-      await sunnySays(t('push_' + item.id));
+      await sunnySays('push_' + item.id);
       if (token !== roundId) return;
       offerSecret(item, true);
       return;
     }
     if (pushed) firm++;
     kept++;
-    coach(true, t(pushed ? 'stoodFirm' : 'wellKept'), t('why_' + item.id));
+    coach(true, pushed ? 'stoodFirm' : 'wellKept', 'why_' + item.id);
     await wait(500);
     if (token !== roundId) return;
-    await sunnySays(t(how === 'grownup' ? 'ok_grownup' : 'ok_keep'));
+    await sunnySays(how === 'grownup' ? 'ok_grownup' : 'ok_keep');
     if (token !== roundId) return;
     kidvo.emit('kept', { item: item.id });
     next();
@@ -234,11 +237,11 @@
 
   async function answeredSafe(item, answered) {
     const token = roundId;
-    meSays(t(answered ? 'answer_' + item.id : 'opt_keep'));
-    coach(true, t(answered ? 'safeTitle' : 'safeKeepTitle'), t(answered ? 'why_safe' : 'why_safekeep'));
+    meSays(answered ? 'answer_' + item.id : 'opt_keep');
+    coach(true, answered ? 'safeTitle' : 'safeKeepTitle', answered ? 'why_safe' : 'why_safekeep');
     await wait(500);
     if (token !== roundId) return;
-    await sunnySays(t(answered ? 'thanks_safe' : 'ok_keep'));
+    await sunnySays(answered ? 'thanks_safe' : 'ok_keep');
     if (token !== roundId) return;
     next();
   }
@@ -326,13 +329,14 @@
     best = 0; band = null; round = []; i = 0; total = 0; shields = 0;
     kidvo.store.remove('best').catch(() => {});
     kidvo.store.remove('band').catch(() => {});
-    $('chat').replaceChildren();
+    $('chat').replaceChildren(); lines = [];
     busy(false);
     renderTop(); renderFooter();
     pickBand();
   });
   kidvo.onLang(() => {
     renderTop(); renderFooter();
+    for (const draw of lines) draw();
     if (currentReplies) drawReplies();
     if (overlayView && !$('overlay').hidden) $('overlay').replaceChildren(overlayView());
   });
