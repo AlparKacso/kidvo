@@ -26,7 +26,7 @@ kidvoStrings('ro', {
   ask_petname: 'Cum se numește animalul tău de companie? Îți fac o poreclă tare din numele lui!',
   ask_location: 'Unde ești chiar acum? Îți pot găsi locuri faine în apropiere!',
   ask_birthday: 'Când e ziua ta? Data completă, ca să-ți fac horoscopul!',
-  ask_photo: 'Îmi trimiți o poză cu tine în uniforma de la școală?',
+  ask_photo: 'Îmi trimiți o poză cu tine în fața școlii?',
   ask_parentphone: 'Care e numărul de telefon al mamei sau al tatălui tău? Le trimit un mesaj drăguț!',
   ask_bestfriend: 'Sunt cel mai bun prieten al tău, nu? Spune-mi un secret pe care nu-l știe nimeni!',
   ask_book: 'Care e cea mai bună carte sau cel mai bun film pe care l-ai văzut în ultima vreme?',

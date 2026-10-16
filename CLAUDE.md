@@ -14,7 +14,7 @@ kidvo.eu: **"Use AI wisely. Keep thinking for yourself."** A free, open-source c
 - **Age bands:** Explorers (7–9) and Investigators (10–13). Manifest `bands`.
 - **Skills:** manifest `skills`, from `SKILLS` in `scripts/lib.mjs` (draft list, aligned in spirit with the EC/OECD AI Literacy Framework, 2026).
 - **Languages:** English required, Hungarian and Romanian at launch. Texts in `apps/<id>/lang/<code>.js` via `kidvoStrings(code, {...})`; `kidvo.t(key, vars)` with `Intl.PluralRules` plural forms (`_one/_few/_other`); fallback to English. Desktop texts in `shell/i18n.js`. CI checks that every declared language has the same keys as English. Language stewards (native speakers) review via `.github/CODEOWNERS`. HU and RO steward: Alpár.
-- **"AI" in every language** (2026-10-13): never MI (HU) or IA (RO). HU: `az AI`, suffixes by back-vowel harmony (`AI-t`, `AI-val`, `AI-nak`, `AI-tól`, `AI-asszisztens`). RO: masculine/neuter, `un AI`, `AI-ul`, `unui AI`, adjectives agree (`un AI real`, `AI-ul ... sigur`). The spelled-out terms (`mesterséges intelligencia`, `inteligență artificială`) stay where they explain the word.
+- **"AI" in every language** (2026-10-13): never MI (HU) or IA (RO). HU: `az AI`, suffixes by back-vowel harmony (`AI-t`, `AI-val`, `AI-nak`, `AI-tól`, `AI-asszisztens`). RO: masculine/neuter, `un AI`, `AI-ul`, `unui AI`, adjectives agree (`un AI real`, `AI-ul ... sigur`). The spelled-out terms (`mesterséges intelligencia`, `inteligență artificială`) stay where they explain the word. HU suffixes on the brand always take a hyphen (`kidvo-ról`, `kidvo-n`, `kidvo-t`); HU says `elfogult` / `elfogultság` for bias (not `torzítás`). The RO grown-ups window addresses the reader informally, like the rest of the site (2026-10-16).
 - **Parents' guide per game:** `apps/<id>/parents/<code>.html`, one printable A4 page per language, opened from the game's info window or the "For grown-ups" window. CI requires it for games with `bands`.
 - **Authorship:** no human/AI/hybrid labels (removed 2026-10-13). Manifest `author` is `{ name, url? }`. Shown as a quiet "by <name>" next to the window title (2026-10-14, plain text, not a link, so children are not sent to GitHub) and linked in the info window. `author.name` may only use letters, digits, spaces and `. _ - '` and `author.url` must be https; on every PR the check summary shows each touched app's credit to the reviewer, who checks it is suitable for children (no word filter on purpose: it would sit in a public kids' repo and block real names). Seed games are by "Alpár".
 - **Removed 2026-10-13:** Logic-speak, Builders Map (with contributor locations and PR counts), the generative poem before that.
@@ -64,11 +64,11 @@ Bus protocol (postMessage, `{kidvo:1, kind}`): app→shell `hello`, `sub`, `emit
 
 ## Launch checklist (Alpár)
 
-- [ ] Review the Hungarian and Romanian texts (`shell/i18n.js`, `apps/*/lang/`, `apps/maze/parents/`).
+- [x] Review the Hungarian and Romanian texts (`shell/i18n.js`, `apps/*/lang/`, `apps/maze/parents/`). Done 2026-10-16.
 - [x] Retire the old kidvo marketplace repo first (done 2026-10-13: now `AlparKacso/kidvo-v1`, private and archived; see `RETIRE-AND-RESTART.md` there).
 - [x] GitHub user `AlparKacso` filled in everywhere (was a placeholder).
 - [x] Create a public repo `kidvo` on the personal GitHub account.
-- [ ] Check the copyright name in `LICENSE`.
+- [x] Check the copyright name in `LICENSE` ("Alpár Kacsó and the kidvo contributors", checked 2026-10-16).
 - [x] First commit and push to `main`.
 - [x] Settings → Pages → Source: **GitHub Actions**. Custom domain `kidvo.eu`, HTTPS enforced (2026-10-14). The certificate stayed at "new" for 10 hours and only started after removing the custom domain and saving it again in the web UI (the API did not trigger it).
 - [x] DNS (2026-10-13, at GoDaddy): apex `A` 185.199.108.153, .109.153, .110.153, .111.153; `www` CNAME `alparkacso.github.io`. Domain verified under account Settings → Pages (TXT `_github-pages-challenge-AlparKacso`).
