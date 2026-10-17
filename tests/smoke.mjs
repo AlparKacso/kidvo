@@ -93,6 +93,24 @@ async function run(name) {
     });
   }
 
+  await step('nonsense: every Investigators round holds a hard fabrication and a surprising truth, with no repeats', async () => {
+    const f = appFrame(page, 'nonsense');
+    if (!f) throw new Error('game frame not found');
+    const bad = await f.evaluate(() => {
+      let last = [];
+      for (let n = 0; n < 30; n++) {
+        window.__nonsense.play('investigators');
+        const round = window.__nonsense.round();
+        if (!round.some(x => x.made && x.hard)) return 'a round without a hard fabrication';
+        if (!round.some(x => !x.made && x.surprising)) return 'a round without a surprising truth';
+        if (round.some(x => last.includes(x.id))) return 'two rounds in a row repeat a fact';
+        last = round.map(x => x.id);
+      }
+      return null;
+    });
+    if (bad) throw new Error(bad);
+  });
+
   // With an overlay running (Vo), long text windows must still scroll with the wheel or trackpad.
   // WebKit sent the scroll to the transparent overlay frame while it sat above the windows.
   await step('a text window scrolls with the mouse wheel', async () => {
