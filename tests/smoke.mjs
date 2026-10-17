@@ -82,6 +82,19 @@ async function run(name) {
     });
   }
 
+  // Train the Sorter shows the example each guess copies. After the red-only lesson a green apple must
+  // copy a fruit that is not an apple, and flipping that label in memory must change the guess.
+  await step('sorter copies its nearest example', async () => {
+    const f = appFrame(page, 'sorter');
+    const r = await f.evaluate(() => {
+      const s = window.__sorter; s.learn();
+      const near = s.nearest('greenapple'); s.flip(near.kind);
+      return { near, after: s.classify('greenapple', 3).apple };
+    });
+    if (r.near.apple) throw new Error(`a green apple copied ${r.near.kind}, labelled apple`);
+    if (!r.after) throw new Error(`flipping ${r.near.kind} did not change the guess`);
+  });
+
   for (const app of registry.filter(a => a.type === 'overlay')) {
     await step(`overlay ${app.id} runs`, async () => {
       await page.evaluate(id => window.kidvoShell.openApp(id), app.id);
