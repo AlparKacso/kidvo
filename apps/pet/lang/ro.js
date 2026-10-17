@@ -4,6 +4,7 @@ kidvoStrings('ro', {
   goodChecking: 'bine că verifici!',
   allByYourself: 'ai reușit singur!',
   levelCleared: 'nivelul {n} gata!',
+  runFinished: 'ai terminat toată seria!',
   ooh: 'ooo, un joc!',
   secretSafe: 'secret păstrat!',
   hmm: 'hmm, atenție...',

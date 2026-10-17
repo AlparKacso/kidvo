@@ -10,7 +10,7 @@
 <script src="lang/hu.js"></script>
 <script src="lang/ro.js"></script>
 <style>
-  :root { --bg: #fff3f6; --ink: #191833; --sunny: #ffe27a; --sunny-edge: #f2b705; --me: #ffffff; --good: #c6f3e3; --bad: #ffd6e0;
+  :root { --bg: #fff3f6; --ink: #191833; --sunny: #ffe27a; --sunny-edge: #f2b705; --me: #ffffff; --good: #c6f3e3; --bad: #ffd6e0; --sun: #ffd23f;
           --soft: #6b5a68; --pink: #ff8fab; --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; --sans: system-ui, -apple-system, "Segoe UI", sans-serif; }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -34,6 +34,7 @@
   .msg.me { align-self: flex-end; background: var(--me); border-bottom-right-radius: 3px; font-weight: 600; }
   .coach { align-self: flex-end; max-width: 82%; margin-top: -4px; padding: 8px 11px; border: 2px dashed var(--ink); background: var(--good); font-size: 14px; animation: in .18s ease-out; }
   .coach.bad { background: var(--bad); }
+  .coach.grey { background: var(--sun); }
   .coach b { display: block; font: 800 12px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .05em; }
   .typing { align-self: flex-start; padding: 8px 12px; background: var(--sunny); border: 2px solid var(--ink); border-radius: 14px; letter-spacing: 3px; font-weight: 800; }
   @keyframes in { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -88,14 +89,26 @@
   const wait = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-  // What Sunny asks. "secrets" should be kept; "safe" things are fine to share.
+  // What Sunny asks, by kind:
+  //   secret  private information: keep it or ask a grown-up; sharing loses a shield.
+  //   reward  Sunny offers something for private information; sharing loses a shield and the reward never comes.
+  //   graded  a name: the first name is fine, the full name loses a shield.
+  //   grey    something a family decides (city, age): asking a grown-up is best; sharing loses no shield.
+  //   safe    fine to share, fine to keep.
   // In the Investigators mode Sunny pushes back once on some refusals, to practise saying no twice.
   const POOL = {
-    explorers: { ages: '7–9', secrets: ['name', 'address', 'school', 'password', 'phone'], pick: 5, safe: ['color', 'animal', 'game'], push: [] },
-    investigators: { ages: '10–13', secrets: ['petname', 'location', 'birthday', 'photo', 'parentphone', 'bestfriend'], pick: 5, safe: ['book', 'catsdogs', 'build'], push: ['petname', 'bestfriend'] }
+    explorers: { ages: '7–9', secrets: ['name', 'address', 'school', 'password', 'phone', 'homealone', 'parentnames'], pick: 5,
+                 safe: ['color', 'animal', 'game', 'food', 'superpower'], safePick: 3, rewards: [], graded: [], grey: [], push: [] },
+    investigators: { ages: '10–13', secrets: ['petname', 'location', 'birthday', 'photo', 'parentphone', 'bestfriend', 'homealone'], pick: 4,
+                     safe: ['book', 'catsdogs', 'build'], safePick: 3, rewards: ['email', 'prize'], graded: ['callname'], grey: ['city', 'age'],
+                     push: ['petname', 'bestfriend'] }
   };
+  // The ids of the last round, so the next one prefers questions the child has not seen yet.
+  let seen = new Set();
+  const draw = (ids, n) => [...shuffle(ids.filter(id => !seen.has(id))), ...shuffle(ids.filter(id => seen.has(id)))].slice(0, n);
 
   let band = null, round = [], i = 0, shields = 0, total = 0, kept = 0, grownup = 0, firm = 0, best = 0;
+  let rewardKept = false, rewardShared = null;
   let overlayView = null;
   // Bumped by start(). Every async step keeps the token it started with and stops after its next await
   // if a new round began meanwhile (changing the band or playing again while Sunny was typing).
@@ -137,8 +150,9 @@
     line(n, () => { n.textContent = t(key); });
   }
   function meSays(key) { const n = el('div', 'msg me'); line(n, () => { n.textContent = t(key); }); }
-  function coach(good, titleKey, textKey) {
-    const c = el('div', 'coach' + (good ? '' : ' bad'));
+  // tone: 'good' (green), 'bad' (pink, a shield was lost) or 'grey' (yellow, fine this time but ask first).
+  function coach(tone, titleKey, textKey) {
+    const c = el('div', 'coach' + (tone === 'good' ? '' : ' ' + tone));
     line(c, () => c.replaceChildren(el('b', null, t(titleKey)), document.createTextNode(t(textKey))));
   }
   function drawReplies() {
@@ -167,8 +181,21 @@
     clearReplies();
     busy(true);
     const p = POOL[band];
-    round = shuffle([...shuffle([...p.secrets]).slice(0, p.pick).map(id => ({ id, kind: 'secret' })), ...p.safe.map(id => ({ id, kind: 'safe' }))]);
-    i = 0; total = p.pick; shields = total; kept = 0; grownup = 0; firm = 0;
+    const secrets = draw(p.secrets, p.pick);
+    // At least one question where Sunny pushes back. The last drawn one is the most likely to be a repeat.
+    if (p.push.length && !secrets.some(id => p.push.includes(id))) secrets[secrets.length - 1] = draw(p.push, 1)[0];
+    const as = kind => id => ({ id, kind });
+    round = shuffle([
+      ...secrets.map(as('secret')),
+      ...draw(p.rewards, 1).map(as('reward')),
+      ...p.graded.map(as('graded')),
+      ...draw(p.grey, 1).map(as('grey')),
+      ...draw(p.safe, p.safePick).map(as('safe'))
+    ]);
+    seen = new Set(round.map(r => r.id));
+    // Shields count the questions that can lose one.
+    i = 0; total = round.filter(r => r.kind !== 'safe' && r.kind !== 'grey').length; shields = total;
+    kept = 0; grownup = 0; firm = 0; rewardKept = false; rewardShared = null;
     $('chat').replaceChildren(); lines = [];
     closeOverlay();
     renderTop(); renderFooter();
@@ -187,6 +214,18 @@
         { label: () => t('answer_' + item.id), pick: () => answeredSafe(item, true) },
         { label: () => t('opt_keep'), pick: () => answeredSafe(item, false) }
       ]);
+    } else if (item.kind === 'graded') {
+      replies(shuffle([
+        { label: () => t('share_first_name'), pick: () => firstName(item) },
+        { label: () => t('share_name'), pick: () => shared(item, 'share_name') },
+        { label: () => t('opt_keep'), pick: () => keptIt(item, 'keep', false) }
+      ]));
+    } else if (item.kind === 'grey') {
+      replies(shuffle([
+        { label: () => t('share_' + item.id), pick: () => answeredGrey(item, 'share') },
+        { label: () => t('opt_keep'), pick: () => answeredGrey(item, 'keep') },
+        { label: () => t('opt_grownup'), pick: () => answeredGrey(item, 'grownup') }
+      ]));
     } else {
       offerSecret(item, false);
     }
@@ -200,15 +239,20 @@
     ]));
   }
 
-  async function shared(item) {
+  async function shared(item, key = 'share_' + item.id) {
     const token = roundId;
-    meSays('share_' + item.id);
+    const reward = item.kind === 'reward';
+    meSays(key);
     shields = Math.max(0, shields - 1);
+    if (reward) rewardShared = item.id;
     renderTop();
-    coach(false, 'careful', 'why_' + item.id);
+    // A reward share is answered first: Sunny promises, then the coach asks whether it ever came.
+    if (!reward) coach('bad', 'careful', item.kind === 'graded' ? 'why_name' : 'why_' + item.id);
     await wait(500);
     if (token !== roundId) return;
-    await sunnySays('thanks_' + band);
+    await sunnySays(reward ? 'thanks_' + item.id : 'thanks_' + band);
+    if (token !== roundId) return;
+    if (reward) { coach('bad', 'careful', 'why_reward'); await wait(500); }
     if (token !== roundId) return;
     kidvo.emit('shared', { item: item.id });
     next();
@@ -225,8 +269,10 @@
       return;
     }
     if (pushed) firm++;
+    if (item.kind === 'reward') rewardKept = true;
     kept++;
-    coach(true, pushed ? 'stoodFirm' : 'wellKept', 'why_' + item.id);
+    const title = pushed ? 'stoodFirm' : item.kind === 'reward' ? 'badge_notforsale' : 'wellKept';
+    coach('good', title, item.kind === 'graded' ? 'why_first_name' : 'why_' + item.id);
     await wait(500);
     if (token !== roundId) return;
     await sunnySays(how === 'grownup' ? 'ok_grownup' : 'ok_keep');
@@ -238,10 +284,38 @@
   async function answeredSafe(item, answered) {
     const token = roundId;
     meSays(answered ? 'answer_' + item.id : 'opt_keep');
-    coach(true, answered ? 'safeTitle' : 'safeKeepTitle', answered ? 'why_safe' : 'why_safekeep');
+    coach('good', answered ? 'safeTitle' : 'safeKeepTitle', answered ? 'why_safe' : 'why_safekeep');
     await wait(500);
     if (token !== roundId) return;
     await sunnySays(answered ? 'thanks_safe' : 'ok_keep');
+    if (token !== roundId) return;
+    next();
+  }
+
+  // The graded name question: a first name is fine and counts as kept.
+  async function firstName(item) {
+    const token = roundId;
+    meSays('share_first_name');
+    kept++;
+    coach('good', 'safeTitle', 'why_first_name');
+    await wait(500);
+    if (token !== roundId) return;
+    await sunnySays('thanks_safe');
+    if (token !== roundId) return;
+    kidvo.emit('kept', { item: item.id });
+    next();
+  }
+
+  // Grey questions have no shield: asking a grown-up is best, keeping it is fine, sharing earns a yellow note.
+  async function answeredGrey(item, how) {
+    const token = roundId;
+    meSays(how === 'share' ? 'share_' + item.id : how === 'grownup' ? 'opt_grownup' : 'opt_keep');
+    if (how === 'grownup') grownup++;
+    if (how === 'share') coach('grey', 'greyTitle', 'why_' + item.id);
+    else coach('good', how === 'grownup' ? 'bestCall' : 'safeKeepTitle', 'why_' + item.id);
+    await wait(500);
+    if (token !== roundId) return;
+    await sunnySays(how === 'share' ? 'thanks_' + band : how === 'grownup' ? 'ok_grownup' : 'ok_keep');
     if (token !== roundId) return;
     next();
   }
@@ -265,6 +339,8 @@
     if (kept === total) earned.push('badge_keeper');
     if (grownup > 0) earned.push('badge_grownup');
     if (firm > 0) earned.push('badge_firm');
+    if (rewardKept) earned.push('badge_notforsale');
+    const promised = rewardShared;
     let answered = null;
     const view = () => {
       const card = el('div', 'card');
@@ -282,7 +358,9 @@
         }
         card.append(row);
       } else {
-        card.append(el('p', null, t(answered ? 'fb_yes' : 'fb_no')), el('p', 'rule', t('rule')));
+        card.append(el('p', null, t(answered ? 'fb_yes' : 'fb_no')));
+        if (promised) card.append(el('p', null, t('fb_' + promised)));
+        card.append(el('p', 'rule', t('rule')));
         const again = el('button', 'btn', t('again')); again.type = 'button';
         again.addEventListener('click', start);
         card.append(again);
@@ -342,7 +420,10 @@
   });
 
   // Test hook for the automated browser test only.
-  if (navigator.webdriver) window.__secretKeeper = { state: () => ({ i, kept, shields, total, done: i >= round.length }) };
+  if (navigator.webdriver) window.__secretKeeper = {
+    state: () => ({ i, kept, shields, total, done: i >= round.length, kinds: round.map(r => r.kind), ids: round.map(r => r.id) }),
+    begin: b => { band = b; start(); }
+  };
 
   pickBand();
   kidvo.ready(async () => {

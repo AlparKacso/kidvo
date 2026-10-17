@@ -95,6 +95,15 @@ async function run(name) {
     if (!r.after) throw new Error(`flipping ${r.near.kind} did not change the guess`);
   });
 
+  await step('secret-keeper: an Investigators round holds one reward, one graded and one grey question', async () => {
+    const kinds = await appFrame(page, 'secret-keeper').evaluate(() => {
+      window.__secretKeeper.begin('investigators');
+      return window.__secretKeeper.state().kinds;
+    });
+    const n = k => kinds.filter(x => x === k).length;
+    if (n('reward') !== 1 || n('graded') !== 1 || n('grey') !== 1) throw new Error(`the round holds ${kinds.join(', ')}`);
+  });
+
   for (const app of registry.filter(a => a.type === 'overlay')) {
     await step(`overlay ${app.id} runs`, async () => {
       await page.evaluate(id => window.kidvoShell.openApp(id), app.id);
@@ -105,6 +114,56 @@ async function run(name) {
       await handshake(f);
     });
   }
+
+  await step('nonsense: every Investigators round holds a hard fabrication and a surprising truth, with no repeats', async () => {
+    const f = appFrame(page, 'nonsense');
+    if (!f) throw new Error('game frame not found');
+    const bad = await f.evaluate(() => {
+      let last = [];
+      for (let n = 0; n < 30; n++) {
+        window.__nonsense.play('investigators');
+        const round = window.__nonsense.round();
+        if (!round.some(x => x.made && x.hard)) return 'a round without a hard fabrication';
+        if (!round.some(x => !x.made && x.surprising)) return 'a round without a surprising truth';
+        if (round.some(x => last.includes(x.id))) return 'two rounds in a row repeat a fact';
+        last = round.map(x => x.id);
+      }
+      return null;
+    });
+    if (bad) throw new Error(bad);
+  });
+
+  // Robot Maze is a run of 8 levels that ends in a finale card. The test walks the shortest route
+  // through every Investigator level, then plays the run again.
+  await step('Robot Maze runs to the finale', async () => {
+    const f = appFrame(page, 'maze');
+    if (!f) throw new Error('maze frame not found');
+    await f.evaluate(async () => {
+      const wait = (find, what) => new Promise((resolve, reject) => {
+        const t0 = Date.now();
+        const tick = () => {
+          const v = find();
+          if (v) return resolve(v);
+          if (Date.now() - t0 > 3000) return reject(new Error(`timed out waiting for ${what}`));
+          setTimeout(tick, 20);
+        };
+        tick();
+      });
+      const m = window.__robotMaze;
+      if (!m) throw new Error('window.__robotMaze is missing');
+      (await wait(() => document.querySelector('#overlay [data-band="investigators"]'), 'the band picker')).click();
+      for (let l = 1; l <= 8; l++) {
+        if (m.level() !== l) throw new Error(`expected level ${l}, the game is on level ${m.level()}`);
+        for (const d of m.route()) m.move(d);
+        if (l < 8) (await wait(() => document.querySelector('#overlay .card:not([data-finale]) .btn'), `the level ${l} card`)).click();
+      }
+      await wait(() => document.querySelector('#overlay [data-finale]'), 'the finale card');
+      const footer = document.getElementById('totals').textContent;
+      if (!footer.endsWith(' · ' + kidvo.t('bestFinished')) || !footer.includes('8')) throw new Error(`the footer does not say the run is finished: "${footer}"`);
+      document.querySelector('#overlay [data-act="again"]').click();
+      if (m.level() !== 1 || !document.getElementById('overlay').hidden) throw new Error('"Play the run again" did not start level 1');
+    });
+  });
 
   // With an overlay running (Vo), long text windows must still scroll with the wheel or trackpad.
   // WebKit sent the scroll to the transparent overlay frame while it sat above the windows.
