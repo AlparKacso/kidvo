@@ -74,10 +74,30 @@
   .earned { display: flex; flex-wrap: wrap; gap: 6px; }
   .earned span { font: 800 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .05em; padding: 5px 7px; border: 2px solid var(--ink); background: var(--good); }
   .choices { display: grid; gap: 8px; max-width: 520px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* What SORT-1 remembers: every example, framed by the child's label. */
+  .mem { display: grid; gap: 6px; width: 100%; min-width: 0; text-align: left; }
+  .mem h3 { margin: 0; font: 800 12px/1.2 var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--soft); }
+  .mem-row { position: relative; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; padding: 4px 4px 6px; }
+  .mem-item { flex: none; display: grid; justify-items: center; padding: 2px; border: 3px solid #2f9e6e; background: var(--good); }
+  .mem-item.not { border-color: #e0567a; background: var(--bad); }
+  .mem-item svg { width: 40px; height: 40px; display: block; }
+  .mem-item.near { outline: 3px solid var(--ink); outline-offset: 1px; box-shadow: 0 0 0 7px var(--sun); margin: 0 4px; }
+  .near-cap { max-width: 11ch; margin-top: 2px; font: 700 10px/1.15 var(--mono); text-align: center; }
+  .basket .fruit { cursor: pointer; font: inherit; color: inherit; }
+  .basket .fruit[aria-pressed="true"] { transform: translate(3px, 3px); box-shadow: none; outline: 4px solid var(--ink); outline-offset: -9px; }
+  .basket .fruit:disabled { opacity: .45; cursor: not-allowed; }
+  .basket .fruit:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+  .count { font: 800 14px/1.2 var(--mono); }
   @media (max-width: 520px) {
     .test { grid-template-columns: 1fr; justify-items: center; text-align: center; }
     .test .side { justify-items: center; } .test .row { justify-content: center; } .cloud { font-size: 16px; padding: 8px 14px; }
+    .test .big { width: 120px; height: 120px; } .test .big svg { width: 96px; height: 96px; }
     .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  /* Phones: the memory scrolls sideways instead of pushing the buttons down. */
+  @media (max-width: 520px), (max-height: 480px) {
+    .mem-row { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; padding: 10px 10px 8px; }
   }
   @media (max-height: 480px) {
     .bot { padding: 6px 10px; } .bot-tag { display: none; } .bot-says p { margin-top: 2px; }
@@ -127,6 +147,11 @@
   const TEST1 = ['redapple', 'greenapple', 'yellowapple', 'cherry', 'pear', 'orange'];
   const TEACH2 = ['greenapple', 'greenapple', 'yellowapple', 'yellowapple', 'cherry', 'strawberry', 'pear', 'redapple'];
   const TEST2 = ['greenapple', 'yellowapple', 'redapple', 'cherry', 'plum', 'banana'];
+  // Round 3: the child picks 8 of these. Only a basket with apples and look-alikes (cherry, orange, pear or lemon) gets 6 of 6.
+  const BASKET = ['redapple', 'redapple', 'redapple', 'redapple', 'greenapple', 'greenapple', 'greenapple', 'yellowapple', 'yellowapple', 'yellowapple',
+    'cherry', 'pear', 'lime', 'orange', 'lemon', 'strawberry'];
+  const PICK = 8;
+  const TEST3 = ['redapple', 'greenapple', 'yellowapple', 'cherry', 'pear', 'orange'];
   const JITTER = [[0, 0], [5, .03], [-4, -.03], [3, -.02], [-6, .02], [2, .04], [-2, -.04], [6, .01]];
   const make = (kind, n) => { const k = KINDS[kind], [dh, ds] = JITTER[n % JITTER.length]; return { kind, h: (k.h + dh + 360) % 360, r: k.r, s: Math.max(.05, k.s + ds), apple: !!k.apple }; };
 
@@ -142,7 +167,7 @@
     for (const ex of memory) { const d = distance(f, ex); if (d < bestD) { bestD = d; best = ex; } }
     // It always sounds sure, whether it is right or not.
     const sure = Math.max(72, Math.min(99, Math.round(99 - bestD * 25)));
-    return { apple: best ? best.label : false, sure };
+    return { apple: best ? best.label : false, sure, nearest: best };
   }
 
   /* ---------------- drawings ---------------- */
@@ -179,11 +204,12 @@
 
   /* ---------------- game flow ---------------- */
   const STEPS = ['step_teach', 'step_test', 'step_fix', 'step_retest'];
-  let phase = 0, view = null, scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null, mislabelled: 0 };
+  const STEPS3 = ['step_teach', 'step_test'];
+  let phase = 0, stepKeys = STEPS, view = null, scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null, mislabelled: 0 };
 
   function steps() {
     const nav = $('steps');
-    nav.replaceChildren(...STEPS.map((k, i) => el('span', i === phase ? 'on' : (i < phase ? 'done' : ''), `${i + 1} ${t(k)}`)));
+    nav.replaceChildren(...stepKeys.map((k, i) => el('span', i === phase ? 'on' : (i < phase ? 'done' : ''), `${i + 1} ${t(k)}`)));
   }
   let lastSay = null;
   async function say(key, vars) {
@@ -201,55 +227,79 @@
     const stage = $('stage');
     stage.replaceChildren(...[].concat(view()));
     stage.scrollTop = 0;
+    // On phones the memory scrolls sideways: bring the example SORT-1 copied into view.
+    for (const row of stage.querySelectorAll('.mem-row')) {
+      const near = row.querySelector('.near');
+      if (near) row.scrollLeft = near.offsetLeft - (row.clientWidth - near.offsetWidth) / 2;
+    }
+  }
+  const button = (key, cls, onClick) => { const b = el('button', cls, t(key)); b.type = 'button'; b.addEventListener('click', onClick); return b; };
+  const fruitName = f => t('fruit_' + f.kind);
+
+  // What SORT-1 remembers: every example it learned, framed in the child's label.
+  // near is the example a guess copied, the whole 1-nearest-neighbour rule in one picture.
+  function memoryStrip(near) {
+    const box = el('section', 'mem');
+    box.append(el('h3', null, t('memTitle')));
+    const row = el('div', 'mem-row');
+    for (const ex of memory) {
+      const d = el('div', 'mem-item ' + (ex.label ? 'apple' : 'not') + (ex === near ? ' near' : ''));
+      d.insertAdjacentHTML('beforeend', svg(ex.kind));
+      d.append(el('span', 'sr', t(ex.label ? 'label_apple' : 'label_not')));
+      if (ex === near) d.append(el('span', 'near-cap', t('memNear')));
+      row.append(d);
+    }
+    box.append(row);
+    return box;
+  }
+
+  // Apple / Not apple for each fruit. Teaching and fixing the memory use the same cards.
+  function labelGrid(items) {
+    const grid = el('div', 'grid');
+    for (const item of items) {
+      const card = el('div', 'fruit' + (item.label === true ? ' apple' : item.label === false ? ' not' : ''));
+      card.insertAdjacentHTML('beforeend', svg(item.kind));
+      const tog = el('div', 'toggle');
+      for (const [val, key] of [[true, 'label_apple'], [false, 'label_not']]) {
+        const b = button(key, null, () => { item.label = val; repaint(); });
+        b.setAttribute('aria-pressed', item.label === val ? 'true' : 'false');
+        tog.append(b);
+      }
+      card.append(tog);
+      grid.append(card);
+    }
+    return grid;
   }
 
   function intro() {
-    phase = 0; memory = []; scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null, mislabelled: 0 };
+    phase = 0; stepKeys = STEPS; memory = []; scores = { test1: 0, test2: 0, judged: 0, judgedTotal: 0, why: null, mislabelled: 0 };
     say('hello');
-    show(() => {
-      const b = el('button', 'btn', t('start')); b.type = 'button';
-      b.addEventListener('click', () => teach(TEACH1, 1));
-      return [el('h2', null, t('introTitle')), el('p', 'hint', t('introHint')), b];
-    });
+    show(() => [el('h2', null, t('introTitle')), el('p', 'hint', t('introHint')), button('start', 'btn', () => teach(TEACH1, 1))]);
   }
 
-  // retry: lesson 1 again after the child's own labels were wrong (memory is empty by then, see relabel).
-  function teach(kinds, round, retry = false) {
-    phase = round === 1 ? 0 : 2;
-    const items = shuffle(kinds.map((k, n) => ({ ...make(k, n), label: null })));
-    say(round === 1 ? (retry ? 'teachSayRetry' : 'teachSay1') : 'teachSay2');
+  // round 1 and 2 are the two lessons; round 3 teaches the child's own pick from the basket.
+  function teach(kinds, round) {
+    phase = round === 2 ? 2 : 0;
+    const items = round === 3 ? kinds : shuffle(kinds.map((k, n) => ({ ...make(k, n), label: null })));
+    say(round === 2 ? 'teachSay2' : 'teachSay1');
     show(() => {
-      const grid = el('div', 'grid');
-      for (const item of items) {
-        const card = el('div', 'fruit' + (item.label === true ? ' apple' : item.label === false ? ' not' : ''));
-        card.insertAdjacentHTML('beforeend', svg(item.kind));
-        const tog = el('div', 'toggle');
-        for (const [val, key] of [[true, 'label_apple'], [false, 'label_not']]) {
-          const b = el('button', null, t(key)); b.type = 'button';
-          b.setAttribute('aria-pressed', item.label === val ? 'true' : 'false');
-          b.addEventListener('click', () => { item.label = val; repaint(); });
-          tog.append(b);
-        }
-        card.append(tog);
-        grid.append(card);
-      }
       const ready = items.every(i => i.label !== null);
-      const go = el('button', 'btn', t('teachBtn')); go.type = 'button'; go.disabled = !ready;
-      go.addEventListener('click', async () => {
+      const go = button('teachBtn', 'btn', async () => {
         memory = memory.concat(items);
         // The why step explains the first test from these labels, so count the wrong ones.
         if (round === 1) scores.mislabelled = items.filter(i => i.label !== i.apple).length;
         go.disabled = true;
         await say('learning', { n: memory.length });
         await wait(700);
-        test(round === 1 ? TEST1 : TEST2, round);
+        test(round === 1 ? TEST1 : round === 2 ? TEST2 : TEST3, round);
       });
-      return [el('h2', null, t(round === 1 ? (retry ? 'teachTitleRetry' : 'teachTitle1') : 'teachTitle2')), el('p', 'hint', t(ready ? 'teachReady' : 'teachNeed')), grid, go];
+      go.disabled = !ready;
+      return [el('h2', null, t(round === 2 ? 'teachTitle2' : 'teachTitle1')), el('p', 'hint', t(ready ? 'teachReady' : 'teachNeed')), labelGrid(items), go];
     });
   }
 
   function test(kinds, round) {
-    phase = round === 1 ? 1 : 3;
+    phase = round === 2 ? 3 : 1;
     const items = kinds.map((k, n) => make(k, n + 3));
     const results = [];
     let idx = 0;
@@ -265,12 +315,11 @@
         const thought = el('p', 'thought');
         thought.insertAdjacentHTML('beforeend', '<span class="eye" aria-hidden="true"></span><span class="puff s" aria-hidden="true"></span><span class="puff m" aria-hidden="true"></span>');
         thought.append(el('span', 'cloud', t(guess.apple ? 'guessApple' : 'guessNot')));
-        side.append(el('h2', null, t('testTitle', { n: idx + 1, total: items.length })), thought);
+        side.append(el('h2', null, t('testTitle', { n: idx + 1, total: items.length })), thought, memoryStrip(guess.nearest));
         if (judged === null) {
           const row = el('div', 'row');
           for (const [val, key] of [[true, 'judgeRight'], [false, 'judgeWrong']]) {
-            const b = el('button', 'btn alt', t(key)); b.type = 'button';
-            b.addEventListener('click', () => {
+            row.append(button(key, 'btn alt', () => {
               judged = val;
               const sortRight = guess.apple === f.apple;
               const childRight = val === sortRight;
@@ -278,18 +327,18 @@
               scores.judgedTotal++; if (childRight) scores.judged++;
               kidvo.emit(childRight && !sortRight ? 'caught' : 'judged', { right: childRight });
               repaint();
-            });
-            row.append(b);
+            }));
           }
           side.append(row);
         } else {
           const sortRight = guess.apple === f.apple;
           const childRight = judged === sortRight;
           const key = childRight ? (sortRight ? 'fbRightRight' : 'fbWrongWrong') : (sortRight ? 'fbWrongRight' : 'fbRightWrong');
-          side.append(el('p', 'verdict' + (childRight ? '' : ' bad'), t(key, { fruit: t('fruit_' + f.kind) })));
-          const next = el('button', 'btn', t(idx + 1 < items.length ? 'next' : 'seeResults')); next.type = 'button';
-          next.addEventListener('click', () => { idx++; idx < items.length ? one() : summary(round, results); });
-          side.append(next);
+          side.append(el('p', 'verdict' + (childRight ? '' : ' bad'), t(key, { fruit: fruitName(f) })));
+          side.append(button(idx + 1 < items.length ? 'next' : 'seeResults', 'btn', () => {
+            idx++;
+            if (idx < items.length) one(); else if (round === 3) curated(results); else summary(round, results);
+          }));
         }
         wrap.append(big, side);
         return wrap;
@@ -309,25 +358,35 @@
     return strip;
   }
 
+  function bars(rows, total) {
+    const box = el('div', 'bars');
+    for (const [key, n, cls] of rows) {
+      const row = el('div', 'bar' + cls);
+      const track = el('div', 'track'); const fill = el('div', 'fill'); fill.style.width = (100 * n / total) + '%'; track.append(fill);
+      row.append(el('span', null, t(key)), track, el('span', null, `${n}/${total}`));
+      box.append(row);
+    }
+    return box;
+  }
+
   function summary(round, results) {
     const right = results.filter(r => r.sortRight).length;
     if (round === 1) scores.test1 = right; else scores.test2 = right;
     if (round === 1) {
       // Two stories. Usually: SORT-1 only saw red apples (whyB). But when the child's own labels
-      // were wrong, SORT-1 learned those mistakes (whyD), and the fix is to label lesson 1 again.
+      // were wrong, SORT-1 learned those mistakes (whyD), and the fix is to correct them in its memory.
       const bad = scores.mislabelled > 0;
       const correct = bad ? 'whyD' : 'whyB';
       say(bad ? 'sayTaught' : 'saySure');
       let picked = null;
       show(() => {
-        const out = [el('h2', null, t('results', { n: right, total: results.length })), resultStrip(results)];
+        const out = [el('h2', null, t('results', { n: right, total: results.length })), resultStrip(results), memoryStrip()];
         out.push(el('h2', null, t('whyQ')));
         const box = el('div', 'choices');
         for (const k of ['whyA', 'whyB', 'whyC', 'whyD']) {
-          const b = el('button', 'btn alt', t(k)); b.type = 'button';
-          b.setAttribute('aria-pressed', picked === k ? 'true' : 'false');
           // The Bias spotter badge means the child found the red-apple bias, so only the usual story counts.
-          b.addEventListener('click', () => { picked = k; if (!bad && scores.why === null) scores.why = k; repaint(); });
+          const b = button(k, 'btn alt', () => { picked = k; if (!bad && scores.why === null) scores.why = k; repaint(); });
+          b.setAttribute('aria-pressed', picked === k ? 'true' : 'false');
           box.append(b);
         }
         out.push(box);
@@ -337,11 +396,7 @@
           else if (bad && (picked === 'whyA' || picked === 'whyB')) fb += '_mislabelled';
           else if (picked === 'whyD') fb = 'fb_whyD_fine';
           out.push(el('p', 'verdict' + (picked === correct ? '' : ' bad'), t(fb, { n: scores.mislabelled })));
-          if (picked === correct) {
-            const fix = el('button', 'btn', t(bad ? 'fixLabelsBtn' : 'fixBtn')); fix.type = 'button';
-            fix.addEventListener('click', bad ? relabel : () => teach(TEACH2, 2));
-            out.push(fix);
-          }
+          if (picked === correct) out.push(button(bad ? 'fixLabelsBtn' : 'fixBtn', 'btn', bad ? fixMemory : () => teach(TEACH2, 2)));
         }
         return out;
       });
@@ -350,12 +405,22 @@
     }
   }
 
-  // The child's lesson-1 labels were wrong: SORT-1 forgets them all and lesson 1 runs again.
-  // The retried test overwrites test1, so the final before/after compares the corrected lesson with lesson 2.
-  function relabel() {
-    memory = [];
-    scores.mislabelled = 0;
-    teach(TEACH1, 1, true);
+  // The child's lesson-1 labels were wrong. SORT-1 keeps its examples; the child flips the wrong
+  // labels in its memory and test 1 runs again. The retried test overwrites test1, so the final
+  // before/after compares the corrected lesson with lesson 2.
+  function fixMemory() {
+    phase = 2;
+    say('fixSay');
+    show(() => {
+      const go = button('relearnBtn', 'btn', async () => {
+        scores.mislabelled = memory.filter(i => i.label !== i.apple).length;
+        go.disabled = true;
+        await say('learning', { n: memory.length });
+        await wait(700);
+        test(TEST1, 1);
+      });
+      return [el('h2', null, t('fixTitle')), el('p', 'hint', t('fixHint')), labelGrid(memory), go];
+    });
   }
 
   // The ending depends on whether the second lesson helped: the child's labels decide that, not the script.
@@ -375,26 +440,65 @@
     kidvo.emit('done', { before: scores.test1, after: scores.test2 });
     say(FINAL[trend].say);
     show(() => {
-      const bars = el('div', 'bars');
-      for (const [key, n, cls] of [['before', scores.test1, ''], ['after', scores.test2, ' after']]) {
-        const row = el('div', 'bar' + cls);
-        const track = el('div', 'track'); const fill = el('div', 'fill'); fill.style.width = (100 * n / total) + '%'; track.append(fill);
-        row.append(el('span', null, t(key)), track, el('span', null, `${n}/${total}`));
-        bars.append(row);
-      }
-      const out = [el('h2', null, t(FINAL[trend].title)), resultStrip(results), bars,
+      const out = [el('h2', null, t(FINAL[trend].title)), resultStrip(results), memoryStrip(), bars([['before', scores.test1, ''], ['after', scores.test2, ' after']], total),
         el('p', null, t('judgedLine', { n: scores.judged, total: scores.judgedTotal })), el('p', 'lesson', t(FINAL[trend].lesson)), el('p', 'hint', t('think'))];
       if (earned.length) { const e = el('div', 'earned'); for (const b of earned) e.append(el('span', null, t(b))); out.splice(1, 0, e); }
-      const again = el('button', 'btn', t('again')); again.type = 'button';
-      again.addEventListener('click', intro);
-      out.push(again);
+      const end = el('div', 'row'); end.append(button('again', 'btn', intro), button('extraBtn', 'btn alt', pickBasket));
+      out.push(end);
+      return out;
+    });
+  }
+
+  /* ---------------- round 3: the child picks the examples ---------------- */
+  // SORT-1 forgets everything. The child picks 8 of 16 fruit, labels them, and a fixed test of 6 scores the pick.
+  function pickBasket() {
+    phase = 0; stepKeys = STEPS3; memory = [];
+    const basket = shuffle(BASKET.map((k, n) => ({ ...make(k, n), label: null, picked: false })));
+    say('r3Say');
+    show(() => {
+      const n = basket.filter(f => f.picked).length;
+      const grid = el('div', 'grid basket');
+      for (const f of basket) {
+        const card = el('button', 'fruit'); card.type = 'button';
+        card.setAttribute('aria-pressed', f.picked ? 'true' : 'false');
+        card.disabled = !f.picked && n >= PICK;
+        card.insertAdjacentHTML('beforeend', svg(f.kind));
+        card.addEventListener('click', () => { f.picked = !f.picked; repaint(); });
+        grid.append(card);
+      }
+      const go = button('r3LabelBtn', 'btn', () => teach(basket.filter(f => f.picked), 3));
+      go.disabled = n !== PICK;
+      return [el('h2', null, t('r3Title')), el('p', 'hint', t('r3Hint')), el('p', 'count', t('r3Count', { n, total: PICK })), grid, go];
+    });
+  }
+
+  function curated(results) {
+    phase = 2;
+    const total = TEST3.length;
+    const right = results.filter(r => r.sortRight).length;
+    const perfect = right === total;
+    kidvo.emit('done', { round: 3, score: right });
+    say(perfect ? 'sayThanks' : 'saySure');
+    show(() => {
+      const out = [el('h2', null, t('results', { n: right, total })), resultStrip(results), memoryStrip(),
+        bars([['after', scores.test2, ' after'], ['yours', right, '']], total), el('p', 'lesson', t(perfect ? 'r3VerdictGood' : 'r3VerdictMore'))];
+      if (perfect) { const e = el('div', 'earned'); e.append(el('span', null, t('badgeCurator'))); out.splice(1, 0, e); }
+      const end = el('div', 'row'); end.append(button('again', 'btn', intro), button('r3Again', 'btn alt', pickBasket));
+      out.push(end);
       return out;
     });
   }
 
   kidvo.onLang(() => { if (view) repaint(); if (lastSay) $('says').textContent = t(...lastSay); });
-  // Test hook for the automated browser test only.
-  if (navigator.webdriver) window.__sorter = { classify: (kind, n = 0) => classify(make(kind, n)), memorySize: () => memory.length };
+  // Test hook for the automated browser test only. learn() teaches lesson 1 with the right labels,
+  // nearest() names the remembered example a fruit is copied from, flip() changes one remembered label.
+  if (navigator.webdriver) window.__sorter = {
+    classify: (kind, n = 0) => { const g = classify(make(kind, n)); return { apple: g.apple, sure: g.sure }; },
+    memorySize: () => memory.length,
+    learn: () => { memory = TEACH1.map((k, n) => ({ ...make(k, n), label: KINDS[k].apple === true })); },
+    nearest: (kind, n = 3) => { const b = classify(make(kind, n)).nearest; return b && { kind: b.kind, apple: b.label }; },
+    flip: kind => { const ex = memory.find(e => e.kind === kind); if (ex) ex.label = !ex.label; }
+  };
   intro();
 })();
 </script>

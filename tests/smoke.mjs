@@ -82,6 +82,19 @@ async function run(name) {
     });
   }
 
+  // Train the Sorter shows the example each guess copies. After the red-only lesson a green apple must
+  // copy a fruit that is not an apple, and flipping that label in memory must change the guess.
+  await step('sorter copies its nearest example', async () => {
+    const f = appFrame(page, 'sorter');
+    const r = await f.evaluate(() => {
+      const s = window.__sorter; s.learn();
+      const near = s.nearest('greenapple'); s.flip(near.kind);
+      return { near, after: s.classify('greenapple', 3).apple };
+    });
+    if (r.near.apple) throw new Error(`a green apple copied ${r.near.kind}, labelled apple`);
+    if (!r.after) throw new Error(`flipping ${r.near.kind} did not change the guess`);
+  });
+
   await step('secret-keeper: an Investigators round holds one reward, one graded and one grey question', async () => {
     const kinds = await appFrame(page, 'secret-keeper').evaluate(() => {
       window.__secretKeeper.begin('investigators');
