@@ -82,6 +82,15 @@ async function run(name) {
     });
   }
 
+  await step('secret-keeper: an Investigators round holds one reward, one graded and one grey question', async () => {
+    const kinds = await appFrame(page, 'secret-keeper').evaluate(() => {
+      window.__secretKeeper.begin('investigators');
+      return window.__secretKeeper.state().kinds;
+    });
+    const n = k => kinds.filter(x => x === k).length;
+    if (n('reward') !== 1 || n('graded') !== 1 || n('grey') !== 1) throw new Error(`the round holds ${kinds.join(', ')}`);
+  });
+
   for (const app of registry.filter(a => a.type === 'overlay')) {
     await step(`overlay ${app.id} runs`, async () => {
       await page.evaluate(id => window.kidvoShell.openApp(id), app.id);
