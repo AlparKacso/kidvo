@@ -83,13 +83,21 @@
 
   // Every question has q_<id> (the question), a_<id> (QUIZ-O-TRON's answer) and f_<id> (the library fact).
   // "made" answers are made up on purpose. Each round mixes 3 true and 3 made-up answers.
+  // "hard" fabrications are almost right (a near number, a plausible name): only the library settles them.
+  // "surprising" truths sound made up. An Investigators round always holds at least one of each.
+  const plain = ids => ids.map(id => ({ id }));
   const POOL = {
-    explorers: { ages: '7–9', checks: 3, true: ['spider', 'insect', 'bees', 'ice', 'sun', 'octopusarms'], made: ['penguins', 'polarbears', 'biggest', 'rainbow', 'fish', 'cows'] },
-    investigators: { ages: '10–13', checks: 2, true: ['hearts', 'bones', 'boil', 'moon', 'ocean', 'light'], made: ['australia', 'wall', 'einstein', 'goldfish', 'brain', 'bats'] }
+    explorers: { ages: '7–9', checks: 3,
+      true: plain(['spider', 'insect', 'bees', 'ice', 'sun', 'octopusarms', 'tadpole', 'jupiter', 'caterpillar', 'carrot']),
+      made: plain(['penguins', 'polarbears', 'biggest', 'rainbow', 'fish', 'cows', 'ladybird', 'cheetah', 'months', 'beelegs']) },
+    investigators: { ages: '10–13', checks: 2,
+      true: [...plain(['hearts', 'bones', 'boil', 'moon', 'ocean', 'light', 'teeth', 'planets']), { id: 'venus', surprising: true }, { id: 'banana', surprising: true }],
+      made: [...plain(['australia', 'wall', 'einstein', 'goldfish', 'brain', 'bats']), { id: 'titanic', hard: true }, { id: 'piano', hard: true }, { id: 'monalisa', hard: true }, { id: 'orbit', hard: true }] }
   };
   const PER_KIND = 3;
+  let lastIds = new Set(); // the previous round's facts, in memory only, so two rounds in a row never repeat one
 
-  let band = null, round = [], i = 0, checks = 0, score = 0, caught = 0, checked = 0, best = 0, falseAlarms = 0;
+  let band = null, round = [], i = 0, checks = 0, score = 0, caught = 0, checked = 0, checkedMade = 0, best = 0, falseAlarms = 0;
   let current = null, overlayView = null;
   let askToken = 0; // a question still "thinking" stops when a new round starts or progress is erased
   let resetArmed = false, resetTimer = null;
@@ -102,10 +110,25 @@
     $('reset').textContent = t(resetArmed ? 'resetConfirm' : 'reset');
   }
 
+  // Draws PER_KIND facts of one kind, unseen ones first. If some facts carry the flag, the draw holds at least one
+  // and leaves at least one out, so the next round can still hold one that this round did not.
+  function draw(list, flag) {
+    const order = xs => [...shuffle(xs.filter(x => !lastIds.has(x.id))), ...shuffle(xs.filter(x => lastIds.has(x.id)))];
+    const flagged = list.filter(x => x[flag]);
+    const picked = flagged.length ? [order(flagged)[0]] : [];
+    for (const x of order(list)) {
+      if (picked.length >= PER_KIND) break;
+      if (picked.includes(x) || (x[flag] && picked.filter(p => p[flag]).length >= flagged.length - 1)) continue;
+      picked.push(x);
+    }
+    return picked;
+  }
+
   function start() {
     const p = POOL[band];
-    round = shuffle([...shuffle([...p.true]).slice(0, PER_KIND).map(id => ({ id, made: false })), ...shuffle([...p.made]).slice(0, PER_KIND).map(id => ({ id, made: true }))]);
-    i = 0; checks = p.checks; score = 0; caught = 0; checked = 0; falseAlarms = 0;
+    round = shuffle([...draw(p.true, 'surprising').map(x => ({ ...x, made: false })), ...draw(p.made, 'hard').map(x => ({ ...x, made: true }))]);
+    lastIds = new Set(round.map(x => x.id));
+    i = 0; checks = p.checks; score = 0; caught = 0; checked = 0; checkedMade = 0; falseAlarms = 0;
     closeOverlay();
     ask();
   }
@@ -154,7 +177,7 @@
     mk('true', 'soundsTrue', () => decide(false));
     mk('made', 'madeUp', () => decide(true));
     if (!checkedThis) {
-      const c = mk('check', 'check', () => { checks--; checked++; current.checkedThis = true; hud(); paint(); kidvo.emit('checked', {}); }, checks <= 0);
+      const c = mk('check', 'check', () => { checks--; checked++; if (current.item.made) checkedMade++; current.checkedThis = true; hud(); paint(); kidvo.emit('checked', {}); }, checks <= 0);
       c.append(el('small', null, t('checksLeft', { n: checks })));
     }
     stage.append(row);
@@ -189,6 +212,7 @@
       for (const [k, v] of [['statScore', t('ofTotal', { n: score, total: round.length })], ['statCaught', t('ofTotal', { n: caught, total: PER_KIND })], ['statChecked', String(checked)]]) {
         const s = el('div', 'stat'); s.append(el('span', null, t(k)), el('span', null, v)); card.append(s);
       }
+      if (checked) card.append(el('p', 'note', t('checksLanded', { n: checkedMade, total: checked })));
       if (earned.length) { const e = el('div', 'earned'); for (const b of earned) e.append(el('span', null, t(b))); card.append(e); }
       card.append(el('p', null, t('reflect')));
       if (answered === null) {
@@ -251,7 +275,11 @@
     if (overlayView && !$('overlay').hidden) $('overlay').replaceChildren(overlayView());
   });
   // Test hook for the automated browser test only.
-  if (navigator.webdriver) window.__nonsense = { current: () => current && { id: current.item.id, made: current.item.made, typed: current.typed } };
+  if (navigator.webdriver) window.__nonsense = {
+    current: () => current && { id: current.item.id, made: current.item.made, typed: current.typed },
+    round: () => round.map(({ id, made, hard, surprising }) => ({ id, made, hard: !!hard, surprising: !!surprising })),
+    play: key => { band = key; start(); }
+  };
 
   hud();
   pickBand();
