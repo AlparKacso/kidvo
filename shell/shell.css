@@ -171,8 +171,13 @@ button { font: inherit; color: inherit; }
 .hotspot {
   position: absolute; padding: 0; border: 0; background: transparent;
   pointer-events: auto; cursor: pointer; z-index: 1;
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation;
 }
 .hotspot:focus-visible { outline: 3px dashed var(--sun); outline-offset: 2px; }
+/* An overlay showing a card (kidvo.setModal): above the windows, below toasts and the taskbar, taking clicks. */
+#overlays.modal { z-index: 90000; }
+#overlays.modal .hotspot { display: none; }
+#overlays iframe.modal { pointer-events: auto; }
 #overlays iframe {
   position: absolute; inset: 0; width: 100%; height: 100%;
   border: 0; background: transparent; pointer-events: none;

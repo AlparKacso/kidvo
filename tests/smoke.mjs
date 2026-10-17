@@ -115,6 +115,45 @@ async function run(name) {
     });
   }
 
+  // Vo grows from the games' thinking moments. A catch in Confident Nonsense (skill ai-can-be-wrong) is one brick
+  // and grows his big eyes; a second catch right after it earns nothing (8 seconds apart at least).
+  await step('Vo counts a brick and grows the matching head part', async () => {
+    const vo = appFrame(page, 'pet');
+    await vo.evaluate(async () => { await window.__vo.ready(); await window.__vo.hatch(); });
+    await appFrame(page, 'nonsense').evaluate(() => { kidvo.emit('caught', {}); kidvo.emit('caught', {}); });
+    await vo.waitForFunction(() => window.__vo.state().bricks > 0, null, { timeout: 3000 });
+    await page.waitForTimeout(300);
+    const { state, stored } = await vo.evaluate(async () => ({ state: window.__vo.state(), stored: await kidvo.store.get('vo') }));
+    if (state.bricks !== 1) throw new Error(`expected 1 brick, Vo has ${state.bricks}`);
+    if (!state.parts.includes('eyes')) throw new Error(`no big eyes after a catch (parts: ${state.parts.join(', ') || 'none'})`);
+    if (!stored || stored.bricks !== 1) throw new Error('the brick was not stored');
+  });
+
+  // A long press on Vo (or a right-click) opens his garage above the windows; a tap outside the card closes it.
+  // The windows cover Vo here, so the presses are sent to his hotspot directly.
+  await step("Vo's garage opens on a long press and a tap outside closes it", async () => {
+    const modal = () => page.waitForFunction(() => document.querySelector('#overlays.modal iframe.modal'), null, { timeout: 2000 });
+    const closed = () => page.waitForFunction(() => !document.querySelector('#overlays.modal, #overlays iframe.modal'), null, { timeout: 2000 });
+    const press = type => page.evaluate(type => {
+      const spot = document.querySelector('#overlays .hotspot');
+      if (!spot) throw new Error('Vo has no hotspot');
+      const at = { bubbles: true, cancelable: true, button: type === 'contextmenu' ? 2 : 0, pointerId: 7, isPrimary: true };
+      if (type === 'contextmenu') spot.dispatchEvent(new MouseEvent('contextmenu', at));
+      else spot.dispatchEvent(new PointerEvent(type, at));
+    }, type);
+    await press('pointerdown');
+    await page.waitForTimeout(800);
+    await press('pointerup');
+    await modal();
+    await page.mouse.click(4, 300);
+    await closed();
+    await page.waitForTimeout(500);
+    await press('contextmenu');
+    await modal();
+    await page.mouse.click(4, 300);
+    await closed();
+  });
+
   await step('nonsense: every Investigators round holds a hard fabrication and a surprising truth, with no repeats', async () => {
     const f = appFrame(page, 'nonsense');
     if (!f) throw new Error('game frame not found');
@@ -236,6 +275,19 @@ async function run(name) {
         await phone.evaluate(() => document.querySelectorAll('.win').forEach(w => w.querySelector('[data-act="close"]').click()));
       });
     }
+    await step(`Vo's garage fits a ${label} screen`, async () => {
+      const vo = appFrame(phone, 'pet');
+      if (!vo) throw new Error('Vo did not load');
+      const r = await vo.evaluate(async () => {
+        await window.__vo.ready();
+        window.__vo.openGarage();
+        const g = document.getElementById('garage'), b = g.getBoundingClientRect();
+        const out = { left: b.left, right: b.right, top: b.top, bottom: b.bottom, over: g.scrollWidth - g.clientWidth };
+        window.__vo.closeGarage();
+        return out;
+      });
+      if (r.left < 0 || r.top < 0 || r.right > viewport.width || r.over > 1) throw new Error(`the card does not fit: ${JSON.stringify(r)}`);
+    });
     await ctx.close();
   }
 

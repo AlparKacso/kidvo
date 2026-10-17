@@ -91,6 +91,19 @@ kidvo.emit('solved', {...})     // others hear "my-game:solved"
 kidvo.on('maze:solved', fn)     // listen to other games
 ```
 
+### Thinking moments feed Vo
+
+Vo, the desktop's pet, grows from the thinking children do in every game: each moment is a brick, the first brick from a game grows the head part for that game's `skills`, and bricks unlock rides in Vo's garage. Your game feeds him without knowing he exists, as long as it emits these events:
+
+```js
+kidvo.emit('caught', {})               // the player caught a wrong AI answer
+kidvo.emit('kept', {})                 // the player kept something private
+kidvo.emit('judged', { right: true })  // the player made a call; right: true when it was the right one
+kidvo.emit('done', {})                 // a round is over
+```
+
+The practice-AI panel already sends `ai-flagged` when the player marks an answer "Not right?", and a flagged wrong answer counts as `caught`, so you do not need to send both. Vo counts at most 3 bricks per game per round and none within 8 seconds of the last one, so emit honestly: one event per real moment, `done` once at the end of a round. Questions asked (`ai-asked`) and secrets shared (`shared`) earn nothing.
+
 ## Hard limits (CI)
 
 - Only your folder: a pull request may change `apps/<your-id>/` and nothing else. Changes to the desktop are "core" and need a maintainer's label.

@@ -9,13 +9,16 @@
  *   kidvo.notify(text)         show a small toast on the desktop
  *   kidvo.setTitle(text)       change your window title
  *   kidvo.windows()            list open windows with their positions
- *   kidvo.apps()               list installed apps
+ *   kidvo.apps()               list installed apps: [{ id, name, type, skills, open }] (skills from the manifest)
  *   kidvo.lang                 the language the player chose: "en", "hu", "ro", ...
  *   kidvo.onLang(fn)           fn(lang) now and whenever the player switches language
  *   kidvo.t(key, vars)         your text in the current language, e.g. kidvo.t('steps', { n: 3 })
  *                              (falls back to English; keys ending in _one/_few/_other are plural forms)
  *   kidvo.store.get/set/remove small per-app storage kept in the visitor's browser
  *   kidvo.setHotspot(rect)     overlays only: one clickable spot {x, y, w, h} (max 140x140); clicks arrive as "shell:poke"
+ *                              ({ x, y, long }: long is true for a long press, a right-click or the context-menu key)
+ *   kidvo.setModal(on)         overlays only: while on, your overlay sits above the windows and takes every click,
+ *                              for a small card the player opened; turn it off as soon as the card closes
  *   kidvo.standalone           true when your page is opened outside the desktop
  *
  * Texts live in lang/<code>.js files in your folder, loaded after this script:
@@ -115,6 +118,7 @@
     apps: () => (standalone ? Promise.resolve([]) : call('apps')),
     get lang() { return lang; },
     setHotspot(rect) { post({ kind: 'hotspot', rect: rect || null }); },
+    setModal(on) { post({ kind: 'modal', on: !!on }); },
     onLang(fn) { langFns.add(fn); try { fn(lang); } catch (err) { console.error('[kidvo]', err); } return () => langFns.delete(fn); },
     t,
     store: standalone
