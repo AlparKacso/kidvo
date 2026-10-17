@@ -4,6 +4,7 @@ kidvoStrings('hu', {
   goodChecking: 'jó, hogy ellenőrzöd!',
   allByYourself: 'egyedül sikerült!',
   levelCleared: '{n}. szint kész!',
+  runFinished: 'végigcsináltad az egészet!',
   ooh: 'ó, egy játék!',
   secretSafe: 'titok megőrizve!',
   hmm: 'hmm, vigyázz...',

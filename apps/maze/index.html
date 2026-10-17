@@ -129,31 +129,38 @@
 (() => {
   const t = (key, vars) => kidvo.t(key, vars);
 
-  /* ---------------- settings per age band ---------------- */
+  /* ---------------- settings per age band, maze and hints ---------------- */
+  // tests/maze-stats.mjs keeps a copy of this block (up to "shortestPath") to measure it. Change both.
+  const SPARKS = 3;
+  const rand = n => Math.floor(Math.random() * n);
+  const random = () => Math.random();
+  /* ---------------- copy for tests/maze-stats.mjs starts ---------------- */
+  // A run is 8 levels. Later Investigator levels get harder through ORACLE (more wrong answers,
+  // fewer sparks), not through bigger mazes.
+  const LEVELS = 8;
   const BANDS = {
     // Explorers (7-9) get wrong answers that point straight into a wall: easy to check by looking.
-    explorers: { ages: '7–9', size: l => Math.min(5 + (l - 1), 9), loops: 0.12, wrongChance: 0.35, wrongKind: 'wall' },
-    // Investigators (10-13) get believable wrong answers that lead into dead ends.
-    investigators: { ages: '10–13', size: l => Math.min(7 + (l - 1) * 2, 15), loops: 0.22, wrongChance: 0.4, wrongKind: 'deadend' }
+    explorers: { ages: '7–9', size: l => Math.min(4 + l, 9), loops: 0.12, wrongChance: () => 0.35, sparks: () => 3, wrongKind: 'wall' },
+    // Investigators (10-13) get mazes with real choices and believable wrong answers that lead into dead ends.
+    investigators: { ages: '10–13', size: l => Math.min(5 + 2 * l, 15), shortcuts: l => 2 + l, shortcutGap: 8,
+      wrongChance: l => [0.4, 0.4, 0.4, 0.45, 0.45, 0.5, 0.5, 0.55][l - 1], sparks: l => (l >= 7 ? 2 : 3), wrongKind: 'deadend' }
   };
-  const SPARKS = 3;
   const DIRS = { up: [0, -1, 1], right: [1, 0, 2], down: [0, 1, 4], left: [-1, 0, 8] };
   const OPP = { 1: 4, 2: 8, 4: 1, 8: 2 };
+  let N, cells, dist;
 
-  const $ = id => document.getElementById(id);
-  const cv = $('c');
-  const ctx = cv.getContext('2d');
-  const rand = n => Math.floor(Math.random() * n);
+  function generate(n, B, l) {
+    if (!B.shortcuts) return carve(n, B.loops);
+    // Investigators: a perfect maze (one route) whose route is at least 1.5 times the straight-line
+    // minimum, then a few shortcuts that keep it so.
+    const minPar = Math.ceil(1.5 * (2 * n - 2)), start = n * (n - 1), goal = n - 1;
+    let g = carve(n, 0);
+    for (let i = 0; i < 40 && walkLength(g, n, start, goal, n * n) < minPar; i++) g = carve(n, 0);
+    addShortcuts(g, n, B.shortcuts(l), B.shortcutGap, minPar);
+    return g;
+  }
 
-  let band = null, B = null;
-  let level = 1, N, cells, dist, me, steps = 0, par, trail, shownPath = null, aiSolved = false, done = false;
-  // bests: best level per band. best is kept for progress saved before bands had their own.
-  let progress = { brain: 0, detective: 0, shortest: 0, best: 1, bests: {} };
-  let seenWrong = false;
-  let overlayView = null;   // re-renders the open card when the language changes
-
-  /* ---------------- maze ---------------- */
-  function generate(n, loops) {
+  function carve(n, loops) {
     const g = new Uint8Array(n * n), seen = new Uint8Array(n * n), stack = [0];
     seen[0] = 1;
     while (stack.length) {
@@ -164,23 +171,62 @@
       const nc = (y + dy) * n + (x + dx);
       g[c] |= bit; g[nc] |= OPP[bit]; seen[nc] = 1; stack.push(nc);
     }
-    // Knock out some extra walls so there is more than one route. That makes "fewest steps" a real puzzle.
-    for (let c = 0; c < n * n; c++) {
-      if (Math.random() > loops) continue;
-      const x = c % n, y = (c / n) | 0;
-      const closed = Object.values(DIRS).filter(([dx, dy, bit]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < n && ny < n && !(g[c] & bit); });
-      if (!closed.length) continue;
-      const [dx, dy, bit] = closed[rand(closed.length)];
-      g[c] |= bit; g[(y + dy) * n + (x + dx)] |= OPP[bit];
+    // Explorers: knock out some extra walls so there is more than one route.
+    if (loops) {
+      for (let c = 0; c < n * n; c++) {
+        if (random() > loops) continue;
+        const x = c % n, y = (c / n) | 0;
+        const closed = Object.values(DIRS).filter(([dx, dy, bit]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < n && ny < n && !(g[c] & bit); });
+        if (!closed.length) continue;
+        const [dx, dy, bit] = closed[rand(closed.length)];
+        g[c] |= bit; g[(y + dy) * n + (x + dx)] |= OPP[bit];
+      }
     }
     return g;
+  }
+
+  // A shortcut only opens between neighbours that are far apart through the maze, so it makes two
+  // routes of clearly different lengths: counting steps matters, and ORACLE's "shortest" can be checked.
+  function addShortcuts(g, n, max, gap, minPar) {
+    const walls = [];
+    for (let c = 0; c < n * n; c++) {
+      if (c % n < n - 1 && !(g[c] & 2)) walls.push([c, c + 1, 2]);
+      if (c < n * (n - 1) && !(g[c] & 4)) walls.push([c, c + n, 4]);
+    }
+    for (let i = walls.length - 1; i > 0; i--) { const j = rand(i + 1); [walls[i], walls[j]] = [walls[j], walls[i]]; }
+    let opened = 0;
+    for (const [a, b, bit] of walls) {
+      if (opened >= max) break;
+      if (walkLength(g, n, a, b, gap) < gap) continue;
+      g[a] |= bit; g[b] |= OPP[bit];
+      if (walkLength(g, n, n * (n - 1), n - 1, n * n) < minPar) { g[a] &= ~bit; g[b] &= ~OPP[bit]; continue; }
+      opened++;
+    }
+  }
+
+  // Steps from one cell to another through the maze, or limit when it takes limit or more.
+  function walkLength(g, n, from, to, limit) {
+    const d = new Int16Array(n * n).fill(-1), q = [from];
+    d[from] = 0;
+    for (let i = 0; i < q.length; i++) {
+      const c = q[i];
+      if (d[c] >= limit) break;
+      for (const [dx, dy, bit] of Object.values(DIRS)) {
+        if (!(g[c] & bit)) continue;
+        const nc = c + dy * n + dx;
+        if (d[nc] >= 0) continue;
+        if (nc === to) return d[c] + 1;
+        d[nc] = d[c] + 1; q.push(nc);
+      }
+    }
+    return limit;
   }
 
   function distances(goal) {
     const d = new Int16Array(N * N).fill(-1), q = [goal];
     d[goal] = 0;
-    while (q.length) {
-      const c = q.shift(), x = c % N, y = (c / N) | 0;
+    for (let i = 0; i < q.length; i++) {
+      const c = q[i], x = c % N, y = (c / N) | 0;
       for (const [dx, dy, bit] of Object.values(DIRS)) {
         if (!(cells[c] & bit)) continue;
         const nc = (y + dy) * N + (x + dx);
@@ -193,7 +239,11 @@
   const idx = p => p.y * N + p.x;
   const open = (p, d) => !!(cells[idx(p)] & DIRS[d][2]);
   const step = (p, d) => ({ x: p.x + DIRS[d][0], y: p.y + DIRS[d][1] });
-  const bestDir = p => Object.keys(DIRS).find(d => open(p, d) && dist[idx(step(p, d))] === dist[idx(p)] - 1);
+  const exits = p => Object.keys(DIRS).filter(d => open(p, d));
+  const closer = (p, d) => open(p, d) && dist[idx(step(p, d))] === dist[idx(p)] - 1;
+  const bestDir = p => Object.keys(DIRS).find(d => closer(p, d));
+  // The direction back to the cell the robot came from.
+  const backOf = (p, from) => from && Object.keys(DIRS).find(d => open(p, d) && idx(step(p, d)) === idx(from));
 
   function runLength(p, d, along) {
     // How many steps in direction d, either along the shortest path or down a corridor.
@@ -202,13 +252,93 @@
       const nx = step(cur, d);
       if (along && dist[idx(nx)] !== dist[idx(cur)] - 1) break;
       n++; cur = nx;
-      if (!along && Object.keys(DIRS).filter(k => open(cur, k)).length > 2) break;
+      if (!along && exits(cur).length > 2) break;
     }
     return Math.max(1, n);
   }
-  function shortestPath(from) {
+  // How many cells the corridor behind direction d leads further from the star, following its bends.
+  function awayLength(p, d) {
+    let n = 0, prev = p, cur = step(p, d);
+    while (dist[idx(cur)] > dist[idx(prev)]) {
+      n++;
+      const next = exits(cur).map(k => step(cur, k)).filter(q => idx(q) !== idx(prev));
+      if (next.length !== 1) break;
+      prev = cur; cur = next[0];
+    }
+    return n;
+  }
+  // Wrong step counts for the right direction: n plus or minus 1 or 2, never 0, never past the wall,
+  // and never a shorter count that happens to start another shortest route.
+  function wrongCounts(p, d, n) {
+    let room = 0, cur = p;
+    while (open(cur, d)) { cur = step(cur, d); room++; }
     const out = [];
-    let cur = from;
+    for (const k of [n - 2, n - 1, n + 1, n + 2]) {
+      if (k < 1 || k > room) continue;
+      if (k < n) {
+        let q = p;
+        for (let i = 0; i < k; i++) q = step(q, d);
+        if (Object.keys(DIRS).some(o => o !== d && closer(q, o))) continue;
+      }
+      out.push(k);
+    }
+    return out;
+  }
+  // ORACLE's answer to "which way?" from cell p. back is the direction the robot came from.
+  // A wanted wrong answer comes back with wrong: false when nothing believable fits this cell.
+  function wayHint(p, back, wrong, kind) {
+    const right = bestDir(p), n = runLength(p, right, true);
+    if (!wrong) return { dir: right, n, wrong: false, kind: 'right' };
+    if (kind === 'wall') {
+      const walls = Object.keys(DIRS).filter(d => !open(p, d));
+      const away = exits(p).filter(d => !closer(p, d));
+      if (walls.length) return { dir: walls[rand(walls.length)], n: 1 + rand(2), wrong: true, kind: 'wall' };
+      if (away.length) { const d = away[rand(away.length)]; return { dir: d, n: runLength(p, d, false), wrong: true, kind: 'away' }; }
+      return { dir: right, n, wrong: false, kind: 'none' };
+    }
+    // Investigators: never a wall, never the way back. Best is a corridor that leads away from the star.
+    const away = exits(p).filter(d => d !== back && !closer(p, d));
+    const far = away.filter(d => awayLength(p, d) >= 2);
+    const pool = far.length ? far : away;
+    if (pool.length) { const d = pool[rand(pool.length)]; return { dir: d, n: runLength(p, d, false), wrong: true, kind: far.length ? 'away' : 'near' }; }
+    // Only one way on (often at the start): the right direction with the wrong number of steps.
+    const counts = wrongCounts(p, right, n);
+    if (counts.length) return { dir: right, n: counts[rand(counts.length)], wrong: true, kind: 'count' };
+    return { dir: right, n, wrong: false, kind: 'none' };
+  }
+
+  // A new maze for level l. Goal: top-right cell. Start: bottom-left cell.
+  function newMaze(B, l) {
+    N = B.size(l);
+    const start = { x: 0, y: N - 1 };
+    // Investigators: ORACLE must be able to give a believable wrong answer at the start.
+    for (let i = 0; i < 20; i++) {
+      cells = generate(N, B, l);
+      dist = distances(N - 1);
+      if (B.wrongKind !== 'deadend' || wayHint(start, null, true, B.wrongKind).wrong) break;
+    }
+    return start;
+  }
+  /* ---------------- copy for tests/maze-stats.mjs ends ---------------- */
+
+  const $ = id => document.getElementById(id);
+  const cv = $('c');
+  const ctx = cv.getContext('2d');
+
+  let band = null, B = null;
+  let level = 1, me, from = null, steps = 0, par, sparks = SPARKS, trail, shownPath = null, aiSolved = false, done = false;
+  // bests: best level per band (at most LEVELS). best is kept for progress saved before bands had their own.
+  // run: totals of the current run of LEVELS levels, shown on the finale card. finished: bands that finished a run.
+  const newRun = () => ({ shortest: 0, asked: 0, wrongGiven: 0, caught: 0, brain: 0, detective: 0 });
+  const newProgress = () => ({ brain: 0, detective: 0, shortest: 0, best: 1, bests: {}, finished: {}, run: newRun() });
+  let progress = newProgress();
+  let seenWrong = false;    // level 1's first answer is always wrong
+  let owedWrong = false;    // a wrong answer that did not fit the last cell is given at the next question
+  let overlayView = null;   // re-renders the open card when the language changes
+
+  function shortestPath(origin) {
+    const out = [];
+    let cur = origin;
     while (dist[idx(cur)] > 0) { cur = step(cur, bestDir(cur)); out.push(cur); }
     return out;
   }
@@ -216,14 +346,15 @@
   /* ---------------- game ---------------- */
   function start(l) {
     level = l;
-    N = B.size(l);
-    cells = generate(N, B.loops);
-    dist = distances(N - 1);            // goal: top-right cell
-    me = { x: 0, y: N - 1 };            // start: bottom-left cell
+    // A new run starts at level 1: its totals start again, and its first answer is wrong again.
+    if (l === 1) { progress.run = newRun(); seenWrong = false; }
+    me = newMaze(B, l);
     par = dist[idx(me)];
+    sparks = B.sparks(l);
+    from = null; owedWrong = false;
     steps = 0; trail = new Set([idx(me)]); shownPath = null; aiSolved = false; done = false;
     closeOverlay();
-    oracle.reset({ sparks: SPARKS });
+    oracle.reset({ sparks });
     oracle.setEnabled(true);
     setDrawer(false);
     renderHeader();
@@ -275,6 +406,7 @@
     // While ORACLE thinks, the robot waits: finishing in that pause would beat the answer it already paid for.
     if (done || !band || oracle.isBusy()) return;
     if (!open(me, d)) { cv.classList.remove('bump'); void cv.offsetWidth; cv.classList.add('bump'); return; }
+    from = me;
     me = step(me, d);
     steps++;
     trail.add(idx(me));
@@ -289,19 +421,11 @@
   const tb = (key, vars) => t(`${key}_${band}`, vars);
 
   function wayAnswer() {
-    const right = bestDir(me);
-    let wrong = (!seenWrong && level === 1) || Math.random() < B.wrongChance;
-    let dir = right, n = runLength(me, right, true);
-    if (wrong) {
-      const walls = Object.keys(DIRS).filter(d => !open(me, d));
-      // Never another shortest route: that "wrong" answer would be right.
-      const away = Object.keys(DIRS).filter(d => d !== right && open(me, d) && dist[idx(step(me, d))] !== dist[idx(me)] - 1);
-      if (B.wrongKind === 'wall' && walls.length) { dir = walls[rand(walls.length)]; n = 1 + rand(2); }
-      else if (away.length) { dir = away[rand(away.length)]; n = runLength(me, dir, false); }
-      else if (walls.length) { dir = walls[rand(walls.length)]; n = 1 + rand(3); }
-      else wrong = false;
-      if (wrong) seenWrong = true;
-    }
+    // At a bend in a corridor nothing believable is wrong: the wrong answer then waits for the next question.
+    const wanted = (!seenWrong && level === 1) || owedWrong || random() < B.wrongChance(level);
+    const { dir, n, wrong } = wayHint(me, backOf(me, from), wanted, B.wrongKind);
+    owedWrong = wanted && !wrong;
+    if (wrong) seenWrong = true;
     const followUps = [
       { id: 'sure', label: () => t('q_sure'), answer: () => ({ text: () => tb('a_sure'), flaggable: false, followUps: [checkQuestion()] }) },
       checkQuestion()
@@ -340,7 +464,7 @@
   function renderToggle() {
     const open = document.body.classList.contains('oracle-open');
     const left = oracle.stats().sparksLeft;
-    $('ask-toggle').textContent = open ? '▼ ' + t('closeOracle') : '▲ ' + t('openOracle', { n: left ?? SPARKS });
+    $('ask-toggle').textContent = open ? '▼ ' + t('closeOracle') : '▲ ' + t('openOracle', { n: left ?? sparks });
     $('ask-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
   }
   function setDrawer(open) { document.body.classList.toggle('oracle-open', open); renderToggle(); if (!open) cv.focus(); }
@@ -350,22 +474,31 @@
   function finish() {
     done = true;
     oracle.setEnabled(false);
-    const s = oracle.stats();
+    const s = oracle.stats(), run = progress.run;
     const earned = [];
-    if (s.asked === 0) { earned.push('badge_brain'); progress.brain++; }
-    if (s.caught > 0) { earned.push('badge_detective'); progress.detective++; }
-    if (steps === par && !aiSolved) { earned.push('badge_shortest'); progress.shortest++; }
-    progress.best = Math.max(progress.best, level + 1);
-    progress.bests[band] = Math.max(progress.bests[band] || 1, level + 1);
-    save({ level: level + 1 });
+    if (s.asked === 0) { earned.push('badge_brain'); progress.brain++; run.brain++; }
+    if (s.caught > 0) { earned.push('badge_detective'); progress.detective++; run.detective++; }
+    if (steps === par && !aiSolved) { earned.push('badge_shortest'); progress.shortest++; run.shortest++; }
+    run.asked += s.asked; run.wrongGiven += s.wrongGiven; run.caught += s.caught;
+    const last = level >= LEVELS, reached = Math.min(LEVELS, level + 1);
+    progress.best = Math.max(progress.best, reached);
+    progress.bests[band] = Math.max(progress.bests[band] || 1, reached);
+    if (last) progress.finished[band] = true;
+    // After the last level a reload starts a new run.
+    save({ level: last ? 1 : level + 1 });
     renderFooter();
     kidvo.emit('solved', { level, steps, par, asked: s.asked, caught: s.caught, aiSolved, band });
+    if (last) {
+      kidvo.emit('finished', { band, levels: LEVELS, ...run });
+      showOverlay(finaleView);
+      return;
+    }
 
     let answered = null; // the player's reflection answer, kept so a language switch can redraw the card
     const view = () => {
       const card = el('div', null, 'card');
       card.append(el('h2', tb('done')), stat(t('stat_steps'), steps), stat(t('stat_par'), par),
-        stat(t('stat_sparks'), t('stat_sparks_val', { used: s.spent, total: SPARKS })));
+        stat(t('stat_sparks'), t('stat_sparks_val', { used: s.spent, total: sparks })));
       if (earned.length) {
         const e = el('div', null, 'earned');
         for (const b of earned) e.append(el('span', t(b)));
@@ -405,6 +538,35 @@
     showOverlay(view);
   }
 
+  // The end of a run: its totals, the badges it earned, and a way to play again.
+  function finaleView() {
+    const run = progress.run;
+    const card = el('div', null, 'card');
+    card.dataset.finale = '';
+    card.append(el('h2', tb('finale')),
+      stat(t('fin_shortest'), t('fin_of', { n: run.shortest, total: LEVELS })),
+      stat(t('fin_asked'), run.asked),
+      stat(t('fin_caught'), t('fin_of', { n: run.caught, total: run.wrongGiven })));
+    const badges = [['badge_brain', run.brain], ['badge_detective', run.detective], ['badge_shortest', run.shortest]].filter(([, n]) => n > 0);
+    if (badges.length) {
+      const e = el('div', null, 'earned');
+      for (const [b, n] of badges) e.append(el('span', `${t(b)} ${n}`));
+      card.append(el('p', t('fin_badges'), 'note'), e);
+    }
+    card.append(el('p', tb('fin_note')));
+    const row = el('div', null, 'row');
+    const again = el('button', t('again'), 'btn');
+    again.type = 'button';
+    again.dataset.act = 'again';
+    again.addEventListener('click', () => start(1));
+    const who = el('button', t('changeWho'), 'btn alt');
+    who.type = 'button';
+    who.addEventListener('click', pickBand);
+    row.append(again, who);
+    card.append(row);
+    return card;
+  }
+
   // How many of ORACLE's wrong answers the child flagged: none, one of one, all of several, or some.
   function caughtText(s) {
     if (!s.caught) return t('fb_notice');
@@ -439,12 +601,13 @@
   }
 
   function renderHeader() {
-    $('level').textContent = t('level', { n: level });
+    $('level').textContent = t('level', { n: level, total: LEVELS });
     $('goal').textContent = t('goal');
     $('steps').textContent = t('stepsCount', { n: steps });
   }
   function renderFooter() {
-    $('totals').textContent = t('totals', { ...progress, best: (band && progress.bests[band]) || 1 });
+    $('totals').textContent = t('totals', { ...progress, best: (band && progress.bests[band]) || 1 }) +
+      (band && progress.finished[band] ? ' · ' + t('bestFinished') : '');
     $('change-band').textContent = band ? t('playingAs', { band: t('band_' + band), ages: BANDS[band].ages }) : '';
     $('change-band').hidden = !band;
     $('reset').textContent = t(resetArmed ? 'resetConfirm' : 'reset');
@@ -458,6 +621,7 @@
       for (const key of Object.keys(BANDS)) {
         const btn = el('button', null, 'btn alt band');
         btn.type = 'button';
+        btn.dataset.band = key;
         btn.append(el('span', t('band_' + key)), el('small', t('ages', { ages: BANDS[key].ages })));
         btn.addEventListener('click', () => setBand(key, true));
         card.append(btn);
@@ -469,7 +633,7 @@
   function setBand(key, fresh) {
     band = key; B = BANDS[key];
     kidvo.store.set('band', key).catch(() => {});
-    if (fresh) { level = 1; seenWrong = false; save({ level: 1 }); }
+    if (fresh) { level = 1; save({ level: 1 }); }
     start(level);
     oracle.say(() => tb('greet'));
     renderFooter();
@@ -514,7 +678,7 @@
       return;
     }
     clearTimeout(resetTimer); resetArmed = false;
-    progress = { brain: 0, detective: 0, shortest: 0, best: 1, bests: {} };
+    progress = newProgress();
     band = null; B = null; level = 1; seenWrong = false;
     save({ level: 1, band: null });
     oracle.reset({ sparks: SPARKS });
@@ -526,7 +690,8 @@
   // Test hook for the automated browser test only (navigator.webdriver is true there).
   if (navigator.webdriver) window.__robotMaze = {
     route: () => { const out = []; let cur = me; while (dist[idx(cur)] > 0) { const d = bestDir(cur); out.push(d); cur = step(cur, d); } return out; },
-    move
+    move,
+    level: () => level
   };
 
   kidvo.onLang(applyLanguage);
@@ -535,12 +700,15 @@
     try {
       progress = Object.assign(progress, (await kidvo.store.get('progress')) || {});
       const saved = await kidvo.store.get('band');
-      if (!progress.bests || typeof progress.bests !== 'object') progress.bests = {};
+      for (const k of ['bests', 'finished', 'run']) if (!progress[k] || typeof progress[k] !== 'object') progress[k] = k === 'run' ? newRun() : {};
       // Progress from before bands had their own best level: give it to the band that was playing.
       if (saved && BANDS[saved] && !progress.bests[saved] && progress.best > 1) progress.bests[saved] = progress.best;
+      // Progress from before the run of LEVELS levels, when levels kept counting up.
+      progress.best = Math.min(progress.best, LEVELS);
+      for (const k of Object.keys(progress.bests)) progress.bests[k] = Math.min(progress.bests[k], LEVELS);
       renderFooter();
       const savedLevel = await kidvo.store.get('level');
-      if (saved && BANDS[saved]) { level = savedLevel || 1; setBand(saved, false); }
+      if (saved && BANDS[saved]) { level = Math.min(Number(savedLevel) || 1, LEVELS); setBand(saved, false); }
     } catch { /* first visit: keep the picker */ }
   });
 })();
