@@ -275,6 +275,7 @@
   const t = (k, v) => kidvo.t(k, v);
   const REACT = {
     'maze:solved': d => { pet.happy = performance.now() + 1800; hop(0.8); return d && d.asked === 0 ? t('allByYourself') : t('levelCleared', { n: d && d.level || '?' }); },
+    'maze:finished': () => { pet.happy = performance.now() + 3000; hop(1); return t('runFinished'); },
     'shell:opened': d => (d && d.appId && d.appId !== 'pet' ? t('ooh') : null),
     'shell:closed': () => t('bye')
   };

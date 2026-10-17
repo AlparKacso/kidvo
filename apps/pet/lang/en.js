@@ -4,6 +4,7 @@ kidvoStrings('en', {
   goodChecking: 'good checking!',
   allByYourself: 'all by yourself!',
   levelCleared: 'level {n} cleared!',
+  runFinished: 'you did the whole run!',
   ooh: 'ooh, a game!',
   secretSafe: 'secret safe!',
   hmm: 'hmm, careful...',
