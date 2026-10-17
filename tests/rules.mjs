@@ -57,37 +57,39 @@ for (const s of ['&#104;ttps://evil.example', '"h" + "ttps://evil.example"', 'ht
   assert.ok(findUrls(unmask(s)).length > 0, `finds ${s}`);
 assert.deepEqual(findUrls(unmask('const a = "x" + "y"; // http-free')), [], 'ordinary code is left alone');
 
-// Vo's bricks: at most 3 per app per round, none within 8 seconds of the last from the same app, growth only.
+// Vo grows one step for every finished round, in any game, the same game again included; growth only.
 const vo = {};
 vm.runInNewContext(readFileSync(new URL('../apps/pet/bricks.js', import.meta.url), 'utf8'), vo);
-const { counter, grow, merge, fresh, PER_ROUND, GAP } = vo.VoBricks;
+const { counter, grow, merge, fresh, clean, ridesAt, RIDES, LAST, GAP } = vo.VoBricks;
 {
   const offer = counter();
   let now = 0;
-  const earned = topic => offer(topic, {}, now += GAP) !== null;
-  assert.equal([1, 2, 3, 4, 5].filter(() => earned('nonsense:caught')).length, PER_ROUND, 'a round earns at most 3 bricks');
-  assert.ok(earned('sorter:caught'), 'the cap is per app');
-  assert.ok(!earned('nonsense:done'), 'done does not lift the cap of the round it ends');
-  assert.ok(earned('nonsense:caught'), 'done starts a new round');
-  assert.equal(offer('nonsense:caught', {}, now + GAP - 1), null, 'none within 8 seconds of the last from the same app');
-  assert.notEqual(offer('maze:ai-flagged', { wasWrong: true }, now + 1), null, 'another app is not held back by that wait');
-  now += 1;
-  for (const [topic, data] of [['secret-keeper:shared', {}], ['maze:ai-asked', {}], ['sorter:judged', { right: false }], ['maze:ai-flagged', { wasWrong: false }],
-    ['shell:opened', {}], ['maze:solved', {}], ['nonsense:checked', {}]])
-    assert.equal(offer(topic, data, now += GAP), null, `${topic} earns nothing`);
-  assert.notEqual(offer('sorter:judged', { right: true }, now += GAP), null, 'a right call earns a brick');
+  const steps = topic => offer(topic, now += GAP) !== null;
+  assert.ok(steps('nonsense:done') && steps('nonsense:done') && steps('nonsense:done'), 'the same game again and again is a step every round');
+  assert.ok(steps('maze:solved'), 'each Robot Maze level is a round');
+  assert.equal(offer('maze:finished', now + 1), null, "Robot Maze's finished arrives with its last solved: no second step");
+  assert.equal(offer('maze:solved', now + 1), null, 'one round end per app at a time, so an event sent twice is one step');
+  assert.notEqual(offer('sorter:done', now + 1), null, 'another app is not held back by that wait');
+  for (const topic of ['nonsense:caught', 'secret-keeper:kept', 'secret-keeper:shared', 'sorter:judged', 'maze:ai-flagged', 'maze:ai-asked', 'shell:opened', 'pet:done'])
+    assert.equal(offer(topic, now += GAP), null, `${topic} is not a finished round`);
 }
 {
   let s = fresh();
-  const first = grow(s, ['ai-can-be-wrong', 'when-to-ask']);
-  assert.deepEqual([first.state.bricks, first.part], [1, 'eyes'], 'the first brick of a skill grows its part');
-  const second = grow(first.state, ['ai-can-be-wrong', 'when-to-ask']);
-  assert.equal(second.part, 'antenna', 'one part per brick: the second skill of the game grows on the next brick');
-  assert.equal(grow(second.state, ['ai-learns-from-examples']).part, null, 'a skill without a drawn part records the brick only');
-  s = second.state;
-  for (let i = 0; i < 3; i++) s = grow(s, []).state;
-  assert.deepEqual([...s.rides], ['skateboard'], '5 bricks unlock the skateboard');
-  assert.equal(merge(s, { bricks: 1, parts: [], rides: [] }).bricks, 5, 'merging with an older copy never shrinks Vo');
+  const first = grow(s);
+  assert.deepEqual([first.state.step, first.got, first.state.ride], [1, 'head', null], 'the first round grows the big eyes and antenna together');
+  s = first.state;
+  const got = [];
+  for (let i = 0; i < RIDES.length; i++) { const g = grow(s); s = g.state; got.push(g.got); assert.equal(s.ride, g.got, 'a new ride is put on straight away'); }
+  assert.deepEqual(got, [...RIDES], 'then one ride per round, in garage order');
+  assert.ok(!RIDES.includes('cap') && !RIDES.includes('rocket'), 'no cap and no rocket');
+  assert.deepEqual([grow(s).got, grow(s).state.step], [null, LAST], 'a full garage stays full');
+  assert.equal(merge(s, { step: 2, ride: 'skateboard' }).step, LAST, 'merging with an older copy never shrinks Vo');
+  assert.equal(clean({ step: 3, ride: 'plane' }).ride, null, 'a ride not unlocked yet is never worn');
+  assert.deepEqual([...ridesAt(3)], ['skateboard', 'pogo'], 'step 3 has the first two rides');
+  assert.equal(clean({ bricks: 12, parts: ['eyes'], rides: ['skateboard', 'pogo'], ride: 'pogo' }).step, 3, 'a Vo saved before steps keeps what he grew');
+  const hatched = fresh(Date.now());
+  assert.equal(merge(s, hatched).step, 0, 'a newly hatched Vo wins over the old one, wherever the old copy comes from');
+  assert.equal(merge(hatched, s).step, 0, 'whichever side it is on');
 }
 
 // Overlays stay under the windows: only the built-in pet may lift itself above them (kidvo.setModal),

@@ -39,14 +39,14 @@
         followUps: [{ id: 'sure', label: t('q_sure'), answer: () => ({ text: t('a_sure'), flaggable: false }) }]
       })
     }],
-    // The panel already tells the desktop (ai-flagged); a wrong answer caught is a brick for Vo.
+    // The panel already tells the desktop (ai-flagged), and Vo cheers when a wrong answer is caught.
     onFlag: (answer, wasWrong) => { /* reward the player for checking */ }
   });
-  // Tell the desktop about the player's thinking moments. Vo, the desktop's pet, grows from them:
+  // Tell the desktop about the player's moments. Vo, the desktop's pet, cheers on them:
   //   kidvo.emit('caught', {})               a wrong AI answer caught (the panel's "Not right?" already does this)
   //   kidvo.emit('kept', {})                 something private kept
   //   kidvo.emit('judged', { right: true })  a call made; right: true when it was the right one
-  //   kidvo.emit('done', {})                 once, when a round is over
+  //   kidvo.emit('done', {})                 once, when a round is over: this one grows Vo a step
   kidvo.onLang(() => {
     document.getElementById('question').textContent = t('question');
     ai.setText(aiText());

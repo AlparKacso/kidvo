@@ -96,10 +96,9 @@
   /* ---------- what Vo has grown (kept in kidvo.store under "vo") ---------- */
   let grown = VoBricks.fresh();
   let sprite, SH, HALF;
-  const partsOf = g => Object.fromEntries(g.parts.map(p => [p, true]));
   // The sprite is 36 columns wide with the head in the middle; HALF is how far Vo's pixels reach from his centre.
   function rebuild() {
-    sprite = compose({ ...partsOf(grown), ride: grown.ride });
+    sprite = compose(VoBricks.look(grown));
     SH = sprite.rows.length * S;
     HALF = Math.max(GW / 2 - sprite.m.x0, sprite.m.x1 + 1 - GW / 2) * S;
   }
@@ -355,7 +354,7 @@
   function wake() { pet.lastActive = performance.now(); if (pet.mode === 'sleep') { pet.mode = 'idle'; pet.until = 0; } }
   function cheer(ms = 1500, power = 0.7) { pet.happy = performance.now() + ms; hop(power); }
 
-  /* ---------- growing: bricks, head parts, rides ---------- */
+  /* ---------- growing: one step for every finished round ---------- */
   // Two tabs may both hold a Vo: every save merges upward with what is stored, so nothing shrinks.
   const loaded = kidvo.store.get('vo')
     .then(v => { grown = VoBricks.merge(grown, v); rebuild(); })
@@ -366,34 +365,25 @@
     await kidvo.store.set('vo', grown).catch(() => {});
   }
 
-  // Which skills each app teaches (manifest "skills"), so a brick knows which head part it feeds.
-  const skillsOf = new Map();
-  const loadApps = () => kidvo.apps().then(list => {
-    for (const a of list || []) skillsOf.set(a.id, Array.isArray(a.skills) ? a.skills : []);
-  }).catch(() => {});
-  loadApps();
-
   const offer = VoBricks.counter();
   const later = [];
-  async function brick(appId) {
-    if (!skillsOf.has(appId)) await loadApps();
+  async function growStep() {
     await loaded;
-    const { state, part, rides } = VoBricks.grow(grown, skillsOf.get(appId) || []);
+    const { state, got } = VoBricks.grow(grown);
     grown = state;
+    if (!got) return; // the garage is full: the game's own cheer is enough
     rising.push({ t0: performance.now() });
-    // After the game's own cheer: a new part first, then a new ride.
-    if (part || rides.length) later.push(setTimeout(() => {
-      rebuild(); cheer(2200, 0.9); say(t(part ? 'grew' : 'newRide'));
+    // After the game's own cheer, so the two never talk over each other.
+    later.push(setTimeout(() => {
+      rebuild(); cheer(2200, 0.9); say(t(got === 'head' ? 'grew' : 'newRide'));
       if (!garage.hidden) renderGarage();
     }, 1800));
-    if (!garage.hidden) renderGarage();
     await save();
   }
 
   /* ---------- the garage card ---------- */
   const garage = document.getElementById('garage');
   const $ = id => document.getElementById(id);
-  const PART_LABEL = { eyes: 'partEyes', antenna: 'partAntenna', cap: 'partCap' };
   let sure = 0;
 
   function tileCanvas(spr, scale, ghost) {
@@ -410,30 +400,28 @@
     $('g-title').textContent = t('garage');
     $('g-close').setAttribute('aria-label', t('close'));
     $('g-close').title = t('close');
-    $('g-bricks').textContent = t('bricks', { n: grown.bricks });
-    const head = partsOf(grown);
-    $('g-parts').replaceChildren(...VoBricks.PART_ORDER.map(p => {
-      const has = grown.parts.includes(p);
-      const d = document.createElement('div');
-      d.className = 'tile' + (has ? '' : ' missing');
-      d.setAttribute('role', 'img');
-      d.setAttribute('aria-label', t(PART_LABEL[p]) + (has ? '' : ' (' + t('notYet') + ')'));
-      d.append(tileCanvas(compose({ [p]: true }), 3, !has));
-      return d;
-    }));
-    const rides = [{ id: null, bricks: 0 }, ...VoBricks.RIDES];
-    $('g-rides').replaceChildren(...rides.map(r => {
-      const open = !r.id || grown.rides.includes(r.id);
+    $('g-bricks').textContent = t('steps', { n: grown.step, total: VoBricks.LAST });
+    const head = VoBricks.look(grown);
+    const hasHead = grown.step >= 1;
+    const d = document.createElement('div');
+    d.className = 'tile' + (hasHead ? '' : ' missing');
+    d.setAttribute('role', 'img');
+    d.setAttribute('aria-label', t('partHead') + (hasHead ? '' : ' (' + t('notYet') + ')'));
+    d.append(tileCanvas(compose({ eyes: true, antenna: true }), 3, !hasHead));
+    $('g-parts').replaceChildren(d);
+    const unlocked = VoBricks.ridesAt(grown.step);
+    $('g-rides').replaceChildren(...[null, ...VoBricks.RIDES].map(id => {
+      const open = !id || unlocked.includes(id);
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'tile' + (open ? '' : ' missing');
-      b.setAttribute('aria-pressed', String(grown.ride === r.id));
-      const name = t(r.id ? 'ride_' + r.id : 'onFoot');
-      b.setAttribute('aria-label', open ? name : `${name} (${t('bricks', { n: r.bricks })})`);
+      b.setAttribute('aria-pressed', String(grown.ride === id));
+      const name = t(id ? 'ride_' + id : 'onFoot');
+      b.setAttribute('aria-label', open ? name : `${name} (${t('notYet')})`);
       b.title = b.getAttribute('aria-label');
-      b.append(tileCanvas(compose({ ...head, ride: r.id }), 2, !open));
-      if (!open) { b.setAttribute('aria-disabled', 'true'); const n = document.createElement('span'); n.textContent = r.bricks; b.append(n); }
-      b.addEventListener('click', () => { if (open) pickRide(r.id); });
+      b.append(tileCanvas(compose({ eyes: head.eyes, antenna: head.antenna, ride: id }), 2, !open));
+      if (!open) b.setAttribute('aria-disabled', 'true');
+      b.addEventListener('click', () => { if (open) pickRide(id); });
       return b;
     }));
     $('g-hatch').textContent = t(sure ? 'hatchSure' : 'hatch');
@@ -465,9 +453,9 @@
   }
   async function hatch() {
     for (const id of later.splice(0)) clearTimeout(id);
-    grown = VoBricks.fresh();
+    grown = VoBricks.fresh(Date.now());
     rebuild();
-    await kidvo.store.remove('vo').catch(() => {});
+    await kidvo.store.set('vo', grown).catch(() => {});
   }
 
   $('g-close').addEventListener('click', closeGarage);
@@ -495,8 +483,7 @@
     if (meta.topic === 'shell:windows' || meta.from === 'pet') return;
     // A tap on Vo feeds him; a long press (or right-click) opens his garage.
     if (meta.topic === 'shell:poke') { wake(); if (data && data.long) openGarage(); else feed(performance.now()); return; }
-    const earned = offer(meta.topic, data, performance.now());
-    if (earned) brick(earned);
+    if (offer(meta.topic, performance.now())) growStep();
     if (meta.topic.endsWith(':ai-asked')) return;
     wake();
     if (meta.topic.endsWith(':ai-flagged')) {

@@ -117,18 +117,17 @@ async function run(name) {
     });
   }
 
-  // Vo grows from the games' thinking moments. A catch in Confident Nonsense (skill ai-can-be-wrong) is one brick
-  // and grows his big eyes; a second catch right after it earns nothing (8 seconds apart at least).
-  await step('Vo counts a brick and grows the matching head part', async () => {
+  // Vo grows one step for every finished round. A round of Confident Nonsense grows his big eyes and antenna;
+  // the same event sent twice at once is still one step.
+  await step('Vo grows a step when a round is finished', async () => {
     const vo = appFrame(page, 'pet');
     await vo.evaluate(async () => { await window.__vo.ready(); await window.__vo.hatch(); });
-    await appFrame(page, 'nonsense').evaluate(() => { kidvo.emit('caught', {}); kidvo.emit('caught', {}); });
-    await vo.waitForFunction(() => window.__vo.state().bricks > 0, null, { timeout: 3000 });
+    await appFrame(page, 'nonsense').evaluate(() => { kidvo.emit('done', {}); kidvo.emit('done', {}); });
+    await vo.waitForFunction(() => window.__vo.state().step > 0, null, { timeout: 3000 });
     await page.waitForTimeout(300);
     const { state, stored } = await vo.evaluate(async () => ({ state: window.__vo.state(), stored: await kidvo.store.get('vo') }));
-    if (state.bricks !== 1) throw new Error(`expected 1 brick, Vo has ${state.bricks}`);
-    if (!state.parts.includes('eyes')) throw new Error(`no big eyes after a catch (parts: ${state.parts.join(', ') || 'none'})`);
-    if (!stored || stored.bricks !== 1) throw new Error('the brick was not stored');
+    if (state.step !== 1) throw new Error(`expected step 1, Vo is at step ${state.step}`);
+    if (!stored || stored.step !== 1) throw new Error('the step was not stored');
   });
 
   // A long press on Vo (or a right-click) opens his garage above the windows; a tap outside the card closes it.
