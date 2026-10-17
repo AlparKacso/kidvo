@@ -1,4 +1,4 @@
-// Vo's pixels: the head, the head parts that grow with each skill, and the rides in the garage.
+// Vo's pixels: the head, the big eyes and antenna of his first step, and the rides in the garage.
 // Every sprite is a list of row strings, 36 columns wide: K ink, Y yellow, R coral, W white, "." empty.
 // Vo's head sits at columns 12-23 and stays head-only on purpose. Drawn in the stage viewer
 // (design doc "Desktop: Vo grows"), copied here row by row.
@@ -55,15 +55,14 @@
       alt: { 1: '.KYYYYYYYYYYYYYYYYYYYYYYYYYYYYYKK...', 3: '..KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK...' }, overlay: [[-3, 2, 'KK'], [-2, 2, 'KYK'], [-1, 2, 'KYYK'], [0, 2, 'KYYYK']] }
   };
 
-  // Build the sprite for a set of head parts ({ eyes, antenna, cap }) and a ride (a VEHICLES key or nothing).
+  // Build the sprite for a set of head parts ({ eyes, antenna }) and a ride (a VEHICLES key or nothing).
   // Returns the rows plus what the animations need: m.alt (frame B rows), m.shut (blink rows), m.mouth (smile and
   // chomp row), m.headTop, and the drawn box m.x0..m.x1 (columns), so the hotspot covers Vo and not the empty grid.
   function compose(p) {
     const rows = [], m = {};
     if (p.antenna) rows.push(line(18, 'KRRK'), line(18, 'KRRK'), line(19, 'KK'), line(19, 'K'));
     else rows.push(line(19, 'KR'), line(19, 'K'), line(19, 'K'));
-    if (p.cap) rows.push(line(16, 'KKKK'), line(14, 'KKYYYYKK'), line(13, 'KYYYYYYYYK'), line(12, 'KKKKKKKKKKKK'));
-    else rows.push(line(14, 'KKKKKKKK'), line(13, 'KYYYYYYYYK'));
+    rows.push(line(14, 'KKKKKKKK'), line(13, 'KYYYYYYYYK'));
     m.headTop = rows.length;
     // Big eyes: two 5x5 round tiles that touch, like the Lego build, with a centred pupil.
     const H = p.eyes

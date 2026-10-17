@@ -91,18 +91,15 @@ kidvo.emit('solved', {...})     // others hear "my-game:solved"
 kidvo.on('maze:solved', fn)     // listen to other games
 ```
 
-### Thinking moments feed Vo
+### Finished rounds grow Vo
 
-Vo, the desktop's pet, grows from the thinking children do in every game: each moment is a brick, the first brick from a game grows the head part for that game's `skills`, and bricks unlock rides in Vo's garage. Your game feeds him without knowing he exists, as long as it emits these events:
+Vo, the desktop's pet, grows one step every time a child finishes a round, in any game, the same game again included: first his big eyes and antenna, then a new ride in his garage each round (skateboard to plane). Your game grows him without knowing he exists, as long as it says when a round is over:
 
 ```js
-kidvo.emit('caught', {})               // the player caught a wrong AI answer
-kidvo.emit('kept', {})                 // the player kept something private
-kidvo.emit('judged', { right: true })  // the player made a call; right: true when it was the right one
-kidvo.emit('done', {})                 // a round is over
+kidvo.emit('done', {})   // once, when a round is over
 ```
 
-The practice-AI panel already sends `ai-flagged` when the player marks an answer "Not right?", and a flagged wrong answer counts as `caught`, so you do not need to send both. Vo counts at most 3 bricks per game per round and none within 8 seconds of the last one, so emit honestly: one event per real moment, `done` once at the end of a round. Questions asked (`ai-asked`) and secrets shared (`shared`) earn nothing.
+Send it once per real round, at the end. The other events (`caught`, `kept`, `judged`) make Vo cheer but do not grow him.
 
 ## Hard limits (CI)
 
