@@ -428,8 +428,13 @@
     spot.style.cssText = `left:${Math.round(r.x)}px;top:${Math.round(r.y)}px;width:${Math.round(w)}px;height:${Math.round(h)}px;`;
   }
 
-  // An overlay may lift itself above the windows and take every click while it shows a small card
-  // (Vo's garage). It turns this off when the card closes; hiding the overlay from the tray also ends it.
+  // Only Vo may lift above the windows (security review 2026-10-14): overlays stay under the windows so a
+  // contributed overlay can never cover a game and take its clicks. The shell ignores the request from any other app.
+  const MODAL_APPS = new Set(['pet']);
+  const mayModal = app => app?.type === 'overlay' && MODAL_APPS.has(app.id);
+
+  // Vo lifts himself above the windows and takes every click while he shows his garage card. He turns this
+  // off when the card closes; hiding him from the tray also ends it.
   function setModal(ctx, on) {
     const ov = overlays.get(ctx.appId);
     if (!ov) return;
@@ -709,7 +714,7 @@
         break;
       }
       case 'modal': {
-        if (apps.get(ctx.appId)?.type !== 'overlay') return;
+        if (!mayModal(apps.get(ctx.appId))) return;
         setModal(ctx, m.on === true);
         break;
       }

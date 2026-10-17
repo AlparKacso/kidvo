@@ -90,4 +90,18 @@ const { counter, grow, merge, fresh, PER_ROUND, GAP } = vo.VoBricks;
   assert.equal(merge(s, { bricks: 1, parts: [], rides: [] }).bricks, 5, 'merging with an older copy never shrinks Vo');
 }
 
+// Overlays stay under the windows: only the built-in pet may lift itself above them (kidvo.setModal),
+// so a contributed overlay can never cover a game and take its clicks. tests/smoke.mjs tries it in a browser.
+{
+  const shell = readFileSync(new URL('../shell/shell.js', import.meta.url), 'utf8');
+  const decl = shell.match(/^\s*const MODAL_APPS = .*;$/m), rule = shell.match(/^\s*const mayModal = .*;$/m);
+  assert.ok(decl && rule, 'shell.js names the apps allowed to go modal (MODAL_APPS, mayModal)');
+  const { mayModal } = vm.runInNewContext(`${decl[0]}\n${rule[0]}\n({ mayModal })`);
+  assert.ok(mayModal({ id: 'pet', type: 'overlay' }), 'Vo may open his garage above the windows');
+  assert.ok(!mayModal({ id: 'ghost', type: 'overlay' }), 'another overlay may not go modal');
+  assert.ok(!mayModal({ id: 'pet', type: 'window' }), 'a window app named pet may not go modal');
+  assert.ok(!mayModal(undefined), 'an unknown app may not go modal');
+  assert.match(shell, /case 'modal': \{\s*if \(!mayModal\(apps\.get\(ctx\.appId\)\)\) return;/, "the shell's modal message checks mayModal first");
+}
+
 console.log('Rules hold.');

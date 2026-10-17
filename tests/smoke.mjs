@@ -8,6 +8,8 @@ import { readFile } from 'node:fs/promises';
 import { serve } from '../scripts/serve.mjs';
 
 const registry = JSON.parse(await readFile(new URL('../apps/registry.json', import.meta.url), 'utf8'));
+// The SDK inlined into a stand-in overlay page (its comment mentions </script>, which would end the inline script).
+const sdk = (await readFile(new URL('../shell/sdk.js', import.meta.url), 'utf8')).replace(/<\/script/gi, '<\\/script');
 const windowApps = registry.filter(a => a.type === 'window');
 const server = await serve(0);
 const SITE = `http://localhost:${server.address().port}`;
@@ -230,6 +232,35 @@ async function run(name) {
     await page.click('#start-btn');
     await page.locator('#start-menu').waitFor({ state: 'visible', timeout: 2000 });
     await page.keyboard.press('Escape');
+  });
+
+  // Only Vo may lift above the windows. A stand-in overlay ("ghost", served by the test only) asks for it
+  // as soon as it starts; its frame must stay under the windows and click-through.
+  await step('another overlay cannot lift itself above the windows', async () => {
+    const ghostPage = await desk.newPage();
+    ghostPage.on('pageerror', err => problems.push(`${name} ghost page error: ${err.message}`));
+    await ghostPage.route(`${SITE}/apps/registry.js`, async route => {
+      const body = (await (await route.fetch()).text()).replace('window.KIDVO_REGISTRY = [',
+        'window.KIDVO_REGISTRY = [{ "id": "ghost", "name": "Ghost", "description": "test", "author": { "name": "test" }, "type": "overlay", "autostart": true, "languages": ["en"] },');
+      return route.fulfill({ contentType: 'text/javascript', body });
+    });
+    await ghostPage.route(`${SITE}/apps/ghost/**`, route => route.request().url().endsWith('.svg')
+      ? route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16"/></svg>' })
+      : route.fulfill({ contentType: 'text/html', body: `<!doctype html><meta charset="utf-8"><script>${sdk}</script><script>kidvo.ready(() => { kidvo.setModal(true); window.asked = true; });</script>` }));
+    await ghostPage.goto(`${SITE}/`);
+    await ghostPage.locator('#overlays iframe[src^="apps/ghost/"]').waitFor({ state: 'attached', timeout: 5000 });
+    const ghost = appFrame(ghostPage, 'ghost');
+    if (!ghost) throw new Error('the stand-in overlay did not load');
+    await handshake(ghost);
+    await ghost.waitForFunction(() => window.asked, null, { timeout: 2000 });
+    await ghostPage.waitForTimeout(400);
+    const lifted = await ghostPage.evaluate(() => ({
+      frame: document.querySelector('#overlays iframe[src^="apps/ghost/"]').classList.contains('modal'),
+      layer: document.getElementById('overlays').classList.contains('modal'),
+      clicks: getComputedStyle(document.querySelector('#overlays iframe[src^="apps/ghost/"]')).pointerEvents
+    }));
+    await ghostPage.close();
+    if (lifted.frame || lifted.layer || lifted.clicks !== 'none') throw new Error(`the ghost overlay went modal: ${JSON.stringify(lifted)}`);
   });
 
   if (process.env.SCREENSHOT) await page.screenshot({ path: process.env.SCREENSHOT.replace(/(\.\w+)?$/, `-${name}$1`) });

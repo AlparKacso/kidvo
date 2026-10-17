@@ -17,8 +17,8 @@
  *   kidvo.store.get/set/remove small per-app storage kept in the visitor's browser
  *   kidvo.setHotspot(rect)     overlays only: one clickable spot {x, y, w, h} (max 140x140); clicks arrive as "shell:poke"
  *                              ({ x, y, long }: long is true for a long press, a right-click or the context-menu key)
- *   kidvo.setModal(on)         overlays only: while on, your overlay sits above the windows and takes every click,
- *                              for a small card the player opened; turn it off as soon as the card closes
+ *   kidvo.setModal(on)         built-in pet only; ignored for every other app. While on, Vo's overlay sits above
+ *                              the windows and takes every click, for his garage card; off when the card closes
  *   kidvo.standalone           true when your page is opened outside the desktop
  *
  * Texts live in lang/<code>.js files in your folder, loaded after this script:
