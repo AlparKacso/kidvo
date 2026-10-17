@@ -1,6 +1,8 @@
 // The safety rules in scripts/lib.mjs, held against the tricks that once got past them.
 //   node tests/rules.mjs
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import { APP_CSP, GUIDE_CSP, findUrls, unmask, htmlProblems, svgProblems } from '../scripts/lib.mjs';
 
 const meta = csp => `<meta http-equiv="Content-Security-Policy" content="${csp}">`;
@@ -54,5 +56,52 @@ bad(svgProblems('<?xml-stylesheet href="x.css"?>' + svg('')), 'a stylesheet inst
 for (const s of ['&#104;ttps://evil.example', '"h" + "ttps://evil.example"', 'https:\\/\\/evil.example', '"\\x68ttps://evil.example"', '"\\u{68}ttps://evil.example"'])
   assert.ok(findUrls(unmask(s)).length > 0, `finds ${s}`);
 assert.deepEqual(findUrls(unmask('const a = "x" + "y"; // http-free')), [], 'ordinary code is left alone');
+
+// Vo's bricks: at most 3 per app per round, none within 8 seconds of the last from the same app, growth only.
+const vo = {};
+vm.runInNewContext(readFileSync(new URL('../apps/pet/bricks.js', import.meta.url), 'utf8'), vo);
+const { counter, grow, merge, fresh, PER_ROUND, GAP } = vo.VoBricks;
+{
+  const offer = counter();
+  let now = 0;
+  const earned = topic => offer(topic, {}, now += GAP) !== null;
+  assert.equal([1, 2, 3, 4, 5].filter(() => earned('nonsense:caught')).length, PER_ROUND, 'a round earns at most 3 bricks');
+  assert.ok(earned('sorter:caught'), 'the cap is per app');
+  assert.ok(!earned('nonsense:done'), 'done does not lift the cap of the round it ends');
+  assert.ok(earned('nonsense:caught'), 'done starts a new round');
+  assert.equal(offer('nonsense:caught', {}, now + GAP - 1), null, 'none within 8 seconds of the last from the same app');
+  assert.notEqual(offer('maze:ai-flagged', { wasWrong: true }, now + 1), null, 'another app is not held back by that wait');
+  now += 1;
+  for (const [topic, data] of [['secret-keeper:shared', {}], ['maze:ai-asked', {}], ['sorter:judged', { right: false }], ['maze:ai-flagged', { wasWrong: false }],
+    ['shell:opened', {}], ['maze:solved', {}], ['nonsense:checked', {}]])
+    assert.equal(offer(topic, data, now += GAP), null, `${topic} earns nothing`);
+  assert.notEqual(offer('sorter:judged', { right: true }, now += GAP), null, 'a right call earns a brick');
+}
+{
+  let s = fresh();
+  const first = grow(s, ['ai-can-be-wrong', 'when-to-ask']);
+  assert.deepEqual([first.state.bricks, first.part], [1, 'eyes'], 'the first brick of a skill grows its part');
+  const second = grow(first.state, ['ai-can-be-wrong', 'when-to-ask']);
+  assert.equal(second.part, 'antenna', 'one part per brick: the second skill of the game grows on the next brick');
+  assert.equal(grow(second.state, ['ai-learns-from-examples']).part, null, 'a skill without a drawn part records the brick only');
+  s = second.state;
+  for (let i = 0; i < 3; i++) s = grow(s, []).state;
+  assert.deepEqual([...s.rides], ['skateboard'], '5 bricks unlock the skateboard');
+  assert.equal(merge(s, { bricks: 1, parts: [], rides: [] }).bricks, 5, 'merging with an older copy never shrinks Vo');
+}
+
+// Overlays stay under the windows: only the built-in pet may lift itself above them (kidvo.setModal),
+// so a contributed overlay can never cover a game and take its clicks. tests/smoke.mjs tries it in a browser.
+{
+  const shell = readFileSync(new URL('../shell/shell.js', import.meta.url), 'utf8');
+  const decl = shell.match(/^\s*const MODAL_APPS = .*;$/m), rule = shell.match(/^\s*const mayModal = .*;$/m);
+  assert.ok(decl && rule, 'shell.js names the apps allowed to go modal (MODAL_APPS, mayModal)');
+  const { mayModal } = vm.runInNewContext(`${decl[0]}\n${rule[0]}\n({ mayModal })`);
+  assert.ok(mayModal({ id: 'pet', type: 'overlay' }), 'Vo may open his garage above the windows');
+  assert.ok(!mayModal({ id: 'ghost', type: 'overlay' }), 'another overlay may not go modal');
+  assert.ok(!mayModal({ id: 'pet', type: 'window' }), 'a window app named pet may not go modal');
+  assert.ok(!mayModal(undefined), 'an unknown app may not go modal');
+  assert.match(shell, /case 'modal': \{\s*if \(!mayModal\(apps\.get\(ctx\.appId\)\)\) return;/, "the shell's modal message checks mayModal first");
+}
 
 console.log('Rules hold.');

@@ -391,9 +391,35 @@
     if (!spot) {
       const app = apps.get(ctx.appId);
       spot = el('button', { type: 'button', class: 'hotspot', 'aria-label': appText(app, 'name'), title: appText(app, 'name') });
-      spot.addEventListener('click', e => {
+      const poke = (e, long) => {
         const box = ovLayer.getBoundingClientRect();
-        try { ctx.frame.contentWindow.postMessage({ kidvo: 1, kind: 'event', topic: 'shell:poke', data: { x: e.clientX - box.left, y: e.clientY - box.top }, from: 'shell' }, '*'); } catch { /* gone */ }
+        try { ctx.frame.contentWindow.postMessage({ kidvo: 1, kind: 'event', topic: 'shell:poke', data: { x: e.clientX - box.left, y: e.clientY - box.top, long }, from: 'shell' }, '*'); } catch { /* gone */ }
+      };
+      // A long press (half a second), a right-click or the context-menu key arrives with long: true.
+      let press = null;
+      spot.addEventListener('pointerdown', e => {
+        if (e.button !== 0) return;
+        clearTimeout(press?.timer);
+        try { spot.setPointerCapture(e.pointerId); } catch { /* not supported */ }
+        const p = press = { fired: false, timer: setTimeout(() => { p.fired = true; poke(e, true); }, 550) };
+      });
+      // The click after a long press is swallowed; forget the press if no click comes (touch screens).
+      for (const type of ['pointerup', 'pointercancel']) spot.addEventListener(type, () => {
+        const p = press;
+        clearTimeout(p?.timer);
+        setTimeout(() => { if (press === p) press = null; }, 400);
+      });
+      spot.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        if (press?.fired) return;
+        clearTimeout(press?.timer);
+        if (press) press.fired = true;
+        poke(e, true);
+      });
+      spot.addEventListener('click', e => {
+        const p = press;
+        press = null;
+        if (!p?.fired) poke(e, false);
       });
       ovLayer.append(spot);
       ctx.hotspot = spot;
@@ -402,10 +428,27 @@
     spot.style.cssText = `left:${Math.round(r.x)}px;top:${Math.round(r.y)}px;width:${Math.round(w)}px;height:${Math.round(h)}px;`;
   }
 
+  // Only Vo may lift above the windows (security review 2026-10-14): overlays stay under the windows so a
+  // contributed overlay can never cover a game and take its clicks. The shell ignores the request from any other app.
+  const MODAL_APPS = new Set(['pet']);
+  const mayModal = app => app?.type === 'overlay' && MODAL_APPS.has(app.id);
+
+  // Vo lifts himself above the windows and takes every click while he shows his garage card. He turns this
+  // off when the card closes; hiding him from the tray also ends it.
+  function setModal(ctx, on) {
+    const ov = overlays.get(ctx.appId);
+    if (!ov) return;
+    ov.frame.classList.toggle('modal', on);
+    ovLayer.classList.toggle('modal', [...overlays.values()].some(o => o.frame.classList.contains('modal')));
+    if (on) ov.frame.focus();
+    else if (document.activeElement === ov.frame) ctx.hotspot ? ctx.hotspot.focus() : ov.frame.blur();
+  }
+
   function stopOverlay(appId) {
     const ov = overlays.get(appId);
     if (!ov) return;
     ov.ctx.hotspot?.remove();
+    setModal(ov.ctx, false);
     frames.delete(ov.frame.contentWindow);
     ov.frame.remove();
     overlays.delete(appId);
@@ -630,7 +673,7 @@
       return true;
     },
     windows: () => windowRects(),
-    apps: () => [...apps.values()].map(a => ({ id: a.id, name: a.name, type: a.type, open: [...wins.values()].some(r => r.appId === a.id) || overlays.has(a.id) })),
+    apps: () => [...apps.values()].map(a => ({ id: a.id, name: a.name, type: a.type, skills: a.skills || [], open: [...wins.values()].some(r => r.appId === a.id) || overlays.has(a.id) })),
     'store.get': (ctx, key) => readStore(ctx.appId)[String(key)] ?? null,
     'store.set': (ctx, key, value) => {
       const obj = { ...readStore(ctx.appId), [String(key).slice(0, 64)]: value };
@@ -668,6 +711,11 @@
         // small clickable spot, e.g. over a pet. A click on it is sent to that overlay as "shell:poke".
         if (apps.get(ctx.appId)?.type !== 'overlay') return;
         setHotspot(ctx, m.rect);
+        break;
+      }
+      case 'modal': {
+        if (!mayModal(apps.get(ctx.appId))) return;
+        setModal(ctx, m.on === true);
         break;
       }
       case 'emit': {

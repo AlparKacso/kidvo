@@ -6,50 +6,77 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vo</title>
 <script src="../../shell/sdk.js"></script>
+<script src="sprites.js"></script>
+<script src="bricks.js"></script>
 <script src="lang/en.js"></script>
 <script src="lang/hu.js"></script>
 <script src="lang/ro.js"></script>
 <style>
-  :root { color-scheme: light; }
+  :root { color-scheme: light; --ink: #191833; --paper: #f4f5fb; --paper-2: #dfe2f2; --sun: #ffd23f; --muted: #6c7099;
+          --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
-  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #c { position: absolute; inset: 0; width: 100%; height: 100%; }
   #bubble {
     position: absolute; transform: translate(-50%, -100%);
     max-width: 200px; padding: 6px 9px;
-    background: #fff; color: #191833; border: 2px solid #191833; box-shadow: 2px 2px 0 #191833;
-    font: 700 12px/1.3 ui-monospace, Menlo, Consolas, monospace; white-space: nowrap;
+    background: #fff; color: var(--ink); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink);
+    font: 700 12px/1.3 var(--mono); white-space: nowrap;
   }
-  #bubble::after { content: ""; position: absolute; left: 50%; bottom: -8px; margin-left: -5px; border: 5px solid transparent; border-top-color: #191833; }
+  #bubble::after { content: ""; position: absolute; left: 50%; bottom: -8px; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--ink); }
+
+  /* Vo's garage: the one place with words and a number. The desktop lifts this overlay above the windows
+     while the card is open (kidvo.setModal), so a tap anywhere outside it closes it. */
+  #garage {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(340px, calc(100% - 16px)); max-height: calc(100% - 16px); overflow: auto;
+    background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+    font: 13px/1.4 var(--mono);
+  }
+  #garage header { display: flex; align-items: center; gap: 8px; padding: 0 4px 0 10px; height: 34px; background: var(--sun); border-bottom: 2px solid var(--ink); position: sticky; top: 0; }
+  #garage h1 { flex: 1; margin: 0; font: 700 13px/1 var(--mono); }
+  #garage .x { width: 26px; height: 26px; padding: 0; border: 2px solid var(--ink); background: var(--paper); font: 800 14px/1 var(--mono); cursor: pointer; }
+  #garage .in { padding: 10px; display: grid; gap: 10px; }
+  #garage .count { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 800; }
+  .brick { width: 18px; height: 10px; background: var(--sun); border: 2px solid var(--ink); position: relative; margin-top: 4px; flex: none; }
+  .brick::before, .brick::after { content: ""; position: absolute; top: -6px; width: 4px; height: 3px; background: var(--sun); border: 2px solid var(--ink); border-bottom: 0; }
+  .brick::before { left: 1px; } .brick::after { right: 1px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .tile {
+    display: grid; place-items: center; align-content: center; gap: 2px; min-height: 64px; padding: 4px;
+    background: #fff; border: 2px solid var(--ink); color: var(--ink); font: 700 11px/1 var(--mono);
+  }
+  .tile canvas { image-rendering: pixelated; max-width: 100%; }
+  .tile.missing { border-style: dashed; border-color: var(--muted); background: transparent; color: var(--muted); }
+  button.tile { cursor: pointer; box-shadow: 2px 2px 0 var(--ink); }
+  button.tile.missing { cursor: default; box-shadow: none; }
+  button.tile[aria-pressed="true"] { background: var(--sun); }
+  button.tile:not(.missing):active { transform: translate(2px, 2px); box-shadow: none; }
+  .hatch { justify-self: start; padding: 9px 12px; background: var(--paper); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); font: 800 12px/1 var(--mono); color: var(--ink); cursor: pointer; }
+  .hatch.sure { background: var(--sun); }
+  #garage :focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+  @media (pointer: coarse) { .tile { min-height: 72px; } #garage .x { width: 40px; height: 30px; } .hatch { padding: 13px 14px; } }
+  @media (max-height: 420px) { .tile { min-height: 56px; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="bubble" hidden></div>
+<section id="garage" role="dialog" aria-modal="true" aria-labelledby="g-title" hidden>
+  <header><h1 id="g-title"></h1><button type="button" class="x" id="g-close">X</button></header>
+  <div class="in">
+    <p class="count"><i class="brick" aria-hidden="true"></i><span id="g-bricks"></span></p>
+    <div class="tiles" id="g-parts"></div>
+    <div class="tiles" id="g-rides"></div>
+    <button type="button" class="hatch" id="g-hatch"></button>
+  </div>
+</section>
 <script>
 (() => {
+  const { GW, compose, paint } = VoSprites;
   const S = 3; // pixel scale
-  const ROWS = [
-    '.........KR.....',
-    '.........K......',
-    '.........K......',
-    '....KKKKKKKK....',
-    '...KYYYYYYYYK...',
-    '..KYYYYYYYYYYK..',
-    '..KYYYYYYYYYYK..',
-    '..KYYKYYYYKYYK..',
-    '..KYYKYYYYKYYK..',
-    '..KYYYYYKYYYYK..',
-    '..KYYYYYYYYYYK..',
-    '...KKKKKKKKKK...',
-    '...KK......KK...'
-  ];
-  const FEET_B = '....KK....KK....';
-  const EYES_SHUT = '..KYYYYYYYYYYK..';
-  const SMILE = '..KYYYYKKYYYYK..';
-  const MOUTH_OPEN = ['..KYYYKKKKYYYK..', '..KYYYKRRKYYYK..'];
   const SNACK_COLORS = ['#ff6b5b', '#7be0c3', '#ffd23f', '#9ec5ff', '#ff8fab', '#6f7bd6'];
-  const COLORS = { K: '#191833', Y: '#ffd23f', R: '#ff6b5b' };
-  const SW = 16 * S, SH = ROWS.length * S;
+  const t = (k, v) => kidvo.t(k, v);
 
   const cv = document.getElementById('c');
   const ctx = cv.getContext('2d');
@@ -66,13 +93,27 @@
   addEventListener('resize', size);
   size();
 
+  /* ---------- what Vo has grown (kept in kidvo.store under "vo") ---------- */
+  let grown = VoBricks.fresh();
+  let sprite, SH, HALF;
+  const partsOf = g => Object.fromEntries(g.parts.map(p => [p, true]));
+  // The sprite is 36 columns wide with the head in the middle; HALF is how far Vo's pixels reach from his centre.
+  function rebuild() {
+    sprite = compose({ ...partsOf(grown), ride: grown.ride });
+    SH = sprite.rows.length * S;
+    HALF = Math.max(GW / 2 - sprite.m.x0, sprite.m.x1 + 1 - GW / 2) * S;
+  }
+  rebuild();
+
   let wins = [];
   const lastX = new Map();
-  const pet = { x: W * 0.62, y: reduced ? H : 0, vx: 0, vy: 0, on: null, face: 1, mode: 'idle', until: 0, happy: 0, lastActive: performance.now(), chomp: 0, lastChomp: 0 };
+  const pet = { x: W * 0.62, y: reduced ? H : 0, vx: 0, vy: 0, on: null, face: 1, mode: 'idle', until: 0, happy: 0, lastActive: performance.now(), chomp: 0, lastChomp: 0, lift: 0, bounce: 0, lastPuff: 0 };
   // Snacks: little pixels that drop next to Vo when someone clicks on him.
   let snacks = [];
   let crumbs = [];
   let eatenAt = [];
+  let puffs = [];   // exhaust behind a ground ride
+  let rising = [];  // a little brick floats up from Vo's head when he earns one
   const G = 0.0022; // px per ms^2
 
   kidvo.on('shell:windows', d => {
@@ -80,12 +121,13 @@
     wins = d.windows.filter(w => w.w > 0 && w.h > 0);
   });
 
-  const surfaces = () => [...wins.map(w => ({ id: w.id, x1: w.x, x2: w.x + w.w, y: w.y })), { id: 'floor', x1: -1e6, x2: 1e6, y: H }];
+  // A window too close to the top of the desktop has no room for Vo (and his ride) above it.
+  const surfaces = () => [...wins.filter(w => w.y >= SH + sprite.m.lift + 6).map(w => ({ id: w.id, x1: w.x, x2: w.x + w.w, y: w.y })), { id: 'floor', x1: -1e6, x2: 1e6, y: H }];
 
   // Vo's x is only clamped while he moves, so a shrinking window (phone rotation, a resized browser)
   // could leave him off screen. Registered after size(), so W and H are already the new size.
   addEventListener('resize', () => {
-    pet.x = Math.max(SW / 2, Math.min(W - SW / 2, pet.x));
+    pet.x = Math.max(HALF, Math.min(W - HALF, pet.x));
     if (pet.on === null || pet.on === 'floor') return;
     const s = surfaces().find(s => s.id === pet.on);
     if (!s || s.y > H || pet.x < s.x1 - 2 || pet.x > s.x2 + 2) pet.on = null;
@@ -108,7 +150,7 @@
     const D = pet.y - target.y; // how far up
     const vy0 = -Math.sqrt(2 * G * (D + 24 * 1.0));
     const t = (-vy0 + Math.sqrt(vy0 * vy0 - 2 * G * D)) / G;
-    const tx = Math.max(target.x1 + 10, SW / 2, Math.min(target.x2 - 10, W - SW / 2, pet.x + (Math.random() - 0.5) * 80));
+    const tx = Math.max(target.x1 + 10, HALF, Math.min(target.x2 - 10, W - HALF, pet.x + (Math.random() - 0.5) * 80));
     pet.on = null;
     pet.vy = vy0;
     pet.vx = (tx - pet.x) / t;
@@ -120,14 +162,17 @@
     const r = Math.random();
     const here = pet.x;
     const higher = surfaces().filter(s => s.id !== 'floor' && s.id !== pet.on && s.y < pet.y - 20 && pet.y - s.y < 260 &&
-      here > s.x1 - 160 && here < s.x2 + 160 && Math.min(s.x2, W) - Math.max(s.x1, 0) > SW + 20);
+      here > s.x1 - 160 && here < s.x2 + 160 && Math.min(s.x2, W) - Math.max(s.x1, 0) > 2 * HALF + 20);
     if (r < 0.22 && higher.length) { jumpTo(higher[Math.floor(Math.random() * higher.length)]); pet.mode = 'walk'; pet.until = now + 1200; return; }
     if (r < 0.6) { pet.mode = 'walk'; pet.face = Math.random() < 0.5 ? -1 : 1; pet.until = now + 1500 + Math.random() * 3500; return; }
     pet.mode = 'idle'; pet.until = now + 1200 + Math.random() * 2600;
   }
 
+  const moving = () => pet.mode === 'walk' && pet.on !== null && !reduced;
+
   function step(dt, now) {
     const ss = surfaces();
+    const m = sprite.m;
     if (pet.on !== null) {
       const s = ss.find(s => s.id === pet.on);
       if (!s) { pet.on = null; }
@@ -138,15 +183,21 @@
         }
         pet.y = s.y;
         if (pet.mode === 'walk' && !reduced) {
-          const nx = pet.x + pet.face * 0.05 * dt;
+          const nx = pet.x + pet.face * m.speed * dt;
           // A window can overhang the screen edge (the desktop shrank): walk only on its visible part.
-          const lo = Math.max(s.x1 + 6, SW / 2), hi = Math.min(s.x2 - 6, W - SW / 2);
+          const lo = Math.max(s.x1 + 6, HALF), hi = Math.min(s.x2 - 6, W - HALF);
           if (nx < lo || nx > hi) {
-            const screenEdge = nx < SW / 2 || nx > W - SW / 2;
+            const screenEdge = nx < HALF || nx > W - HALF;
             if (s.id !== 'floor' && !screenEdge && Math.random() < 0.35) { pet.on = null; pet.vx = pet.face * 0.06; pet.vy = -0.2; }
             else pet.face *= -1;
           } else pet.x = nx;
-          if (s.id === 'floor') pet.x = Math.max(SW / 2, Math.min(W - SW / 2, pet.x));
+          if (s.id === 'floor') pet.x = Math.max(HALF, Math.min(W - HALF, pet.x));
+          // Exhaust puffs behind a ground ride.
+          if (m.ride && !m.fly && now - pet.lastPuff > 170) {
+            pet.lastPuff = now;
+            const back = pet.x - pet.face * (GW / 2 - m.x0) * S;
+            puffs.push({ x: back, y: pet.y - 3 * S, vx: -pet.face * 0.02, vy: -0.03, life: 650 });
+          }
         }
         if (pet.x < s.x1 - 2 || pet.x > s.x2 + 2) pet.on = null;
       }
@@ -156,7 +207,7 @@
       pet.vy += G * dt;
       pet.y += pet.vy * dt;
       pet.x += pet.vx * dt;
-      pet.x = Math.max(SW / 2, Math.min(W - SW / 2, pet.x));
+      pet.x = Math.max(HALF, Math.min(W - HALF, pet.x));
       if (pet.vy > 0) {
         const land = ss.filter(s => pet.x >= s.x1 && pet.x <= s.x2 && s.y >= prevY - 1 && s.y <= pet.y)
           .sort((a, b) => a.y - b.y)[0];
@@ -164,6 +215,14 @@
       }
       if (pet.y > H) { pet.on = 'floor'; pet.y = H; pet.vy = 0; pet.vx = 0; }
     }
+    // Flying rides hover above the surface and bob; asleep or eating, they land. A pogo stick moves by bouncing.
+    const wantLift = m.fly && pet.mode !== 'sleep' && pet.mode !== 'eat' && !reduced ? m.lift + Math.sin(now / 350) * 3 : 0;
+    pet.lift += (wantLift - pet.lift) * Math.min(1, dt / 300);
+    const wantBounce = m.bounce && moving() ? Math.abs(Math.sin(now / 170)) * 12 : 0;
+    pet.bounce += (wantBounce - pet.bounce) * Math.min(1, dt / 60);
+    for (const p of puffs) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+    puffs = puffs.filter(p => p.life > 0);
+    rising = rising.filter(b => now - b.t0 < 1000);
     for (const w of wins) lastX.set(w.id, w.x);
     stepSnacks(dt, now);
     if (now > pet.until && pet.on !== null && pet.mode !== 'sleep' && pet.mode !== 'eat') decide(now);
@@ -217,42 +276,66 @@
     }
   }
 
+  // Where Vo's pixels are on screen right now: his drawn columns (mirrored when he faces left), lifted and bouncing.
+  function box() {
+    const m = sprite.m;
+    const top = pet.y - SH - pet.lift - pet.bounce;
+    const reachL = (pet.face === 1 ? GW / 2 - m.x0 : m.x1 + 1 - GW / 2) * S;
+    const reachR = (pet.face === 1 ? m.x1 + 1 - GW / 2 : GW / 2 - m.x0) * S;
+    return { x: pet.x - reachL, y: top, w: reachL + reachR, h: SH, top };
+  }
+
   // Tell the desktop where Vo is, so clicks on him reach us (overlays are click-through otherwise).
   let lastSpot = '';
   setInterval(() => {
-    const rect = { x: pet.x - SW / 2 - 8, y: pet.y - SH - 8, w: SW + 16, h: SH + 12 };
-    const key = [rect.x, rect.y].map(Math.round).join(',');
+    const b = box();
+    const rect = { x: b.x - 8, y: b.y - 8, w: b.w + 16, h: b.h + 12 };
+    const key = [rect.x, rect.y, rect.w, rect.h].map(Math.round).join(',');
     if (key !== lastSpot) { lastSpot = key; kidvo.setHotspot(rect); }
   }, 100);
 
   function draw(now) {
     ctx.clearRect(0, 0, W, H);
-    const left = Math.round(pet.x - SW / 2), top = Math.round(pet.y - SH);
-    const walking = pet.mode === 'walk' && pet.on !== null && !reduced;
+    const { rows, m } = sprite;
+    const top = Math.round(box().top), left = Math.round(pet.x - GW * S / 2);
+    const roll = moving() || (m.spin && pet.mode !== 'sleep' && !reduced);
+    const tick = Math.floor(now / (m.spin ? 90 : 160)) % 2;
     const blink = pet.mode === 'sleep' || (now % 4200) < 140;
-    for (let r = 0; r < ROWS.length; r++) {
-      let row = ROWS[r];
-      if (r === ROWS.length - 1 && walking && Math.floor(now / 160) % 2) row = FEET_B;
-      if (r === 7 && blink) row = EYES_SHUT;
-      if (r === 9 && (now < pet.happy)) row = SMILE;
-      if ((r === 9 || r === 10) && now < pet.chomp) row = MOUTH_OPEN[r - 9];
-      for (let c = 0; c < 16; c++) {
-        const ch = row[pet.face === 1 ? c : 15 - c];
-        if (ch === '.') continue;
-        ctx.fillStyle = COLORS[ch];
-        ctx.fillRect(left + c * S, top + r * S, S, S);
-      }
+    const happy = now < pet.happy, chomp = now < pet.chomp;
+    for (const p of puffs) {
+      const a = p.life / 650, s = Math.round(S * (1.6 - a));
+      ctx.fillStyle = `rgba(244, 245, 251, ${(0.85 * a).toFixed(2)})`;
+      ctx.fillRect(Math.round(p.x - s / 2), Math.round(p.y - s), s, s);
     }
+    paint(ctx, sprite, left, top, S, {
+      face: pet.face,
+      row: r => {
+        let row = rows[r];
+        if (m.alt[r] && roll && tick) row = m.alt[r];
+        if (blink && m.shut[r]) row = m.shut[r];
+        if (r === m.mouth && happy) row = m.smile;
+        if ((r === m.mouth || r === m.mouth + 1) && chomp) row = m.open[r - m.mouth];
+        return row;
+      }
+    });
     for (const s of snacks) {
       ctx.fillStyle = '#191833'; ctx.fillRect(Math.round(s.x) - 4, Math.round(s.y) - 8, 8, 8);
       ctx.fillStyle = s.color; ctx.fillRect(Math.round(s.x) - 3, Math.round(s.y) - 7, 6, 6);
     }
     for (const c of crumbs) { ctx.fillStyle = c.color; ctx.fillRect(Math.round(c.x), Math.round(c.y), 3, 3); }
+    const headTop = top + m.headTop * S;
+    for (const b of rising) {
+      const k = (now - b.t0) / 1000, x = Math.round(pet.x - 7), y = Math.round(headTop - 14 - k * 30);
+      ctx.globalAlpha = Math.min(1, 2.5 * (1 - k));
+      ctx.fillStyle = '#191833'; ctx.fillRect(x, y, 14, 8); ctx.fillRect(x + 1, y - 3, 4, 3); ctx.fillRect(x + 9, y - 3, 4, 3);
+      ctx.fillStyle = '#ffd23f'; ctx.fillRect(x + 2, y + 2, 10, 4); ctx.fillRect(x + 2, y - 1, 2, 2); ctx.fillRect(x + 10, y - 1, 2, 2);
+      ctx.globalAlpha = 1;
+    }
     if (pet.mode === 'sleep') {
       ctx.fillStyle = '#191833';
       ctx.font = '700 12px ui-monospace, Menlo, Consolas, monospace';
       const z = Math.floor(now / 600) % 3;
-      ctx.fillText('z'.repeat(z + 1), left + SW - 6, top - 4);
+      ctx.fillText('z'.repeat(z + 1), pet.x + 20, headTop - 4);
     }
     const half = bubble.hidden ? 0 : bubble.offsetWidth / 2;
     bubble.style.left = Math.max(half + 4, Math.min(W - half - 4, pet.x)) + 'px';
@@ -270,22 +353,154 @@
   requestAnimationFrame(frame);
 
   function wake() { pet.lastActive = performance.now(); if (pet.mode === 'sleep') { pet.mode = 'idle'; pet.until = 0; } }
+  function cheer(ms = 1500, power = 0.7) { pet.happy = performance.now() + ms; hop(power); }
+
+  /* ---------- growing: bricks, head parts, rides ---------- */
+  // Two tabs may both hold a Vo: every save merges upward with what is stored, so nothing shrinks.
+  const loaded = kidvo.store.get('vo')
+    .then(v => { grown = VoBricks.merge(grown, v); rebuild(); })
+    .catch(() => {});
+  async function save() {
+    const stored = await kidvo.store.get('vo').catch(() => null);
+    grown = VoBricks.merge(stored, grown);
+    await kidvo.store.set('vo', grown).catch(() => {});
+  }
+
+  // Which skills each app teaches (manifest "skills"), so a brick knows which head part it feeds.
+  const skillsOf = new Map();
+  const loadApps = () => kidvo.apps().then(list => {
+    for (const a of list || []) skillsOf.set(a.id, Array.isArray(a.skills) ? a.skills : []);
+  }).catch(() => {});
+  loadApps();
+
+  const offer = VoBricks.counter();
+  const later = [];
+  async function brick(appId) {
+    if (!skillsOf.has(appId)) await loadApps();
+    await loaded;
+    const { state, part, rides } = VoBricks.grow(grown, skillsOf.get(appId) || []);
+    grown = state;
+    rising.push({ t0: performance.now() });
+    // After the game's own cheer: a new part first, then a new ride.
+    if (part || rides.length) later.push(setTimeout(() => {
+      rebuild(); cheer(2200, 0.9); say(t(part ? 'grew' : 'newRide'));
+      if (!garage.hidden) renderGarage();
+    }, 1800));
+    if (!garage.hidden) renderGarage();
+    await save();
+  }
+
+  /* ---------- the garage card ---------- */
+  const garage = document.getElementById('garage');
+  const $ = id => document.getElementById(id);
+  const PART_LABEL = { eyes: 'partEyes', antenna: 'partAntenna', cap: 'partCap' };
+  let sure = 0;
+
+  function tileCanvas(spr, scale, ghost) {
+    const c = document.createElement('canvas');
+    const { m } = spr;
+    c.width = (m.x1 - m.x0 + 1) * scale; c.height = spr.rows.length * scale;
+    c.style.width = c.width + 'px';
+    const g = c.getContext('2d');
+    paint(g, spr, -m.x0 * scale, 0, scale, { ghost: ghost ? '#6c7099' : null });
+    return c;
+  }
+
+  function renderGarage() {
+    $('g-title').textContent = t('garage');
+    $('g-close').setAttribute('aria-label', t('close'));
+    $('g-close').title = t('close');
+    $('g-bricks').textContent = t('bricks', { n: grown.bricks });
+    const head = partsOf(grown);
+    $('g-parts').replaceChildren(...VoBricks.PART_ORDER.map(p => {
+      const has = grown.parts.includes(p);
+      const d = document.createElement('div');
+      d.className = 'tile' + (has ? '' : ' missing');
+      d.setAttribute('role', 'img');
+      d.setAttribute('aria-label', t(PART_LABEL[p]) + (has ? '' : ' (' + t('notYet') + ')'));
+      d.append(tileCanvas(compose({ [p]: true }), 3, !has));
+      return d;
+    }));
+    const rides = [{ id: null, bricks: 0 }, ...VoBricks.RIDES];
+    $('g-rides').replaceChildren(...rides.map(r => {
+      const open = !r.id || grown.rides.includes(r.id);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tile' + (open ? '' : ' missing');
+      b.setAttribute('aria-pressed', String(grown.ride === r.id));
+      const name = t(r.id ? 'ride_' + r.id : 'onFoot');
+      b.setAttribute('aria-label', open ? name : `${name} (${t('bricks', { n: r.bricks })})`);
+      b.title = b.getAttribute('aria-label');
+      b.append(tileCanvas(compose({ ...head, ride: r.id }), 2, !open));
+      if (!open) { b.setAttribute('aria-disabled', 'true'); const n = document.createElement('span'); n.textContent = r.bricks; b.append(n); }
+      b.addEventListener('click', () => { if (open) pickRide(r.id); });
+      return b;
+    }));
+    $('g-hatch').textContent = t(sure ? 'hatchSure' : 'hatch');
+    $('g-hatch').classList.toggle('sure', !!sure);
+  }
+
+  function pickRide(id) {
+    if (grown.ride === id) return;
+    grown.ride = id;
+    rebuild(); wake(); cheer(1500, 0.8);
+    renderGarage();
+    save();
+  }
+
+  function openGarage() {
+    if (!garage.hidden) return;
+    sure = 0;
+    renderGarage();
+    garage.hidden = false;
+    kidvo.setModal(true);
+    wake(); cheer(1200, 0.6);
+    $('g-close').focus();
+  }
+  function closeGarage() {
+    if (garage.hidden) return;
+    garage.hidden = true;
+    clearTimeout(sure); sure = 0;
+    kidvo.setModal(false);
+  }
+  async function hatch() {
+    for (const id of later.splice(0)) clearTimeout(id);
+    grown = VoBricks.fresh();
+    rebuild();
+    await kidvo.store.remove('vo').catch(() => {});
+  }
+
+  $('g-close').addEventListener('click', closeGarage);
+  $('g-hatch').addEventListener('click', async () => {
+    if (!sure) { sure = setTimeout(() => { sure = 0; renderGarage(); }, 4000); renderGarage(); return; }
+    clearTimeout(sure); sure = 0;
+    await hatch();
+    closeGarage();
+    cheer(1800, 0.9);
+    say(t('hi'));
+  });
+  // The overlay covers the whole desktop while the card is open: a tap outside the card closes it.
+  document.addEventListener('pointerdown', e => { if (!garage.hidden && !garage.contains(e.target)) closeGarage(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGarage(); });
+  kidvo.onLang(() => { if (!garage.hidden) renderGarage(); });
 
   // React to the rest of the desktop. Unknown events still get a reaction.
-  const t = (k, v) => kidvo.t(k, v);
   const REACT = {
-    'maze:solved': d => { pet.happy = performance.now() + 1800; hop(0.8); return d && d.asked === 0 ? t('allByYourself') : t('levelCleared', { n: d && d.level || '?' }); },
-    'maze:finished': () => { pet.happy = performance.now() + 3000; hop(1); return t('runFinished'); },
+    'maze:solved': d => { cheer(1800, 0.8); return d && d.asked === 0 ? t('allByYourself') : t('levelCleared', { n: d && d.level || '?' }); },
+    'maze:finished': () => { cheer(3000, 1); return t('runFinished'); },
     'shell:opened': d => (d && d.appId && d.appId !== 'pet' ? t('ooh') : null),
     'shell:closed': () => t('bye')
   };
   kidvo.on('*', (data, meta) => {
     if (meta.topic === 'shell:windows' || meta.from === 'pet') return;
-    if (meta.topic === 'shell:poke') { wake(); feed(performance.now()); return; }
+    // A tap on Vo feeds him; a long press (or right-click) opens his garage.
+    if (meta.topic === 'shell:poke') { wake(); if (data && data.long) openGarage(); else feed(performance.now()); return; }
+    const earned = offer(meta.topic, data, performance.now());
+    if (earned) brick(earned);
     if (meta.topic.endsWith(':ai-asked')) return;
     wake();
     if (meta.topic.endsWith(':ai-flagged')) {
-      if (data && data.wasWrong) { pet.happy = performance.now() + 1500; hop(0.7); }
+      if (data && data.wasWrong) cheer();
       say(t(data && data.wasWrong ? 'niceCatch' : 'goodChecking'));
       return;
     }
@@ -294,9 +509,16 @@
     if (suffix === 'judged') return;
     const f = REACT[meta.topic];
     const text = f ? f(data) : (GENERIC[suffix] ? t(GENERIC[suffix]) : '?!');
-    if (suffix === 'caught' || suffix === 'done') { pet.happy = performance.now() + 1500; hop(0.7); }
+    if (suffix === 'caught' || suffix === 'done') cheer();
     if (text) say(text);
   });
+
+  // For the smoke test only (navigator.webdriver is true under Playwright).
+  if (navigator.webdriver) window.__vo = {
+    ready: () => loaded,
+    state: () => JSON.parse(JSON.stringify(grown)),
+    hatch, openGarage, closeGarage
+  };
 
   setTimeout(() => say(t('hi')), 900);
 })();
