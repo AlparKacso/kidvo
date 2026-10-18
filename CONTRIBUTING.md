@@ -6,9 +6,7 @@ this is not about you or me, it is about the kids who will need to navigate a fu
 
 I have 2 small ones and no clue yet what and how they will navigate, so I thought maybe we could try to give them a minimum tool set: use AI, and keep thinking for themselves.
 
-If you'd like to help, build a small game with us. Let me know your thoughts!
-
-Alpár
+If you'd like to help, build a small game with us - the details are below.
 
 This page is the charter (what gets merged and why) and the practical guide.
 

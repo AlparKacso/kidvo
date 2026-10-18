@@ -553,7 +553,6 @@
         <p class="lede">${t('buildWinLede')}</p>
         <p class="lede">${t('buildWinLede2')}</p>
         <p class="lede">${t('buildWinAsk')}</p>
-        <p class="sign">Alpár</p>
         <h3>${t('lookH')}</h3>
         <ul>
           <li>${t('look1')}</li>

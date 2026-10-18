@@ -314,7 +314,6 @@ button { font: inherit; color: inherit; }
 .doc h3 { margin: 18px 0 6px; font: 800 13px/1.2 var(--font-ui); text-transform: uppercase; letter-spacing: .06em; }
 .doc p { margin: 0 0 10px; }
 .doc .lede { font-size: 15px; }
-.doc .sign { font: 700 14px var(--font-ui); margin-bottom: 14px; }
 .doc ol, .doc ul { margin: 0 0 10px; padding-left: 22px; display: grid; gap: 6px; }
 .doc code { font: 600 12.5px var(--font-ui); background: var(--paper-2); padding: 1px 4px; }
 .doc a { color: var(--ink); font-weight: 700; text-decoration-thickness: 2px; text-underline-offset: 2px; }
