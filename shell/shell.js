@@ -549,7 +549,10 @@
     openBuiltin('build', T('buildWinTitle'), 480, 530, () => html`
       <div class="doc">
         <h2>${t('buildWinH')}</h2>
+        <p class="lede">${t('buildWinHey')}</p>
         <p class="lede">${t('buildWinLede')}</p>
+        <p class="lede">${t('buildWinLede2')}</p>
+        <p class="lede">${t('buildWinAsk')}</p>
         <h3>${t('lookH')}</h3>
         <ul>
           <li>${t('look1')}</li>
