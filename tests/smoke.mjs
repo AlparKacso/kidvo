@@ -305,6 +305,28 @@ async function run(name) {
         await phone.evaluate(() => document.querySelectorAll('.win').forEach(w => w.querySelector('[data-act="close"]').click()));
       });
     }
+    // Labelling a fruit further down the teaching grid must not jump the page back to the top.
+    await step(`Train the Sorter keeps its place when a fruit is labelled (${label})`, async () => {
+      await phone.evaluate(() => window.kidvoShell.openApp('sorter'));
+      await phone.waitForTimeout(700);
+      const f = appFrame(phone, 'sorter');
+      if (!f) throw new Error('game did not load');
+      const r = await f.evaluate(async () => {
+        const stage = document.getElementById('stage');
+        stage.querySelector('.btn').click(); // Start teaching
+        await new Promise(res => setTimeout(res, 600));
+        const toggles = stage.querySelectorAll('.fruit .toggle button');
+        if (!toggles.length) return { error: 'no teaching grid' };
+        stage.scrollTop = stage.scrollHeight;
+        const before = stage.scrollTop;
+        toggles[toggles.length - 2].click(); // "Apple" on the last fruit
+        return { before, after: stage.scrollTop };
+      });
+      if (r.error) throw new Error(r.error);
+      if (r.before < 20) throw new Error(`the grid does not scroll here (scrollTop ${r.before}), so the test proves nothing`);
+      if (Math.abs(r.after - r.before) > 2) throw new Error(`the page jumped from ${r.before} to ${r.after} after a label`);
+      await phone.evaluate(() => document.querySelectorAll('.win').forEach(w => w.querySelector('[data-act="close"]').click()));
+    });
     await step(`Vo's garage fits a ${label} screen`, async () => {
       const vo = appFrame(phone, 'pet');
       if (!vo) throw new Error('Vo did not load');

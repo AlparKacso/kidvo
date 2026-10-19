@@ -220,13 +220,18 @@
     $('bot').classList.remove('thinking');
     $('says').textContent = t(key, vars);
   }
-  function show(render) { view = render; repaint(); }
+  // A new screen starts at the top; a repaint of the same screen (a label tapped, a language switch) keeps the
+  // child where they were, scroll and keyboard focus, so labelling the fruit further down never jumps back up.
+  function show(render) { view = render; repaint(); $('stage').scrollTop = 0; }
   function repaint() {
     $('tag').textContent = t('tag');
     steps();
     const stage = $('stage');
+    const top = stage.scrollTop;
+    const focused = [...stage.querySelectorAll('button')].indexOf(document.activeElement);
     stage.replaceChildren(...[].concat(view()));
-    stage.scrollTop = 0;
+    stage.scrollTop = top;
+    if (focused >= 0) stage.querySelectorAll('button')[focused]?.focus({ preventScroll: true });
     // On phones the memory scrolls sideways: bring the example SORT-1 copied into view.
     for (const row of stage.querySelectorAll('.mem-row')) {
       const near = row.querySelector('.near');
