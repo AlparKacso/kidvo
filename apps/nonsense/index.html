@@ -43,9 +43,10 @@
   .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
   .btn:focus-visible, footer button:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
   .btn small { display: block; font: 600 12px var(--sans); }
-  footer { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; color: var(--soft); font: 11px var(--mono); background: #fff; border-top: 2px solid var(--ink); }
-  footer .links { display: flex; gap: 12px; }
-  footer button { font: 700 11px var(--mono); background: none; border: 0; color: var(--soft); text-decoration: underline; cursor: pointer; padding: 0; }
+  footer { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 8px; padding: 6px 12px; color: var(--soft); font: 11px var(--mono); background: #fff; border-top: 2px solid var(--ink); }
+  /* The links stay together on the right and never break mid-label; on a narrow screen "best" takes its own line. */
+  footer .links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 12px; margin-left: auto; }
+  footer button { font: 700 11px var(--mono); background: none; border: 0; color: var(--soft); text-decoration: underline; cursor: pointer; padding: 0; white-space: nowrap; text-align: right; }
   .card-wrap { position: absolute; inset: 0; display: flex; background: rgba(238, 244, 255, .92); padding: 14px; z-index: 5; overflow-y: auto; }
   .card { margin: auto; width: min(100%, 400px); background: #fff; border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); padding: 16px; display: grid; gap: 10px; }
   .card:focus, .row:focus { outline: none; }
