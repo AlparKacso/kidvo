@@ -164,22 +164,26 @@ button { font: inherit; color: inherit; }
 .win.max .win-resize { display: none; }
 
 /* ---------- overlays (apps that live on the desktop, like Vo) ---------- */
-/* Overlays sit between the icons and the windows (windows start at z-index 11). Above the windows,
-   Safari sends wheel and trackpad scrolling to the transparent overlay frame despite
-   pointer-events: none, so no window could scroll. Vo still walks on window tops. */
-#overlays { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+/* Overlays sit above the icons and the games page and below the windows (windows start at z-index 11). Above
+   the windows, Safari sends wheel and trackpad scrolling to the transparent overlay frame despite
+   pointer-events: none, so no window could scroll. Vo still walks on window tops.
+   On the games page the overlays do sit above the scrolling page, so they live inside it: #above is the first
+   thing in #play, pinned to the top of the visible part (sticky) with no height of its own. A wheel over the
+   overlay frame then passes on to #play, its scrolling ancestor, in every browser. #play itself has no
+   z-index, so #above takes its place among the desktop's layers: over the page (6), under the windows. */
+#above { position: sticky; top: 0; height: 0; z-index: 7; pointer-events: none; }
+#overlays, #hotspots { position: absolute; left: 0; top: 0; width: 100%; height: var(--vo-h, 100%); pointer-events: none; }
+#hotspots { z-index: 1; }
 .hotspot {
   position: absolute; padding: 0; border: 0; background: transparent;
   pointer-events: auto; cursor: pointer; z-index: 1;
   -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation;
 }
 .hotspot:focus-visible { outline: 3px dashed var(--sun); outline-offset: 2px; }
-/* Hotspots (the one clickable spot an overlay may ask for, e.g. over Vo) have their own layer, the same size as
-   the overlays: above the games page, so Vo can be tapped there, and below every window. */
-#hotspots { position: absolute; inset: 0; pointer-events: none; z-index: 7; }
+/* Hotspots: the one clickable spot an overlay may ask for (e.g. over Vo), in their own layer above the overlays. */
 /* An overlay showing a card (kidvo.setModal): above the windows, below toasts and the taskbar, taking clicks. */
-#overlays.modal { z-index: 90000; }
-#hotspots.modal .hotspot { display: none; }
+#above.modal { z-index: 90000; }
+#above.modal .hotspot { display: none; }
 #overlays iframe.modal { pointer-events: auto; }
 #overlays iframe {
   position: absolute; inset: 0; width: 100%; height: 100%;
@@ -361,7 +365,7 @@ button { font: inherit; color: inherit; }
 .view-btn:hover { background: var(--sun); color: var(--ink); }
 
 body[data-view="play"] #taskbar, body[data-view="play"] #start-menu, body[data-view="play"] #icons { display: none !important; }
-body[data-view="desktop"] #play, body[data-view="desktop"] #sky, body[data-view="desktop"] #ground { display: none; }
+body[data-view="desktop"] #page, body[data-view="desktop"] #sky, body[data-view="desktop"] #ground { display: none; }
 /* The games page has no taskbar: a strip of pixel ground takes its place, and Vo walks on it. */
 body[data-view="play"] { --bar-h: 18px; }
 body[data-view="play"] #motto { visibility: hidden; }
@@ -413,21 +417,19 @@ body[data-view="play"] #motto { visibility: hidden; }
 }
 
 /* ---------- the games page: content ---------- */
-/* The page scrolls above the overlays (Vo is drawn in the gaps between cards) and below the hotspots and windows.
-   It must stay above the overlay frame: Safari sends wheel scrolling to the topmost frame under the pointer. */
-#play {
-  position: absolute; inset: 0; z-index: 6;
-  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
-  transition: filter .25s;
-}
+/* #play holds the overlays (#above) in both views; on the games page it also scrolls the page (#page).
+   No z-index and no filter on #play: either would make it a layer of its own and trap #above (and Vo's
+   garage card) inside it. On the desktop it lets every click through to the icons. */
+#play { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+body[data-view="play"] #play { overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; pointer-events: auto; }
+#page { position: relative; z-index: 6; min-height: 100%; transition: filter .25s; }
 /* A game is on the stage: the page behind it dims (Vo does not), and a click there goes back to the games. */
-#desktop.staged #play, #desktop.staged #sky { filter: brightness(.6) saturate(.7); }
+#desktop.staged #page, #desktop.staged #sky { filter: brightness(.6) saturate(.7); }
 /* The space above the first row is room for Vo to stand on it. */
 .play-in { max-width: 1240px; margin: 0 auto; padding: 64px 24px 150px; }
 
-/* One grid of tiles: the motto (two columns wide), the games, and two guide tiles between them. The rows keep a
-   tall gap: Vo is drawn under the page, so that gap is where he stands on a tile and can be seen. */
-.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 56px 20px; }
+/* One grid of tiles: the motto (two columns wide), the games, and two guide tiles between them. */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 20px; }
 .tiles > * { animation: tile-in .55s cubic-bezier(.2, .9, .25, 1.25) backwards; }
 .tiles > :nth-child(2) { animation-delay: .06s; } .tiles > :nth-child(3) { animation-delay: .12s; }
 .tiles > :nth-child(4) { animation-delay: .18s; } .tiles > :nth-child(5) { animation-delay: .24s; }
@@ -601,6 +603,6 @@ body[data-view="play"] .win-btns [data-act="max"] { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .win, .toast, .tiles > *, .cloud, .star, .card:hover .card-art img { animation: none; }
-  .card, #play, #sky { transition: none; }
+  .card, #page, #sky { transition: none; }
   .card:hover .card-art::after { transition: none; }
 }
