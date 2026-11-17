@@ -30,6 +30,9 @@
   const startBtn = $('#start-btn');
   const startMenu = $('#start-menu');
   const toasts = $('#toasts');
+  const playEl = $('#play');
+  const skyEl = $('#sky');
+  const hotLayer = $('#hotspots');
 
   const apps = new Map(REGISTRY.map(a => [a.id, a]));
   const wins = new Map();      // winId -> window record
@@ -77,6 +80,14 @@
       set: (k, v) => { data[k] = v; try { localStorage.setItem('kidvo:shell', JSON.stringify(data)); } catch { /* storage blocked */ } }
     };
   })();
+
+  /* ---------------- views: the games page (default) or the desktop ---------------- */
+  // Both views share the same windows, apps and bus. On the games page one game at a time sits on a
+  // centred stage (a full sheet on compact screens) and the page behind it dims.
+  const VIEWS = ['play', 'desktop'];
+  let view = VIEWS.includes(prefs.get('view')) ? prefs.get('view') : 'play';
+  const playing = () => view === 'play';
+  const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || !Element.prototype.animate;
 
   /* ---------------- per-app storage ---------------- */
   const store = {
@@ -176,6 +187,7 @@
     const author = appId ? apps.get(appId)?.author?.name : null;
     const btn = (act, label, text) => el('button', { type: 'button', 'data-act': act, 'aria-label': label, title: label }, text);
     const bar = el('header', { class: 'win-bar' },
+      el('button', { type: 'button', class: 'win-back', 'data-act': 'back', 'aria-label': T('backToGames'), title: T('backToGames') }, '‹'),
       icon ? el('img', { class: 'win-icon', src: icon, alt: '' }) : null,
       el('span', { class: 'win-title' }, title),
       author ? el('span', { class: 'win-by' }, T('byAuthor', { name: author })) : null,
@@ -196,13 +208,15 @@
       node.style.setProperty('--app-fg', readableOn(color));
     }
 
-    const rec = { id, appId, title, icon, node, frame, minimized: false, task: null };
+    const rec = { id, appId, title, icon, node, frame, minimized: false, task: null, size: { w: width, h: height + 34 } };
     wins.set(id, rec);
     winLayer.append(node);
+    fitStage(rec);
 
     bar.addEventListener('click', e => {
       const act = e.target.closest('button')?.dataset.act;
-      if (act === 'close') closeWindow(id);
+      if (act === 'back') goBack();
+      else if (act === 'close') closeWindow(id);
       else if (act === 'min') minimize(id);
       else if (act === 'max') toggleMax(id);
       else if (act === 'info') openInfo(appId);
@@ -257,15 +271,59 @@
   function restore(id) {
     const rec = wins.get(id);
     if (!rec) return;
+    if (rec.appId) soloStage(id);
     rec.minimized = false;
     rec.node.hidden = false;
     rec.task.classList.remove('min');
+    fitStage(rec);
     focus(id);
+  }
+
+  // On the games page one game at a time is on the stage; the others wait, minimized, behind their cards.
+  function soloStage(keepId) {
+    if (!playing()) return;
+    for (const r of [...wins.values()]) if (r.id !== keepId && r.appId && !r.minimized) minimize(r.id);
+  }
+
+  // The stage: centred and as large as a game needs, with room above it for Vo when the screen is tall enough.
+  // Compact screens ignore this: there every window is a full sheet (shell.css).
+  function fitStage(rec) {
+    if (!playing() || narrow() || rec.minimized) return;
+    const W = desktop.clientWidth, H = desktop.clientHeight;
+    const want = rec.appId ? { w: Math.max(rec.size.w, 900), h: Math.max(rec.size.h, 660) } : rec.size;
+    const w = Math.min(want.w, W - 32);
+    const gap = H - 120 >= 520 ? 104 : 16;
+    const h = Math.min(want.h, H - gap - 16);
+    Object.assign(rec.node.style, {
+      left: Math.round((W - w) / 2) + 'px', top: Math.round(Math.max(gap, (H - h) / 2)) + 'px',
+      width: Math.round(w) + 'px', height: Math.round(h) + 'px'
+    });
+  }
+
+  // "Back to the games": every window on the stage shrinks into its card (or simply goes) and waits there.
+  function goBack() {
+    for (const r of [...wins.values()]) {
+      if (r.minimized || r.leaving) continue;
+      const card = r.appId && cardFor(r.appId);
+      if (!playing() || !card || narrow() || calm()) { minimize(r.id); continue; }
+      r.leaving = true;
+      const anim = flip(r.node, card.getBoundingClientRect(), true);
+      const done = () => { r.leaving = false; minimize(r.id); anim.cancel(); };
+      anim.finished.then(done, done);
+    }
+  }
+
+  // Zooms a window from a rectangle (a game card) to where it stands now, or back when `reverse` is set.
+  function flip(node, from, reverse = false) {
+    const to = node.getBoundingClientRect();
+    const k = `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width}, ${from.height / to.height})`;
+    const frames = [{ transformOrigin: '0 0', transform: k, opacity: 0.3 }, { transformOrigin: '0 0', transform: 'none', opacity: 1 }];
+    return node.animate(reverse ? frames.reverse() : frames, { duration: reverse ? 220 : 340, easing: 'cubic-bezier(.2,.9,.25,1)', fill: reverse ? 'forwards' : 'none' });
   }
 
   function toggleMax(id) {
     const rec = wins.get(id);
-    if (!rec || narrow()) return;
+    if (!rec || narrow() || playing()) return;
     rec.node.classList.toggle('max');
     queueWindows();
   }
@@ -289,7 +347,7 @@
 
   function enableDrag(rec, handle) {
     handle.addEventListener('pointerdown', e => {
-      if (e.button !== 0 || e.target.closest('button') || narrow() || rec.node.classList.contains('max')) return;
+      if (e.button !== 0 || e.target.closest('button') || narrow() || playing() || rec.node.classList.contains('max')) return;
       const start = { x: e.clientX, y: e.clientY, left: rec.node.offsetLeft, top: rec.node.offsetTop };
       const bounds = desktop.getBoundingClientRect();
       handle.setPointerCapture(e.pointerId);
@@ -342,6 +400,7 @@
     if (app.type === 'overlay') { startOverlay(app); return null; }
     const existing = [...wins.values()].find(r => r.appId === appId);
     if (existing) { restore(existing.id); return existing; }
+    soloStage(null);
 
     const frame = el('iframe', {
       src: appDir(app) + (app.entry || 'index.html'),
@@ -421,7 +480,9 @@
         press = null;
         if (!p?.fired) poke(e, false);
       });
-      ovLayer.append(spot);
+      // Hotspots have their own layer, the same size as the overlays: on the games page it sits above the
+      // scrolling page (so Vo can be tapped there) and, like the overlays, below every window.
+      hotLayer.append(spot);
       ctx.hotspot = spot;
     }
     const w = Math.min(140, Math.max(16, r.w)), h = Math.min(140, Math.max(16, r.h));
@@ -439,7 +500,9 @@
     const ov = overlays.get(ctx.appId);
     if (!ov) return;
     ov.frame.classList.toggle('modal', on);
-    ovLayer.classList.toggle('modal', [...overlays.values()].some(o => o.frame.classList.contains('modal')));
+    const any = [...overlays.values()].some(o => o.frame.classList.contains('modal'));
+    ovLayer.classList.toggle('modal', any);
+    hotLayer.classList.toggle('modal', any);
     if (on) ov.frame.focus();
     else if (document.activeElement === ov.frame) ctx.hotspot ? ctx.hotspot.focus() : ov.frame.blur();
   }
@@ -604,6 +667,231 @@
     }, () => openParents(appId));
   }
 
+  /* ---------------- the games page ---------------- */
+  // Small pixel pictures, drawn from rows of letters. Each letter is a class (px-<letter>) that shell.css colours,
+  // so the sky can change with the time of day.
+  function pixelSvg(rows, scale, cls = '') {
+    let rects = '';
+    rows.forEach((row, y) => {
+      for (let x = 0; x < row.length;) {
+        const c = row[x];
+        let n = 1;
+        while (row[x + n] === c) n++;
+        if (c !== '.') rects += `<rect class="px-${c}" x="${x}" y="${y}" width="${n}" height="1"/>`;
+        x += n;
+      }
+    });
+    const w = rows[0].length, h = rows.length;
+    return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" width="${w * scale}" height="${h * scale}" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
+  }
+  const ART = {
+    games: ['ccc.ccc', 'ccc.ccc', 'ccc.ccc', '.......', 'ccc.ccc', 'ccc.ccc', 'ccc.ccc'],
+    desktop: ['ccccccc', 'ccccccc', 'c.....c', 'c.....c', 'c.....c', 'c.....c', 'ccccccc'],
+    play: ['cc....', 'ccc...', 'cccc..', 'ccccc.', 'ccccc.', 'cccc..', 'ccc...', 'cc....'],
+    cloud: ['.....wwww.......', '...wwwwwwww.ww..', '.wwwwwwwwwwwwww.', 'wwwwwwwwwwwwwwww', 'sswwwwwwwwwwwwss', '.ssssssssssssss.'],
+    puff: ['...www.....', '.wwwwwwww..', 'wwwwwwwwwww', '.sssssssss.'],
+    sun: ['....yyyy....', '..yhhyyyyy..', '.yhhyyyyyyy.', '.yhyyyyyyyy.', 'yyyyyyyyyyyy', 'yyyyyyyyyyyy', 'yyyyyyyyyyyy', 'yyyyyyyyyyyo', '.yyyyyyyyyo.', '.yyyyyyyyoo.', '..yyyyyooo..', '....oooo....'],
+    moon: ['....mmmm....', '..mmmmm.....', '.mmmmm......', '.mmmm.......', 'mmmm........', 'mmmm........', 'mmmm........', 'mmmm........', '.mmmm.......', '.mmmmm......', '..mmmmm.....', '....mmmm....']
+  };
+
+  // A row of stepped hills, as one path: `cells` columns, each `h` cells tall at most.
+  function hills(cells, h, seed, cls) {
+    let d = `M0 ${h}`;
+    for (let i = 0; i < cells; i++) {
+      const y = h - Math.max(1, Math.round(h * (0.55 + 0.25 * Math.sin(i / 9 + seed) + 0.2 * Math.sin(i / 3.7 + seed * 2))));
+      d += `V${y}h1`;
+    }
+    return `<svg class="hills ${cls}" viewBox="0 0 ${cells} ${h}" width="${cells * 6}" height="${h * 6}" shape-rendering="crispEdges" aria-hidden="true"><path d="${d}V${h}z"/></svg>`;
+  }
+
+  // Morning, day, sunset or night, from this device's clock. Nothing else changes with it.
+  const skyPhase = () => {
+    const h = new Date().getHours();
+    return h >= 6 && h < 9 ? 'dawn' : h >= 9 && h < 17 ? 'day' : h >= 17 && h < 20 ? 'dusk' : 'night';
+  };
+  function renderSky() {
+    let stars = '';
+    for (let i = 0; i < 46; i++) {
+      // Fixed places (no Math.random), so the night sky looks the same on every visit.
+      const x = (i * 37.3) % 100, y = (i * 61.7) % 58, big = i % 5 === 0;
+      stars += `<i class="star${big ? ' big' : ''}" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%;animation-delay:${(i % 7) * 0.45}s"></i>`;
+    }
+    const clouds = [[8, 0.62, 4, 95], [26, 0.4, 3, 140], [46, 0.82, 5, 80], [64, 0.25, 3, 120], [80, 0.55, 4, 105]]
+      .map(([top, start, scale, secs], i) => `<div class="cloud" style="top:${top}%;animation-duration:${secs}s;animation-delay:${-start * secs}s">${pixelSvg(i % 2 ? ART.puff : ART.cloud, scale)}</div>`).join('');
+    skyEl.innerHTML = `<div class="sky-far"><div class="stars">${stars}</div>${pixelSvg(ART.sun, 7, 'sun')}${pixelSvg(ART.moon, 7, 'moon')}</div>
+      <div class="sky-near">${clouds}</div>${hills(560, 22, 1.3, 'far')}${hills(560, 13, 4.1, 'near')}`;
+    skyEl.dataset.phase = skyPhase();
+  }
+  setInterval(() => { skyEl.dataset.phase = skyPhase(); }, 5 * 60 * 1000);
+
+  const cardFor = appId => playEl.querySelector(`.card[data-app="${CSS.escape(appId)}"]`);
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+  // A card leans towards the mouse a little, like a real one held in a hand.
+  function tilt(card) {
+    card.addEventListener('pointermove', e => {
+      if (!fine.matches || calm()) return;
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--ry', (((e.clientX - r.left) / r.width - 0.5) * 10).toFixed(2) + 'deg');
+      card.style.setProperty('--rx', ((0.5 - (e.clientY - r.top) / r.height) * 8).toFixed(2) + 'deg');
+    });
+    card.addEventListener('pointerleave', () => { card.style.removeProperty('--rx'); card.style.removeProperty('--ry'); });
+  }
+
+  function openFromCard(appId, card) {
+    const from = card.getBoundingClientRect();
+    const rec = openApp(appId);
+    if (rec && playing() && !narrow() && !calm()) flip(rec.node, from);
+  }
+
+  // A game that is already open (waiting behind its card) says "Continue" instead of "Play".
+  function markCards() {
+    for (const card of playEl.querySelectorAll('.card')) {
+      const on = [...wins.values()].some(r => r.appId === card.dataset.app);
+      const btn = card.querySelector('.card-play');
+      if (btn.dataset.on === String(on)) continue;
+      btn.dataset.on = String(on);
+      card.classList.toggle('running', on);
+      btn.querySelector('span').textContent = T(on ? 'continueBtn' : 'playBtn');
+      btn.setAttribute('aria-label', `${T(on ? 'continueBtn' : 'playBtn')}: ${card.querySelector('.card-name').textContent}`);
+    }
+  }
+
+  // One grid of tiles: the motto first, then the games, with two small guide tiles (the three tips, and how Vo
+  // grows) placed between them, so the games stay in front and the explaining sits right next to them.
+  function renderPlay() {
+    const top = playEl.scrollTop;
+    const pet = apps.get('pet');
+    const tip = n => `<div class="note"><span class="tip-n">${n}</span><p><b>${t(`tip${n}b`)}</b> ${t(`tip${n}`)}</p></div>`;
+    const page = html`
+      <div class="play-in">
+        <div class="tiles">
+          <header class="intro">
+            <h1 class="intro-h" data-surface>${t('motto').replace(/\bAI\b/g, '<span class="ai">AI</span>')}</h1>
+            <p class="intro-p">${t('heroP')}</p>
+          </header>
+          <div class="guide" data-guide="1" data-surface>${tip(1)}${tip(2)}</div>
+          <div class="guide" data-guide="2" data-surface>${tip(3)}${pet ? `<div class="note vo"><img src="${esc(iconUrl(pet))}" alt="" width="40" height="40"><p><b>${t('voH')}</b> ${t('voP')}</p></div>` : ''}</div>
+        </div>
+        <div class="play-foot">
+          <button class="btn alt" type="button" data-shell="about">${t('menuAbout')}</button>
+          <button class="btn alt" type="button" data-shell="grownups">${t('menuGrownups')}</button>
+          <button class="btn alt" type="button" data-shell="build">${t('menuBuild')}</button>
+        </div>
+        <p class="play-note">${t('priv1')}</p>
+      </div>`.firstElementChild;
+    const tiles = page.querySelector('.tiles');
+    const [guide1, guide2] = tiles.querySelectorAll('.guide');
+    const games = [...apps.values()].filter(a => a.type !== 'overlay');
+    games.forEach((app, i) => {
+      const btn = el('button', { type: 'button', class: 'card-play' }, el('span', {}, T('playBtn')));
+      btn.insertAdjacentHTML('afterbegin', pixelSvg(ART.play, 2));
+      const card = el('article', { class: 'card', 'data-app': app.id, 'data-surface': '' },
+        el('div', { class: 'card-art', 'aria-hidden': 'true' }, el('img', { src: iconUrl(app), alt: '', width: 96, height: 96, draggable: 'false' })),
+        el('div', { class: 'card-body' },
+          el('h3', { class: 'card-name' }, appText(app, 'name')),
+          el('p', { class: 'card-desc' }, appText(app, 'description')),
+          el('div', { class: 'card-foot' },
+            el('span', { class: 'bands' }, ...(app.bands || []).map(b => el('span', { class: 'band ' + b, title: T(b) }, b === 'explorers' ? '7–9' : '10–13'))),
+            btn)));
+      if (app.color) card.style.setProperty('--app', app.color);
+      btn.addEventListener('click', () => openFromCard(app.id, card));
+      tilt(card);
+      // The tips follow the third game and Vo's note the fourth (or the last games, when there are fewer).
+      tiles.insertBefore(card, i < 3 ? guide1 : i === 3 ? guide2 : null);
+    });
+    page.querySelector('.play-foot').addEventListener('click', e => {
+      const which = e.target.closest('[data-shell]')?.dataset.shell;
+      ({ about: openAbout, grownups: openGrownups, build: openBuild })[which]?.();
+    });
+    playEl.replaceChildren(page);
+    playEl.scrollTop = top;
+    markCards();
+    queueWindows();
+  }
+
+  // Vo walks on the page too: the headline, the cards and the tips are surfaces, like window tops.
+  function playSurfaces() {
+    const box = desktop.getBoundingClientRect();
+    const out = [];
+    playEl.querySelectorAll('[data-surface]').forEach((n, i) => {
+      const r = n.getBoundingClientRect();
+      if (r.bottom <= box.top || r.top >= box.bottom) return;
+      out.push({ id: 'page' + i, appId: null, title: '', x: r.left - box.left, y: r.top - box.top, w: r.width, h: r.height, z: 0, focused: false });
+    });
+    return out;
+  }
+
+  playEl.addEventListener('scroll', () => {
+    skyEl.style.setProperty('--scroll', playEl.scrollTop);
+    queueWindows();
+  }, { passive: true });
+  // Tiles slide in and lift under the mouse: tell Vo where they ended up, or he stands where they were.
+  playEl.addEventListener('animationend', queueWindows);
+  playEl.addEventListener('transitionend', queueWindows);
+
+  // While a game is on the stage the page behind it dims; a click there (or Escape) goes back to the games.
+  playEl.addEventListener('click', e => {
+    if (!desktop.classList.contains('staged')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    goBack();
+  }, true);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && desktop.classList.contains('staged') && startMenu.hidden) goBack();
+  });
+
+  function renderViews() {
+    const box = $('#views');
+    box.replaceChildren(...VIEWS.map(v => {
+      const label = T(v === 'play' ? 'viewGames' : 'viewDesktop');
+      const b = el('button', { type: 'button', class: 'view-btn', title: label, 'aria-label': label, 'aria-pressed': v === view ? 'true' : 'false', onclick: () => setView(v) },
+        el('span', {}, label));
+      b.insertAdjacentHTML('afterbegin', pixelSvg(v === 'play' ? ART.games : ART.desktop, 2));
+      return b;
+    }));
+    box.setAttribute('aria-label', T('viewLabel'));
+  }
+
+  // Switching views: a quick wipe of pixel blocks, then the other view.
+  function pixelWipe(middle) {
+    const cols = 14, rows = Math.max(5, Math.round(cols * innerHeight / innerWidth));
+    const wipe = el('div', { class: 'wipe', 'aria-hidden': 'true', style: `grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${rows},1fr)` });
+    const cells = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = el('i', { class: (r * 7 + c * 3) % 11 === 0 ? 'sun' : '' });
+        cells.push([cell, (r + c) / (rows + cols - 2)]);
+        wipe.append(cell);
+      }
+    }
+    document.body.append(wipe);
+    const run = (a, b) => Promise.all(cells.map(([cell, k]) => cell.animate(
+      [{ transform: `scale(${a})` }, { transform: `scale(${b})` }],
+      { duration: 150, delay: k * 200, easing: 'steps(3, end)', fill: 'forwards' }).finished));
+    let switched = false;
+    const swap = () => { if (!switched) { switched = true; middle(); } };
+    run(0, 1.04).then(() => { swap(); return run(1.04, 0); }).catch(swap).finally(() => wipe.remove());
+  }
+
+  function setView(v, animate = true) {
+    if (!VIEWS.includes(v) || (v === view && document.body.dataset.view === v)) return;
+    const apply = () => {
+      view = v;
+      prefs.set('view', v);
+      document.body.dataset.view = v;
+      closeStart();
+      if (playing()) {
+        const keep = wins.get(focusedId);
+        for (const r of [...wins.values()]) if (r !== keep && !r.minimized) minimize(r.id);
+        for (const r of wins.values()) { r.node.classList.remove('max'); fitStage(r); }
+      }
+      renderViews();
+      queueWindows();
+    };
+    if (!animate || calm()) apply(); else pixelWipe(apply);
+  }
+
   /* ---------------- toasts ---------------- */
   const lastToast = new Map();
   function toast(from, text) {
@@ -649,11 +937,19 @@
       windowsQueued = false;
       // On compact screens an open window fills the desktop, so overlays (like Vo) step aside
       // instead of covering the game's buttons.
-      desktop.classList.toggle('sheet-open', narrow() && [...wins.values()].some(r => !r.minimized));
-      broadcast('shell:windows', { windows: windowRects(), width: desktop.clientWidth, height: desktop.clientHeight }, 'shell');
+      const shown = [...wins.values()].some(r => !r.minimized);
+      desktop.classList.toggle('sheet-open', narrow() && shown);
+      desktop.classList.toggle('staged', playing() && shown);
+      markCards();
+      const rects = windowRects();
+      if (playing() && !(narrow() && shown)) rects.unshift(...playSurfaces());
+      broadcast('shell:windows', { windows: rects, width: desktop.clientWidth, height: desktop.clientHeight }, 'shell');
     });
   }
-  window.addEventListener('resize', queueWindows);
+  window.addEventListener('resize', () => {
+    for (const r of wins.values()) fitStage(r);
+    queueWindows();
+  });
 
   const TOPIC = /^[a-z0-9][a-z0-9-]{0,31}$/;
   const PATTERN = /^(\*|[a-z0-9][a-z0-9-]{0,31}(:[a-z0-9*][a-z0-9-]{0,31})?)$/;
@@ -784,6 +1080,7 @@
       onclick: () => setLang(l)
     }, l.toUpperCase())));
     box.setAttribute('aria-label', T('language'));
+    renderViews();
   }
 
   function setLang(l, initial = false) {
@@ -795,11 +1092,12 @@
     renderIcons();
     renderStartMenu();
     renderTray();
+    renderPlay();
     const prevFocus = focusedId;
     const replaced = new Map();
     for (const rec of [...wins.values()]) {
-      const btns = rec.node.querySelectorAll('.win-btns button');
-      btns.forEach(b => { const k = { info: 'aboutApp', min: 'minimize', max: 'maximize', close: 'close' }[b.dataset.act]; b.title = T(k); b.setAttribute('aria-label', T(k)); });
+      const btns = rec.node.querySelectorAll('.win-bar button');
+      btns.forEach(b => { const k = { back: 'backToGames', info: 'aboutApp', min: 'minimize', max: 'maximize', close: 'close' }[b.dataset.act]; b.title = T(k); b.setAttribute('aria-label', T(k)); });
       if (rec.appId) {
         const name = appText(apps.get(rec.appId), 'name');
         rec.node.querySelector('.win-title').textContent = name;
@@ -827,10 +1125,13 @@
 
   /* ---------------- boot ---------------- */
   const browserLang = (navigator.languages || [navigator.language || 'en']).map(x => String(x).slice(0, 2).toLowerCase()).find(x => LANGS.includes(x));
+  document.body.dataset.view = view;
   setLang(prefs.get('lang') || browserLang || 'en', true);
   if (!REGISTRY.length) {
     toast('kidvo', T('noApps'));
   }
+  renderSky();
+  renderPlay();
   renderIcons();
   renderStartMenu();
   for (const app of apps.values()) {
@@ -838,11 +1139,12 @@
   }
   renderTray();
   const opened = openFromHash();
-  if (!opened && !prefs.get('welcomed')) {
+  // The games page welcomes by itself; the desktop opens hello.txt the first time.
+  if (!opened && !playing() && !prefs.get('welcomed')) {
     openAbout();
     prefs.set('welcomed', true);
   }
 
   // A small, read-only handle for tests and curious people in the console.
-  window.kidvoShell = Object.freeze({ openApp, closeWindow, setLang, apps: () => [...apps.keys()], windows: windowRects });
+  window.kidvoShell = Object.freeze({ openApp, closeWindow, setLang, setView, view: () => view, apps: () => [...apps.keys()], windows: windowRects });
 })();

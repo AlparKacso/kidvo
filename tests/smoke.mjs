@@ -64,6 +64,41 @@ async function run(name) {
     await page.waitForFunction(() => window.kidvoShell && document.querySelectorAll('#icons .icon').length > 0, null, { timeout: 5000 });
   });
 
+  // The games page is the default view: one card per game; a card opens its game on the stage and "back"
+  // puts it behind its card again.
+  await step(`games page shows ${windowApps.length} card(s)`, async () => {
+    if (await page.evaluate(() => window.kidvoShell.view()) !== 'play') throw new Error('the games page is not the default view');
+    const n = await page.locator('#play .card').count();
+    if (n !== windowApps.length) throw new Error(`expected ${windowApps.length} cards, found ${n}`);
+  });
+
+  await step('a card opens its game on the stage and back returns to the games', async () => {
+    const id = windowApps[0].id;
+    await page.click(`#play .card[data-app="${id}"] .card-play`);
+    await page.locator(`.win iframe[src^="apps/${id}/"]`).waitFor({ state: 'visible', timeout: 3000 });
+    await page.waitForFunction(() => document.getElementById('desktop').classList.contains('staged'), null, { timeout: 2000 })
+      .catch(() => { throw new Error('the page behind the game did not dim'); });
+    await page.click('.win:not([hidden]) [data-act="back"]');
+    await page.waitForFunction(id => document.querySelector(`#play .card[data-app="${id}"]`).classList.contains('running') &&
+      !document.getElementById('desktop').classList.contains('staged'), id, { timeout: 3000 });
+  });
+
+  // The page scrolls above Vo's overlay frame; WebKit sends wheel scrolling to the topmost frame under the pointer.
+  await step('the games page scrolls with the mouse wheel while Vo runs', async () => {
+    await page.locator('#overlays iframe[src^="apps/pet/"]').waitFor({ state: 'attached', timeout: 5000 });
+    await page.mouse.move(640, 400);
+    await page.mouse.wheel(0, 400);
+    await page.waitForTimeout(500);
+    const top = await page.evaluate(() => document.getElementById('play').scrollTop);
+    if (top < 50) throw new Error(`the games page did not scroll (scrollTop ${top})`);
+  });
+
+  await step('the view switch opens the desktop', async () => {
+    await page.click('#views .view-btn:nth-child(2)');
+    await page.waitForFunction(() => document.body.dataset.view === 'desktop' && !document.querySelector('.wipe'), null, { timeout: 3000 });
+    if (!await page.locator('#icons .icon').first().isVisible()) throw new Error('no desktop icons after switching');
+  });
+
   await step(`desktop shows ${windowApps.length} icon(s)`, async () => {
     const n = await page.locator('#icons .icon').count();
     if (n !== windowApps.length) throw new Error(`expected ${windowApps.length} icons, found ${n}`);
@@ -136,7 +171,7 @@ async function run(name) {
     const modal = () => page.waitForFunction(() => document.querySelector('#overlays.modal iframe.modal'), null, { timeout: 2000 });
     const closed = () => page.waitForFunction(() => !document.querySelector('#overlays.modal, #overlays iframe.modal'), null, { timeout: 2000 });
     const press = type => page.evaluate(type => {
-      const spot = document.querySelector('#overlays .hotspot');
+      const spot = document.querySelector('#hotspots .hotspot');
       if (!spot) throw new Error('Vo has no hotspot');
       const at = { bubbles: true, cancelable: true, button: type === 'contextmenu' ? 2 : 0, pointerId: 7, isPrimary: true };
       if (type === 'contextmenu') spot.dispatchEvent(new MouseEvent('contextmenu', at));
@@ -292,6 +327,13 @@ async function run(name) {
     phone.on('pageerror', err => problems.push(`${name} ${label} page error: ${err.message}`));
     await phone.goto(`${SITE}/`);
     await phone.waitForFunction(() => window.kidvoShell, null, { timeout: 5000 });
+    await step(`the games page and its top bar fit a ${label} screen`, async () => {
+      const over = await phone.evaluate(() => {
+        const wide = n => n.scrollWidth - n.clientWidth;
+        return { page: wide(document.documentElement), play: wide(document.getElementById('play')), bar: wide(document.getElementById('topbar')) };
+      });
+      if (over.page > 1 || over.play > 1 || over.bar > 1) throw new Error(`wider than the screen: ${JSON.stringify(over)}`);
+    });
     for (const app of windowApps) {
       await step(`${app.id} fits a ${label} screen`, async () => {
         await phone.evaluate(id => window.kidvoShell.openApp(id), app.id);
