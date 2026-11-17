@@ -31,6 +31,8 @@
   const startMenu = $('#start-menu');
   const toasts = $('#toasts');
   const playEl = $('#play');
+  const pageEl = $('#page');
+  const aboveEl = $('#above');
   const skyEl = $('#sky');
   const hotLayer = $('#hotspots');
 
@@ -480,8 +482,7 @@
         press = null;
         if (!p?.fired) poke(e, false);
       });
-      // Hotspots have their own layer, the same size as the overlays: on the games page it sits above the
-      // scrolling page (so Vo can be tapped there) and, like the overlays, below every window.
+      // Hotspots have their own layer just above the overlays (see #above in shell.css), below every window.
       hotLayer.append(spot);
       ctx.hotspot = spot;
     }
@@ -502,7 +503,7 @@
     ov.frame.classList.toggle('modal', on);
     const any = [...overlays.values()].some(o => o.frame.classList.contains('modal'));
     ovLayer.classList.toggle('modal', any);
-    hotLayer.classList.toggle('modal', any);
+    aboveEl.classList.toggle('modal', any);
     if (on) ov.frame.focus();
     else if (document.activeElement === ov.frame) ctx.hotspot ? ctx.hotspot.focus() : ov.frame.blur();
   }
@@ -804,7 +805,7 @@
       const which = e.target.closest('[data-shell]')?.dataset.shell;
       ({ about: openAbout, grownups: openGrownups, build: openBuild })[which]?.();
     });
-    playEl.replaceChildren(page);
+    pageEl.replaceChildren(page);
     playEl.scrollTop = top;
     markCards();
     queueWindows();
@@ -831,7 +832,8 @@
   playEl.addEventListener('transitionend', queueWindows);
 
   // While a game is on the stage the page behind it dims; a click there (or Escape) goes back to the games.
-  playEl.addEventListener('click', e => {
+  // On the page only: a tap on Vo's hotspot (in #above) still reaches Vo.
+  pageEl.addEventListener('click', e => {
     if (!desktop.classList.contains('staged')) return;
     e.preventDefault();
     e.stopPropagation();
@@ -946,7 +948,11 @@
       broadcast('shell:windows', { windows: rects, width: desktop.clientWidth, height: desktop.clientHeight }, 'shell');
     });
   }
+  // #above is pinned to the top of the visible page with no height of its own; the overlays and hotspots in it
+  // are as tall as the visible part, so Vo's floor is the bottom of the screen, not of the page.
+  const sizeAbove = () => aboveEl.style.setProperty('--vo-h', playEl.clientHeight + 'px');
   window.addEventListener('resize', () => {
+    sizeAbove();
     for (const r of wins.values()) fitStage(r);
     queueWindows();
   });
@@ -1130,6 +1136,7 @@
   if (!REGISTRY.length) {
     toast('kidvo', T('noApps'));
   }
+  sizeAbove();
   renderSky();
   renderPlay();
   renderIcons();

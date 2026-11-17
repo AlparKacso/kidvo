@@ -83,9 +83,12 @@ async function run(name) {
       !document.getElementById('desktop').classList.contains('staged'), id, { timeout: 3000 });
   });
 
-  // The page scrolls above Vo's overlay frame; WebKit sends wheel scrolling to the topmost frame under the pointer.
-  await step('the games page scrolls with the mouse wheel while Vo runs', async () => {
+  // Vo is drawn in front of the cards, so his overlay frame lies over the page. WebKit sends wheel scrolling to
+  // that frame; the page must still scroll, because the frame sits inside the scrolling page (#above in #play).
+  await step('the games page scrolls with the mouse wheel while Vo runs in front of it', async () => {
     await page.locator('#overlays iframe[src^="apps/pet/"]').waitFor({ state: 'attached', timeout: 5000 });
+    const order = await page.evaluate(() => [document.getElementById('above'), document.getElementById('page')].map(n => Number(getComputedStyle(n).zIndex)));
+    if (!(order[0] > order[1])) throw new Error(`Vo's layer is not in front of the page (z-index ${order.join(' vs ')})`);
     await page.mouse.move(640, 400);
     await page.mouse.wheel(0, 400);
     await page.waitForTimeout(500);
@@ -290,7 +293,7 @@ async function run(name) {
     await ghostPage.waitForTimeout(400);
     const lifted = await ghostPage.evaluate(() => ({
       frame: document.querySelector('#overlays iframe[src^="apps/ghost/"]').classList.contains('modal'),
-      layer: document.getElementById('overlays').classList.contains('modal'),
+      layer: document.getElementById('overlays').classList.contains('modal') || document.getElementById('above').classList.contains('modal'),
       clicks: getComputedStyle(document.querySelector('#overlays iframe[src^="apps/ghost/"]')).pointerEvents
     }));
     await ghostPage.close();
