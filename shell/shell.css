@@ -174,9 +174,12 @@ button { font: inherit; color: inherit; }
   -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation;
 }
 .hotspot:focus-visible { outline: 3px dashed var(--sun); outline-offset: 2px; }
+/* Hotspots (the one clickable spot an overlay may ask for, e.g. over Vo) have their own layer, the same size as
+   the overlays: above the games page, so Vo can be tapped there, and below every window. */
+#hotspots { position: absolute; inset: 0; pointer-events: none; z-index: 7; }
 /* An overlay showing a card (kidvo.setModal): above the windows, below toasts and the taskbar, taking clicks. */
 #overlays.modal { z-index: 90000; }
-#overlays.modal .hotspot { display: none; }
+#hotspots.modal .hotspot { display: none; }
 #overlays iframe.modal { pointer-events: auto; }
 #overlays iframe {
   position: absolute; inset: 0; width: 100%; height: 100%;
@@ -343,19 +346,224 @@ button { font: inherit; color: inherit; }
 .meta dt { font: 700 12px/1.6 var(--font-ui); color: var(--muted); }
 .meta dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 
+/* ---------- view switch (top bar): the games page or the desktop ---------- */
+#views { display: flex; flex: none; margin-left: auto; border: 2px solid var(--ink); }
+.view-btn {
+  display: flex; align-items: center; gap: 6px;
+  height: 20px; padding: 0 8px;
+  background: var(--paper); color: var(--ink); border: 0;
+  font: 800 11px/1 var(--font-ui); cursor: pointer;
+}
+.view-btn + .view-btn { border-left: 2px solid var(--ink); }
+.view-btn svg { flex: none; }
+.px-c { fill: currentColor; }
+.view-btn[aria-pressed="true"] { background: var(--ink); color: var(--sun); }
+.view-btn:hover { background: var(--sun); color: var(--ink); }
+
+body[data-view="play"] #taskbar, body[data-view="play"] #start-menu, body[data-view="play"] #icons { display: none !important; }
+body[data-view="desktop"] #play, body[data-view="desktop"] #sky, body[data-view="desktop"] #ground { display: none; }
+/* The games page has no taskbar: a strip of pixel ground takes its place, and Vo walks on it. */
+body[data-view="play"] { --bar-h: 18px; }
+body[data-view="play"] #motto { visibility: hidden; }
+
+/* ---------- the games page: sky ---------- */
+#sky {
+  --s1: #5d68c6; --s2: #6874d2; --s3: #7782dc; --s4: #8792e5; --s5: #98a2ec; --h1: #5560c2; --h2: #444fae;
+  position: absolute; inset: 0; z-index: 0; overflow: hidden;
+  background:
+    radial-gradient(rgba(255, 255, 255, .08) 1.2px, transparent 1.6px) 0 0 / 16px 16px,
+    linear-gradient(var(--s1) 0 22%, var(--s2) 22% 40%, var(--s3) 40% 56%, var(--s4) 56% 70%, var(--s5) 70%);
+  transition: filter .25s;
+}
+#sky[data-phase="dawn"] { --s1: #6f7bd6; --s2: #8f86d8; --s3: #b793d0; --s4: #e1a5bf; --s5: #ffc8a8; --h1: #8a7cc8; --h2: #6a60b2; }
+#sky[data-phase="dusk"] { --s1: #2e3477; --s2: #47408f; --s3: #74509e; --s4: #bf628f; --s5: #ff9466; --h1: #573f86; --h2: #3f2f6c; }
+#sky[data-phase="night"] { --s1: #0e0f2b; --s2: #131536; --s3: #191c44; --s4: #202453; --s5: #292e64; --h1: #262a5e; --h2: #1b1e49; }
+#sky .sky-far, #sky .sky-near { position: absolute; inset: 0; }
+#sky .sky-far { transform: translateY(calc(var(--scroll, 0) * -0.06px)); }
+#sky .sky-near { transform: translateY(calc(var(--scroll, 0) * -0.16px)); }
+#sky .sun, #sky .moon { position: absolute; right: 9%; top: 9%; }
+#sky[data-phase="dawn"] .sun { right: auto; left: 12%; top: 30%; }
+#sky[data-phase="dusk"] .sun { top: 36%; right: 14%; }
+#sky .moon, #sky .stars, #sky[data-phase="night"] .sun { display: none; }
+#sky[data-phase="night"] .moon, #sky[data-phase="night"] .stars { display: block; }
+.px-y { fill: var(--sun); } .px-h { fill: #fff6c2; } .px-o { fill: #f2b52b; }
+#sky[data-phase="dusk"] .px-y { fill: #ffb04a; } #sky[data-phase="dusk"] .px-h { fill: #ffd68f; } #sky[data-phase="dusk"] .px-o { fill: #f0803a; }
+.px-m { fill: #eef0fb; }
+.px-w { fill: #fff; } .px-s { fill: #dfe2f2; }
+#sky[data-phase="dawn"] .px-w { fill: #fff5f2; } #sky[data-phase="dawn"] .px-s { fill: #f0c6d6; }
+#sky[data-phase="dusk"] .px-w { fill: #ffd8c8; } #sky[data-phase="dusk"] .px-s { fill: #e3a0b4; }
+#sky[data-phase="night"] .px-w { fill: #353a74; } #sky[data-phase="night"] .px-s { fill: #2b2f66; }
+.cloud { position: absolute; left: 0; animation: drift linear infinite; }
+@keyframes drift { from { transform: translateX(-30vw); } to { transform: translateX(110vw); } }
+.stars { position: absolute; inset: 0; }
+.star { position: absolute; width: 3px; height: 3px; background: #fff; animation: twinkle 3.2s steps(2, end) infinite; }
+.star.big { width: 6px; height: 6px; }
+@keyframes twinkle { 50% { opacity: .3; } }
+#sky .hills { position: absolute; left: 0; bottom: 0; }
+#sky .hills.far path { fill: var(--h1); }
+#sky .hills.near path { fill: var(--h2); }
+#ground {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 100000;
+  height: calc(18px + env(safe-area-inset-bottom, 0px));
+  border-top: 2px solid var(--ink);
+  background:
+    linear-gradient(90deg, #4fbf9c 0 6px, transparent 6px 14px, #4fbf9c 14px 18px, transparent 18px) 0 0 / 24px 3px repeat-x,
+    radial-gradient(#3b3a6b 1.2px, transparent 1.6px) 4px 10px / 12px 8px,
+    linear-gradient(var(--ai) 0 6px, var(--ink) 6px);
+}
+
+/* ---------- the games page: content ---------- */
+/* The page scrolls above the overlays (Vo is drawn in the gaps between cards) and below the hotspots and windows.
+   It must stay above the overlay frame: Safari sends wheel scrolling to the topmost frame under the pointer. */
+#play {
+  position: absolute; inset: 0; z-index: 6;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  transition: filter .25s;
+}
+/* A game is on the stage: the page behind it dims (Vo does not), and a click there goes back to the games. */
+#desktop.staged #play, #desktop.staged #sky { filter: brightness(.6) saturate(.7); }
+/* The space above the first row is room for Vo to stand on it. */
+.play-in { max-width: 1240px; margin: 0 auto; padding: 64px 24px 150px; }
+
+/* One grid of tiles: the motto (two columns wide), the games, and two guide tiles between them. The rows keep a
+   tall gap: Vo is drawn under the page, so that gap is where he stands on a tile and can be seen. */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 56px 20px; }
+.tiles > * { animation: tile-in .55s cubic-bezier(.2, .9, .25, 1.25) backwards; }
+.tiles > :nth-child(2) { animation-delay: .06s; } .tiles > :nth-child(3) { animation-delay: .12s; }
+.tiles > :nth-child(4) { animation-delay: .18s; } .tiles > :nth-child(5) { animation-delay: .24s; }
+.tiles > :nth-child(n+6) { animation-delay: .3s; }
+@keyframes tile-in { from { transform: translateY(40px) scale(.92); opacity: 0; } }
+
+.intro { grid-column: span 2; align-self: center; padding: 4px 8px 4px 0; }
+.intro-h {
+  display: inline-block; margin: 0;
+  color: #fff;
+  font: 900 clamp(30px, 3.9vw, 52px)/1.06 var(--font-ui); letter-spacing: -.035em;
+  text-wrap: balance;
+  text-shadow:
+    -3px -3px 0 var(--ink), 3px -3px 0 var(--ink), -3px 3px 0 var(--ink), 3px 3px 0 var(--ink),
+    -3px 0 0 var(--ink), 3px 0 0 var(--ink), 0 -3px 0 var(--ink), 0 3px 0 var(--ink),
+    4px 4px 0 var(--ink), 5px 5px 0 var(--ink), 6px 6px 0 var(--ink);
+}
+.intro-h .ai { color: var(--sun); }
+.intro-p {
+  display: inline-block; max-width: 30em; margin: 24px 0 0; padding: 12px 16px;
+  background: var(--paper); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+  font-size: 16px; line-height: 1.45; text-wrap: pretty;
+}
+
+/* Guide tiles: notes that explain, next to the games they explain. */
+.guide { align-self: start; display: grid; gap: 14px; }
+.note {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start;
+  padding: 14px; background: var(--paper); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+}
+.note p { margin: 0; font-size: 14px; line-height: 1.45; }
+.note b { display: block; margin-bottom: 3px; font: 800 15px/1.25 var(--font-ui); }
+.note .tip-n { display: grid; place-items: center; width: 40px; height: 40px; background: var(--ink); color: var(--sun); font: 900 20px/1 var(--font-ui); }
+.note.vo { background: var(--sun); }
+.note.vo img { width: 40px; height: 40px; image-rendering: pixelated; }
+
+.card {
+  --rx: 0deg; --ry: 0deg; --lift: 0px;
+  position: relative; display: flex; flex-direction: column;
+  background: var(--paper); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(var(--lift));
+  transition: transform .18s ease-out, box-shadow .18s ease-out;
+}
+.card:hover, .card:focus-within { --lift: -6px; box-shadow: 10px 12px 0 var(--ink); }
+.card-art {
+  position: relative; height: 150px; display: grid; place-items: center; overflow: hidden;
+  background: radial-gradient(rgba(25, 24, 51, .16) 1.3px, transparent 1.7px) 0 0 / 12px 12px, var(--app, var(--sun));
+  border-bottom: 3px solid var(--ink);
+}
+/* A strip of light runs over the picture when the card is picked up, like on a shiny trading card. */
+.card-art::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .5) 38% 46%, transparent 46% 52%, rgba(255, 255, 255, .35) 52% 55%, transparent 55%);
+  transform: translateX(-100%);
+}
+.card:hover .card-art::after { transform: translateX(100%); transition: transform .7s ease-in-out; }
+.card-art img { width: 96px; height: 96px; image-rendering: pixelated; filter: drop-shadow(4px 4px 0 var(--ink)); }
+.card:hover .card-art img { animation: hop .45s steps(2, end) infinite alternate; }
+@keyframes hop { to { transform: translateY(-10px); } }
+.card-body { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 16px; }
+.card-name { margin: 0; font: 800 19px/1.15 var(--font-ui); letter-spacing: -.01em; }
+.card-desc { margin: 0; color: #3b3e66; font-size: 14px; line-height: 1.45; }
+.card-foot { margin-top: auto; padding-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.card-play {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; margin-left: auto;
+  background: var(--sun); color: var(--ink);
+  border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+  font: 900 15px/1 var(--font-ui); cursor: pointer;
+}
+/* The whole card is the button (no transform on the button itself: it would shrink this to the button). */
+.card-play::after { content: ""; position: absolute; inset: 0; }
+.card:active .card-play { box-shadow: 1px 1px 0 var(--ink); }
+.card.running .card-play { background: var(--ink); color: var(--sun); }
+
+.play-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 64px; }
+.play-note {
+  margin: 18px 0 0; text-align: center; color: #fff; font: 700 12.5px/1.4 var(--font-ui);
+  text-shadow: 1px 1px 0 var(--ink), -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink), 2px 2px 0 var(--ink);
+}
+
+/* ---------- the games page: the stage ---------- */
+.win-back { display: none; }
+body[data-view="play"] .win-back {
+  display: grid; place-items: center; flex: none;
+  width: 30px; height: 24px; padding: 0 0 3px;
+  background: var(--paper); color: var(--ink); border: 2px solid var(--ink);
+  font: 900 20px/1 var(--font-ui); cursor: pointer;
+}
+body[data-view="play"] .win-back:hover { background: var(--sun); }
+body[data-view="play"] .win { border-width: 3px; box-shadow: 8px 8px 0 var(--ink); }
+body[data-view="play"] .win-bar { cursor: default; }
+body[data-view="play"] .win-resize,
+body[data-view="play"] .win-btns [data-act="min"],
+body[data-view="play"] .win-btns [data-act="max"] { display: none; }
+
+/* Switching views: a wipe of pixel blocks (shell.js pixelWipe). */
+.wipe { position: fixed; inset: 0; z-index: 200000; display: grid; pointer-events: none; }
+.wipe i { background: var(--ink); transform: scale(0); }
+.wipe i.sun { background: var(--sun); }
+
 /* ---------- narrow screens: windows become sheets ---------- */
 /* Compact screens: keep in sync with COMPACT in shell.js */
 @media (max-width: 700px), (max-height: 500px), (pointer: coarse) and (max-width: 1100px) {
-  #desktop.sheet-open #overlays { visibility: hidden; }
-  .win { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; box-shadow: none; }
+  #desktop.sheet-open #overlays, #desktop.sheet-open #hotspots { visibility: hidden; }
+  .win, body[data-view="play"] .win { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; box-shadow: none; border-width: 2px; }
   .win-resize, .win-btns [data-act="max"] { display: none; }
   .win-bar { cursor: default; }
   #icons { right: 16px; grid-auto-flow: row; grid-template-columns: repeat(auto-fill, 88px); grid-template-rows: none; grid-auto-rows: 96px; }
   #clock { display: none; }
 }
+@media (max-width: 899px) {
+  .view-btn span { display: none; }
+  .view-btn { padding: 0 7px; }
+}
 @media (max-width: 700px) {
   #motto { font-size: 11.5px; white-space: normal; line-height: 1.15; }
   .tb-brand { display: none; }
+  #topbar { gap: 10px; }
+  /* The games page says the motto in its first tile, so the top bar shows the name instead. */
+  body[data-view="play"] .tb-brand { display: flex; }
+  .play-in { padding: 64px 16px 150px; }
+  .intro-p { font-size: 15px; }
+  .card-art { height: 124px; }
+}
+/* Fewer columns as the screen narrows; the motto keeps two of them until there is only one. */
+@media (max-width: 1099px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 819px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 559px) {
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+  .intro { grid-column: auto; }
+}
+/* Next to the view switch and three languages the motto would need three cramped lines on a phone. */
+@media (max-width: 520px) {
+  #motto { display: none; }
+  .tb-brand { display: flex; }
 }
 /* On phones the author credit would eat the title; it stays in the info window. */
 @media (max-width: 459px) {
@@ -372,6 +580,8 @@ button { font: inherit; color: inherit; }
   .win-btns { gap: 6px; }
   .win-btns button { width: 36px; height: 36px; font-size: 16px; }
   .lang-btn { height: 32px; min-width: 42px; }
+  .view-btn { height: 28px; min-width: 38px; justify-content: center; }
+  body[data-view="play"] .win-back { width: 44px; height: 36px; font-size: 24px; }
   #start-btn { height: 38px; }
   .task { height: 38px; }
   .tray-btn { width: 38px; height: 38px; }
@@ -383,10 +593,14 @@ button { font: inherit; color: inherit; }
   .win-bar { height: 36px; }
   .win-btns button { width: 32px; height: 32px; }
   .lang-btn { height: 28px; }
+  .view-btn { height: 24px; }
+  body[data-view="play"] .win-back { height: 32px; }
   #start-btn, .task, .tray-btn { height: 34px; }
   .tray-btn { width: 34px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .win, .toast { animation: none; }
+  .win, .toast, .tiles > *, .cloud, .star, .card:hover .card-art img { animation: none; }
+  .card, #play, #sky { transition: none; }
+  .card:hover .card-art::after { transition: none; }
 }

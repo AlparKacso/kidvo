@@ -69,7 +69,11 @@ window.KIDVO_I18N = {
       suggestP: 'No code? Suggest a game idea. A good idea is a contribution too.',
       suggest: 'Suggest a game', openIdeas: 'Open ideas',
       buildAge: "For grown-ups and teens from 13 (GitHub's minimum age). The guides are in English.",
-      madeByAlpar: 'Made by Alpár.'
+      madeByAlpar: 'Made by Alpár.',
+      viewLabel: 'View', viewGames: 'Games', viewDesktop: 'Desktop',
+      heroP: 'In every game a practice AI tries to help you. Sometimes it is wrong. Can you catch it?',
+      voH: 'Vo grows.', voP: 'Every round you finish makes him grow. Tap him for a snack, hold him down to see his garage.',
+      playBtn: 'Play', continueBtn: 'Continue', backToGames: 'Back to the games'
     },
     hu: {
       motto: 'Használd okosan az AI-t, gondolkodj a saját fejeddel!',
@@ -134,7 +138,11 @@ window.KIDVO_I18N = {
       suggestP: 'Nem programozol? Küldj be egy játékötletet. Egy jó ötlet is hozzájárulás.',
       suggest: 'Játékötlet beküldése', openIdeas: 'Nyitott ötletek',
       buildAge: 'Felnőtteknek és 13 éves kortól (ez a GitHub alsó korhatára). Az útmutatók angol nyelvűek.',
-      madeByAlpar: 'Készítette: Alpár.'
+      madeByAlpar: 'Készítette: Alpár.',
+      viewLabel: 'Nézet', viewGames: 'Játékok', viewDesktop: 'Asztal',
+      heroP: 'Minden játékban egy gyakorló AI próbál segíteni neked. Néha téved. Rajtakapod?',
+      voH: 'Vo megnő.', voP: 'Minden befejezett körrel nő egy kicsit. Koppints rá, és kap egy nasit; nyomd meg hosszan, és megnézheted a garázsát.',
+      playBtn: 'Játszom', continueBtn: 'Folytatom', backToGames: 'Vissza a játékokhoz'
     },
     ro: {
       motto: 'Folosește AI cu cap și gândește cu mintea ta.',
@@ -200,7 +208,11 @@ window.KIDVO_I18N = {
       suggestP: 'Nu scrii cod? Propune o idee de joc. O idee bună este și ea o contribuție.',
       suggest: 'Propune un joc', openIdeas: 'Idei deschise',
       buildAge: 'Pentru adulți și adolescenți de la 13 ani (vârsta minimă pe GitHub). Ghidurile sunt în engleză.',
-      madeByAlpar: 'Creat de Alpár.'
+      madeByAlpar: 'Creat de Alpár.',
+      viewLabel: 'Vizualizare', viewGames: 'Jocuri', viewDesktop: 'Desktop',
+      heroP: 'În fiecare joc te ajută un AI de exercițiu. Uneori greșește. Îl prinzi?',
+      voH: 'Vo crește.', voP: 'Cu fiecare rundă terminată crește puțin. Atinge-l ca să primească o gustare, ține-l apăsat ca să-i vezi garajul.',
+      playBtn: 'Joacă', continueBtn: 'Continuă', backToGames: 'Înapoi la jocuri'
     }
   }
 };
