@@ -4,7 +4,7 @@ kidvo.eu has no cookies, accounts or tracking. To see which games are used, the 
 
 ## What is counted
 
-When a game stops being played (its window is closed, or the browser tab is hidden), the site sends one request:
+When a game stops being played (the child goes back to the games, closes it, or the browser tab is hidden), the site sends one request:
 
 ```
 POST https://kidvo-count.kidvo-counter.workers.dev/play?g=maze&s=412&r=3&n=1
@@ -13,7 +13,7 @@ POST https://kidvo-count.kidvo-counter.workers.dev/play?g=maze&s=412&r=3&n=1
 - `g`: the game, one of the games on kidvo.eu (checked against the live `apps/registry.json`)
 - `s`: seconds the game was on screen (not counted while it waits behind its card or the tab is hidden)
 - `r`: rounds finished (the same `done` and `solved` events that make Vo grow)
-- `n`: 1 when the game was just opened, 0 when the child came back to the tab
+- `n`: 1 for the first stretch after the game was opened, 0 when the child came back to it (Continue, or back to the tab)
 
 The worker adds this to one row per game per day (`schema.sql`), in a D1 database kept in the EU (jurisdiction `eu`). It stores no IP address, browser, time of day or ID, and request logs are off, so the table cannot tell one child from another. Cloudflare sees each request's IP address on the way in, as any server does.
 

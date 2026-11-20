@@ -259,6 +259,7 @@
     const rec = wins.get(id);
     if (!rec) return;
     rec.minimized = true;
+    playSend(id); // back to the games (or minimized on the desktop): this stretch of play is over
     rec.node.hidden = true;
     rec.task.classList.add('min');
     rec.task.classList.remove('active');
@@ -1064,8 +1065,9 @@
   });
 
   /* ---------------- counting game plays, without names or IDs ---------------- */
-  // To see which games are used, the shell (never a game) sends one small count when a game stops being played:
-  // which game, the seconds it was on screen and the rounds finished (counter/README.md). No cookie, no ID, nothing
+  // To see which games are used, the shell (never a game) sends one small count when a game stops being played
+  // (back to the games, closed, or the tab hidden): which game, the seconds it was on screen and the rounds finished
+  // (counter/README.md). No cookie, no ID, nothing
   // kept on the device for it. Only on kidvo.eu itself, and never for browsers that ask not to be tracked.
   const COUNT = CFG.count || {};
   const counting = !!COUNT.url && location.hostname === COUNT.host && typeof navigator.sendBeacon === 'function' &&
