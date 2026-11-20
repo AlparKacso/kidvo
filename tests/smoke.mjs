@@ -85,7 +85,7 @@ async function run(name) {
 
   // Game plays are counted without names or IDs (counter/), and only on kidvo.eu. Here a stand-in config points the
   // count at this test, which records each beacon instead of letting it leave the machine.
-  await step('a game play is counted when the tab hides and when the game closes', async () => {
+  await step('a game play is counted on back, when the tab hides and when the game closes', async () => {
     const id = windowApps[0].id;
     const counted = [];
     const cp = await desk.newPage();
@@ -110,16 +110,24 @@ async function run(name) {
       await cp.waitForFunction(() => window.kidvoShell, null, { timeout: 5000 });
       await cp.click(`#play .card[data-app="${id}"] .card-play`);
       await cp.locator(`.win iframe[src^="apps/${id}/"]`).waitFor({ state: 'visible', timeout: 3000 });
+      // Back to the games: the first stretch is a new open.
+      await cp.waitForTimeout(1300);
+      await cp.click('.win:not([hidden]) [data-act="back"]');
+      await seen(1);
+      // Continue from its card, then the tab hides: the child came back to it.
+      await cp.click(`#play .card[data-app="${id}"] .card-play`);
+      await cp.locator(`.win iframe[src^="apps/${id}/"]`).waitFor({ state: 'visible', timeout: 3000 });
       await cp.waitForTimeout(1300);
       await tab('hidden');
-      await seen(1);
+      await seen(2);
+      // Back to the tab, then the game is closed.
       await tab('visible');
       await cp.waitForTimeout(1300);
       await cp.click('.win:not([hidden]) [data-act="close"]');
-      await seen(2);
-      const [a, b] = counted;
+      await seen(3);
+      const [a, ...rest] = counted;
       if (a.method !== 'POST' || a.g !== id || a.n !== '1' || !(Number(a.s) >= 1) || a.r !== '0') throw new Error(`first count: ${JSON.stringify(a)}`);
-      if (b.g !== id || b.n !== '0' || !(Number(b.s) >= 1)) throw new Error(`second count: ${JSON.stringify(b)}`);
+      for (const b of rest) if (b.g !== id || b.n !== '0' || !(Number(b.s) >= 1)) throw new Error(`later count: ${JSON.stringify(b)}`);
     } finally {
       await cp.close();
     }
