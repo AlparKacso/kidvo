@@ -776,6 +776,7 @@
             <p class="intro-for" data-surface>${t('heroFor', { ages: '%AGES%' }).replace('%AGES%', '<b class="ages">7–13</b>')}</p>
             <h1 class="intro-h" data-surface>${t('motto').replace(/\bAI\b/g, '<span class="ai">AI</span>')}</h1>
             <p class="intro-p">${t('heroP')}</p>
+            <p class="intro-note"><b>${t('safe1b')}</b> ${t('safe1')}</p>
           </header>
           <div class="guide" data-guide="1" data-surface>${tip(1)}${tip(2)}</div>
           <div class="guide" data-guide="2" data-surface>${tip(3)}${pet ? `<div class="note vo"><img src="${esc(iconUrl(pet))}" alt="" width="40" height="40"><p><b>${t('voH')}</b> ${t('voP')}</p></div>` : ''}</div>
