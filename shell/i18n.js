@@ -71,6 +71,7 @@ window.KIDVO_I18N = {
       buildAge: "For grown-ups and teens from 13 (GitHub's minimum age). The guides are in English.",
       madeByAlpar: 'Made by Alpár.',
       viewLabel: 'View', viewGames: 'Games', viewDesktop: 'Desktop',
+      heroFor: 'Games for kids aged {ages}',
       heroP: 'In every game a practice AI tries to help you. Sometimes it is wrong. Can you catch it?',
       voH: 'Vo grows.', voP: 'Every round you finish makes him grow. Tap him for a snack, hold him down to see his garage.',
       playBtn: 'Play', continueBtn: 'Continue', backToGames: 'Back to the games'
@@ -140,6 +141,7 @@ window.KIDVO_I18N = {
       buildAge: 'Felnőtteknek és 13 éves kortól (ez a GitHub alsó korhatára). Az útmutatók angol nyelvűek.',
       madeByAlpar: 'Készítette: Alpár.',
       viewLabel: 'Nézet', viewGames: 'Játékok', viewDesktop: 'Asztal',
+      heroFor: 'Játékok {ages}\u00a0éves gyerekeknek',
       heroP: 'Minden játékban egy gyakorló AI próbál segíteni neked. Néha téved. Rajtakapod?',
       voH: 'Vo megnő.', voP: 'Minden befejezett körrel nő egy kicsit. Koppints rá, és kap egy nasit; nyomd meg hosszan, és megnézheted a garázsát.',
       playBtn: 'Játszom', continueBtn: 'Folytatom', backToGames: 'Vissza a játékokhoz'
@@ -210,6 +212,7 @@ window.KIDVO_I18N = {
       buildAge: 'Pentru adulți și adolescenți de la 13 ani (vârsta minimă pe GitHub). Ghidurile sunt în engleză.',
       madeByAlpar: 'Creat de Alpár.',
       viewLabel: 'Vizualizare', viewGames: 'Jocuri', viewDesktop: 'Desktop',
+      heroFor: 'Jocuri pentru copii de {ages}\u00a0ani',
       heroP: 'În fiecare joc te ajută un AI de exercițiu. Uneori greșește. Îl prinzi?',
       voH: 'Vo crește.', voP: 'Cu fiecare rundă terminată crește puțin. Atinge-l ca să primească o gustare, ține-l apăsat ca să-i vezi garajul.',
       playBtn: 'Joacă', continueBtn: 'Continuă', backToGames: 'Înapoi la jocuri'

@@ -768,6 +768,7 @@
       <div class="play-in">
         <div class="tiles">
           <header class="intro">
+            <p class="intro-for" data-surface>${t('heroFor', { ages: '%AGES%' }).replace('%AGES%', '<b class="ages">7–13</b>')}</p>
             <h1 class="intro-h" data-surface>${t('motto').replace(/\bAI\b/g, '<span class="ai">AI</span>')}</h1>
             <p class="intro-p">${t('heroP')}</p>
           </header>
@@ -785,18 +786,24 @@
     const [guide1, guide2] = tiles.querySelectorAll('.guide');
     const games = [...apps.values()].filter(a => a.type !== 'overlay');
     games.forEach((app, i) => {
+      const name = appText(app, 'name');
       const btn = el('button', { type: 'button', class: 'card-play' }, el('span', {}, T('playBtn')));
       btn.insertAdjacentHTML('afterbegin', pixelSvg(ART.play, 2));
+      // A quiet way in for grown-ups: the game's parents' guide. Play stays the big yellow button.
+      const guide = app.bands?.length ? el('button', {
+        type: 'button', class: 'card-grownups', title: `${T('parentsGuide')} · ${name}`, 'aria-label': `${T('menuGrownups')}: ${name}`
+      }, T('menuGrownups')) : null;
       const card = el('article', { class: 'card', 'data-app': app.id, 'data-surface': '' },
         el('div', { class: 'card-art', 'aria-hidden': 'true' }, el('img', { src: iconUrl(app), alt: '', width: 96, height: 96, draggable: 'false' })),
         el('div', { class: 'card-body' },
-          el('h3', { class: 'card-name' }, appText(app, 'name')),
+          el('h3', { class: 'card-name' }, name),
+          // The age bands are stickers on the picture (shell.css), read right after the name.
+          el('span', { class: 'bands card-bands' }, ...(app.bands || []).map(b => el('span', { class: 'band ' + b, title: T(b) }, b === 'explorers' ? '7–9' : '10–13'))),
           el('p', { class: 'card-desc' }, appText(app, 'description')),
-          el('div', { class: 'card-foot' },
-            el('span', { class: 'bands' }, ...(app.bands || []).map(b => el('span', { class: 'band ' + b, title: T(b) }, b === 'explorers' ? '7–9' : '10–13'))),
-            btn)));
+          el('div', { class: 'card-foot' }, guide, btn)));
       if (app.color) card.style.setProperty('--app', app.color);
       btn.addEventListener('click', () => openFromCard(app.id, card));
+      guide?.addEventListener('click', () => openParents(app.id));
       tilt(card);
       // The tips follow the third game and Vo's note the fourth (or the last games, when there are fewer).
       tiles.insertBefore(card, i < 3 ? guide1 : i === 3 ? guide2 : null);
@@ -949,10 +956,12 @@
     });
   }
   // #above is pinned to the top of the visible page with no height of its own; the overlays and hotspots in it
-  // are as tall as the visible part, so Vo's floor is the bottom of the screen, not of the page.
+  // are as tall as the visible part, so Vo's floor is the bottom of the screen, not of the page. The visible part
+  // also changes without a window resize: the desktop's taskbar is taller than the games page's strip of ground,
+  // and Vo walked behind it after a switch of views.
   const sizeAbove = () => aboveEl.style.setProperty('--vo-h', playEl.clientHeight + 'px');
+  new ResizeObserver(() => { sizeAbove(); queueWindows(); }).observe(playEl);
   window.addEventListener('resize', () => {
-    sizeAbove();
     for (const r of wins.values()) fitStage(r);
     queueWindows();
   });

@@ -201,7 +201,8 @@ export async function readManifest(id) {
   if (RESERVED_IDS.has(id)) errors.push(`"${id}" is a reserved name.`);
   if (m.id !== id) errors.push(`manifest.id ("${m.id}") must match the folder name ("${id}").`);
   if (!isStr(m.name, 1, 32)) errors.push('name: 1 to 32 characters.');
-  if (!isStr(m.description, 10, 160)) errors.push('description: 10 to 160 characters.');
+  // The description is the game's card on the games page, read by children: one or two short sentences.
+  if (!isStr(m.description, 10, 90)) errors.push('description: 10 to 90 characters, one or two short sentences a child can read (it is the text on the game\'s card).');
   if (!m.author || !isStr(m.author.name, 1, 60)) errors.push('author.name: 1 to 60 characters.');
   // The name is shown to children on the game window: a plain name, no links, emails or emoji.
   else if (!/^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N} .'’_-]*$/u.test(m.author.name)) errors.push('author.name: letters, digits, spaces and . _ - \' only (no links, emails or emoji). Children see it on the game window.');
@@ -225,7 +226,7 @@ export async function readManifest(id) {
   if (!Array.isArray(m.languages) || !m.languages.includes('en') || !m.languages.every(l => LANGUAGES.includes(l))) errors.push(`languages must list "en" plus any of: ${LANGUAGES.join(', ')}.`);
   for (const l of (m.languages || []).filter(l => l !== 'en')) {
     const tr = m.translations?.[l];
-    if (!tr || !isStr(tr.name, 1, 32) || !isStr(tr.description, 10, 200)) errors.push(`translations.${l} needs a name (up to 32 characters) and a description.`);
+    if (!tr || !isStr(tr.name, 1, 32) || !isStr(tr.description, 10, 110)) errors.push(`translations.${l} needs a name (up to 32 characters) and a description (10 to 110 characters).`);
   }
   for (const l of Object.keys(m.translations || {})) if (!(m.languages || []).includes(l)) errors.push(`translations.${l} is there, but "${l}" is not in languages.`);
   if (m.bands && !m.skills) errors.push('A learning app (with bands) must name the skills it teaches.');

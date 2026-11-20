@@ -1,7 +1,7 @@
 {
   "id": "your-game-id",
   "name": "Your Game",
-  "description": "One sentence a parent would understand: what the child does and what it teaches.",
+  "description": "One or two short sentences a child can read: what they do in the game.",
   "author": { "name": "Your name or handle", "url": "https://github.com/your-handle" },
   "type": "window",
   "window": { "width": 640, "height": 460 },
