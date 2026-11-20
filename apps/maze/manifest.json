@@ -1,7 +1,7 @@
 {
   "id": "maze",
   "name": "Robot Maze",
-  "description": "Reach the star in as few steps as you can. A practice AI can help, but asking costs sparks, and it is not always right.",
+  "description": "Guide the robot to the star. The AI gives hints, but are they right?",
   "author": {
     "name": "Alpár"
   },
@@ -33,11 +33,11 @@
   "translations": {
     "hu": {
       "name": "Robot-labirintus",
-      "description": "Érd el a csillagot a lehető legkevesebb lépésből. Egy gyakorló AI segíthet, de a kérdés szikrába kerül, és nem mindig van igaza."
+      "description": "Vezesd el a robotot a csillagig. Az AI tippeket ad, de vajon jók?"
     },
     "ro": {
       "name": "Labirintul robotului",
-      "description": "Ajungi la stea din cât mai puțini pași. Un AI de exercițiu te poate ajuta, dar întrebările costă scântei și nu are mereu dreptate."
+      "description": "Du robotul până la stea. AI-ul îți dă indicii, dar oare sunt bune?"
     }
   }
 }

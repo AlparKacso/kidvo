@@ -425,8 +425,9 @@ body[data-view="play"] #play { overflow-x: hidden; overflow-y: auto; overscroll-
 #page { position: relative; z-index: 6; min-height: 100%; transition: filter .25s; }
 /* A game is on the stage: the page behind it dims (Vo does not), and a click there goes back to the games. */
 #desktop.staged #page, #desktop.staged #sky { filter: brightness(.6) saturate(.7); }
-/* The space above the first row is room for Vo to stand on it. */
-.play-in { max-width: 1240px; margin: 0 auto; padding: 64px 24px 150px; }
+/* The space above the first row is room for Vo to stand on a card with his speech bubble over him: his
+   tallest ride (98px) and the bubble (40px). Where it is less (phones, short screens), the bubble goes beside him. */
+.play-in { max-width: 1240px; margin: 0 auto; padding: 144px 24px 150px; }
 
 /* One grid of tiles: the motto (two columns wide), the games, and two guide tiles between them. */
 .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 20px; }
@@ -448,6 +449,14 @@ body[data-view="play"] #play { overflow-x: hidden; overflow-y: auto; overscroll-
     4px 4px 0 var(--ink), 5px 5px 0 var(--ink), 6px 6px 0 var(--ink);
 }
 .intro-h .ai { color: var(--sun); }
+/* Who the site is for, as a sticker above the motto: children, and their ages. */
+.intro-for {
+  width: fit-content; margin: 0 0 20px; padding: 6px 12px;
+  background: var(--paper); color: var(--ink);
+  border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+  font: 800 16px/1.75 var(--font-ui);
+}
+.intro-for .ages { display: inline-block; margin: 0 3px; padding: 0 8px; line-height: 1.6; background: var(--ink); color: var(--sun); font-weight: 900; white-space: nowrap; }
 .intro-p {
   display: inline-block; max-width: 30em; margin: 24px 0 0; padding: 12px 16px;
   background: var(--paper); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
@@ -475,7 +484,7 @@ body[data-view="play"] #play { overflow-x: hidden; overflow-y: auto; overscroll-
 }
 .card:hover, .card:focus-within { --lift: -6px; box-shadow: 10px 12px 0 var(--ink); }
 .card-art {
-  position: relative; height: 150px; display: grid; place-items: center; overflow: hidden;
+  position: relative; height: 128px; display: grid; place-items: center; overflow: hidden;
   background: radial-gradient(rgba(25, 24, 51, .16) 1.3px, transparent 1.7px) 0 0 / 12px 12px, var(--app, var(--sun));
   border-bottom: 3px solid var(--ink);
 }
@@ -490,9 +499,21 @@ body[data-view="play"] #play { overflow-x: hidden; overflow-y: auto; overscroll-
 .card:hover .card-art img { animation: hop .45s steps(2, end) infinite alternate; }
 @keyframes hop { to { transform: translateY(-10px); } }
 .card-body { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 16px; }
+/* The age bands are stickers on the picture; clicks go through them to the card. */
+.card-bands { position: absolute; top: 10px; left: 10px; pointer-events: none; }
+.card-bands .band { box-shadow: 2px 2px 0 var(--ink); }
 .card-name { margin: 0; font: 800 19px/1.15 var(--font-ui); letter-spacing: -.01em; }
 .card-desc { margin: 0; color: #3b3e66; font-size: 14px; line-height: 1.45; }
-.card-foot { margin-top: auto; padding-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.card-foot { margin-top: auto; padding-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; }
+/* For grown-ups: a plain underlined link next to Play, above the card-wide Play target (.card-play::after). */
+.card-grownups {
+  position: relative; z-index: 1;
+  padding: 6px 0; background: none; border: 0; color: #3b3e66;
+  font: 700 12px/1.2 var(--font-ui); text-align: left;
+  text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px;
+  cursor: pointer;
+}
+.card-grownups:hover { color: var(--ink); text-decoration-thickness: 2.5px; }
 .card-play {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 10px 16px; margin-left: auto;
@@ -502,7 +523,7 @@ body[data-view="play"] #play { overflow-x: hidden; overflow-y: auto; overscroll-
 }
 /* The whole card is the button (no transform on the button itself: it would shrink this to the button). */
 .card-play::after { content: ""; position: absolute; inset: 0; }
-.card:active .card-play { box-shadow: 1px 1px 0 var(--ink); }
+.card-play:active { box-shadow: 1px 1px 0 var(--ink); }
 .card.running .card-play { background: var(--ink); color: var(--sun); }
 
 .play-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 64px; }
@@ -555,12 +576,18 @@ body[data-view="play"] .win-btns [data-act="max"] { display: none; }
   .intro-p { font-size: 15px; }
   .card-art { height: 124px; }
 }
-/* Fewer columns as the screen narrows; the motto keeps two of them until there is only one. */
+/* Fewer columns as the screen narrows; the motto keeps two of them until there is only one. Wide screens get a
+   fifth column, so a longer list of games needs less scrolling. */
+@media (min-width: 1480px) {
+  .play-in { max-width: 1540px; }
+  .tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
 @media (max-width: 1099px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 819px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 559px) {
   .tiles { grid-template-columns: minmax(0, 1fr); }
   .intro { grid-column: auto; }
+  .intro-for { font-size: 14px; }
 }
 /* Next to the view switch and three languages the motto would need three cramped lines on a phone. */
 @media (max-width: 520px) {
@@ -574,6 +601,8 @@ body[data-view="play"] .win-btns [data-act="max"] { display: none; }
 @media (max-height: 500px) {
   :root { --top-h: 28px; --bar-h: 40px; }
   .win-bar { height: 30px; }
+  /* Too short a screen for all that sky: Vo's bubble goes beside him instead. */
+  .play-in { padding-top: 64px; }
 }
 /* Fingers need bigger targets than mouse pointers. */
 @media (pointer: coarse) {
@@ -589,6 +618,7 @@ body[data-view="play"] .win-btns [data-act="max"] { display: none; }
   .tray-btn { width: 38px; height: 38px; }
   .sm-app { padding: 11px 8px; }
   .sm-link { padding: 15px 10px; }
+  .card-grownups { min-height: 40px; }
 }
 @media (pointer: coarse) and (max-height: 500px) {
   :root { --top-h: 32px; --bar-h: 44px; }
