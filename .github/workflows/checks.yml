@@ -43,7 +43,9 @@ jobs:
 
   rule-1:
     name: Do no harm (automatic part)
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04 (2026-11), where Playwright 1.56.0 cannot install its browsers.
+    # Go back to ubuntu-latest after moving to a Playwright release that supports it.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

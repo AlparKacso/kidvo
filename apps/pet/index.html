@@ -18,12 +18,17 @@
   html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
   #c { position: absolute; inset: 0; width: 100%; height: 100%; }
   #bubble {
-    position: absolute; transform: translate(-50%, -100%);
+    position: absolute;
     max-width: 200px; padding: 6px 9px;
     background: #fff; color: var(--ink); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink);
     font: 700 12px/1.3 var(--mono); white-space: nowrap;
   }
-  #bubble::after { content: ""; position: absolute; left: 50%; bottom: -8px; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--ink); }
+  /* The tail points at Vo from whichever side the bubble is on (placeBubble). */
+  #bubble::after { content: ""; position: absolute; border: 5px solid transparent; }
+  #bubble[data-side="up"]::after { left: var(--tail, 50%); bottom: -12px; margin-left: -5px; border-top-color: var(--ink); }
+  #bubble[data-side="down"]::after { left: var(--tail, 50%); top: -12px; margin-left: -5px; border-bottom-color: var(--ink); }
+  #bubble[data-side="right"]::after { top: 50%; left: -12px; margin-top: -5px; border-right-color: var(--ink); }
+  #bubble[data-side="left"]::after { top: 50%; right: -12px; margin-top: -5px; border-left-color: var(--ink); }
 
   /* Vo's garage: the one place with words and a number. The desktop lifts this overlay above the windows
      while the card is open (kidvo.setModal), so a tap anywhere outside it closes it. */
@@ -61,7 +66,7 @@
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="bubble" hidden></div>
+<div id="bubble" data-side="up" hidden></div>
 <section id="garage" role="dialog" aria-modal="true" aria-labelledby="g-title" hidden>
   <header><h1 id="g-title"></h1><button type="button" class="x" id="g-close">X</button></header>
   <div class="in">
@@ -336,9 +341,31 @@
       const z = Math.floor(now / 600) % 3;
       ctx.fillText('z'.repeat(z + 1), pet.x + 20, headTop - 4);
     }
-    const half = bubble.hidden ? 0 : bubble.offsetWidth / 2;
-    bubble.style.left = Math.max(half + 4, Math.min(W - half - 4, pet.x)) + 'px';
-    bubble.style.top = (top - 8) + 'px';
+    if (!bubble.hidden) placeBubble(top, headTop);
+  }
+
+  // The speech bubble goes above Vo when there is room. Near the top of the screen (the first row of cards, a
+  // window high up, a tall ride) it goes beside his head instead: under him is the window he stands on, which
+  // would hide it. Only a screen too narrow for that puts it under his feet (the games page lies under him).
+  function placeBubble(top, headTop) {
+    const bw = bubble.offsetWidth, bh = bubble.offsetHeight, b = box();
+    const room = { right: W - 4 - (b.x + b.w + 10) >= bw, left: b.x - 10 - 4 >= bw };
+    let side = 'down';
+    if (top - 8 - bh >= 4) side = 'up';
+    else if (room[bubble.dataset.side]) side = bubble.dataset.side; // keep its side while it fits: no flicker
+    else if (room.right || room.left) side = room.right && (!room.left || W - b.x - b.w >= b.x) ? 'right' : 'left';
+    let x, y;
+    if (side === 'up' || side === 'down') {
+      x = Math.max(4, Math.min(W - bw - 4, pet.x - bw / 2));
+      y = side === 'up' ? top - 8 - bh : pet.y + 10;
+      bubble.style.setProperty('--tail', Math.max(10, Math.min(bw - 10, pet.x - x)) + 'px');
+    } else {
+      x = side === 'right' ? b.x + b.w + 10 : b.x - 10 - bw;
+      y = Math.max(4, Math.min(pet.y - pet.lift - bh - 2, headTop + 4 * S - bh / 2));
+    }
+    if (bubble.dataset.side !== side) bubble.dataset.side = side;
+    bubble.style.left = Math.round(x) + 'px';
+    bubble.style.top = Math.round(y) + 'px';
   }
 
   let last = performance.now();

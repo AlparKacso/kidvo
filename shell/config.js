@@ -10,5 +10,8 @@ window.KIDVO_CONFIG = {
   // Max bus messages per second a single app may send before it is muted.
   emitRate: 40,
   // Largest event payload (bytes of JSON) the bus will forward.
-  maxPayload: 4096
+  maxPayload: 4096,
+  // Counting game plays without names or IDs (counter/README.md). Sent only when the page is served from `host`;
+  // the address must also be in connect-src in index.html.
+  count: { url: 'https://kidvo-count.kidvo-counter.workers.dev/play', host: 'kidvo.eu' }
 };

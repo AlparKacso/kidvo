@@ -4,14 +4,19 @@
 
 kidvo is a free, open-source collection of short browser games that help children aged 7 to 13 learn to use AI responsibly without losing their critical thinking. Live at **[kidvo.eu](https://kidvo.eu)**.
 
-![The kidvo desktop](docs/screenshot.png)
+<p>
+  <img src="docs/secret-keeper.gif" width="240" alt="Secret Keeper on a phone. Sunny, a friendly practice AI, asks for a home address and a phone number. Asking a grown-up first earns Well kept; sharing the phone number gets a Careful! note.">
+  <img src="docs/screenshot.png" width="560" alt="The kidvo desktop">
+</p>
+
+**[Play at kidvo.eu](https://kidvo.eu)** · **[Make a game](docs/first-game.md)** · **[Good first issues](https://github.com/AlparKacso/kidvo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)**
 
 ## How the games work
 
 Every game has a **practice AI**: a clearly labelled pretend AI (like ORACLE-3000 in Robot Maze) whose answers are written in advance. Some of them are wrong on purpose. Children practise asking, doubting and checking in a place where nothing can go wrong.
 
 - **No real AI, no internet calls.** Every sentence a child sees is in this repository and reviewed.
-- **Nothing is collected.** No accounts, ads, tracking or cookies. Progress stays in the browser.
+- **No personal data.** No accounts, ads, tracking or cookies. Progress stays in the browser. The site only counts game plays, without names or IDs: which game, how long, and how many rounds ([how](counter/README.md)).
 - **Two age bands.** Explorers (7–9) and Investigators (10–13).
 - **Three languages to start:** English, Hungarian and Romanian.
 - **A printable guide for parents and teachers** comes with every game.
@@ -29,7 +34,7 @@ Plus **Vo**, the desktop's pet, who cheers when a child catches the AI making a 
 
 ## Build a game
 
-Anyone can propose a game. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the charter, the merge rules and a five-minute start. AI coding agents: [AGENTS.md](AGENTS.md).
+Anyone can propose a game. [Your first kidvo game in an evening](docs/first-game.md) walks you from an idea to a pull request; [CONTRIBUTING.md](CONTRIBUTING.md) has the charter and the merge rules. No coding? [Translate kidvo](https://github.com/AlparKacso/kidvo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) into your language. AI coding agents: [AGENTS.md](AGENTS.md).
 
 ```bash
 git clone https://github.com/AlparKacso/kidvo && cd kidvo

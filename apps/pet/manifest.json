@@ -1,7 +1,7 @@
 {
   "id": "pet",
   "name": "Vo",
-  "description": "The desktop's resident creature. Walks on your windows and cheers when you catch the AI making a mistake.",
+  "description": "Vo walks on your windows and cheers when you catch the AI making a mistake.",
   "author": {
     "name": "Alpár"
   },
@@ -21,11 +21,11 @@
   "translations": {
     "hu": {
       "name": "Vo",
-      "description": "Az asztal lakója. Sétál az ablakaidon, és ujjong, ha rajtakapod az AI-t egy hibán."
+      "description": "Vo sétál az ablakaidon, és ujjong, ha rajtakapod az AI-t egy hibán."
     },
     "ro": {
       "name": "Vo",
-      "description": "Locuitorul desktopului. Se plimbă pe ferestrele tale și se bucură când prinzi AI-ul greșind."
+      "description": "Vo se plimbă pe ferestrele tale și se bucură când prinzi AI-ul greșind."
     }
   }
 }

@@ -1,4 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url><loc>https://kidvo.eu/</loc></url>
+  <url>
+    <loc>https://kidvo.eu/apps/maze/parents/en.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/maze/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/maze/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/maze/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/maze/parents/hu.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/maze/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/maze/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/maze/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/maze/parents/ro.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/maze/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/maze/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/maze/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/nonsense/parents/en.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/nonsense/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/nonsense/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/nonsense/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/nonsense/parents/hu.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/nonsense/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/nonsense/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/nonsense/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/nonsense/parents/ro.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/nonsense/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/nonsense/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/nonsense/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/secret-keeper/parents/en.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/secret-keeper/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/secret-keeper/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/secret-keeper/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/secret-keeper/parents/hu.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/secret-keeper/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/secret-keeper/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/secret-keeper/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/secret-keeper/parents/ro.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/secret-keeper/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/secret-keeper/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/secret-keeper/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/sorter/parents/en.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/sorter/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/sorter/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/sorter/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/sorter/parents/hu.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/sorter/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/sorter/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/sorter/parents/ro.html"/>
+  </url>
+  <url>
+    <loc>https://kidvo.eu/apps/sorter/parents/ro.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kidvo.eu/apps/sorter/parents/en.html"/>
+    <xhtml:link rel="alternate" hreflang="hu" href="https://kidvo.eu/apps/sorter/parents/hu.html"/>
+    <xhtml:link rel="alternate" hreflang="ro" href="https://kidvo.eu/apps/sorter/parents/ro.html"/>
+  </url>
 </urlset>
