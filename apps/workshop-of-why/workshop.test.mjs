@@ -115,7 +115,7 @@ test('wrong answers lead to smaller questions, then retry without advancing', ()
 
 test('AI checks require the right observation and are distinct from main answers', () => {
   const game = create(); game.begin(); game.visit('window');
-  for (const q of lesson.steps) {
+  for (const q of lesson.steps.slice(0, 3)) {
     if (game.state.awaiting) game.visit(q.place);
     game.act(option(game, 'unsure'));
     const before = game.state.at, count = game.state.checked, msg = game.act(option(game, 'ai'));
@@ -133,7 +133,7 @@ test('AI checks require the right observation and are distinct from main answers
     if (game.state.awaiting) game.visit(q.place);
     choose(game, true);
   }
-  assert.equal(game.state.checked, lesson.steps.length);
+  assert.equal(game.state.checked, 3);
 });
 
 test('new diagrams require a fresh observation; retries do not repeat that gate', () => {
@@ -155,16 +155,36 @@ test('new diagrams require a fresh observation; retries do not repeat that gate'
   }
 });
 
-test('AI has no quota, each request needs a check, old messages keep their keys', () => {
+test('three asks per round, each on a different step', () => {
   const game = create(), opening = game.begin(), snapshot = JSON.stringify(opening);
-  game.visit('window'); game.act(option(game, 'unsure'));
-  for (let i = 0; i < 5; i++) {
-    game.act(option(game, 'ai'));
-    assert.equal(game.state.mode, 'check');
+  let result;
+  for (const q of lesson.steps) {
+    if (game.state.awaiting) game.visit(q.place);
+    game.act(option(game, 'unsure'));
+    const ask = option(game, 'ai');
+    if (game.state.at < 3) {
+      assert.ok(ask);
+      game.act(ask);
+      if (game.state.awaiting) game.visit(q.ai.place);
+      choose(game, true);
+      if (game.state.awaiting) game.visit(q.place);
+      game.act(option(game, 'unsure'));
+      assert.equal(option(game, 'ai'), undefined);
+      assert.equal(game.act(ask).ai, undefined);
+      assert.equal(game.remaining(), 2 - game.state.at);
+    } else {
+      assert.equal(ask, undefined);
+    }
     choose(game, true);
-    assert.equal(game.state.at, 0);
+    result = choose(game, true);
   }
-  assert.equal(game.state.requests, 5); assert.equal(game.state.checked, 5);
+  assert.equal(game.state.checked, 3);
+  assert.equal(game.state.independent, lesson.steps.length - 3);
+  assert.ok(result.parts.some(part => part.key === 'checked'));
+  game.act(option(game, 'replay'));
+  assert.equal(game.remaining(), 3);
+  assert.equal(game.state.checked, 0);
+  assert.equal(game.state.independent, 0);
   assert.equal(JSON.stringify(opening), snapshot);
 });
 
@@ -201,26 +221,30 @@ test('every bundled investigation completes with guidance and authored AI checks
   const { lessons, skipped } = await loadLessons(new URL('lessons/', root), dictionaries.en);
   assert.deepEqual(skipped, []);
   for (const content of lessons) {
-    const game = box.Workshop.create(content); game.begin();
-    let completions = 0;
-    for (const q of content.steps) {
-      if (game.state.awaiting) game.visit(q.place);
-      for (const direction of ['cw', 'ccw']) {
-        if (game.basin.state.phase === 'empty') game.basin.refill();
-        game.basin.stir(direction); game.basin.drain(); game.basin.finish();
+    for (let first = 0; first < content.steps.length; first += 3) {
+      const game = box.Workshop.create(content); game.begin();
+      let completions = 0;
+      for (const [index, q] of content.steps.entries()) {
+        if (game.state.awaiting) game.visit(q.place);
+        for (const direction of ['cw', 'ccw']) {
+          if (game.basin.state.phase === 'empty') game.basin.refill();
+          game.basin.stir(direction); game.basin.drain(); game.basin.finish();
+        }
+        choose(game, false); assert.equal(game.state.mode, 'guide');
+        choose(game, false); choose(game, true);
+        if (index >= first && index < first + 3) {
+          game.act(option(game, 'ai'));
+          if (game.state.awaiting) game.visit(q.ai.place);
+          const checkedBefore = game.state.checked;
+          choose(game, false); assert.equal(game.state.checked, checkedBefore);
+          assert.ok(choose(game, true).checked);
+          if (game.state.awaiting) game.visit(q.place);
+        }
+        if (choose(game, true).done) completions++;
       }
-      choose(game, false); assert.equal(game.state.mode, 'guide');
-      choose(game, false); choose(game, true);
-      game.act(option(game, 'ai'));
-      if (game.state.awaiting) game.visit(q.ai.place);
-      const checkedBefore = game.state.checked;
-      choose(game, false); assert.equal(game.state.checked, checkedBefore);
-      assert.ok(choose(game, true).checked);
-      if (game.state.awaiting) game.visit(q.place);
-      if (choose(game, true).done) completions++;
+      assert.equal(completions, 1, content.id);
+      assert.equal(game.state.checked, Math.min(3, content.steps.length - first), content.id);
     }
-    assert.equal(completions, 1, content.id);
-    assert.equal(game.state.checked, content.steps.length, content.id);
   }
 });
 

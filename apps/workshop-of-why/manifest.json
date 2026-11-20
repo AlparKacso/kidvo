@@ -7,7 +7,7 @@
   "window": { "width": 940, "height": 740 },
   "color": "#e8d3ad",
   "icon": "icon.svg",
-  "bands": ["explorers", "investigators"],
+  "bands": ["explorers"],
   "skills": ["ai-can-be-wrong", "when-to-ask"],
   "languages": ["en", "hu", "ro"],
   "translations": {

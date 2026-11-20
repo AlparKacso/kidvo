@@ -33,17 +33,11 @@ The manifest names two skills:
 - **when-to-ask:** think first, then choose ordinary free guidance or optional
   AI help that adds a checking task.
 
-AI becomes available after a first reply or “not sure” choice. Its button
-advertises **one extra check**. There is no spark currency or help quota.
-The child answers that evidence-check question before returning to the main
-question. Mira models the first two requested checks, then offers less coaching.
-Successful checks receive recognition. The inline flag alone does not earn
-evidence credit. A finished investigation emits kidvo's done event once;
-abandoning it does not.
-
-**Maintainer design decision:** the advertised effort cost replaces the
-reference game's spendable sparks. Whether that satisfies charter rule 3
-requires maintainer judgement; passing automated checks is not acceptance.
+After trying a step or choosing “not sure,” the child can ask the practice AI.
+Each investigation has three asks, with one per step. Each ask adds a check
+before the child returns to the main question. Mira helps with the first
+two checks. The results show steps solved without AI and checks completed.
+A finished investigation emits kidvo's done event once.
 
 ## Run and review
 

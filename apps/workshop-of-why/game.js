@@ -4,12 +4,21 @@
   const lessons = window.workshopLessons || [];
   let lesson = null, game = null, places = {};
   const board = $('board'), bird = $('bird'), chat = $('conversation');
-  let position = { x: 47, y: 80 }, drag = null, pendingMove = null, keyboard = false, viewRound = 0;
+  let position = { x: 47, y: 80 }, drag = null, pendingMove = null, keyboard = false;
   const basinView = WorkshopBasin.mount($('basin-panel'), { getModel: () => game?.basin, translate: t,
     onTrial: () => { if (game) observe({ place: game.state.focus, repeat: true }); } });
-  const render = msg => () => msg.parts.map(part => t('from_' + part.speaker, { text: t(part.key, part.vars) })).join('\n\n');
-  const aiText = () => ({ tag: t('panel_tag'), ask: t(game && (game.state.awaiting || game.needsExperiment()) ? 'explore_label' : game?.state.mode === 'check' ? 'check_label' : 'reply_label'),
-    notRight: t('flag'), caught: t('flagged_wrong'), fine: t('flagged_true'), other: t('other'), sparksLeft: () => '', costs: () => '', notEnough: '' });
+  const render = parts => () => parts.map(part => t('from_' + part.speaker, { text: t(part.key, part.vars) })).join('\n\n');
+  const tell = msg => ai.say(render(msg.parts.filter(part => part.speaker !== 'ai')));
+  let aiStory;
+  function askStatus() {
+    if (!game || game.state.mode === 'complete') return '';
+    if (game.state.mode === 'check') return t('ai_check_first');
+    if (!game.remaining()) return t('ai_empty');
+    if (game.state.askedHere) return t('ai_used');
+    if (!game.state.allowAI) return t('ai_try_first');
+    return '';
+  }
+  const aiText = () => ({ tag: t('panel_tag'), ask: askStatus() });
   function scroll() { const log = chat.querySelector('.kai-log'); log.scrollTop = log.scrollHeight; }
   function placeBird(x, y) {
     position = { x: Math.max(5, Math.min(95, x)), y: Math.max(10, Math.min(95, y)) };
@@ -26,7 +35,7 @@
     if (ai.isBusy()) { pendingMove = move; return; }
     if (move.place === game.state.focus && !game.state.awaiting && !move.repeat) return;
     const msg = game.visit(move.place);
-    if (msg) ai.say(render(msg));
+    if (msg) tell(msg);
     ai.refresh(); update(); scroll();
   }
   function move(x, y, repeat = false, target = null) {
@@ -35,37 +44,48 @@
     board.dataset.focus = places[place]?.visual || '';
     observe({ ...position, place, repeat });
   }
-  function answer(option) {
+  function finishAction() {
+    if (pendingMove) {
+      const move = pendingMove; pendingMove = null;
+      const msg = game.visit(move.place);
+      if (msg) tell(msg);
+    }
+    update(); scroll();
+    if (keyboard) (choices.querySelector('button:not(:disabled)') || $('place-' + game.place()) || $('restart')).focus();
+  }
+  function storyAnswer(option) {
+    if (ai.isBusy()) return;
+    if (option.action === 'replay') {
+      begin(true);
+      $('bird').focus();
+      return;
+    }
     const msg = game.act(option);
     if (msg.judged !== undefined) kidvo.emit('judged', { right: msg.judged });
     if (msg.checked) kidvo.emit('checked', {});
     if (msg.done) kidvo.emit('done', { lesson: lesson.id });
-    return { text: render(msg), wrong: !!msg.wrong, flaggable: !!msg.ai };
+    tell(msg);
+    finishAction();
   }
   const ai = kidvoAI.create(chat, {
-    name: 'Workshop', sparks: null, thinkMs: 250, typeMs: 9,
+    name: t('panel_name'), sparks: null, thinkMs: 250, typeMs: 9,
     text: aiText(),
-    questions: () => game ? game.options().map(option => ({ id: option.id, label: () => t(option.label), answer: () => answer(option) })) : [],
-    onAnswer: () => {
-      if (!game) return;
-      if (game.state.round !== viewRound) {
-        viewRound = game.state.round; pendingMove = null; placeBird(47, 80);
-        basinView.reset();
-      }
-      if (pendingMove) {
-        const move = pendingMove; pendingMove = null;
-        const msg = game.visit(move.place);
-        if (msg) ai.say(render(msg));
-        ai.refresh();
-      }
-      update(); scroll();
-      if (keyboard) chat.querySelector('.kai-chip:not(:disabled)')?.focus();
-    },
-    onFlag: () => {
-      // A flag alone is not evidence-check credit and never changes lesson state.
-      ai.say(render({ parts: [{ speaker: 'mira', key: 'flag_guide' }, ...(game ? [{ speaker: 'mira', key: game.active() }] : [])] }));
-    }
+    questions: () => (game?.options() || []).filter(option => option.action === 'ai').map(option => {
+      const remaining = game.remaining();
+      return {
+        id: option.id,
+        label: () => t('ai_ask', { n: remaining }),
+        answer: () => {
+          aiStory = game.act(option);
+          return { text: render(aiStory.parts.filter(part => part.speaker === 'ai')), wrong: !!aiStory.wrong, flaggable: false };
+        }
+      };
+    }),
+    onAnswer: () => { tell(aiStory); finishAction(); }
   });
+  const choices = document.createElement('div');
+  choices.className = 'story-choices';
+  chat.querySelector('.kai-ask').prepend(choices);
   function update() {
     $('title').textContent = t('title'); document.title = t('title'); document.documentElement.lang = kidvo.lang;
     $('restart').textContent = t('restart'); $('restart').disabled = ai.isBusy();
@@ -91,11 +111,19 @@
     $('basin-panel').hidden = !(board.dataset.basin === 'true' && board.dataset.focus === 'basin');
     $('basin-close').textContent = t('basin_close'); basinView.render();
     ai.setText(aiText());
-    if (game) {
-      const options = game.options();
-      chat.querySelectorAll('.kai-chip').forEach((chip, i) => {
-        if (options[i]?.action === 'ai') chip.setAttribute('data-ai', '');
-      });
+    const focused = document.activeElement?.dataset.choice;
+    choices.replaceChildren();
+    for (const option of game?.options() || []) {
+      if (option.action === 'ai') continue;
+      const button = document.createElement('button');
+      button.className = 'kai-chip';
+      button.type = 'button';
+      button.dataset.choice = option.id;
+      button.disabled = ai.isBusy();
+      button.textContent = t(option.label);
+      button.addEventListener('click', () => storyAnswer(option));
+      choices.append(button);
+      if (option.id === focused && !button.disabled) button.focus();
     }
   }
   function begin(clear) {
@@ -103,7 +131,7 @@
     pendingMove = null; drag = null; bird.classList.remove('dragging');
     if (clear) ai.reset({ sparks: null });
     placeBird(47, 80);
-    if (game) { const msg = game.begin(); basinView.reset(); viewRound = game.state.round; ai.say(render(msg)); ai.refresh(); }
+    if (game) { const msg = game.begin(); basinView.reset(); tell(msg); ai.refresh(); }
     else ai.say(() => t('empty'));
     update(); scroll();
   }

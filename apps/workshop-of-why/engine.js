@@ -1,9 +1,10 @@
 (() => {
   'use strict';
+  const ASK_LIMIT = 3;
   const line = (speaker, key, vars) => ({ speaker, key, vars });
   window.Workshop = { create(lesson) {
     let basin = WorkshopBasin.create();
-    const state = { at: 0, mode: 'question', awaiting: true, focus: null, allowAI: false, requests: 0, checked: 0, done: false, round: 0 };
+    const state = { at: 0, mode: 'question', awaiting: true, focus: null, allowAI: false, requests: 0, askedHere: false, checked: 0, independent: 0, done: false, round: 0 };
     const current = () => lesson.steps[state.at];
     const place = () => state.mode === 'complete' ? null : state.mode === 'check' ? current().ai.place : current().place;
     const prompt = () => state.mode === 'complete' ? 'finished' : state.mode === 'check' ? current().ai.prompt :
@@ -21,7 +22,7 @@
     }
     function begin() {
       basin = WorkshopBasin.create();
-      Object.assign(state, { at: 0, mode: 'question', awaiting: true, focus: null, allowAI: false, requests: 0, checked: 0, done: false, round: state.round + 1 });
+      Object.assign(state, { at: 0, mode: 'question', awaiting: true, focus: null, allowAI: false, requests: 0, askedHere: false, checked: 0, independent: 0, done: false, round: state.round + 1 });
       return message([line('mira', 'intro_mira'), line('tavi', lesson.title), line('mira', 'intro_follow'), ...enter(true)]);
     }
     function visit(id) {
@@ -32,6 +33,8 @@
       const observation = scene().observations[id];
       return message([line('tavi', observation), line('mira', active())]);
     }
+    const remaining = () => ASK_LIMIT - state.requests;
+    const canAsk = () => state.allowAI && !state.askedHere && remaining() > 0 && state.mode !== 'check' && state.mode !== 'complete';
     function options() {
       if (state.awaiting || needsExperiment()) return [];
       const token = state.round + '-' + state.at + '-' + state.mode;
@@ -39,7 +42,7 @@
       const q = current(), choices = state.mode === 'check' ? q.ai.choices : state.mode === 'guide' ? q.guide.choices : q.choices;
       const list = choices.map((choice, index) => ({ id: token + '-' + index, label: choice.label, action: 'reply', index, token }));
       list.push({ id: token + '-unsure', label: 'unsure', action: 'unsure', token });
-      if (state.allowAI && state.mode !== 'check') list.push({ id: token + '-ai', label: 'ai_ask', action: 'ai', token });
+      if (canAsk()) list.push({ id: token + '-ai', label: 'ai_ask', action: 'ai', token });
       return list;
     }
     function act(option) {
@@ -47,8 +50,9 @@
       if (state.awaiting || needsExperiment() || option.token !== token) return message([line('mira', active())]);
       if (option.action === 'replay') return begin();
       const q = current();
-      if (option.action === 'ai' && state.allowAI && state.mode !== 'check') {
-        state.requests++; state.mode = 'check';
+      if (option.action === 'ai') {
+        if (!canAsk()) return message([line('mira', active())]);
+        state.requests++; state.askedHere = true; state.mode = 'check';
         state.awaiting = state.focus !== q.ai.place;
         return message([line('ai', q.ai.text), ...(state.requests <= 2 ? [line('mira', q.ai.coach)] : []), line('mira', active())],
           { ai: true, wrong: q.ai.kind === 'wrong', kind: q.ai.kind });
@@ -77,15 +81,17 @@
         state.mode = 'guide';
         return message([line('mira', 'smaller'), line('mira', q.guide.prompt)], { judged: false });
       }
+      if (!state.askedHere) state.independent++;
       if (state.at + 1 < lesson.steps.length) {
-        state.at++; state.allowAI = false;
+        state.at++; state.allowAI = false; state.askedHere = false;
         return message([line('mira', q.reply), ...enter(true)], { judged: true });
       }
       state.mode = 'complete'; state.awaiting = false;
       const done = !state.done; state.done = true;
       return message([line('mira', q.reply), line('mira', 'finish_mira'), line('tavi', lesson.summary),
-        line('mira', 'checked', { n: state.checked }), ...(state.checked ? [line('mira', 'checker')] : [])], { judged: true, done });
+        line('mira', 'independent', { n: state.independent, total: lesson.steps.length }),
+        ...(state.checked ? [line('mira', 'checked', { n: state.checked })] : [])], { judged: true, done });
     }
-    return { state, current, place, prompt, active, scene, needsExperiment, begin, visit, options, act, get basin() { return basin; } };
+    return { state, current, place, prompt, active, scene, needsExperiment, begin, visit, options, act, remaining, get basin() { return basin; } };
   } };
 })();
