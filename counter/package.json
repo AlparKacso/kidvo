@@ -1,0 +1,16 @@
+{
+  "name": "kidvo-counter",
+  "private": true,
+  "type": "module",
+  "description": "kidvo's play counter: a Cloudflare Worker with a D1 table of daily totals per game. See README.md.",
+  "scripts": {
+    "dev": "wrangler d1 execute kidvo-count --local --file schema.sql && wrangler dev --var SITE:http://localhost:8080",
+    "deploy": "wrangler deploy",
+    "schema": "wrangler d1 execute kidvo-count --remote --file schema.sql",
+    "counts": "node counts.mjs",
+    "counts:weeks": "node counts.mjs weeks"
+  },
+  "devDependencies": {
+    "wrangler": "4.165.0"
+  }
+}
