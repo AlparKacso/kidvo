@@ -1,0 +1,18 @@
+# kidvo's play counter. See README.md.
+name = "kidvo-count"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+preview_urls = false
+
+# No request logs: they would hold IP addresses, and the counter needs none.
+[observability]
+enabled = false
+
+[vars]
+SITE = "https://kidvo.eu"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kidvo-count"
+database_id = "281f9443-192e-405e-911c-811d3f05f8b8"

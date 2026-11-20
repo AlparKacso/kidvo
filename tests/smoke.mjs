@@ -83,6 +83,48 @@ async function run(name) {
       !document.getElementById('desktop').classList.contains('staged'), id, { timeout: 3000 });
   });
 
+  // Game plays are counted without names or IDs (counter/), and only on kidvo.eu. Here a stand-in config points the
+  // count at this test, which records each beacon instead of letting it leave the machine.
+  await step('a game play is counted when the tab hides and when the game closes', async () => {
+    const id = windowApps[0].id;
+    const counted = [];
+    const cp = await desk.newPage();
+    try {
+      await cp.route('**/shell/config.js', async route => {
+        const body = await (await route.fetch()).text();
+        route.fulfill({ contentType: 'text/javascript', body: body + `\nwindow.KIDVO_CONFIG.count = { url: '${SITE}/__count', host: 'localhost' };` });
+      });
+      await cp.route('**/__count**', route => {
+        counted.push({ method: route.request().method(), ...Object.fromEntries(new URL(route.request().url()).searchParams) });
+        route.fulfill({ status: 204 });
+      });
+      const seen = async n => {
+        for (let t = 0; counted.length < n && t < 30; t++) await cp.waitForTimeout(100);
+        if (counted.length !== n) throw new Error(`expected ${n} count(s), got ${JSON.stringify(counted)}`);
+      };
+      const tab = state => cp.evaluate(s => {
+        Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => s });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }, state);
+      await cp.goto(`${SITE}/`);
+      await cp.waitForFunction(() => window.kidvoShell, null, { timeout: 5000 });
+      await cp.click(`#play .card[data-app="${id}"] .card-play`);
+      await cp.locator(`.win iframe[src^="apps/${id}/"]`).waitFor({ state: 'visible', timeout: 3000 });
+      await cp.waitForTimeout(1300);
+      await tab('hidden');
+      await seen(1);
+      await tab('visible');
+      await cp.waitForTimeout(1300);
+      await cp.click('.win:not([hidden]) [data-act="close"]');
+      await seen(2);
+      const [a, b] = counted;
+      if (a.method !== 'POST' || a.g !== id || a.n !== '1' || !(Number(a.s) >= 1) || a.r !== '0') throw new Error(`first count: ${JSON.stringify(a)}`);
+      if (b.g !== id || b.n !== '0' || !(Number(b.s) >= 1)) throw new Error(`second count: ${JSON.stringify(b)}`);
+    } finally {
+      await cp.close();
+    }
+  });
+
   // Vo is drawn in front of the cards, so his overlay frame lies over the page. WebKit sends wheel scrolling to
   // that frame; the page must still scroll, because the frame sits inside the scrolling page (#above in #play).
   await step('the games page scrolls with the mouse wheel while Vo runs in front of it', async () => {

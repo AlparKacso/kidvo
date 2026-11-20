@@ -334,6 +334,8 @@
     const rec = wins.get(id);
     if (!rec) return;
     if (rec.frame) frames.delete(rec.frame.contentWindow);
+    playSend(id);
+    plays.delete(id);
     rec.node.remove();
     rec.task.remove();
     wins.delete(id);
@@ -417,6 +419,7 @@
       width: app.window?.width || 480, height: app.window?.height || 400, frame
     });
     registerFrame(frame, appId, rec.id);
+    playStart(rec);
     return rec;
   }
 
@@ -589,6 +592,7 @@
         <ul>
           <li>${t('priv1')}</li>
           <li>${t('priv2')}</li>
+          <li>${t('privCount')}</li>
           <li>${t('priv3')} <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">${t('privacyGithub')}</a></li>
         </ul>
         <h3>${t('gamesH')}</h3>
@@ -950,6 +954,7 @@
       desktop.classList.toggle('sheet-open', narrow() && shown);
       desktop.classList.toggle('staged', playing() && shown);
       markCards();
+      playTick();
       const rects = windowRects();
       if (playing() && !(narrow() && shown)) rects.unshift(...playSurfaces());
       broadcast('shell:windows', { windows: rects, width: desktop.clientWidth, height: desktop.clientHeight }, 'shell');
@@ -1041,6 +1046,7 @@
           data = JSON.parse(s);
         } catch { return; }
         broadcast(ctx.appId + ':' + m.topic, data, ctx.appId);
+        playRound(ctx.appId, m.topic);
         break;
       }
       case 'call': {
@@ -1056,6 +1062,54 @@
       }
     }
   });
+
+  /* ---------------- counting game plays, without names or IDs ---------------- */
+  // To see which games are used, the shell (never a game) sends one small count when a game stops being played:
+  // which game, the seconds it was on screen and the rounds finished (counter/README.md). No cookie, no ID, nothing
+  // kept on the device for it. Only on kidvo.eu itself, and never for browsers that ask not to be tracked.
+  const COUNT = CFG.count || {};
+  const counting = !!COUNT.url && location.hostname === COUNT.host && typeof navigator.sendBeacon === 'function' &&
+    navigator.globalPrivacyControl !== true && navigator.doNotTrack !== '1' && window.doNotTrack !== '1';
+  const plays = new Map(); // winId -> { appId, fresh, ms, since, rounds, lastRound }
+  const ROUND_END = new Set(['done', 'solved']); // a finished round, as for Vo (apps/pet/bricks.js)
+
+  function playStart(rec) {
+    if (counting) plays.set(rec.id, { appId: rec.appId, fresh: true, ms: 0, since: null, rounds: 0, lastRound: -Infinity });
+    playTick();
+  }
+  // The clock runs while the game is on screen: its window open (not waiting behind its card) and the tab visible.
+  function playTick() {
+    const now = performance.now(), shown = document.visibilityState === 'visible';
+    for (const [id, p] of plays) {
+      const on = shown && wins.has(id) && !wins.get(id).minimized;
+      if (on && p.since === null) p.since = now;
+      else if (!on && p.since !== null) { p.ms += now - p.since; p.since = null; }
+    }
+  }
+  function playRound(appId, topic) {
+    if (!ROUND_END.has(topic)) return;
+    const now = performance.now();
+    for (const p of plays.values()) if (p.appId === appId && now - p.lastRound > 1500) { p.rounds++; p.lastRound = now; }
+  }
+  // Sends what this stretch of play added up to, and starts the next stretch from zero.
+  function playSend(id) {
+    const p = plays.get(id);
+    if (!p) return;
+    playTick();
+    const now = performance.now();
+    const ms = p.ms + (p.since === null ? 0 : now - p.since);
+    if (p.fresh || ms >= 1000 || p.rounds) {
+      const q = `g=${encodeURIComponent(p.appId)}&s=${Math.round(ms / 1000)}&r=${p.rounds}&n=${p.fresh ? 1 : 0}`;
+      try { navigator.sendBeacon(`${COUNT.url}?${q}`); } catch { /* not counted, and nothing else happens */ }
+    }
+    Object.assign(p, { fresh: false, ms: 0, rounds: 0, since: p.since === null ? null : now });
+  }
+  // A hidden tab may never come back (phones close them silently), so each stretch is sent when the page hides.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') for (const id of plays.keys()) playSend(id);
+    playTick();
+  });
+  window.addEventListener('pagehide', () => { for (const id of plays.keys()) playSend(id); });
 
   /* ---------------- deep links: #maze.map opens those apps ---------------- */
   let syncing = false;

@@ -11,7 +11,7 @@ kidvo is a free, open-source collection of short browser games that help childre
 Every game has a **practice AI**: a clearly labelled pretend AI (like ORACLE-3000 in Robot Maze) whose answers are written in advance. Some of them are wrong on purpose. Children practise asking, doubting and checking in a place where nothing can go wrong.
 
 - **No real AI, no internet calls.** Every sentence a child sees is in this repository and reviewed.
-- **Nothing is collected.** No accounts, ads, tracking or cookies. Progress stays in the browser.
+- **No personal data.** No accounts, ads, tracking or cookies. Progress stays in the browser. The site only counts game plays, without names or IDs: which game, how long, and how many rounds ([how](counter/README.md)).
 - **Two age bands.** Explorers (7–9) and Investigators (10–13).
 - **Three languages to start:** English, Hungarian and Romanian.
 - **A printable guide for parents and teachers** comes with every game.
