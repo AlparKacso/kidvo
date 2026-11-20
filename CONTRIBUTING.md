@@ -59,6 +59,8 @@ Games never call a real AI. They use `shell/ask-ai.js`, a shared, clearly labell
 
 ## Quick start
 
+New here? [Your first kidvo game in an evening](docs/first-game.md) walks through these steps one by one.
+
 ```bash
 npm install
 npx playwright install chromium webkit   # browsers for the smoke test (Chromium and Safari's engine)

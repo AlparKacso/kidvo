@@ -449,6 +449,13 @@ body[data-view="play"] #play { overflow-x: hidden; overflow-y: auto; overscroll-
     4px 4px 0 var(--ink), 5px 5px 0 var(--ink), 6px 6px 0 var(--ink);
 }
 .intro-h .ai { color: var(--sun); }
+/* For grown-ups, under the children's line: there is no real AI here. */
+.intro-note {
+  width: fit-content; max-width: 30em; margin: 16px 0 0; padding: 10px 16px;
+  background: var(--ink); color: var(--paper); border: 3px solid var(--ink);
+  font-size: 15px; line-height: 1.45; text-wrap: pretty;
+}
+.intro-note b { color: var(--sun); font: 800 15px/1.45 var(--font-ui); }
 /* Who the site is for, as a sticker above the motto: children, and their ages. */
 .intro-for {
   width: fit-content; margin: 0 0 20px; padding: 6px 12px;
@@ -503,7 +510,8 @@ body[data-view="play"] #play { overflow-x: hidden; overflow-y: auto; overscroll-
 .card-bands { position: absolute; top: 10px; left: 10px; pointer-events: none; }
 .card-bands .band { box-shadow: 2px 2px 0 var(--ink); }
 .card-name { margin: 0; font: 800 19px/1.15 var(--font-ui); letter-spacing: -.01em; }
-.card-desc { margin: 0; color: #3b3e66; font-size: 14px; line-height: 1.45; }
+/* Room for three lines (descriptions are at most 90 characters), so cards come out the same height. */
+.card-desc { margin: 0; min-height: calc(3 * 1.45em); color: #3b3e66; font-size: 14px; line-height: 1.45; }
 .card-foot { margin-top: auto; padding-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; }
 /* For grown-ups: a plain underlined link next to Play, above the card-wide Play target (.card-play::after). */
 .card-grownups {
@@ -574,6 +582,7 @@ body[data-view="play"] .win-btns [data-act="max"] { display: none; }
   body[data-view="play"] .tb-brand { display: flex; }
   .play-in { padding: 64px 16px 150px; }
   .intro-p { font-size: 15px; }
+  .intro-note, .intro-note b { font-size: 14px; }
   .card-art { height: 124px; }
 }
 /* Fewer columns as the screen narrows; the motto keeps two of them until there is only one. Wide screens get a
@@ -583,6 +592,12 @@ body[data-view="play"] .win-btns [data-act="max"] { display: none; }
   .tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 @media (max-width: 1099px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* The motto's tile is taller than a card: the cards beside it keep their own height, centred, instead of
+   stretching with an empty band above Play. Which cards share its row depends on the columns (the first
+   guide comes after the third game, so the first games are children 2, 3 and 4). */
+@media (min-width: 1480px) { .tiles > .card:nth-child(-n+4) { align-self: center; } }
+@media (min-width: 1100px) and (max-width: 1479px) { .tiles > .card:nth-child(-n+3) { align-self: center; } }
+@media (min-width: 820px) and (max-width: 1099px) { .tiles > .card:nth-child(2) { align-self: center; } }
 @media (max-width: 819px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 559px) {
   .tiles { grid-template-columns: minmax(0, 1fr); }
